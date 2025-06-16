@@ -1,11 +1,9 @@
 ## Type of changes
-
--   Feature/Fix/Docs/Refactor/CI/Test/Chore
+- Feature/Fix/Docs/Refactor/CI/Test/Chore
 
 ## Purpose
-
--   Add XXX
--   Resolve issue #XXX
+- Add XXX
+- Resolve issue #XXX
 
 <!-- Provide a brief description of the changes made in this pull request. -->
 
