@@ -2,6 +2,16 @@ import { type ReactNode, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Inbox, FileText, Settings, User, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger
+} from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AppLayoutProps {
 	children: ReactNode;
@@ -31,133 +41,118 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
-		<>
-			{/* Organization Button */}
-			<div className="relative">
-				<button
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			<DialogTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
 					className={cn(
-						"w-10 h-10 rounded-lg transition-all duration-200",
-						"bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500/20",
-						"flex items-center justify-center text-slate-50 font-semibold text-sm shadow-sm"
+						"w-10 h-10 rounded-lg",
+						"bg-slate-700 hover:bg-slate-600 text-slate-50 font-semibold text-sm shadow-sm",
+						"focus:ring-2 focus:ring-slate-500/20"
 					)}
-					onClick={() => setIsOpen(true)}
-					title={`Switch from ${currentOrg.name}`}
 				>
 					{currentOrg.initial}
-				</button>
-			</div>
+				</Button>
+			</DialogTrigger>
 
-			{/* Backdrop and Popup */}
-			{isOpen && (
-				<div
-					className="fixed inset-0 z-50 flex items-center justify-center"
-					style={{ backdropFilter: "blur(4px)" }}
-					onClick={() => setIsOpen(false)}
-				>
-					<div
-						className="bg-slate-50 rounded-xl shadow-2xl border border-slate-200 p-6 min-w-80 max-w-md mx-4"
-						onClick={e => e.stopPropagation()}
-					>
-						<h3 className="text-lg font-semibold text-slate-900 mb-4">
-							Switch Organization
-						</h3>
+			<DialogContent className="bg-slate-50 border-slate-200">
+				<DialogHeader>
+					<DialogTitle className="text-slate-900">Switch Organization</DialogTitle>
+				</DialogHeader>
 
-						<div className="space-y-2">
-							{organizations.map(org => (
-								<button
-									key={org.id}
-									className={cn(
-										"w-full flex items-center gap-3 p-3 rounded-lg transition-colors",
-										"hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500/20",
-										org.id === currentOrg.id
-											? "bg-slate-100 ring-1 ring-slate-300"
-											: ""
-									)}
-									onClick={() => {
-										onOrgChange(org);
-										setIsOpen(false);
-									}}
-								>
-									<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">
-										{org.initial}
-									</div>
-									<span className="text-slate-700 font-medium flex-1 text-left">
-										{org.name}
-									</span>
-									{org.id === currentOrg.id && (
-										<Check className="w-5 h-5 text-slate-600" />
-									)}
-								</button>
-							))}
-						</div>
-
-						<div className="mt-4 pt-4 border-t border-slate-200">
-							<button
-								className="w-full p-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
-								onClick={() => setIsOpen(false)}
-							>
-								Cancel
-							</button>
-						</div>
-					</div>
+				<div className="space-y-2 mt-4">
+					{organizations.map(org => (
+						<Button
+							key={org.id}
+							variant="ghost"
+							className={cn(
+								"w-full justify-start gap-3 h-auto p-3",
+								"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
+								org.id === currentOrg.id ? "bg-slate-100 ring-1 ring-slate-300" : ""
+							)}
+							onClick={() => {
+								onOrgChange(org);
+								setIsOpen(false);
+							}}
+						>
+							<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">
+								{org.initial}
+							</div>
+							<span className="text-slate-700 font-medium flex-1 text-left">
+								{org.name}
+							</span>
+							{org.id === currentOrg.id && (
+								<Check className="w-5 h-5 text-slate-600" />
+							)}
+						</Button>
+					))}
 				</div>
-			)}
-		</>
+			</DialogContent>
+		</Dialog>
 	);
 };
 
 const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: NavItemProps) => {
 	if (isProfile) {
 		return (
-			<div className="group relative">
-				<button
-					className={cn(
-						"p-3 rounded-lg transition-all duration-200 group relative",
-						"hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500/20",
-						isActive && "bg-slate-100 ring-1 ring-slate-300"
-					)}
-					onClick={onClick}
-					title={label}
-				>
-					<div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center shadow-sm">
-						{icon}
-					</div>
-				</button>
-				{/* Tooltip */}
-				<div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-900 text-slate-50 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-					{label}
-					<div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900"></div>
-				</div>
-			</div>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className={cn(
+								"p-3 rounded-lg transition-all duration-200",
+								"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
+								isActive && "bg-slate-100 ring-1 ring-slate-300"
+							)}
+							onClick={onClick}
+						>
+							<Avatar className="w-8 h-8 bg-slate-600">
+								<AvatarFallback className="bg-slate-600 text-slate-50">
+									{icon}
+								</AvatarFallback>
+							</Avatar>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent side="right" className="bg-slate-900 text-slate-50">
+						<p>{label}</p>
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
 		);
 	}
 
 	return (
-		<div className="group relative">
-			<button
-				className={cn(
-					"p-3 rounded-lg transition-all duration-200 group relative",
-					"hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500/20",
-					isActive && "bg-slate-100 ring-1 ring-slate-300"
-				)}
-				onClick={onClick}
-				title={label}
-			>
-				<div
-					className={cn(
-						"w-6 h-6 transition-colors duration-200",
-						isActive ? "text-slate-700" : "text-slate-600 group-hover:text-slate-900"
-					)}
-				>
-					{icon}
-				</div>
-			</button>
-			{/* Tooltip */}
-			<div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-900 text-slate-50 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-				{label}
-				<div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900"></div>
-			</div>
-		</div>
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon"
+						className={cn(
+							"p-3 rounded-lg transition-all duration-200",
+							"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
+							isActive && "bg-slate-100 ring-1 ring-slate-300"
+						)}
+						onClick={onClick}
+					>
+						<div
+							className={cn(
+								"w-6 h-6 transition-colors duration-200",
+								isActive ? "text-slate-700" : "text-slate-600 hover:text-slate-900"
+							)}
+						>
+							{icon}
+						</div>
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent side="right" className="bg-slate-900 text-slate-50">
+					<p>{label}</p>
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
 	);
 };
 
