@@ -4,12 +4,12 @@ import Home from "./pages/Home";
 import OAuthCallback from "@/features/auth/pages/OAuthCallback.tsx";
 
 const App = () => {
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    <Route path="/auth/callback" element={<OAuthCallback />} />
-    </Routes>
-  );
+	return (
+		<Routes>
+			<Route path="/" element={<Home />} />
+			<Route path="/auth/callback" element={<OAuthCallback />} />
+		</Routes>
+	);
 };
 
 export default App;
