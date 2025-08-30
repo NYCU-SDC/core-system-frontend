@@ -1,4 +1,4 @@
-name: Lint
+name: Snapshot
 
 on:
   pull_request:
@@ -115,7 +115,6 @@ jobs:
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/arm64
           push: true
           tags: |
             nycusdc/core-system-frontend:pr-${{ github.event.number }}
@@ -123,14 +122,53 @@ jobs:
           context: .
 
   Deploy:
-    name: Deploy
-    needs: Push-Image
-    runs-on: self-hosted
+    needs: Build
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - name: Extract PR body for webhook
+        uses: NYCU-SDC/Extract-PRbody@V1.0
+        id: extract
+        with:
+          pr_body: ${{ github.event.pull_request.body }}
 
-      - name: Deploy container to local
+      - name: Process PR body for webhook
         run: |
-          ~/deploy.sh "Snapshot" "${{ github.event.number }}" "${{ github.event.pull_request.title }}"
-        
+          PR_TYPE=$(echo '${{ steps.extract.outputs.type_block }}' | jq -R -s @json)
+          PR_PURPOSE=$(echo '${{ steps.extract.outputs.purpose_block }}' | jq -R -s @json)
+          echo "PR_TYPE=$PR_TYPE" >> $GITHUB_ENV
+          echo "PR_PURPOSE=$PR_PURPOSE" >> $GITHUB_ENV
+
+      - name: Trigger n8n Snapshot Webhook
+        run: |
+          curl --location --fail-with-body -X POST https://webhook.eng.sdc.nycu.club/webhook/deploy \
+            -H "Content-Type: application/json" \
+            -H "x-deploy-token: ${{ secrets.N8N_DEPLOY_TOKEN }}" \
+            -d '{
+              "source": {
+                "title": "Core System",
+                "repo": "${{ github.repository }}",
+                "branch": "${{ github.head_ref || github.ref_name }}",
+                "commit": "${{ github.sha }}",
+                "pr_number": "${{ github.event.pull_request.number }}",
+                "pr_title": "${{ github.event.pull_request.title }}",
+                "pr_type": ${{ env.PR_TYPE }},
+                "pr_purpose": ${{ env.PR_PURPOSE }}
+              },
+              "method": "deploy",
+              "metadata": {
+                "environment": "snapshot",
+                "component": "frontend"
+              },
+              "post": {
+                "notify_discord": {
+                  "enable": true,
+                  "channel": "core-system-activity"
+                },
+                "setup_domain": {
+                  "enable": true,
+                  "title": "Endpoint",
+                  "name": "pr-${{ github.event.pull_request.number }}.core-system.sdc.nycu.club",
+                  "value": "gcp-eng-deploy:internal"
+                }
+              }
+            }'

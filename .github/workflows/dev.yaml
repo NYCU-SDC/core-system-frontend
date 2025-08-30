@@ -1,4 +1,4 @@
-name: Lint
+name: Dev
 on:
   push:
     branches:
@@ -115,7 +115,6 @@ jobs:
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/arm64
           push: true
           tags: |
             nycusdc/core-system-frontend:dev
@@ -123,13 +122,36 @@ jobs:
           context: .
 
   Deploy:
-    name: Deploy
-    needs: Push-Image
-    runs-on: self-hosted
+    needs: Build
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Deploy container to local
+      - name: Trigger n8n Deploy Webhook
         run: |
-          ~/deploy.sh "Dev"
+          curl --location --fail-with-body --request POST 'https://webhook.eng.sdc.nycu.club/webhook/deploy' \
+            --header 'Content-Type: application/json' \
+            --header "x-deploy-token: ${{ secrets.N8N_DEPLOY_TOKEN }}" \
+            --data-raw '{
+            "source": {
+              "title": "Core System",
+              "repo": "${{ github.repository }}",
+              "branch": "${{ github.head_ref || github.ref_name }}",
+              "commit": "${{ github.sha }}"
+            },
+            "method": "deploy",
+            "metadata": {
+              "environment": "dev",
+              "component": "frontend"
+            },
+            "post": {
+              "notify_discord": {
+                "enable": true,
+                "channel": "core-system-activity"
+              },
+              "setup_domain": {
+                "enable": true,
+                "title": "Endpoint",
+                "name": "dev.core-system.sdc.nycu.club",
+                "value": "gcp-eng-deploy:internal"
+              }
+            }
+          }'
