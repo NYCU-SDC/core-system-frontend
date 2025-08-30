@@ -18,7 +18,10 @@ export function Counter() {
 				</button>
 			</div>
 			<div>
-				<button aria-label="IncrementByAmount" onClick={() => dispatch(incrementByAmount(5))}>
+				<button
+					aria-label="IncrementByAmount"
+					onClick={() => dispatch(incrementByAmount(5))}
+				>
 					IncrementByAmount
 				</button>
 			</div>

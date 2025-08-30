@@ -49,25 +49,29 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 
 			{/* Backdrop and Popup */}
 			{isOpen && (
-				<div 
+				<div
 					className="fixed inset-0 z-50 flex items-center justify-center"
-					style={{ backdropFilter: 'blur(4px)' }}
+					style={{ backdropFilter: "blur(4px)" }}
 					onClick={() => setIsOpen(false)}
 				>
-					<div 
+					<div
 						className="bg-slate-50 rounded-xl shadow-2xl border border-slate-200 p-6 min-w-80 max-w-md mx-4"
-						onClick={(e) => e.stopPropagation()}
+						onClick={e => e.stopPropagation()}
 					>
-						<h3 className="text-lg font-semibold text-slate-900 mb-4">Switch Organization</h3>
-						
+						<h3 className="text-lg font-semibold text-slate-900 mb-4">
+							Switch Organization
+						</h3>
+
 						<div className="space-y-2">
-							{organizations.map((org) => (
+							{organizations.map(org => (
 								<button
 									key={org.id}
 									className={cn(
 										"w-full flex items-center gap-3 p-3 rounded-lg transition-colors",
 										"hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500/20",
-										org.id === currentOrg.id ? "bg-slate-100 ring-1 ring-slate-300" : ""
+										org.id === currentOrg.id
+											? "bg-slate-100 ring-1 ring-slate-300"
+											: ""
 									)}
 									onClick={() => {
 										onOrgChange(org);
@@ -77,14 +81,16 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 									<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">
 										{org.initial}
 									</div>
-									<span className="text-slate-700 font-medium flex-1 text-left">{org.name}</span>
+									<span className="text-slate-700 font-medium flex-1 text-left">
+										{org.name}
+									</span>
 									{org.id === currentOrg.id && (
 										<Check className="w-5 h-5 text-slate-600" />
 									)}
 								</button>
 							))}
 						</div>
-						
+
 						<div className="mt-4 pt-4 border-t border-slate-200">
 							<button
 								className="w-full p-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
@@ -158,21 +164,21 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 const AppLayout = ({ children }: AppLayoutProps) => {
 	const location = useLocation();
 	const navigate = useNavigate();
-	
+
 	// Mock organizations data - replace with real data from your API/store
 	const [organizations] = useState<Organization[]>([
 		{ id: "1", name: "Acme Corporation", initial: "A" },
 		{ id: "2", name: "Beta Solutions", initial: "B" },
 		{ id: "3", name: "Gamma Technologies", initial: "G" },
-		{ id: "4", name: "Delta Industries", initial: "D" },
+		{ id: "4", name: "Delta Industries", initial: "D" }
 	]);
-	
+
 	const [currentOrg, setCurrentOrg] = useState<Organization>(organizations[0]);
 
 	const handleNavigation = (path: string) => {
 		navigate(path);
 	};
-	
+
 	const handleOrgChange = (org: Organization) => {
 		setCurrentOrg(org);
 		// Add your organization switching logic here
@@ -191,7 +197,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 						organizations={organizations}
 						onOrgChange={handleOrgChange}
 					/>
-					
+
 					{/* Inbox */}
 					<NavItem
 						icon={<Inbox className="w-full h-full" />}
