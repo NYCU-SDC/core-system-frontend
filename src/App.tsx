@@ -1,14 +1,45 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
+import Inbox from "./pages/Inbox";
+import Forms from "./pages/Forms";
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 // import {Counter} from "@/features/example/Counter.tsx";
 import OAuthCallback from "@/features/auth/pages/OAuthCallback.tsx";
+import { AppLayout, SimpleLayout } from "./components/layout";
 
-const App = () => {
+const AppContent = () => {
 	return (
 		<Routes>
 			<Route path="/" element={<Home />} />
+			<Route path="/inbox" element={<Inbox />} />
+			<Route path="/forms" element={<Forms />} />
+			<Route path="/settings" element={<Settings />} />
+			<Route path="/profile" element={<Profile />} />
 			<Route path="/auth/callback" element={<OAuthCallback />} />
 		</Routes>
+	);
+};
+
+const App = () => {
+	const location = useLocation();
+	
+	// Routes that should use simple layout (no aside navigation)
+	const simpleLayoutRoutes = ['/auth/callback'];
+	const useSimpleLayout = simpleLayoutRoutes.includes(location.pathname);
+
+	if (useSimpleLayout) {
+		return (
+			<SimpleLayout>
+				<AppContent />
+			</SimpleLayout>
+		);
+	}
+
+	return (
+		<AppLayout>
+			<AppContent />
+		</AppLayout>
 	);
 };
 
