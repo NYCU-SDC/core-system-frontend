@@ -122,7 +122,7 @@ jobs:
           context: .
 
   Deploy:
-    needs: Build
+    needs: Push-Image
     runs-on: ubuntu-latest
     steps:
       - name: Extract PR body for webhook

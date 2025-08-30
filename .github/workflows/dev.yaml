@@ -123,7 +123,7 @@ jobs:
           context: .
 
   Deploy:
-    needs: Build
+    needs: Push-Image
     runs-on: ubuntu-latest
     steps:
       - name: Trigger n8n Deploy Webhook
