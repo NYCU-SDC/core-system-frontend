@@ -1,0 +1,17 @@
+name: core-system-frontend-$VERSION
+
+services:
+  frontend:
+    image: "nycusdc/core-system-frontend:$VERSION"
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core-system-frontend-$VERSION.rule=Host(`$VERSION.core-system.sdc.nycu.club`)"
+      - "traefik.http.routers.core-system-frontend-$VERSION.entrypoints=websecure"
+      - "traefik.http.routers.core-system-frontend-$VERSION.tls=true"
+      - "traefik.http.routers.core-system-frontend-$VERSION.tls.certresolver=cloudflare"
+
+networks:
+  traefik:
+    external: true
