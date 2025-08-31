@@ -1,24 +1,15 @@
 import { toast } from "sonner";
+import { Button } from "@/components/ui";
 
 const Home = () => {
-	// Example usage of Sonner toast
-	toast("Welcome to the Home page!", {
-		description: "This is a simple toast notification.",
-		duration: 5000,
-		position: "top-right"
-	});
 	return (
-		<div className="p-6">
-			<h1 className="text-2xl font-bold text-gray-900 mb-4">Dashboard</h1>
-			<div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-				<p className="text-gray-600 mb-4">Hello world! This is your main content area.</p>
-				<button
-					onClick={() => toast("Hello!")}
-					className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-				>
-					Click here
-				</button>
-			</div>
+		<div className="h-screen text-center flex flex-col items-center justify-center font-[Quantico]">
+			<p className="text-5xl text-slate-700 tracking-widest font-bold">Core System</p>
+			<p className="mt-[22px] text-sm text-slate-300 tracking-[6px]">/* Everything all at once */</p>
+			<Button className="mt-[41px] font-bold"
+					variant="outline"
+					onClick={() => {toast("Hello World!")}}>Login with Google</Button>
+
 		</div>
 	);
 };
