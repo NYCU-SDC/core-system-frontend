@@ -10,7 +10,9 @@ export default function MemberCard() {
 				<p className="text-slate-800 text-lg font-semibold">AAA</p>
 				<p className="text-slate-800 leadiing-6">aaa</p>
 			</div>
-			<Button className="bg-slate-200 hover:bg-slate-300" variant="secondary">Remove</Button>
+			<Button className="bg-slate-200 hover:bg-slate-300" variant="secondary">
+				Remove
+			</Button>
 		</div>
-	)
+	);
 }
