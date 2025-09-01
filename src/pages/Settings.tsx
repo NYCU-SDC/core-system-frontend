@@ -65,14 +65,14 @@ const Settings = () => {
 			</div>
 
 			<p className="text-slate-800 text-3xl font-semibold">Dangerous Zone</p>
-            <div className="flex gap-[27px]">
-                <p className="w-[170px] text-slate-400 text-2xl font-semibold">Quit Team</p>
-                <Button className="w-fit">Quit</Button>
-            </div>
-            <div className="flex gap-[27px]">
-                <p className="w-[170px] text-slate-400 text-2xl font-semibold">Delete Project</p>
-                <Button className="w-fit">Delete</Button>
-            </div>
+			<div className="flex gap-[27px]">
+				<p className="w-[170px] text-slate-400 text-2xl font-semibold">Quit Team</p>
+				<Button className="w-fit">Quit</Button>
+			</div>
+			<div className="flex gap-[27px]">
+				<p className="w-[170px] text-slate-400 text-2xl font-semibold">Delete Project</p>
+				<Button className="w-fit">Delete</Button>
+			</div>
 		</div>
 	);
 };
