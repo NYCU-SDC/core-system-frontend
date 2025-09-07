@@ -1,0 +1,94 @@
+.draft-form-card {
+    background: #ffffff;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 24px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    width: 512px;
+    height: 180px;
+}
+
+.card-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.form-title {
+    font-family: Inter;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 28px;
+    letter-spacing: 0;
+}
+
+.form-unit {
+    background-color: #94A3B8;
+    color: #F1F5F9;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px;
+    border-radius: 8px;
+    gap: 10px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.form-description {
+    font-family: Inter;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    color: #64748B;
+}
+
+.card-footer {
+    display: flex;
+}
+
+.form-time {
+     font-family: Inter;
+     font-weight: 400;
+     font-size: 14px;
+     line-height: 20px;
+     letter-spacing: 0;
+     margin-top: 30px;
+     color: #64748B;
+ }
+
+.form-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding-top: 12px;
+}
+
+.btn {
+    height: 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 8px 16px;
+    transform: rotate(0deg);
+    opacity: 1;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    border: 1px solid #E2E8F0;
+}
+
+.btn-secondary {
+    background-color: #0F172A;
+    color: #FFFFFF;
+}
