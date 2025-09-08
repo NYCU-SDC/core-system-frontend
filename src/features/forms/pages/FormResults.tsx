@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import type { FormData } from "@/types/form.ts";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Question } from "@/types/question.ts";
-import "@/components/Form/FormCard/DraftFormCard.css"
+import type { Question } from "@/features/forms/types/question.ts";
+import "@/features/forms/components/DraftFormCard.css"
 
 interface PublishedFormData extends FormData {
 	replyNumber?: string;
@@ -24,7 +24,7 @@ const fetchFormById = async (id: string): Promise<PublishedFormData | null> => {
 	};
 }
 
-const ResultPage: React.FC = () => {
+const FormResults: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState<PublishedFormData | null>(null);
@@ -108,4 +108,4 @@ const ResultPage: React.FC = () => {
 	)
 }
 
-export default ResultPage;
+export default FormResults;
