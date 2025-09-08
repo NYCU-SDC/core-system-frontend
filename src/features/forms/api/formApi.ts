@@ -1,0 +1,238 @@
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQuery } from '@/app/api';
+import type {
+	Form,
+	FormRequest,
+	Question,
+	QuestionRequest,
+	SubmitRequest,
+	SubmitResponse,
+	ListResponse,
+	GetResponse,
+	AnswersForQuestionResponse,
+	RecipientSelectionRequest,
+	RecipientSelectionResponse,
+	UUID
+} from '@/types/form.ts';
+
+export const formsApi = createApi({
+	reducerPath: 'formsApi',
+	baseQuery,
+	tagTypes: ['Form', 'Question', 'Response'],
+	endpoints: (builder) => ({
+
+		// ========== 表單管理 ==========
+
+		/**
+		 * 取得所有表單列表
+		 */
+		getForms: builder.query<Form[], void>({
+			query: () => '/forms',
+			providesTags: ['Form'],
+		}),
+
+		/**
+		 * 取得特定表單詳情
+		 */
+		getForm: builder.query<Form, UUID>({
+			query: (id) => `/forms/${id}`,
+			providesTags: (result, error, id) => [{ type: 'Form', id }],
+		}),
+
+		/**
+		 * 更新表單
+		 */
+		updateForm: builder.mutation<Form, { id: UUID; data: FormRequest }>({
+			query: ({ id, data }) => ({
+				url: `/forms/${id}`,
+				method: 'PUT',
+				body: data,
+			}),
+			invalidatesTags: (result, error, { id }) => [
+				{ type: 'Form', id },
+				'Form',
+			],
+		}),
+
+		/**
+		 * 刪除表單
+		 */
+		deleteForm: builder.mutation<void, UUID>({
+			query: (id) => ({
+				url: `/forms/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: ['Form'],
+		}),
+
+		/**
+		 * 發布表單
+		 */
+		publishForm: builder.mutation<void, { id: UUID; recipients: RecipientSelectionRequest }>({
+			query: ({ id, recipients }) => ({
+				url: `/forms/${id}/publish`,
+				method: 'POST',
+				body: recipients,
+			}),
+			invalidatesTags: (result, error, { id }) => [
+				{ type: 'Form', id },
+				'Form',
+			],
+		}),
+
+		/**
+		 * 在特定單位下建立新表單
+		 */
+		createForm: builder.mutation<Form, { orgSlug: string; unitId: UUID; data: FormRequest }>({
+			query: ({ orgSlug, unitId, data }) => ({
+				url: `/orgs/${orgSlug}/units/${unitId}/forms`,
+				method: 'POST',
+				body: data,
+			}),
+			invalidatesTags: ['Form'],
+		}),
+
+		/**
+		 * 預覽收件人列表
+		 */
+		previewRecipients: builder.mutation<RecipientSelectionResponse, RecipientSelectionRequest>({
+			query: (data) => ({
+				url: '/forms/recipients/preview',
+				method: 'POST',
+				body: data,
+			}),
+		}),
+
+		// ========== 問題管理 ==========
+
+		/**
+		 * 取得表單的所有問題
+		 */
+		getQuestions: builder.query<Question[], UUID>({
+			query: (formId) => `/forms/${formId}/questions`,
+			providesTags: (result, error, formId) => [
+				{ type: 'Question', id: 'LIST' },
+				...(result?.map(({ id }) => ({ type: 'Question' as const, id })) || []),
+			],
+		}),
+
+		/**
+		 * 建立新問題
+		 */
+		createQuestion: builder.mutation<Question, { formId: UUID; data: QuestionRequest }>({
+			query: ({ formId, data }) => ({
+				url: `/forms/${formId}/questions`,
+				method: 'POST',
+				body: data,
+			}),
+			invalidatesTags: [{ type: 'Question', id: 'LIST' }],
+		}),
+
+		/**
+		 * 更新問題
+		 */
+		updateQuestion: builder.mutation<Question, { formId: UUID; questionId: UUID; data: QuestionRequest }>({
+			query: ({ formId, questionId, data }) => ({
+				url: `/forms/${formId}/questions/${questionId}`,
+				method: 'PUT',
+				body: data,
+			}),
+			invalidatesTags: (result, error, { questionId }) => [
+				{ type: 'Question', id: questionId },
+				{ type: 'Question', id: 'LIST' },
+			],
+		}),
+
+		/**
+		 * 刪除問題
+		 */
+		deleteQuestion: builder.mutation<void, { formId: UUID; questionId: UUID }>({
+			query: ({ formId, questionId }) => ({
+				url: `/forms/${formId}/questions/${questionId}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [{ type: 'Question', id: 'LIST' }],
+		}),
+
+		// ========== 回應管理 ==========
+
+		/**
+		 * 提交表單回應
+		 */
+		submitResponse: builder.mutation<SubmitResponse, { formId: UUID; data: SubmitRequest }>({
+			query: ({ formId, data }) => ({
+				url: `/forms/${formId}/responses`,
+				method: 'POST',
+				body: data,
+			}),
+			invalidatesTags: (result, error, { formId }) => [
+				{ type: 'Response', id: 'LIST' },
+				{ type: 'Form', id: formId },
+			],
+		}),
+
+		/**
+		 * 取得表單所有回應
+		 */
+		getFormResponses: builder.query<ListResponse, UUID>({
+			query: (formId) => `/forms/${formId}/responses`,
+			providesTags: (result, error, formId) => [
+				{ type: 'Response', id: 'LIST' },
+				...(result?.responses?.map(({ id }) => ({ type: 'Response' as const, id })) || []),
+			],
+		}),
+
+		/**
+		 * 取得特定回應詳情
+		 */
+		getResponse: builder.query<GetResponse, { formId: UUID; responseId: UUID }>({
+			query: ({ formId, responseId }) => `/forms/${formId}/responses/${responseId}`,
+			providesTags: (result, error, { responseId }) => [
+				{ type: 'Response', id: responseId },
+			],
+		}),
+
+		/**
+		 * 刪除回應
+		 */
+		deleteResponse: builder.mutation<void, { formId: UUID; responseId: UUID }>({
+			query: ({ formId, responseId }) => ({
+				url: `/forms/${formId}/responses/${responseId}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [{ type: 'Response', id: 'LIST' }],
+		}),
+
+		/**
+		 * 取得特定問題的所有答案
+		 */
+		getQuestionAnswers: builder.query<AnswersForQuestionResponse, { formId: UUID; questionId: UUID }>({
+			query: ({ formId, questionId }) => `/forms/${formId}/questions/${questionId}`,
+			providesTags: (result, error, { questionId }) => [
+				{ type: 'Question', id: questionId },
+			],
+		}),
+
+	}),
+});
+
+export const {
+	useGetFormsQuery,
+	useGetFormQuery,
+	useUpdateFormMutation,
+	useDeleteFormMutation,
+	usePublishFormMutation,
+	useCreateFormMutation,
+	usePreviewRecipientsMutation,
+
+	useGetQuestionsQuery,
+	useCreateQuestionMutation,
+	useUpdateQuestionMutation,
+	useDeleteQuestionMutation,
+
+	useSubmitResponseMutation,
+	useGetFormResponsesQuery,
+	useGetResponseQuery,
+	useDeleteResponseMutation,
+	useGetQuestionAnswersQuery,
+} = formsApi;
