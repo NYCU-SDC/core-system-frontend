@@ -1,5 +1,5 @@
 import React from 'react'
-import type { FormCardProps } from '@/types/form';
+import type { FormCardProps } from '@/types/form.ts';
 import "./DraftFormCard.css"
 import { useNavigate } from 'react-router-dom';
 

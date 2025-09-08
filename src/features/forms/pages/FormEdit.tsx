@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
-import type { FormData } from '@/types/form';
-import type { Question, QuestionType } from '@/types/question';
-import { createNewQuestion } from '@/types/question';
-import "@/components/Form/FormCard/DraftFormCard.css"
-import { GroupSelector } from "@/components/Form/FormCard/GroupSelector.tsx";
-import QuestionList from '@/components/Form/Question/QuestionList';
-import AddQuestion from '@/components/Form/Question/AddQuestion';
+import type { FormData } from '@/types/form.ts';
+import type { Question, QuestionType } from '@/features/forms/types/question.ts';
+import { createNewQuestion } from '@/features/forms/types/question.ts';
+import "@/features/forms/components/DraftFormCard.css"
+import { GroupSelector } from "@/features/forms/components/GroupSelector.tsx";
+import QuestionList from '@/components/Form/Question/QuestionList.tsx';
+import AddQuestion from '@/components/Form/Question/AddQuestion.tsx';
 
 interface EditFormData extends FormData {
 	updatedAt?: string;
@@ -32,7 +32,7 @@ const fetchFormById = async (id: string): Promise<EditFormData | null> => {
 	};
 };
 
-const EditForm: React.FC = () => {
+const FormEdit: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState<EditFormData | null>(null);
@@ -265,4 +265,4 @@ const EditForm: React.FC = () => {
 	)
 }
 
-export default EditForm;
+export default FormEdit;
