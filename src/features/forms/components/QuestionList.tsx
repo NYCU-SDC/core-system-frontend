@@ -1,427 +1,385 @@
 import React, { useState } from 'react';
-import type { Question, ChoiceOption } from '@/features/forms/types/question.ts';
-import { QuestionTypeLabels } from '@/features/forms/types/question.ts';
+import { type Question, QuestionTypeLabels, type SingleChoiceQuestion, type MultipleChoiceQuestion, type ChoiceOption } from "@/features/forms/types/question.ts";
+import { useUpdateQuestionMutation, useDeleteQuestionMutation } from '@/features/forms/api/formApi.ts';
 import "@/features/forms/components/DraftFormCard.css"
 
 interface QuestionListProps {
+	formId?: string;
 	questions: Question[];
 	onUpdateQuestion: (questionId: string, updatedQuestion: Question) => void;
 	onDeleteQuestion: (questionId: string) => void;
-	onReorderQuestions: (reorderedQuestions: Question[]) => void;
+	onReorderQuestions: (questions: Question[]) => void;
 }
-
-interface QuestionItemProps {
-	question: Question;
-	index: number;
-	onUpdate: (updatedQuestion: Question) => void;
-	onDelete: () => void;
-	onMoveUp: () => void;
-	onMoveDown: () => void;
-	canMoveUp: boolean;
-	canMoveDown: boolean;
-}
-
-const QuestionItem: React.FC<QuestionItemProps> = ({
-													   question,
-													   index,
-													   onUpdate,
-													   onDelete,
-													   onMoveUp,
-													   onMoveDown,
-													   canMoveUp,
-													   canMoveDown,
-												   }) => {
-	const [isExpanded, setIsExpanded] = useState(false);
-
-	const handleFieldChange = (field: string, value: string | number | boolean | undefined) => {
-		onUpdate({
-			...question,
-			[field]: value,
-		} as Question);
-	};
-
-	const handleOptionChange = (optionIndex: number, field: 'label' | 'value', value: string) => {
-		if (question.type === 'single_choice' || question.type === 'multiple_choice') {
-			const newOptions = [...question.options];
-			newOptions[optionIndex] = {
-				...newOptions[optionIndex],
-				[field]: value,
-			};
-			onUpdate({
-				...question,
-				options: newOptions,
-			});
-		}
-	};
-
-	const addOption = () => {
-		if (question.type === 'single_choice' || question.type === 'multiple_choice') {
-			const newOption: ChoiceOption = {
-				id: `option_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-				label: '',
-				value: '',
-			};
-			onUpdate({
-				...question,
-				options: [...question.options, newOption],
-			});
-		}
-	};
-
-	const removeOption = (optionIndex: number) => {
-		if (question.type === 'single_choice' || question.type === 'multiple_choice') {
-			const newOptions = question.options.filter((_, index) => index !== optionIndex);
-			onUpdate({
-				...question,
-				options: newOptions,
-			});
-		}
-	};
-
-	const renderQuestionTypeSpecificFields = () => {
-		switch (question.type) {
-			case 'short_text':
-				return (
-					<div className="space-y-3">
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Placeholder</label>
-							<input
-								type="text"
-								value={question.placeholder || ''}
-								onChange={(e) => handleFieldChange('placeholder', e.target.value)}
-								placeholder="Enter placeholder text"
-								className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							/>
-						</div>
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Max Length</label>
-							<input
-								type="number"
-								value={question.maxLength || ''}
-								onChange={(e) => handleFieldChange('maxLength', parseInt(e.target.value) || undefined)}
-								placeholder="100"
-								min="1"
-								className="text-sm w-20 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							/>
-						</div>
-					</div>
-				);
-
-			case 'long_text':
-				return (
-					<div className="space-y-3">
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Placeholder</label>
-							<input
-								type="text"
-								value={question.placeholder || ''}
-								onChange={(e) => handleFieldChange('placeholder', e.target.value)}
-								placeholder="Enter placeholder text"
-								className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							/>
-						</div>
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Rows</label>
-							<input
-								type="number"
-								value={question.rows || ''}
-								onChange={(e) => handleFieldChange('rows', parseInt(e.target.value) || undefined)}
-								placeholder="4"
-								min="1"
-								max="20"
-								className="text-sm w-20 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							/>
-						</div>
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Max Length</label>
-							<input
-								type="number"
-								value={question.maxLength || ''}
-								onChange={(e) => handleFieldChange('maxLength', parseInt(e.target.value) || undefined)}
-								placeholder="1000"
-								min="1"
-								className="text-sm w-24 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							/>
-						</div>
-					</div>
-				);
-
-			case 'single_choice':
-			case 'multiple_choice':
-				return (
-					<div className="space-y-3">
-						<div className="flex items-start gap-6">
-							<label className="text-sm w-[89px] text-slate-800 pt-2">Options</label>
-							<div className="flex-1 space-y-2">
-								{question.options.map((option, optionIndex) => (
-									<div key={option.id} className="flex items-center gap-2">
-										<input
-											type="text"
-											value={option.label}
-											onChange={(e) => handleOptionChange(optionIndex, 'label', e.target.value)}
-											placeholder={`Option ${optionIndex + 1}`}
-											className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-										/>
-										<button
-											type="button"
-											onClick={() => removeOption(optionIndex)}
-											className="text-red-600 hover:text-red-800 p-1"
-											disabled={question.options.length <= 1}
-										>
-											×
-										</button>
-									</div>
-								))}
-								<button
-									type="button"
-									onClick={addOption}
-									className="text-sm text-slate-600 hover:text-slate-800 border border-dashed border-slate-300 rounded-md px-3 py-2 w-full"
-								>
-									+ Add Option
-								</button>
-							</div>
-						</div>
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800"></label>
-							<label className="flex items-center gap-2">
-								<input
-									type="checkbox"
-									checked={question.allowOther || false}
-									onChange={(e) => handleFieldChange('allowOther', e.target.checked)}
-									className="accent-slate-800"
-								/>
-								<span className="text-sm text-slate-800">Allow "Other" option</span>
-							</label>
-						</div>
-						{question.type === 'multiple_choice' && (
-							<>
-								<div className="flex items-center gap-6">
-									<label className="text-sm w-[89px] text-slate-800">Min Selections</label>
-									<input
-										type="number"
-										value={question.minSelections || ''}
-										onChange={(e) => handleFieldChange('minSelections', parseInt(e.target.value) || undefined)}
-										placeholder="0"
-										min="0"
-										className="text-sm w-20 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-									/>
-								</div>
-								<div className="flex items-center gap-6">
-									<label className="text-sm w-[89px] text-slate-800">Max Selections</label>
-									<input
-										type="number"
-										value={question.maxSelections || ''}
-										onChange={(e) => handleFieldChange('maxSelections', parseInt(e.target.value) || undefined)}
-										placeholder="No limit"
-										min="1"
-										className="text-sm w-20 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-									/>
-								</div>
-							</>
-						)}
-					</div>
-				);
-
-			case 'date':
-				return (
-					<div className="space-y-3">
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Date Format</label>
-							<select
-								value={question.dateFormat || 'date'}
-								onChange={(e) => handleFieldChange('dateFormat', e.target.value)}
-								className="text-sm px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							>
-								<option value="date">Date only</option>
-								<option value="datetime">Date and time</option>
-								<option value="time">Time only</option>
-							</select>
-						</div>
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Min Date</label>
-							<input
-								type="date"
-								value={question.minDate || ''}
-								onChange={(e) => handleFieldChange('minDate', e.target.value)}
-								className="text-sm px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							/>
-						</div>
-						<div className="flex items-center gap-6">
-							<label className="text-sm w-[89px] text-slate-800">Max Date</label>
-							<input
-								type="date"
-								value={question.maxDate || ''}
-								onChange={(e) => handleFieldChange('maxDate', e.target.value)}
-								className="text-sm px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-							/>
-						</div>
-					</div>
-				);
-
-			default:
-				return null;
-		}
-	};
-
-	return (
-		<div className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5">
-			<div className="flex items-center justify-between mb-4">
-				<div className="flex items-center gap-3">
-					<span className="font-semibold text-lg leading-7 text-slate-800">
-						Question {index + 1}
-					</span>
-					<span className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded">
-						{QuestionTypeLabels[question.type]}
-					</span>
-				</div>
-				<div className="flex items-center gap-2">
-					<button
-						type="button"
-						onClick={onMoveUp}
-						disabled={!canMoveUp}
-						className="p-1 text-slate-600 hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
-						title="Move up"
-					>
-						↑
-					</button>
-					<button
-						type="button"
-						onClick={onMoveDown}
-						disabled={!canMoveDown}
-						className="p-1 text-slate-600 hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
-						title="Move down"
-					>
-						↓
-					</button>
-					<button
-						type="button"
-						onClick={() => setIsExpanded(!isExpanded)}
-						className="p-1 text-slate-600 hover:text-slate-800"
-						title={isExpanded ? "Collapse" : "Expand"}
-					>
-						{isExpanded ? "−" : "+"}
-					</button>
-					<button
-						type="button"
-						onClick={onDelete}
-						className="p-1 text-red-600 hover:text-red-800"
-						title="Delete question"
-					>
-						×
-					</button>
-				</div>
-			</div>
-
-			{isExpanded && (
-				<div className="space-y-4">
-					<div className="flex items-center gap-6">
-						<label className="text-sm w-[89px] text-slate-800">Title *</label>
-						<input
-							type="text"
-							value={question.title}
-							onChange={(e) => handleFieldChange('title', e.target.value)}
-							placeholder="Enter question title"
-							className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
-						/>
-					</div>
-
-					<div className="flex items-start gap-6">
-						<label className="text-sm w-[89px] text-slate-800 pt-2">Description</label>
-						<textarea
-							value={question.description || ''}
-							onChange={(e) => handleFieldChange('description', e.target.value)}
-							placeholder="Enter question description (optional)"
-							rows={2}
-							className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none"
-						/>
-					</div>
-
-					<div className="flex items-center gap-6">
-						<label className="text-sm w-[89px] text-slate-800"></label>
-						<label className="flex items-center gap-2">
-							<input
-								type="checkbox"
-								checked={question.required}
-								onChange={(e) => handleFieldChange('required', e.target.checked)}
-								className="accent-slate-800"
-							/>
-							<span className="text-sm text-slate-800">Required</span>
-						</label>
-					</div>
-
-					{renderQuestionTypeSpecificFields()}
-				</div>
-			)}
-
-			{!isExpanded && (
-				<div className="text-sm text-slate-600">
-					{question.title || 'Untitled question'}
-					{question.required && <span className="text-red-500 ml-1">*</span>}
-				</div>
-			)}
-		</div>
-	);
-};
 
 const QuestionList: React.FC<QuestionListProps> = ({
+													   formId,
 													   questions,
 													   onUpdateQuestion,
 													   onDeleteQuestion,
-													   onReorderQuestions,
+													   onReorderQuestions
 												   }) => {
-	const handleMoveUp = (index: number) => {
-		if (index > 0) {
-			const newQuestions = [...questions];
-			[newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
-
-			// Update order property
-			newQuestions.forEach((q, i) => {
-				q.order = i;
-			});
-
-			onReorderQuestions(newQuestions);
-		}
-	};
-
-	const handleMoveDown = (index: number) => {
-		if (index < questions.length - 1) {
-			const newQuestions = [...questions];
-			[newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
-
-			// Update order property
-			newQuestions.forEach((q, i) => {
-				q.order = i;
-			});
-
-			onReorderQuestions(newQuestions);
-		}
-	};
+	const [updateQuestionAPI, { isLoading: isUpdating }] = useUpdateQuestionMutation();
+	const [deleteQuestionAPI, { isLoading: isDeleting }] = useDeleteQuestionMutation();
 
 	if (questions.length === 0) {
+		return null;
+	}
+
+	const moveQuestionUp = async (questionId: string) => {
+		const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
+		const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
+
+		if (currentIndex > 0) {
+			const updatedQuestions = [...sortedQuestions];
+			const temp = updatedQuestions[currentIndex].order;
+			updatedQuestions[currentIndex].order = updatedQuestions[currentIndex - 1].order;
+			updatedQuestions[currentIndex - 1].order = temp;
+
+			onReorderQuestions(updatedQuestions);
+
+			if (formId) {
+				try {
+					await Promise.all([
+						updateQuestionAPI({
+							formId,
+							questionId: updatedQuestions[currentIndex].id,
+							data: updatedQuestions[currentIndex]
+						}).unwrap(),
+						updateQuestionAPI({
+							formId,
+							questionId: updatedQuestions[currentIndex - 1].id,
+							data: updatedQuestions[currentIndex - 1]
+						}).unwrap()
+					]);
+				} catch (error) {
+					console.error('Failed to reorder questions:', error);
+					// API 失敗時回滾本地狀態
+					onReorderQuestions(sortedQuestions);
+				}
+			}
+		}
+	};
+
+	const moveQuestionDown = async (questionId: string) => {
+		const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
+		const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
+
+		if (currentIndex < sortedQuestions.length - 1) {
+			const updatedQuestions = [...sortedQuestions];
+			const temp = updatedQuestions[currentIndex].order;
+			updatedQuestions[currentIndex].order = updatedQuestions[currentIndex + 1].order;
+			updatedQuestions[currentIndex + 1].order = temp;
+
+			onReorderQuestions(updatedQuestions);
+
+			if (formId) {
+				try {
+					await Promise.all([
+						updateQuestionAPI({
+							formId,
+							questionId: updatedQuestions[currentIndex].id,
+							data: updatedQuestions[currentIndex]
+						}).unwrap(),
+						updateQuestionAPI({
+							formId,
+							questionId: updatedQuestions[currentIndex + 1].id,
+							data: updatedQuestions[currentIndex + 1]
+						}).unwrap()
+					]);
+				} catch (error) {
+					console.error('Failed to reorder questions:', error);
+					// API 失敗時回滾本地狀態
+					onReorderQuestions(sortedQuestions);
+				}
+			}
+		}
+	};
+
+	const addOption = async (questionId: string, newOptionLabel: string) => {
+		const question = questions.find(q => q.id === questionId);
+		if (!question || (question.type !== 'single_choice' && question.type !== 'multiple_choice')) {
+			return;
+		}
+
+		const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
+		const newOption: ChoiceOption = {
+			id: `option_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+			label: newOptionLabel,
+			value: newOptionLabel.toLowerCase().replace(/\s+/g, '_')
+		};
+
+		const updatedQuestion = {
+			...choiceQuestion,
+			options: [...choiceQuestion.options, newOption]
+		};
+
+		// 先更新本地狀態
+		onUpdateQuestion(questionId, updatedQuestion);
+
+		// 如果有 formId，才調用 API
+		if (formId) {
+			try {
+				await updateQuestionAPI({
+					formId,
+					questionId,
+					data: updatedQuestion
+				}).unwrap();
+			} catch (error) {
+				console.error('Failed to add option:', error);
+				// API 失敗時，本地狀態已經更新，不需要回滾
+			}
+		}
+	};
+
+	const removeOption = async (questionId: string, optionId: string) => {
+		const question = questions.find(q => q.id === questionId);
+		if (!question || (question.type !== 'single_choice' && question.type !== 'multiple_choice')) {
+			return;
+		}
+
+		const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
+		const updatedQuestion = {
+			...choiceQuestion,
+			options: choiceQuestion.options.filter(option => option.id !== optionId)
+		};
+
+		onUpdateQuestion(questionId, updatedQuestion);
+
+		if (formId) {
+			try {
+				await updateQuestionAPI({
+					formId,
+					questionId,
+					data: updatedQuestion
+				}).unwrap();
+			} catch (error) {
+				console.error('Failed to remove option:', error);
+			}
+		}
+	};
+
+	const updateOption = async (questionId: string, optionId: string, newLabel: string) => {
+		const question = questions.find(q => q.id === questionId);
+		if (!question || (question.type !== 'single_choice' && question.type !== 'multiple_choice')) {
+			return;
+		}
+
+		const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
+		const updatedQuestion = {
+			...choiceQuestion,
+			options: choiceQuestion.options.map(option =>
+				option.id === optionId
+					? { ...option, label: newLabel, value: newLabel.toLowerCase().replace(/\s+/g, '_') }
+					: option
+			)
+		};
+
+		onUpdateQuestion(questionId, updatedQuestion);
+
+		// 新增：API 調用來更新問題
+		if (formId) {
+			try {
+				await updateQuestionAPI({
+					formId,
+					questionId,
+					data: updatedQuestion
+				}).unwrap();
+			} catch (error) {
+				console.error('Failed to update option:', error);
+			}
+		}
+	};
+
+	// 新增：處理問題標題和描述的更新
+	const handleQuestionUpdate = async (questionId: string, field: string, value: string) => {
+		const question = questions.find(q => q.id === questionId);
+		if (!question) return;
+
+		const updatedQuestion = {
+			...question,
+			[field]: value
+		};
+
+		if (field === 'title' && !value.trim()) {
+			const defaultTitle = `Untitled ${question.type.replace('_', ' ')} Question`;
+			updatedQuestion.title = defaultTitle;
+		}
+
+		onUpdateQuestion(questionId, updatedQuestion);
+	};
+
+	// 新增：處理刪除問題
+	const handleDeleteQuestion = async (questionId: string) => {
+		onDeleteQuestion(questionId);
+	};
+
+	const OptionEditor: React.FC<{ question: SingleChoiceQuestion | MultipleChoiceQuestion }> = ({ question }) => {
+		const [newOptionText, setNewOptionText] = useState('');
+
+		const handleAddOption = () => {
+			if (newOptionText.trim()) {
+				addOption(question.id, newOptionText.trim());
+				setNewOptionText('');
+			}
+		};
+
+		const handleKeyPress = (e: React.KeyboardEvent) => {
+			if (e.key === 'Enter') {
+				handleAddOption();
+			}
+		};
+
 		return (
-			<div className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5">
-				<div className="text-center py-8 text-slate-500">
-					No questions added yet. Click question type in "Add" section to get started.
+			<div className="flex gap-6 mb-3 w-[600px]">
+				<label className="text-sm w-[89px] text-slate-800 pt-0.5">Options</label>
+				<div className="flex flex-col gap-3">
+					{question.options.map((option) => (
+						<div key={option.id} className="flex items-center gap-2 md-3 w-[387.5px]">
+							<textarea
+								value={option.label}
+								onChange={(e) => updateOption(question.id, option.id, e.target.value)}
+								rows={1}
+								className="flex-1 text-sm px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none"
+								disabled={isUpdating} // 新增：在更新時禁用
+							/>
+							<button
+								onClick={() => removeOption(question.id, option.id)}
+								className="p-1 text-gray-400 hover:text-black transition-colors -ml-10"
+								title="Delete option"
+								disabled={isUpdating} // 新增：在更新時禁用
+							>
+								<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							</button>
+						</div>
+					))}
+					<div className="flex gap-3">
+						<textarea
+							value={newOptionText}
+							onChange={(e) => setNewOptionText(e.target.value)}
+							onKeyPress={handleKeyPress}
+							placeholder="Add an option..."
+							rows={1}
+							className="w-[396px] text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+							disabled={isUpdating} // 新增：在更新時禁用
+						/>
+						<button
+							onClick={handleAddOption}
+							disabled={!newOptionText.trim() || isUpdating} // 修改：增加 isUpdating 條件
+							className={`px-3 py-2 text-xs rounded transition-colors ${
+								newOptionText.trim() && !isUpdating
+									? 'btn btn-secondary'
+									: 'bg-gray-300 text-gray-500 cursor-not-allowed'
+							}`}
+						>
+							Add
+						</button>
+					</div>
 				</div>
 			</div>
 		);
-	}
+	};
 
 	return (
-		<div>
-			{questions.map((question, index) => (
-				<QuestionItem
-					key={question.id}
-					question={question}
-					index={index}
-					onUpdate={(updatedQuestion) => onUpdateQuestion(question.id, updatedQuestion)}
-					onDelete={() => onDeleteQuestion(question.id)}
-					onMoveUp={() => handleMoveUp(index)}
-					onMoveDown={() => handleMoveDown(index)}
-					canMoveUp={index > 0}
-					canMoveDown={index < questions.length - 1}
-				/>
-			))}
+		<div className="space-y-5">
+			{questions
+				.sort((a, b) => a.order - b.order)
+				.map((question, index) => {
+					const isFirst = index === 0;
+					const isLast = index === questions.length - 1;
+					return (
+						<div
+							key={question.id}
+							className="bg-white border border-slate-300 rounded-md p-6 w-[800px]"
+						>
+							<div className="flex justify-between items-start">
+								<div className="flex-1">
+									<div className="flex items-center gap-2 mb-2">
+									<span className="font-medium text-base mb-5 text-slate-800">
+                    					{QuestionTypeLabels[question.type]}
+                  					</span>
+									</div>
+									<div className="w-[508px]">
+										<div className="flex items-center gap-6 mb-3">
+											<label className="text-sm w-[89px] text-slate-800">Title</label>
+											<input
+												type="text"
+												value={question.title}
+												onChange={(e) => {
+													// 修改：使用新的 API 更新函數
+													handleQuestionUpdate(question.id, 'title', e.target.value);
+												}}
+												placeholder="Enter question title"
+												className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+												disabled={isUpdating} // 新增：在更新時禁用
+											/>
+										</div>
+										<div className="flex items-center gap-6 mb-3">
+											<label className="text-sm w-[89px] text-slate-800">Description</label>
+											<textarea
+												value={question.description || ''}
+												onChange={(e) => {
+													// 修改：使用新的 API 更新函數
+													handleQuestionUpdate(question.id, 'description', e.target.value);
+												}}
+												placeholder="Enter question description (optional)"
+												rows={2}
+												className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+												disabled={isUpdating} // 新增：在更新時禁用
+											/>
+										</div>
+										{(question.type === 'single_choice' || question.type === 'multiple_choice') && (
+											<OptionEditor question={question as SingleChoiceQuestion | MultipleChoiceQuestion} />
+										)}
+									</div>
+								</div>
+								<div className="flex gap-2 ml-4">
+									<button
+										onClick={() => moveQuestionUp(question.id)}
+										disabled={isFirst || isUpdating} // 修改：增加 isUpdating 條件
+										className={`p-1 transition-colors ${
+											isFirst || isUpdating
+												? 'text-gray-300 cursor-not-allowed'
+												: 'text-gray-400 hover:text-slate-800 cursor-pointer'
+										}`}
+										title="Move up"
+									>
+										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+												  d="M5 15l7-7 7 7" />
+										</svg>
+									</button>
+									<button
+										onClick={() => moveQuestionDown(question.id)}
+										disabled={isLast || isUpdating} // 修改：增加 isUpdating 條件
+										className={`p-1 transition-colors ${
+											isLast || isUpdating
+												? 'text-gray-300 cursor-not-allowed'
+												: 'text-gray-400 hover:text-slate-800 cursor-pointer'
+										}`}
+										title="Move down"
+									>
+										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+												  d="M19 9l-7 7-7-7" />
+										</svg>
+									</button>
+									<button
+										onClick={() => handleDeleteQuestion(question.id)} // 修改：使用新的刪除函數
+										className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+										disabled={isDeleting} // 新增：在刪除時禁用
+									>
+										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+												  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" />
+										</svg>
+									</button>
+								</div>
+							</div>
+						</div>
+					);
+				})}
 		</div>
 	);
 };
