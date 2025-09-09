@@ -2,12 +2,12 @@ export type UUID = string;
 export type FormStatus = 'draft' | 'published';
 export type QuestionType = 'short_text' | 'long_text' | 'single_choice' | 'multiple_choice' | 'date';
 
-export interface Form {
+export interface FormData {
 	id: UUID;
 	title: string;
 	description: string;
 	status: FormStatus;
-	unitId: UUID;
+	unitId: UUID[];
 	lastEditor: UUID;
 	createdAt: string;
 	updatedAt: string;
@@ -16,6 +16,7 @@ export interface Form {
 export interface FormRequest {
 	title: string;
 	description: string;
+	unitIds: string[];
 }
 
 export interface ChoiceOption {
@@ -27,7 +28,7 @@ export interface Choice {
 	name: string;
 }
 
-export interface Question {
+export interface BaseQuestion {
 	id: UUID;
 	formId: UUID;
 	required: boolean;
@@ -50,19 +51,23 @@ export interface QuestionRequest {
 }
 
 export interface RecipientSelectionRequest {
-	orgIds?: UUID[];
 	unitIds?: UUID[];
 }
 
-export interface RecipientUser {
+/*export interface RecipientUser {
 	id: UUID;
 	name: string;
 	organizationId?: UUID;
 	unitId?: UUID;
-}
+}*/
 
 export interface RecipientSelectionResponse {
-	recipients: RecipientUser[];
+	units: Array<{
+		id: string;
+		name: string;
+		memberCount: number;
+	}>;
+	totalRecipients: number;
 }
 
 export interface AnswerRequest {
@@ -117,7 +122,7 @@ export interface AnswerForQuestionResponse {
 }
 
 export interface AnswersForQuestionResponse {
-	question: Question;
+	question: BaseQuestion;
 	answers: AnswerForQuestionResponse[];
 }
 

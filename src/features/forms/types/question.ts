@@ -1,13 +1,4 @@
-export type QuestionType = 'short_text' | 'long_text' | 'single_choice' | 'multiple_choice' | 'date';
-
-export interface BaseQuestion {
-	id: string;
-	type: QuestionType;
-	title: string;
-	description?: string;
-	required: boolean;
-	order: number;
-}
+import type { BaseQuestion, QuestionType } from "@/types/form.ts";
 
 export interface ShortTextQuestion extends BaseQuestion {
 	type: 'short_text';
@@ -97,18 +88,18 @@ export const createNewQuestion = (type: QuestionType, order: number): Question =
 		case 'single_choice':
 			return {
 				...base,
-				type: 'single_choice',
+				type: "single_choice",
 				options: [],
 				allowOther: false
-			} as SingleChoiceQuestion;
+			} as unknown as SingleChoiceQuestion;
 
 		case 'multiple_choice':
 			return {
 				...base,
-				type: 'multiple_choice',
+				type: "multiple_choice",
 				options: [],
 				allowOther: false
-			} as MultipleChoiceQuestion;
+			} as unknown as MultipleChoiceQuestion;
 
 		case 'date':
 			return {

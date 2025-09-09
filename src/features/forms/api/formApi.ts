@@ -1,9 +1,9 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '@/app/api';
 import type {
-	Form,
+	FormData,
 	FormRequest,
-	Question,
+	BaseQuestion,
 	QuestionRequest,
 	SubmitRequest,
 	SubmitResponse,
@@ -16,53 +16,49 @@ import type {
 } from '@/types/form.ts';
 
 export const formsApi = createApi({
-	reducerPath: 'formsApi',
+	reducerPath: "formsApi",
 	baseQuery,
-	tagTypes: ['Form', 'Question', 'Response'],
-	endpoints: (builder) => ({
-
+	tagTypes: ["Form", "Question", "Response"],
+	endpoints: builder => ({
 		// ========== 表單管理 ==========
 
 		/**
 		 * 取得所有表單列表
 		 */
-		getForms: builder.query<Form[], void>({
-			query: () => '/forms',
-			providesTags: ['Form'],
+		getForms: builder.query<FormData[], void>({
+			query: () => "/forms",
+			providesTags: ["Form"]
 		}),
 
 		/**
 		 * 取得特定表單詳情
 		 */
-		getForm: builder.query<Form, UUID>({
-			query: (id) => `/forms/${id}`,
-			providesTags: (result, error, id) => [{ type: 'Form', id }],
+		getForm: builder.query<FormData, UUID>({
+			query: id => `/forms/${id}`,
+			providesTags: (_result, _error, id) => [{ type: "Form", id }]
 		}),
 
 		/**
 		 * 更新表單
 		 */
-		updateForm: builder.mutation<Form, { id: UUID; data: FormRequest }>({
+		updateForm: builder.mutation<FormData, { id: UUID; data: FormRequest }>({
 			query: ({ id, data }) => ({
 				url: `/forms/${id}`,
-				method: 'PUT',
-				body: data,
+				method: "PUT",
+				body: data
 			}),
-			invalidatesTags: (result, error, { id }) => [
-				{ type: 'Form', id },
-				'Form',
-			],
+			invalidatesTags: (_result, _error, { id }) => [{ type: "Form", id }, "Form"]
 		}),
 
 		/**
 		 * 刪除表單
 		 */
 		deleteForm: builder.mutation<void, UUID>({
-			query: (id) => ({
+			query: id => ({
 				url: `/forms/${id}`,
-				method: 'DELETE',
+				method: "DELETE"
 			}),
-			invalidatesTags: ['Form'],
+			invalidatesTags: ["Form"]
 		}),
 
 		/**
@@ -71,36 +67,36 @@ export const formsApi = createApi({
 		publishForm: builder.mutation<void, { id: UUID; recipients: RecipientSelectionRequest }>({
 			query: ({ id, recipients }) => ({
 				url: `/forms/${id}/publish`,
-				method: 'POST',
-				body: recipients,
+				method: "POST",
+				body: recipients
 			}),
-			invalidatesTags: (result, error, { id }) => [
-				{ type: 'Form', id },
-				'Form',
-			],
+			invalidatesTags: (_result, _error, { id }) => [{ type: "Form", id }, "Form"]
 		}),
 
 		/**
 		 * 在特定單位下建立新表單
 		 */
-		createForm: builder.mutation<Form, { orgSlug: string; unitId: UUID; data: FormRequest }>({
+		createForm: builder.mutation<
+			FormData,
+			{ orgSlug: string; unitId: UUID; data: FormRequest }
+		>({
 			query: ({ orgSlug, unitId, data }) => ({
 				url: `/orgs/${orgSlug}/units/${unitId}/forms`,
-				method: 'POST',
-				body: data,
+				method: "POST",
+				body: data
 			}),
-			invalidatesTags: ['Form'],
+			invalidatesTags: ["Form"]
 		}),
 
 		/**
 		 * 預覽收件人列表
 		 */
 		previewRecipients: builder.mutation<RecipientSelectionResponse, RecipientSelectionRequest>({
-			query: (data) => ({
-				url: '/forms/recipients/preview',
-				method: 'POST',
-				body: data,
-			}),
+			query: data => ({
+				url: "/forms/recipients/preview",
+				method: "POST",
+				body: data
+			})
 		}),
 
 		// ========== 問題管理 ==========
@@ -108,39 +104,42 @@ export const formsApi = createApi({
 		/**
 		 * 取得表單的所有問題
 		 */
-		getQuestions: builder.query<Question[], UUID>({
-			query: (formId) => `/forms/${formId}/questions`,
-			providesTags: (result, error, formId) => [
-				{ type: 'Question', id: 'LIST' },
-				...(result?.map(({ id }) => ({ type: 'Question' as const, id })) || []),
-			],
+		getQuestions: builder.query<BaseQuestion[], UUID>({
+			query: formId => `/forms/${formId}/questions`,
+			providesTags: (result) => [
+				{ type: "Question", id: "LIST" },
+				...(result?.map(({ id }) => ({ type: "Question" as const, id })) || [])
+			]
 		}),
 
 		/**
 		 * 建立新問題
 		 */
-		createQuestion: builder.mutation<Question, { formId: UUID; data: QuestionRequest }>({
+		createQuestion: builder.mutation<BaseQuestion, { formId: UUID; data: QuestionRequest }>({
 			query: ({ formId, data }) => ({
 				url: `/forms/${formId}/questions`,
-				method: 'POST',
-				body: data,
+				method: "POST",
+				body: data
 			}),
-			invalidatesTags: [{ type: 'Question', id: 'LIST' }],
+			invalidatesTags: [{ type: "Question", id: "LIST" }]
 		}),
 
 		/**
 		 * 更新問題
 		 */
-		updateQuestion: builder.mutation<Question, { formId: UUID; questionId: UUID; data: QuestionRequest }>({
+		updateQuestion: builder.mutation<
+			BaseQuestion,
+			{ formId: UUID; questionId: UUID; data: QuestionRequest }
+		>({
 			query: ({ formId, questionId, data }) => ({
 				url: `/forms/${formId}/questions/${questionId}`,
-				method: 'PUT',
-				body: data,
+				method: "PUT",
+				body: data
 			}),
-			invalidatesTags: (result, error, { questionId }) => [
-				{ type: 'Question', id: questionId },
-				{ type: 'Question', id: 'LIST' },
-			],
+			invalidatesTags: (_result, _error, { questionId }) => [
+				{ type: "Question", id: questionId },
+				{ type: "Question", id: "LIST" }
+			]
 		}),
 
 		/**
@@ -149,9 +148,9 @@ export const formsApi = createApi({
 		deleteQuestion: builder.mutation<void, { formId: UUID; questionId: UUID }>({
 			query: ({ formId, questionId }) => ({
 				url: `/forms/${formId}/questions/${questionId}`,
-				method: 'DELETE',
+				method: "DELETE"
 			}),
-			invalidatesTags: [{ type: 'Question', id: 'LIST' }],
+			invalidatesTags: [{ type: "Question", id: "LIST" }]
 		}),
 
 		// ========== 回應管理 ==========
@@ -162,24 +161,24 @@ export const formsApi = createApi({
 		submitResponse: builder.mutation<SubmitResponse, { formId: UUID; data: SubmitRequest }>({
 			query: ({ formId, data }) => ({
 				url: `/forms/${formId}/responses`,
-				method: 'POST',
-				body: data,
+				method: "POST",
+				body: data
 			}),
-			invalidatesTags: (result, error, { formId }) => [
-				{ type: 'Response', id: 'LIST' },
-				{ type: 'Form', id: formId },
-			],
+			invalidatesTags: (_result, _error, { formId }) => [
+				{ type: "Response", id: "LIST" },
+				{ type: "Form", id: formId }
+			]
 		}),
 
 		/**
 		 * 取得表單所有回應
 		 */
 		getFormResponses: builder.query<ListResponse, UUID>({
-			query: (formId) => `/forms/${formId}/responses`,
-			providesTags: (result, error, formId) => [
-				{ type: 'Response', id: 'LIST' },
-				...(result?.responses?.map(({ id }) => ({ type: 'Response' as const, id })) || []),
-			],
+			query: formId => `/forms/${formId}/responses`,
+			providesTags: (result) => [
+				{ type: "Response", id: "LIST" },
+				...(result?.responses?.map(({ id }) => ({ type: "Response" as const, id })) || [])
+			]
 		}),
 
 		/**
@@ -187,9 +186,7 @@ export const formsApi = createApi({
 		 */
 		getResponse: builder.query<GetResponse, { formId: UUID; responseId: UUID }>({
 			query: ({ formId, responseId }) => `/forms/${formId}/responses/${responseId}`,
-			providesTags: (result, error, { responseId }) => [
-				{ type: 'Response', id: responseId },
-			],
+			providesTags: (_result, _error, { responseId }) => [{ type: "Response", id: responseId }]
 		}),
 
 		/**
@@ -198,22 +195,22 @@ export const formsApi = createApi({
 		deleteResponse: builder.mutation<void, { formId: UUID; responseId: UUID }>({
 			query: ({ formId, responseId }) => ({
 				url: `/forms/${formId}/responses/${responseId}`,
-				method: 'DELETE',
+				method: "DELETE"
 			}),
-			invalidatesTags: [{ type: 'Response', id: 'LIST' }],
+			invalidatesTags: [{ type: "Response", id: "LIST" }]
 		}),
 
 		/**
 		 * 取得特定問題的所有答案
 		 */
-		getQuestionAnswers: builder.query<AnswersForQuestionResponse, { formId: UUID; questionId: UUID }>({
+		getQuestionAnswers: builder.query<
+			AnswersForQuestionResponse,
+			{ formId: UUID; questionId: UUID }
+		>({
 			query: ({ formId, questionId }) => `/forms/${formId}/questions/${questionId}`,
-			providesTags: (result, error, { questionId }) => [
-				{ type: 'Question', id: questionId },
-			],
-		}),
-
-	}),
+			providesTags: (_result, _error, { questionId }) => [{ type: "Question", id: questionId }]
+		})
+	})
 });
 
 export const {
