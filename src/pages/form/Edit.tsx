@@ -7,12 +7,12 @@ import type {
 	Question,
 	ShortTextQuestion,
 	SingleChoiceQuestion
-} from "@/features/forms/types/question.ts";
-import { createNewQuestion } from '@/features/forms/types/question.ts';
-import "@/features/forms/components/DraftFormCard.css"
-import { GroupSelector } from "@/features/forms/components/GroupSelector.tsx";
-import QuestionList from "@/features/forms/components/QuestionList.tsx";
-import AddQuestion from "@/features/forms/components/AddQuestion.tsx";
+} from "@/types/question.ts";
+import { createNewQuestion } from '@/types/question.ts';
+import "@/components/form/DraftFormCard.css"
+import { GroupSelector } from "@/components/form/GroupSelector.tsx";
+import QuestionList from "@/components/form/QuestionList.tsx";
+import AddQuestion from "@/components/form/AddQuestion.tsx";
 import {
 	useGetFormQuery,
 	useGetQuestionsQuery,
@@ -23,7 +23,7 @@ import {
 	useCreateQuestionMutation,
 	useUpdateQuestionMutation,
 	useDeleteQuestionMutation
-} from '@/features/forms/api/formApi.ts';
+} from '@/lib/request/form.ts';
 
 const FormEdit: React.FC = () => {
 	const { id } = useParams<{ id: string }>();

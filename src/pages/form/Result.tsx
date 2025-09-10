@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import type { FormData } from "@/types/form.ts";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Question } from "@/features/forms/types/question.ts";
-import "@/features/forms/components/DraftFormCard.css"
+import type { Question } from "@/types/question.ts";
+import "@/components/form/DraftFormCard.css"
 
 interface PublishedFormData extends FormData {
 	replyNumber?: string;

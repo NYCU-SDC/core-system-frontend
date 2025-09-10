@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQuery } from '@/app/api';
+import { baseQuery } from '@/lib/request/api.ts';
 import type {
 	FormData,
 	FormRequest,

@@ -1,5 +1,5 @@
 import type { FormData } from "@/types/form.ts"
-import type { Question } from "@/features/forms/types/question.ts";
+import type { Question } from "@/types/question.ts";
 
 export interface FormCardProps {
 	form: FormData;
