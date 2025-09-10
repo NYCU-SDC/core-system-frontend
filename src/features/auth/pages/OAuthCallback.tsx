@@ -8,10 +8,11 @@ export default function OAuthCallback() {
 
 	const status = params.get("status");
 	const reason = params.get("reason");
+	const error = params.get("error");
 
 	useEffect(() => {
-		if (status === "success") {
-			navigate("/");
+		if (error === null) {
+			navigate("/inbox");
 		}
 	});
 
