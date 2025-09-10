@@ -37,20 +37,6 @@ const Settings = () => {
 					</div>
 					<div className="w-wrap">
 						<p>Unit</p>
-						{/*<Menubar className="h-fit w-fit flex flex-wrap">*/}
-						{/*	<MenubarMenu>*/}
-						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
-						{/*	</MenubarMenu>*/}
-						{/*	<MenubarMenu>*/}
-						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
-						{/*	</MenubarMenu>*/}
-						{/*	<MenubarMenu>*/}
-						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
-						{/*	</MenubarMenu>*/}
-						{/*	<MenubarMenu>*/}
-						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
-						{/*	</MenubarMenu>*/}
-						{/*</Menubar>*/}
 						<UnitSelectorContainer>
 							<UnitSelectorContent>AAA</UnitSelectorContent>
 							<UnitSelectorContent>BBB</UnitSelectorContent>
