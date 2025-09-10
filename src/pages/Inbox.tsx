@@ -1,15 +1,4 @@
-import {
-	Card,
-	CardAction,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
 	Select,
@@ -21,32 +10,106 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import HoverCard from "@/components/inbox/HoverCard.tsx";
+import { useEffect, useMemo, useState } from "react";
+import { fetchInbox, type InboxItem } from "@/features/inbox/api/index";
 import MenuBar from "@/components/inbox/MenuBar.tsx";
+import UnreadSwitch from "@/components/inbox/UnreadSwitch.tsx";
+import SearchInput	 from "@/components/inbox/SearchInput.tsx";
+
+
+const ALL = "All";
+const STATIC_DESC =
+	"各位工人好，以下是活動當天的住宿、接駁、報到與用餐等相關資訊，活動日期...";
+
+
 const Inbox = () => {
-	return (
+    const [items, setItems] = useState<InboxItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+
+
+	// 篩選狀態
+	const [selectedUnits, setSelectedUnits] = useState<string[]>([ALL]); // 初始 All
+	const [unreadOnly, setUnreadOnly] = useState(false);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		(async () => {
+			try {
+				setLoading(true);
+				setError(null);
+				const data = await fetchInbox();
+				if (!cancelled) setItems(data.items);
+			} catch (e: any) {
+				if (!cancelled) setError(e?.message ?? "Failed to load inbox");
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	// 由資料得出「可選單位列表」（不含 All）
+	const units = useMemo(() => {
+		const set = new Set<string>();
+		for (const it of items) {
+			if (it?.message?.postedBy) set.add(it.message.postedBy);
+		}
+		return Array.from(set);
+	}, [items]);
+
+	// 套用兩段條件過濾
+	const filtered = useMemo(() => {
+		const useAll = selectedUnits.includes(ALL) || selectedUnits.length === 0;
+
+		return items.filter((it) => {
+			// unread switch
+			if (unreadOnly && it.type.isRead) return false;
+
+			// menubar 過濾 postedBy（單位）
+			const unitId = it.message.postedBy;
+			if (useAll) return true;
+			return selectedUnits.includes(unitId);
+		});
+	}, [items, selectedUnits, unreadOnly]);
+
+    return (
 		<>
 			<div className="flex flex-row">
 				<div  className="tab-card flex flex-col w-[344px]  bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-[986px]" >
 					<div className="tab-card-container w-full h-fit flex flex-col gap-[10px] px-4 pb-4 border-b ">
 						<div className="tab-card-header flex flex-row justify-between items-center w-full h-fit ">
 							<h2 className="font-semibold text-[30px] text-slate-800 ">Inbox</h2>
-							<div className="flex flex-row gap-2">
-								<Switch id="read-state"/>
-								<p className="font-medium text-slate-800 text-sm">Unread</p>
-							</div>
-
+							<UnreadSwitch />
 						</div>
-						<div >
-							<Input type="text" placeholder="Type to search..." className="placeholder-slate-300 w-full h-fit"/>
-						</div>
-						<MenuBar/>
+						<SearchInput />
+						<MenuBar
+							units={units}
+							selected={selectedUnits}
+							onChange={setSelectedUnits}
+						/>
 					</div>
-					<div className="hover-card-container  pr-4 pl-7 bg-white h-[545px]">
-						<HoverCard />
-						<HoverCard />
-						<HoverCard />
-						<HoverCard />
-						<HoverCard />
+					<div className="hover-card-container pr-4 pl-7 bg-white h-[545px] overflow-y-auto">
+						{loading && <p className="text-sm text-slate-500 py-3">Loading…</p>}
+						{error && <p className="text-sm text-red-500 py-3">{error}</p>}
+						{!loading && !error && items.length === 0 && (
+							<p className="text-sm text-slate-500 py-3">No inbox items</p>
+						)}
+
+						{!loading &&
+							!error &&
+							items.map((it) => (
+								<HoverCard
+									key={it.id}
+									title={it.message.title}      // 對應 message.title
+									subtitle={it.message.subtitle} // 對應 message.subtitle
+									description={STATIC_DESC}      // 先寫死
+								/>
+							))}
 					</div>
 
 				</div>
