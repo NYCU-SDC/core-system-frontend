@@ -36,16 +36,16 @@ const Settings = () => {
 						<p>Unit</p>
 						<Menubar className="h-fit w-fit flex flex-wrap">
 							<MenubarMenu>
-								<MenubarTrigger className="px-[12px] py-[6px]">AAA</MenubarTrigger>
+								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
 							</MenubarMenu>
 							<MenubarMenu>
-								<MenubarTrigger className="px-[12px] py-[6px]">AAA</MenubarTrigger>
+								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
 							</MenubarMenu>
 							<MenubarMenu>
-								<MenubarTrigger className="px-[12px] py-[6px]">AAA</MenubarTrigger>
+								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
 							</MenubarMenu>
 							<MenubarMenu>
-								<MenubarTrigger className="px-[12px] py-[6px]">AAA</MenubarTrigger>
+								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
 							</MenubarMenu>
 						</Menubar>
 					</div>
@@ -54,7 +54,7 @@ const Settings = () => {
 			</div>
 			<div className="flex gap-[27px]">
 				<p className="w-[170px] text-slate-400 text-2xl font-semibold">Members</p>
-				<div className="max-w-[802px] flex flex-wrap gap-4">
+				<div className="max-w-[802px] flex flex-wrap gap-6">
 					<MemberCard />
 					<MemberCard />
 					<MemberCard />
