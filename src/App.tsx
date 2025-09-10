@@ -5,18 +5,31 @@ import Forms from "./pages/Forms";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 // import {Counter} from "@/features/example/Counter.tsx";
-import OAuthCallback from "@/features/auth/pages/OAuthCallback.tsx";
 import { AppLayout, SimpleLayout } from "./components/layout";
 
 const AppContent = () => {
 	return (
 		<Routes>
-			<Route path="/" element={<Home />} />
-			<Route path="/inbox" element={<Inbox />} />
-			<Route path="/forms" element={<Forms />} />
-			<Route path="/settings" element={<Settings />} />
-			<Route path="/profile" element={<Profile />} />
-			<Route path="/auth/callback" element={<OAuthCallback />} />
+			<Route
+				path="/"
+				element={<Home />}
+			/>
+			<Route
+				path="/inbox"
+				element={<Inbox />}
+			/>
+			<Route
+				path="/forms"
+				element={<Forms />}
+			/>
+			<Route
+				path="/settings"
+				element={<Settings />}
+			/>
+			<Route
+				path="/profile"
+				element={<Profile />}
+			/>
 		</Routes>
 	);
 };
@@ -25,7 +38,7 @@ const App = () => {
 	const location = useLocation();
 
 	// Routes that should use simple layout (no aside navigation)
-	const simpleLayoutRoutes = ["/auth/callback"];
+	const simpleLayoutRoutes = ["/"];
 	const useSimpleLayout = simpleLayoutRoutes.includes(location.pathname);
 
 	if (useSimpleLayout) {
