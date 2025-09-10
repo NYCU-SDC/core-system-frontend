@@ -1,7 +1,6 @@
 import MemberCard from "@/components/settings/MemberCard.tsx";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui/input.tsx";
-import { Menubar, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar.tsx";
 import { UnitSelectorContainer, UnitSelectorContent } from "@/components/settings/UnitSelector.tsx";
 import { useState } from "react";
 
