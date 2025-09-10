@@ -4,13 +4,7 @@ import { Inbox, FileText, Settings, User, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AppLayoutProps {
@@ -41,16 +35,15 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
-		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+		<Dialog
+			open={isOpen}
+			onOpenChange={setIsOpen}
+		>
 			<DialogTrigger asChild>
 				<Button
 					variant="ghost"
 					size="icon"
-					className={cn(
-						"w-10 h-10 rounded-lg",
-						"bg-slate-700 hover:bg-slate-600 text-slate-50 font-semibold text-sm shadow-sm",
-						"focus:ring-2 focus:ring-slate-500/20"
-					)}
+					className={cn("w-10 h-10 rounded-lg", "bg-slate-700 hover:bg-slate-600 text-slate-50 font-semibold text-sm shadow-sm", "focus:ring-2 focus:ring-slate-500/20")}
 				>
 					{currentOrg.initial}
 				</Button>
@@ -76,15 +69,9 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 								setIsOpen(false);
 							}}
 						>
-							<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">
-								{org.initial}
-							</div>
-							<span className="text-slate-700 font-medium flex-1 text-left">
-								{org.name}
-							</span>
-							{org.id === currentOrg.id && (
-								<Check className="w-5 h-5 text-slate-600" />
-							)}
+							<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">{org.initial}</div>
+							<span className="text-slate-700 font-medium flex-1 text-left">{org.name}</span>
+							{org.id === currentOrg.id && <Check className="w-5 h-5 text-slate-600" />}
 						</Button>
 					))}
 				</div>
@@ -102,21 +89,18 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 						<Button
 							variant="ghost"
 							size="icon"
-							className={cn(
-								"p-3 rounded-lg transition-all duration-200",
-								"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
-								isActive && "bg-slate-100 ring-1 ring-slate-300"
-							)}
+							className={cn("p-3 rounded-lg transition-all duration-200", "hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20", isActive && "bg-slate-100 ring-1 ring-slate-300")}
 							onClick={onClick}
 						>
 							<Avatar className="w-8 h-8 bg-slate-600">
-								<AvatarFallback className="bg-slate-600 text-slate-50">
-									{icon}
-								</AvatarFallback>
+								<AvatarFallback className="bg-slate-600 text-slate-50">{icon}</AvatarFallback>
 							</Avatar>
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent side="right" className="bg-slate-900 text-slate-50">
+					<TooltipContent
+						side="right"
+						className="bg-slate-900 text-slate-50"
+					>
 						<p>{label}</p>
 					</TooltipContent>
 				</Tooltip>
@@ -131,24 +115,16 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 					<Button
 						variant="ghost"
 						size="icon"
-						className={cn(
-							"p-3 rounded-lg transition-all duration-200",
-							"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
-							isActive && "bg-slate-100 ring-1 ring-slate-300"
-						)}
+						className={cn("p-3 rounded-lg transition-all duration-200", "hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20", isActive && "bg-slate-100 ring-1 ring-slate-300")}
 						onClick={onClick}
 					>
-						<div
-							className={cn(
-								"w-6 h-6 transition-colors duration-200",
-								isActive ? "text-slate-700" : "text-slate-600 hover:text-slate-900"
-							)}
-						>
-							{icon}
-						</div>
+						<div className={cn("w-6 h-6 transition-colors duration-200", isActive ? "text-slate-700" : "text-slate-600 hover:text-slate-900")}>{icon}</div>
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent side="right" className="bg-slate-900 text-slate-50">
+				<TooltipContent
+					side="right"
+					className="bg-slate-900 text-slate-50"
+				>
 					<p>{label}</p>
 				</TooltipContent>
 			</Tooltip>

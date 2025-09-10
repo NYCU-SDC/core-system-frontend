@@ -1,5 +1,5 @@
 {
-	"printWidth": 100,
+	"printWidth": 200,
 	"tabWidth": 4,
 	"useTabs": true,
 	"semi": true,
@@ -10,5 +10,6 @@
 	"requirePragma": false,
 	"insertPragma": false,
 	"proseWrap": "never",
-	"overrides": []
+	"overrides": [],
+	"singleAttributePerLine": true
 }

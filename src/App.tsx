@@ -10,11 +10,26 @@ import { AppLayout, SimpleLayout } from "./components/layout";
 const AppContent = () => {
 	return (
 		<Routes>
-			<Route path="/" element={<Home />} />
-			<Route path="/inbox" element={<Inbox />} />
-			<Route path="/forms" element={<Forms />} />
-			<Route path="/settings" element={<Settings />} />
-			<Route path="/profile" element={<Profile />} />
+			<Route
+				path="/"
+				element={<Home />}
+			/>
+			<Route
+				path="/inbox"
+				element={<Inbox />}
+			/>
+			<Route
+				path="/forms"
+				element={<Forms />}
+			/>
+			<Route
+				path="/settings"
+				element={<Settings />}
+			/>
+			<Route
+				path="/profile"
+				element={<Profile />}
+			/>
 		</Routes>
 	);
 };
