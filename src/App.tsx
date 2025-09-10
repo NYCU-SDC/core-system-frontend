@@ -23,7 +23,7 @@ const App = () => {
 	const location = useLocation();
 
 	// Routes that should use simple layout (no aside navigation)
-	const simpleLayoutRoutes = ["/auth/callback", "/"];
+	const simpleLayoutRoutes = ["/"];
 	const useSimpleLayout = simpleLayoutRoutes.includes(location.pathname);
 
 	if (useSimpleLayout) {
