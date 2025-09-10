@@ -1,13 +1,12 @@
 import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Inbox from "./pages/Inbox";
-import FormList from "./features/forms/pages/FormList.tsx";
-import FormEdit from './features/forms/pages/FormEdit.tsx';
-import FormResults from "./features/forms/pages/FormResults.tsx";
+import FormList from "./pages/form/List.tsx";
+import FormEdit from './pages/form/Edit.tsx';
+import FormResults from "./pages/form/Result.tsx";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 // import {Counter} from "@/features/example/Counter.tsx";
-import OAuthCallback from "@/features/auth/pages/OAuthCallback.tsx";
 import { AppLayout, SimpleLayout } from "./components/layout";
 
 const AppContent = () => {
@@ -21,7 +20,6 @@ const AppContent = () => {
 			<Route path="/forms/results/:id" element={<FormResults />} />
 			<Route path="/settings" element={<Settings />} />
 			<Route path="/profile" element={<Profile />} />
-			<Route path="/auth/callback" element={<OAuthCallback />} />
 		</Routes>
 	);
 };

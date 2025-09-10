@@ -1,7 +1,7 @@
 import React from 'react';
-import { QuestionTypeLabels } from "@/features/forms/types/question.ts";
+import { QuestionTypeLabels } from "@/types/question.ts";
 import type { QuestionType } from "@/types/form.ts";
-import "@/features/forms/components/DraftFormCard.css"
+import "@/components/form/DraftFormCard.css"
 
 interface AddQuestionPanelProps {
 	onAddQuestion: (type: QuestionType) => void;

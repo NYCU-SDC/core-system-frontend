@@ -1,8 +1,8 @@
-import DraftFormCard from "@/features/forms/components/DraftFormCard.tsx";
-import PublishedFormCard from "@/features/forms/components/PublishedFormCard.tsx";
+import DraftFormCard from "@/components/form/DraftFormCard.tsx";
+import PublishedFormCard from "@/components/form/PublishedFormCard.tsx";
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetFormsQuery } from '@/features/forms/api/formApi.ts';
+import { useGetFormsQuery } from '@/lib/request/form.ts';
 import { useEffect } from 'react';
 
 const FormList: React.FC = () => {

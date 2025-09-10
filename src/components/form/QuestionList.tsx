@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { type Question, QuestionTypeLabels, type SingleChoiceQuestion, type MultipleChoiceQuestion, type ChoiceOption } from "@/features/forms/types/question.ts";
-import { useUpdateQuestionMutation, useDeleteQuestionMutation } from '@/features/forms/api/formApi.ts';
-import "@/features/forms/components/DraftFormCard.css"
+import { type Question, QuestionTypeLabels, type SingleChoiceQuestion, type MultipleChoiceQuestion, type ChoiceOption } from "@/types/question.ts";
+import { useUpdateQuestionMutation, useDeleteQuestionMutation } from '@/lib/request/form.ts';
+import "@/components/form/DraftFormCard.css"
 
 interface QuestionListProps {
 	formId?: string;
