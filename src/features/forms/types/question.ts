@@ -1,43 +1,57 @@
-import type { BaseQuestion, QuestionType } from "@/types/form.ts";
+export type QuestionType = 'short_text' | 'long_text' | 'single_choice' | 'multiple_choice' | 'date';
+
+export interface BaseQuestion {
+	id: string;
+	formId: string;
+	type: QuestionType;
+	title: string;
+	description?: string;
+	required: boolean;
+	order: number;
+	choices: Choice[];
+	createdAt: string;
+	updatedAt: string;
+}
 
 export interface ShortTextQuestion extends BaseQuestion {
 	type: 'short_text';
-	placeholder?: string;
-	maxLength?: number;
+	//placeholder?: string;
+	//maxLength?: number;
 }
 
 export interface LongTextQuestion extends BaseQuestion {
 	type: 'long_text';
-	placeholder?: string;
-	maxLength?: number;
-	rows?: number;
+	//placeholder?: string;
+	//maxLength?: number;
+	//rows?: number;
 }
 
-export interface ChoiceOption {
+export interface Choice {
 	id: string;
-	label: string;
-	value: string;
+	name: string;
+	//label: string;
+	//value: string;
 }
 
 export interface SingleChoiceQuestion extends BaseQuestion {
 	type: 'single_choice';
-	options: ChoiceOption[];
-	allowOther?: boolean;
+	choices: Choice[];
+	//allowOther?: boolean;
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {
 	type: 'multiple_choice';
-	options: ChoiceOption[];
-	allowOther?: boolean;
-	minSelections?: number;
-	maxSelections?: number;
+	choices: Choice[];
+	//allowOther?: boolean;
+	//minSelections?: number;
+	//maxSelections?: number;
 }
 
 export interface DateQuestion extends BaseQuestion {
 	type: 'date';
-	dateFormat?: 'date' | 'datetime' | 'time';
-	minDate?: string;
-	maxDate?: string;
+	//dateFormat?: 'date' | 'datetime' | 'time';
+	//minDate?: string;
+	//maxDate?: string;
 }
 
 export type Question =
@@ -72,40 +86,32 @@ export const createNewQuestion = (type: QuestionType, order: number): Question =
 			return {
 				...base,
 				type: 'short_text',
-				placeholder: '',
-				maxLength: 100
 			} as ShortTextQuestion;
 
 		case 'long_text':
 			return {
 				...base,
 				type: 'long_text',
-				placeholder: '',
-				maxLength: 1000,
-				rows: 4
 			} as LongTextQuestion;
 
 		case 'single_choice':
 			return {
 				...base,
 				type: "single_choice",
-				options: [],
-				allowOther: false
+				choices: []
 			} as unknown as SingleChoiceQuestion;
 
 		case 'multiple_choice':
 			return {
 				...base,
 				type: "multiple_choice",
-				options: [],
-				allowOther: false
+				choices: []
 			} as unknown as MultipleChoiceQuestion;
 
 		case 'date':
 			return {
 				...base,
 				type: 'date',
-				dateFormat: 'date'
 			} as DateQuestion;
 
 		default:

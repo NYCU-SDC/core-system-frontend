@@ -30,137 +30,6 @@ const transformFormData = (form: any): FormData => ({
 	updatedAt: form.UpdatedAt
 });
 
-const transformQuestionToAPI = (question: any) => {
-	console.log('=== transformQuestionToAPI 輸入 ===');
-	console.log('原始問題數據:', question);
-
-	const title = question.title?.toString().trim();
-	const type = question.type?.toString();
-	const required = question.required;
-	const order = question.order;
-
-	console.log('字段檢查:');
-	console.log('- title:', title, '(length:', title?.length || 0, ')');
-	console.log('- type:', type);
-	console.log('- required:', required, '(type:', typeof required, ')');
-	console.log('- order:', order, '(type:', typeof order, ')');
-
-	const finalTitle = title || `New ${type?.replace('_', ' ') || 'Question'}`;
-
-	// 基本數據轉換，確保必填字段不為空
-	const baseData = {
-		Type: type,
-		Title: finalTitle,
-		Description: question.description?.toString() || '',
-		Required: Boolean(required),
-		Order: parseInt(order) || 0
-	};
-
-	console.log('基本數據:', baseData);
-
-
-	// 根據問題類型添加特定屬性
-	switch (question.type) {
-		case 'short_text':
-			return {
-				...baseData,
-				Placeholder: question.placeholder || '',
-				MaxLength: question.maxLength || null
-			};
-
-		case 'long_text':
-			return {
-				...baseData,
-				Placeholder: question.placeholder || '',
-				MaxLength: question.maxLength || null,
-				Rows: question.rows || 3
-			};
-
-		case 'single_choice':
-			return {
-				...baseData,
-				Options: question.options || [],
-				AllowOther: Boolean(question.allowOther)
-			};
-
-		case 'multiple_choice':
-			return {
-				...baseData,
-				Options: question.options || [],
-				AllowOther: Boolean(question.allowOther),
-				MinSelections: question.minSelections || null,
-				MaxSelections: question.maxSelections || null
-			};
-
-		case 'date':
-			return {
-				...baseData,
-				DateFormat: question.dateFormat || 'YYYY-MM-DD',
-				MinDate: question.minDate || null,
-				MaxDate: question.maxDate || null
-			};
-
-		default:
-			return baseData;
-	}
-};
-
-const transformQuestionFromAPI = (question: any) => {
-	const baseQuestion = {
-		id: question.ID || question.id,
-		type: question.Type || question.type,
-		title: question.Title || question.title,
-		description: question.Description || question.description,
-		required: question.Required || question.required,
-		order: question.Order || question.order
-	};
-
-	// 根據問題類型添加特定屬性
-	switch (baseQuestion.type) {
-		case 'short_text':
-			return {
-				...baseQuestion,
-				placeholder: question.Placeholder || question.placeholder || '',
-				maxLength: question.MaxLength || question.maxLength || null
-			};
-
-		case 'long_text':
-			return {
-				...baseQuestion,
-				placeholder: question.Placeholder || question.placeholder || '',
-				maxLength: question.MaxLength || question.maxLength || null,
-				rows: question.Rows || question.rows || 3
-			};
-
-		case 'single_choice':
-			return {
-				...baseQuestion,
-				options: question.Options || question.options || [],
-				allowOther: question.AllowOther || question.allowOther || false
-			};
-
-		case 'multiple_choice':
-			return {
-				...baseQuestion,
-				options: question.Options || question.options || [],
-				allowOther: question.AllowOther || question.allowOther || false,
-				minSelections: question.MinSelections || question.minSelections || null,
-				maxSelections: question.MaxSelections || question.maxSelections || null
-			};
-
-		case 'date':
-			return {
-				...baseQuestion,
-				dateFormat: question.DateFormat || question.dateFormat || 'YYYY-MM-DD',
-				minDate: question.MinDate || question.minDate || null,
-				maxDate: question.MaxDate || question.maxDate || null
-			};
-
-		default:
-			return baseQuestion;
-	}
-};
-
 export const formsApi = createApi({
 	reducerPath: "formsApi",
 	baseQuery,
@@ -176,10 +45,7 @@ export const formsApi = createApi({
 			providesTags: ["Form"],
 			transformResponse: (response: any[]) => {
 				console.log('API 原始回應:', response);
-
-				// 將 API 回應的字段名稱轉換為前端期望的格式
 				const transformedResponse = response.map(transformFormData);
-
 				console.log('轉換後的回應:', transformedResponse);
 				return transformedResponse;
 			}
@@ -190,12 +56,10 @@ export const formsApi = createApi({
 		 */
 		getForm: builder.query<FormData, UUID>({
 			query: id => `/forms/${id}`,
-			providesTags: (_result, _error, id)=> [{ type: "Form", id }],
+			providesTags: (_result, _error, id) => [{ type: "Form", id }],
 			transformResponse: (response: any) => {
-				console.log('getForm API 原始回應:', response);
-				const transformedResponse = transformFormData(response);
-				console.log('getForm 轉換後的回應:', transformedResponse);
-				return transformedResponse;
+				console.log('API 原始回傳:', response);
+				return response.data;
 			}
 		}),
 
@@ -208,14 +72,7 @@ export const formsApi = createApi({
 				method: "PUT",
 				body: data
 			}),
-			invalidatesTags: (_result, _error, { id }
-			) => [{ type: "Form", id }, "Form"],
-			transformResponse: (response: any) => {
-				console.log('updateForm API 原始回應:', response);
-				const transformedResponse = transformFormData(response);
-				console.log('updateForm 轉換後的回應:', transformedResponse);
-				return transformedResponse;
-			}
+			invalidatesTags: (_result, _error, { id }) => [{ type: "Form", id }, "Form"]
 		}),
 
 		/**
@@ -253,13 +110,7 @@ export const formsApi = createApi({
 				method: "POST",
 				body: data
 			}),
-			invalidatesTags: ["Form"],
-			transformResponse: (response: any) => {
-				console.log('createForm API 原始回應:', response);
-				const transformedResponse = transformFormData(response);
-				console.log('createForm 轉換後的回應:', transformedResponse);
-				return transformedResponse;
-			}
+			invalidatesTags: ["Form"]
 		}),
 
 		/**
@@ -283,31 +134,19 @@ export const formsApi = createApi({
 			providesTags: (result) => [
 				{ type: "Question", id: "LIST" },
 				...(result?.map(({ id }) => ({ type: "Question" as const, id })) || [])
-			],
-			transformResponse: (response: any[]) => {
-				console.log('getQuestions API 原始回應:', response);
-				const transformedResponse = response.map(transformQuestionFromAPI);
-				console.log('getQuestions 轉換後的回應:', transformedResponse);
-				return transformedResponse;
-			}
+			]
 		}),
 
 		/**
 		 * 建立新問題
 		 */
 		createQuestion: builder.mutation<BaseQuestion, { formId: UUID; data: QuestionRequest }>({
-			query: ({ formId, data }) => {
-				console.log('createQuestion 原始數據:', data);
-				const transformedData = transformQuestionToAPI(data);
-				console.log('createQuestion 轉換後數據:', transformedData);
-
-				return {
-					url: `/forms/${formId}/questions`,
-					method: "POST",
-					body: data
-				};
-			},
-			//invalidatesTags: [{ type: "Question", id: "LIST" }]
+			query: ({ formId, data }) => ({
+				url: `/forms/${formId}/questions`,
+				method: "POST",
+				body: data
+			}),
+			invalidatesTags: [{ type: "Question", id: "LIST" }]
 		}),
 
 		/**
@@ -317,27 +156,15 @@ export const formsApi = createApi({
 			BaseQuestion,
 			{ formId: UUID; questionId: UUID; data: QuestionRequest }
 		>({
-			query: ({ formId, questionId, data }) => {
-				console.log('updateQuestion 原始數據:', data);
-				const transformedData = transformQuestionToAPI(data);
-				console.log('updateQuestion 轉換後數據:', transformedData);
-
-				return {
-					url: `/forms/${formId}/questions/${questionId}`,
-					method: "PUT",
-					body: data
-				};
-			},
+			query: ({ formId, questionId, data }) => ({
+				url: `/forms/${formId}/questions/${questionId}`,
+				method: "PUT",
+				body: data
+			}),
 			invalidatesTags: (_result, _error, { questionId }) => [
 				{ type: "Question", id: questionId },
 				{ type: "Question", id: "LIST" }
-			],
-			transformResponse: (response: any) => {
-				console.log('updateQuestion API 回應:', response);
-				const transformedResponse = transformQuestionFromAPI(response);
-				console.log('updateQuestion 轉換後回應:', transformedResponse);
-				return transformedResponse;
-			}
+			]
 		}),
 
 		/**

@@ -7,39 +7,7 @@ import { useEffect } from 'react';
 
 const FormList: React.FC = () => {
 	const navigate = useNavigate();
-	const queryResult = useGetFormsQuery();
 	const { data: forms, isLoading, error, refetch, isError, isSuccess, isFetching } = useGetFormsQuery();
-
-	/*console.log('=== FormList API Debug ===');
-	console.log('完整 query result:', queryResult);
-	console.log('isLoading:', isLoading);
-	console.log('isError:', isError);
-	console.log('isSuccess:', isSuccess);
-	console.log('isFetching:', isFetching);
-	console.log('error:', error);
-	console.log('data (forms):', forms);
-
-	useEffect(() => {
-		console.log('=== API 狀態變化 ===');
-		console.log('isLoading:', isLoading);
-		console.log('isError:', isError);
-		console.log('isSuccess:', isSuccess);
-		console.log('isFetching:', isFetching);
-		console.log('error 詳情:', error);
-
-		if (isError) {
-			console.error('API 請求失敗:', error);
-			// 檢查是否是網路錯誤、認證錯誤等
-			if ('status' in error) {
-				console.error('HTTP 狀態碼:', error.status);
-				console.error('錯誤數據:', error.data);
-			}
-		}
-
-		if (isSuccess) {
-			console.log('API 請求成功，但數據是:', forms);
-		}
-	}, [isLoading, isError, isSuccess, isFetching, error, forms]);*/
 
 	// 在組件載入時強制重新獲取一次數據
 	useEffect(() => {
@@ -71,14 +39,9 @@ const FormList: React.FC = () => {
 	};
 
 	const safeFormsArray = forms || [];
-	const draftForms = safeFormsArray.filter(form => {
-		console.log('檢查表單:', form.id, 'status:', form.status);
-		return form.status === 'draft';
-	});
-	const publishedForms = safeFormsArray.filter(form => form.status === 'published');
-
-	/*console.log('篩選後的 draftForms:', draftForms);
-	console.log('篩選後的 publishedForms:', publishedForms);*/
+	const draftForms = safeFormsArray.filter(f => f.status?.toLowerCase() === 'draft');
+	const publishedForms = safeFormsArray.filter(f => f.status?.toLowerCase() === 'published');
+	console.log('篩選後的 draftForms:', draftForms);
 
 	if (isLoading || isFetching) {
 		console.log('FormList 正在載入...');

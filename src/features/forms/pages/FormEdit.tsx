@@ -55,18 +55,22 @@ const FormEdit: React.FC = () => {
 	console.log('questionsQuery.isSuccess:', questionsQuery.isSuccess);
 	console.log('questionsQuery.isFetching:', questionsQuery.isFetching);
 
+	// API queries
 	const {
 		data: apiFormData,
 		isLoading: formLoading,
-		error: formError
+		error: formError,
+		isSuccess: formSuccess
 	} = useGetFormQuery(id!, { skip: isNewForm });
 
 	const {
 		data: apiQuestions = [],
 		isLoading: questionsLoading,
-		error: questionsError
+		error: questionsError,
+		isSuccess: questionsSuccess
 	} = useGetQuestionsQuery(id!, { skip: isNewForm });
 
+	// Mutations
 	const [updateForm, { isLoading: isUpdating }] = useUpdateFormMutation();
 	const [deleteForm, { isLoading: isDeleting }] = useDeleteFormMutation();
 	const [createForm, { isLoading: isCreating }] = useCreateFormMutation();
@@ -76,7 +80,18 @@ const FormEdit: React.FC = () => {
 	const [updateQuestion] = useUpdateQuestionMutation();
 	const [deleteQuestion] = useDeleteQuestionMutation();
 
-	const [formData, setFormData] = useState<FormData | null>(null);
+	// Local state - 初始化為有效的默認值而不是 null
+	const [formData, setFormData] = useState<FormData>(() => ({
+		id: isNewForm ? '' : (id || ''),
+		title: '',
+		description: '',
+		unitId: [],
+		status: 'draft',
+		lastEditor: '',
+		createdAt: '',
+		updatedAt: ''
+	}));
+
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -93,7 +108,13 @@ const FormEdit: React.FC = () => {
 		console.log('apiQuestions:', apiQuestions);
 	}, [formLoading, questionsLoading, formError, questionsError, apiFormData, apiQuestions]);
 
+	// 處理 API 數據加載
 	useEffect(() => {
+		console.log('=== Form Data Effect ===');
+		console.log('isNewForm:', isNewForm);
+		console.log('formSuccess:', formSuccess);
+		console.log('apiFormData:', apiFormData);
+
 		if (isNewForm) {
 			console.log('設置新表單的預設資料');
 			setFormData({
@@ -110,21 +131,30 @@ const FormEdit: React.FC = () => {
 			console.log('設置從 API 獲取的表單資料:', apiFormData);
 			setFormData({
 				...apiFormData,
-				createdAt: apiFormData.createdAt,
-				updatedAt: apiFormData.updatedAt,
+				createdAt: apiFormData.createdAt || '',
+				updatedAt: apiFormData.updatedAt || '',
 				lastEditor: apiFormData.lastEditor || 'Unknown',
 				unitId: Array.isArray(apiFormData.unitId) ? apiFormData.unitId : [apiFormData.unitId].filter(Boolean)
 			});
 		}
-	}, [isNewForm, apiFormData]);
+	}, [isNewForm, formSuccess, apiFormData]);
 
+	// 處理問題數據加載
 	useEffect(() => {
-		if (apiQuestions && apiQuestions.length > 0) {
+		console.log('=== Questions Effect ===');
+		console.log('questionsSuccess:', questionsSuccess);
+		console.log('apiQuestions:', apiQuestions);
+
+		if (questionsSuccess && apiQuestions && apiQuestions.length > 0) {
 			console.log('設置從 API 獲取的問題資料:', apiQuestions);
 			setQuestions(apiQuestions);
+		} else if (questionsSuccess && (!apiQuestions || apiQuestions.length === 0)) {
+			console.log('API 成功但沒有問題，設置為空數組');
+			setQuestions([]);
 		}
-	}, [apiQuestions]);
+	}, [questionsSuccess, apiQuestions]);
 
+	// 超時檢測
 	useEffect(() => {
 		if (!isNewForm && (formLoading || questionsLoading)) {
 			console.log('開始載入計時器...');
@@ -138,18 +168,18 @@ const FormEdit: React.FC = () => {
 				console.error('- questionsLoading:', questionsLoading);
 				console.error('- formError:', formError);
 				console.error('- questionsError:', questionsError);
-			}, 10000); // 10秒超時
+			}, 10000);
 
 			return () => clearTimeout(timeout);
 		}
 	}, [isNewForm, formLoading, questionsLoading, formError, questionsError]);
 
+	// 自動保存邏輯
 	useEffect(() => {
 		if (isNewForm || !formData?.id || !hasUnsavedChanges) {
 			return;
 		}
 
-		// 使用 setTimeout 而不是 setInterval，實現 debounce 效果
 		const autoSaveTimeout = setTimeout(async () => {
 			try {
 				setAutoSaveStatus('saving');
@@ -167,15 +197,21 @@ const FormEdit: React.FC = () => {
 				console.error('Auto-save failed:', error);
 				setAutoSaveStatus('error');
 			}
-		}, 2000); // 2 秒後自動保存
+		}, 2000);
 
-		return () => {
-			clearTimeout(autoSaveTimeout);
-		};
+		return () => clearTimeout(autoSaveTimeout);
 	}, [isNewForm, formData?.id, hasUnsavedChanges, formData?.title, formData?.description, formData?.unitId, updateForm]);
 
 	const handleFormDataChange = (updates: Partial<FormData>) => {
-		setFormData(prev => prev ? { ...prev, ...updates } : null);
+		console.log('=== Updating form data ===');
+		console.log('updates:', updates);
+		console.log('current formData:', formData);
+
+		setFormData(prev => {
+			const newData = { ...prev, ...updates };
+			console.log('new formData:', newData);
+			return newData;
+		});
 		setHasUnsavedChanges(true);
 	};
 
@@ -242,7 +278,7 @@ const FormEdit: React.FC = () => {
 
 		try {
 			const orgSlug = 'nycu-sdc';
-			const defaultUnitId = '09bab8cf-eeac-4ff5-a4e3-4fd7662f749b';
+			const defaultUnitId = '2c136c1d-b2e8-47f9-8197-17833c5aef66';
 			if (isNewForm) {
 				const requestData = {
 					orgSlug,
@@ -260,8 +296,7 @@ const FormEdit: React.FC = () => {
 
 				// 更新本地狀態
 				const updatedFormData = { ...formData, id: newForm.id };
-				setFormData(prev => prev ? { ...prev, id: newForm.id } : null);
-				//setHasUnsavedChanges(false);
+				setFormData(prev => ({ ...prev, id: newForm.id }));
 
 				if (questions.length > 0) {
 					console.log('開始保存問題:', questions.length, '個');
@@ -269,50 +304,33 @@ const FormEdit: React.FC = () => {
 					for (const question of questions) {
 						try {
 							console.log('正在創建問題:', question.title);
+
+							const questionData = {
+								type: question.type,
+								title: (question.title || '').trim() || `Untitled ${question.type.replace('_', ' ')} Question`,
+								description: question.description || '',
+								required: true,
+								order: question.order || 0,
+							};
+
+							console.log('準備創建問題數據:', JSON.stringify(questionData, null, 2));
+
 							const createdQuestion = await createQuestion({
 								formId: newForm.id,
-								data: {
-									type: question.type,
-									title: question.title,
-									description: question.description,
-									required: question.required,
-									order: question.order,
-									// 根據問題類型添加特定屬性
-									...(question.type === "short_text" && {
-										placeholder: question.placeholder,
-										maxLength: question.maxLength
-									}),
-									...(question.type === "long_text" && {
-										placeholder: question.placeholder,
-										maxLength: question.maxLength,
-										rows: question.rows
-									}),
-									...((question.type === "single_choice" ||
-										question.type === "multiple_choice") && {
-										options: question.options,
-										allowOther: question.allowOther
-									}),
-									...(question.type === "multiple_choice" && {
-										minSelections: question.minSelections,
-										maxSelections: question.maxSelections
-									}),
-									...(question.type === "date" && {
-										dateFormat: question.dateFormat,
-										minDate: question.minDate,
-										maxDate: question.maxDate
-									})
-								}
+								data: questionData
 							}).unwrap();
 							console.log('問題創建成功:', createdQuestion);
 							createdQuestions.push(createdQuestion);
 						} catch (error) {
 							console.error('Failed to create question:', error);
+							console.error("錯誤詳情:", JSON.stringify(error, null, 2));
 						}
 					}
 					if (createdQuestions.length > 0) {
 						setQuestions(createdQuestions);
 					}
 				}
+
 				setHasUnsavedChanges(false);
 				return newForm;
 			} else {
@@ -339,7 +357,6 @@ const FormEdit: React.FC = () => {
 		if (!formData) return;
 
 		try {
-			// 如果是新表單，先儲存
 			let formToPublish = formData;
 			if (isNewForm || !formData.id) {
 				formToPublish = await handleSaveDraft();
@@ -371,73 +388,56 @@ const FormEdit: React.FC = () => {
 		const newQuestion = createNewQuestion(type, questions.length);
 
 		if (!formData?.id) {
-			// 如果是新表單，只在本地狀態中添加
 			setQuestions([...questions, newQuestion]);
 			setHasUnsavedChanges(true);
 			return;
 		}
 
 		try {
-			// 調用 API 創建問題
+			const questionData = {
+				type: newQuestion.type,
+				title: newQuestion.title || `New ${newQuestion.type.replace('_', ' ')} Question`,
+				description: newQuestion.description || '',
+				required: false,
+				order: newQuestion.order || 0,
+			};
+
+			console.log('=== handleAddQuestion 準備創建問題 ===');
+			console.log('問題類型:', type);
+			console.log('問題數據:', JSON.stringify(questionData, null, 2));
+
 			const createdQuestion = await createQuestion({
 				formId: formData.id,
-				data: {
-					type: newQuestion.type,
-					title: newQuestion.title,
-					description: newQuestion.description,
-					required: newQuestion.required,
-					order: newQuestion.order,
-					// 根據問題類型添加特定屬性
-					...(newQuestion.type === "short_text" && {
-						placeholder: newQuestion.placeholder,
-						maxLength: newQuestion.maxLength
-					}),
-					...(newQuestion.type === "long_text" && {
-						placeholder: newQuestion.placeholder,
-						maxLength: newQuestion.maxLength,
-						rows: newQuestion.rows
-					}),
-					...((newQuestion.type === "single_choice" ||
-						newQuestion.type === "multiple_choice") && {
-						options: newQuestion.options,
-						allowOther: newQuestion.allowOther
-					}),
-					...(newQuestion.type === "multiple_choice" && {
-						minSelections: newQuestion.minSelections,
-						maxSelections: newQuestion.maxSelections
-					}),
-					...(newQuestion.type === "date" && {
-						dateFormat: newQuestion.dateFormat,
-						minDate: newQuestion.minDate,
-						maxDate: newQuestion.maxDate
-					})
-				}
+				data: questionData
 			}).unwrap();
 
+			console.log('問題創建成功:', createdQuestion);
 			setQuestions([...questions, createdQuestion]);
 		} catch (error) {
 			console.error("Failed to create question:", error);
-			// 如果 API 調用失敗，回退到本地狀態
+			console.error("錯誤詳情:", JSON.stringify(error, null, 2));
 			setQuestions([...questions, newQuestion]);
 			setHasUnsavedChanges(true);
 		}
 	};
 
 	const handleUpdateQuestion = async (questionId: string, updatedQuestion: Question) => {
-		// 先更新本地狀態
 		setQuestions(questions.map(q => q.id === questionId ? updatedQuestion : q));
 		setHasUnsavedChanges(true);
 
-		// 如果是已儲存的表單，才調用 API
 		if (formData?.id && !isNewForm) {
 			try {
-				// 確保更新的問題有標題
 				const questionToUpdate = {
-					...updatedQuestion,
-					title: updatedQuestion.title?.trim() || `Untitled ${updatedQuestion.type.replace('_', ' ')} Question`
+					type: updatedQuestion.type,
+					title: (updatedQuestion.title || '').trim() || `Untitled ${updatedQuestion.type.replace('_', ' ')} Question`,
+					description: updatedQuestion.description || '',
+					required: Boolean(updatedQuestion.required),
+					order: updatedQuestion.order || 0,
 				};
 
-				console.log('更新問題數據:', questionToUpdate);
+				console.log('=== handleUpdateQuestion 準備更新問題 ===');
+				console.log('問題 ID:', questionId);
+				console.log('更新數據:', JSON.stringify(questionToUpdate, null, 2));
 
 				await updateQuestion({
 					formId: formData.id,
@@ -448,17 +448,15 @@ const FormEdit: React.FC = () => {
 				console.log('問題更新成功');
 			} catch (error) {
 				console.error('Failed to update question:', error);
+				console.error("錯誤詳情:", JSON.stringify(error, null, 2));
 			}
 		}
 	};
 
-
 	const handleDeleteQuestion = async (questionId: string) => {
-		// 先更新本地狀態
 		setQuestions(questions.filter(q => q.id !== questionId));
 		setHasUnsavedChanges(true);
 
-		// 如果是已儲存的表單，才調用 API
 		if (formData?.id && !isNewForm) {
 			try {
 				await deleteQuestion({
@@ -467,7 +465,6 @@ const FormEdit: React.FC = () => {
 				}).unwrap();
 			} catch (error) {
 				console.error('Failed to delete question:', error);
-				// API 失敗時不回滾本地狀態
 			}
 		}
 	};
@@ -480,7 +477,6 @@ const FormEdit: React.FC = () => {
 			return;
 		}
 
-		// 如果是已保存的表單，更新每個問題的順序
 		try {
 			const updatePromises = reorderedQuestions.map((question, index) =>
 				updateQuestion({
@@ -501,6 +497,7 @@ const FormEdit: React.FC = () => {
 	};
 
 	const formatDate = (dateString: string) => {
+		if (!dateString) return 'Not available';
 		const date = new Date(dateString);
 		return date.toLocaleDateString('zh-TW', {
 			year: 'numeric',
@@ -512,9 +509,11 @@ const FormEdit: React.FC = () => {
 		});
 	};
 
-	const isLoading = formLoading || questionsLoading;
+	// 修正 loading 邏輯
+	const isLoading = !isNewForm && (formLoading || questionsLoading);
 	const hasError = formError || questionsError;
 
+	// Loading 狀態
 	if (isLoading) {
 		return (
 			<div className="p-10">
@@ -525,6 +524,7 @@ const FormEdit: React.FC = () => {
 		);
 	}
 
+	// Error 狀態
 	if (hasError) {
 		return (
 			<div className="p-10">
@@ -543,9 +543,20 @@ const FormEdit: React.FC = () => {
 		);
 	}
 
+	// 確保 formData 存在才渲染主要內容
+	if (!formData) {
+		return (
+			<div className="p-10">
+				<div className="flex justify-center items-center h-64">
+					<p className="text-gray-600">Initializing form...</p>
+				</div>
+			</div>
+		);
+	}
+
 	const pageTitle = isNewForm
-		? `New Form - ${formData?.title || 'Untitled'}`
-		: `Edit Form - ${formData?.title || 'Loading...'}`;
+		? `New Form${formData.title ? ` - ${formData.title}` : ''}`
+		: `Edit Form - ${formData.title || 'Loading...'}`;
 
 	return (
 		<div className="px-22 py-15">
@@ -556,7 +567,7 @@ const FormEdit: React.FC = () => {
 			</button>
 			<h1 className="text-3xl font-extrabold text-gray-900 mb-1 pb-5">{pageTitle}</h1>
 			<div className="flex items-center mb-5 gap-1.5">
-				<span className="pl-1">☁︎</span>
+				<span className="pl-1">⚡️</span>
 				<span className="text-sm text-gray-600">
           			{autoSaveStatus === 'saving' && 'Saving...'}
 					{autoSaveStatus === 'saved' && !hasUnsavedChanges && 'All changes saved'}
@@ -567,18 +578,18 @@ const FormEdit: React.FC = () => {
 			<div className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5">
 				<div className="font-semibold text-lg leading-7 mb-3">Info</div>
 				<div className="font-normal text-sm leading-6 text-slate-800 mb-4">
-					<div>Status: {formData?.status === 'draft' ? 'Draft' : 'Published'}</div>
+					<div>Status: {formData.status === 'draft' ? 'Draft' : 'Published'}</div>
 					<div className="flex gap-1">
 						<label>Created At: </label>
-						<p>{isNewForm ? 'Not created yet' : formatDate(formData?.createdAt || '')}</p>
+						<p>{isNewForm ? 'Not created yet' : formatDate(formData.createdAt)}</p>
 					</div>
 					<div className="flex gap-1">
 						<label>Updated At: </label>
-						<p>{isNewForm ? 'Not created yet' : formatDate(formData?.updatedAt || '')}</p>
+						<p>{isNewForm ? 'Not created yet' : formatDate(formData.updatedAt)}</p>
 					</div>
 					<div className="flex gap-1">
 						<label>Last Editor: </label>
-						<p>{isNewForm ? 'You' : (formData?.lastEditor || 'unknown')}</p>
+						<p>{isNewForm ? 'You' : (formData.lastEditor || 'unknown')}</p>
 					</div>
 				</div>
 				<div className="flex gap-3">
@@ -586,7 +597,7 @@ const FormEdit: React.FC = () => {
 						onClick={handleDelete}
 						disabled={isDeleting}
 						className="btn btn-primary bg-red-600 text-white"
-					>{isCreating ? 'Deleting...' : 'Delete'}</button>
+					>{isDeleting ? 'Deleting...' : 'Delete'}</button>
 					<button
 						onClick={handlePublish}
 						disabled={isCreating || isPublishing}
@@ -600,11 +611,11 @@ const FormEdit: React.FC = () => {
 					<div className="flex items-center gap-6 mb-3">
 						<label className="text-sm w-[89px] text-slate-800">Title</label>
 						<textarea
-							value={formData?.title || ''}
+							value={formData.title}
 							onChange={(e) => {
 								handleFormDataChange({ title: e.target.value });
 							}}
-							placeholder={isNewForm ? "Enter form title" : formData?.title || "Enter form title"}
+							placeholder="Enter form title"
 							rows={1}
 							className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
 						/>
@@ -612,11 +623,11 @@ const FormEdit: React.FC = () => {
 					<div className="flex items-center gap-6 mb-3">
 						<label className="text-sm w-[89px] text-slate-800">Description</label>
 						<textarea
-							value={formData?.description || ''}
+							value={formData.description}
 							onChange={(e) => {
 								handleFormDataChange({ description: e.target.value });
 							}}
-							placeholder={isNewForm ? "Enter form description" : formData?.description || "Enter form description"}
+							placeholder="Enter form description"
 							rows={5}
 							className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
 						/>
@@ -625,7 +636,7 @@ const FormEdit: React.FC = () => {
 						<label className="text-sm w-[89px] text-slate-800">Unit</label>
 						<div className="flex-1">
 							<GroupSelector
-								selectedGroups={formData?.unitId || []}
+								selectedGroups={formData.unitId || []}
 								availableGroups={availableGroups}
 								onGroupsChange={(groups) => handleFormDataChange({ unitId: groups })}
 								label=""
@@ -636,7 +647,7 @@ const FormEdit: React.FC = () => {
 				</div>
 			</div>
 			<QuestionList
-				formId={formData?.id}
+				formId={formData.id}
 				questions={questions}
 				onUpdateQuestion={handleUpdateQuestion}
 				onDeleteQuestion={handleDeleteQuestion}

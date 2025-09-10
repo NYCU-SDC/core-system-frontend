@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { type Question, QuestionTypeLabels, type SingleChoiceQuestion, type MultipleChoiceQuestion, type ChoiceOption } from "@/features/forms/types/question.ts";
+import { type Question, QuestionTypeLabels, type SingleChoiceQuestion, type MultipleChoiceQuestion, type Choice } from "@/features/forms/types/question.ts";
 import { useUpdateQuestionMutation, useDeleteQuestionMutation } from '@/features/forms/api/formApi.ts';
 import "@/features/forms/components/DraftFormCard.css"
 
@@ -26,14 +26,22 @@ const QuestionList: React.FC<QuestionListProps> = ({
 	}
 
 	const moveQuestionUp = async (questionId: string) => {
+		// 創建一個新的可變數組副本進行排序
 		const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
 		const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
 
 		if (currentIndex > 0) {
+			// 創建另一個副本用於修改
 			const updatedQuestions = [...sortedQuestions];
 			const temp = updatedQuestions[currentIndex].order;
-			updatedQuestions[currentIndex].order = updatedQuestions[currentIndex - 1].order;
-			updatedQuestions[currentIndex - 1].order = temp;
+			updatedQuestions[currentIndex] = {
+				...updatedQuestions[currentIndex],
+				order: updatedQuestions[currentIndex - 1].order
+			};
+			updatedQuestions[currentIndex - 1] = {
+				...updatedQuestions[currentIndex - 1],
+				order: temp
+			};
 
 			onReorderQuestions(updatedQuestions);
 
@@ -61,14 +69,22 @@ const QuestionList: React.FC<QuestionListProps> = ({
 	};
 
 	const moveQuestionDown = async (questionId: string) => {
+		// 創建一個新的可變數組副本進行排序
 		const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
 		const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
 
 		if (currentIndex < sortedQuestions.length - 1) {
+			// 創建另一個副本用於修改
 			const updatedQuestions = [...sortedQuestions];
 			const temp = updatedQuestions[currentIndex].order;
-			updatedQuestions[currentIndex].order = updatedQuestions[currentIndex + 1].order;
-			updatedQuestions[currentIndex + 1].order = temp;
+			updatedQuestions[currentIndex] = {
+				...updatedQuestions[currentIndex],
+				order: updatedQuestions[currentIndex + 1].order
+			};
+			updatedQuestions[currentIndex + 1] = {
+				...updatedQuestions[currentIndex + 1],
+				order: temp
+			};
 
 			onReorderQuestions(updatedQuestions);
 
@@ -110,7 +126,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 
 		const updatedQuestion = {
 			...choiceQuestion,
-			options: [...choiceQuestion.options, newOption]
+			options: [...choiceQuestion.choices, newOption]
 		};
 
 		// 先更新本地狀態
@@ -140,7 +156,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 		const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
 		const updatedQuestion = {
 			...choiceQuestion,
-			options: choiceQuestion.options.filter(option => option.id !== optionId)
+			options: choiceQuestion.choices.filter(option => option.id !== optionId)
 		};
 
 		onUpdateQuestion(questionId, updatedQuestion);
@@ -167,7 +183,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 		const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
 		const updatedQuestion = {
 			...choiceQuestion,
-			options: choiceQuestion.options.map(option =>
+			options: choiceQuestion.choices.map(option =>
 				option.id === optionId
 					? { ...option, label: newLabel, value: newLabel.toLowerCase().replace(/\s+/g, '_') }
 					: option
@@ -233,10 +249,10 @@ const QuestionList: React.FC<QuestionListProps> = ({
 			<div className="flex gap-6 mb-3 w-[600px]">
 				<label className="text-sm w-[89px] text-slate-800 pt-0.5">Options</label>
 				<div className="flex flex-col gap-3">
-					{question.options.map((option) => (
+					{question.choices.map((option) => (
 						<div key={option.id} className="flex items-center gap-2 md-3 w-[387.5px]">
 							<textarea
-								value={option.label}
+								//value={option.label}
 								onChange={(e) => updateOption(question.id, option.id, e.target.value)}
 								rows={1}
 								className="flex-1 text-sm px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none"
@@ -281,105 +297,106 @@ const QuestionList: React.FC<QuestionListProps> = ({
 		);
 	};
 
+	// 創建一個排序後的問題列表，不修改原始數組
+	const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
+
 	return (
 		<div className="space-y-5">
-			{questions
-				.sort((a, b) => a.order - b.order)
-				.map((question, index) => {
-					const isFirst = index === 0;
-					const isLast = index === questions.length - 1;
-					return (
-						<div
-							key={question.id}
-							className="bg-white border border-slate-300 rounded-md p-6 w-[800px]"
-						>
-							<div className="flex justify-between items-start">
-								<div className="flex-1">
-									<div className="flex items-center gap-2 mb-2">
+			{sortedQuestions.map((question, index) => {
+				const isFirst = index === 0;
+				const isLast = index === sortedQuestions.length - 1;
+				return (
+					<div
+						key={question.id}
+						className="bg-white border border-slate-300 rounded-md p-6 w-[800px]"
+					>
+						<div className="flex justify-between items-start">
+							<div className="flex-1">
+								<div className="flex items-center gap-2 mb-2">
 									<span className="font-medium text-base mb-5 text-slate-800">
                     					{QuestionTypeLabels[question.type]}
                   					</span>
-									</div>
-									<div className="w-[508px]">
-										<div className="flex items-center gap-6 mb-3">
-											<label className="text-sm w-[89px] text-slate-800">Title</label>
-											<input
-												type="text"
-												value={question.title}
-												onChange={(e) => {
-													// 修改：使用新的 API 更新函數
-													handleQuestionUpdate(question.id, 'title', e.target.value);
-												}}
-												placeholder="Enter question title"
-												className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
-												disabled={isUpdating} // 新增：在更新時禁用
-											/>
-										</div>
-										<div className="flex items-center gap-6 mb-3">
-											<label className="text-sm w-[89px] text-slate-800">Description</label>
-											<textarea
-												value={question.description || ''}
-												onChange={(e) => {
-													// 修改：使用新的 API 更新函數
-													handleQuestionUpdate(question.id, 'description', e.target.value);
-												}}
-												placeholder="Enter question description (optional)"
-												rows={2}
-												className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
-												disabled={isUpdating} // 新增：在更新時禁用
-											/>
-										</div>
-										{(question.type === 'single_choice' || question.type === 'multiple_choice') && (
-											<OptionEditor question={question as SingleChoiceQuestion | MultipleChoiceQuestion} />
-										)}
-									</div>
 								</div>
-								<div className="flex gap-2 ml-4">
-									<button
-										onClick={() => moveQuestionUp(question.id)}
-										disabled={isFirst || isUpdating} // 修改：增加 isUpdating 條件
-										className={`p-1 transition-colors ${
-											isFirst || isUpdating
-												? 'text-gray-300 cursor-not-allowed'
-												: 'text-gray-400 hover:text-slate-800 cursor-pointer'
-										}`}
-										title="Move up"
-									>
-										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-												  d="M5 15l7-7 7 7" />
-										</svg>
-									</button>
-									<button
-										onClick={() => moveQuestionDown(question.id)}
-										disabled={isLast || isUpdating} // 修改：增加 isUpdating 條件
-										className={`p-1 transition-colors ${
-											isLast || isUpdating
-												? 'text-gray-300 cursor-not-allowed'
-												: 'text-gray-400 hover:text-slate-800 cursor-pointer'
-										}`}
-										title="Move down"
-									>
-										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-												  d="M19 9l-7 7-7-7" />
-										</svg>
-									</button>
-									<button
-										onClick={() => handleDeleteQuestion(question.id)} // 修改：使用新的刪除函數
-										className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-										disabled={isDeleting} // 新增：在刪除時禁用
-									>
-										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-												  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" />
-										</svg>
-									</button>
+								<div className="w-[508px]">
+									<div className="flex items-center gap-6 mb-3">
+										<label className="text-sm w-[89px] text-slate-800">Title</label>
+										<input
+											type="text"
+											value={question.title}
+											onChange={(e) => {
+												// 修改：使用新的 API 更新函數
+												handleQuestionUpdate(question.id, 'title', e.target.value);
+											}}
+											placeholder="Enter question title"
+											className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+											disabled={isUpdating} // 新增：在更新時禁用
+										/>
+									</div>
+									<div className="flex items-center gap-6 mb-3">
+										<label className="text-sm w-[89px] text-slate-800">Description</label>
+										<textarea
+											value={question.description || ''}
+											onChange={(e) => {
+												// 修改：使用新的 API 更新函數
+												handleQuestionUpdate(question.id, 'description', e.target.value);
+											}}
+											placeholder="Enter question description (optional)"
+											rows={2}
+											className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+											disabled={isUpdating} // 新增：在更新時禁用
+										/>
+									</div>
+									{(question.type === 'single_choice' || question.type === 'multiple_choice') && (
+										<OptionEditor question={question as SingleChoiceQuestion | MultipleChoiceQuestion} />
+									)}
 								</div>
 							</div>
+							<div className="flex gap-2 ml-4">
+								<button
+									onClick={() => moveQuestionUp(question.id)}
+									disabled={isFirst || isUpdating} // 修改：增加 isUpdating 條件
+									className={`p-1 transition-colors ${
+										isFirst || isUpdating
+											? 'text-gray-300 cursor-not-allowed'
+											: 'text-gray-400 hover:text-slate-800 cursor-pointer'
+									}`}
+									title="Move up"
+								>
+									<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+											  d="M5 15l7-7 7 7" />
+									</svg>
+								</button>
+								<button
+									onClick={() => moveQuestionDown(question.id)}
+									disabled={isLast || isUpdating} // 修改：增加 isUpdating 條件
+									className={`p-1 transition-colors ${
+										isLast || isUpdating
+											? 'text-gray-300 cursor-not-allowed'
+											: 'text-gray-400 hover:text-slate-800 cursor-pointer'
+									}`}
+									title="Move down"
+								>
+									<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+											  d="M19 9l-7 7-7-7" />
+									</svg>
+								</button>
+								<button
+									onClick={() => handleDeleteQuestion(question.id)} // 修改：使用新的刪除函數
+									className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+									disabled={isDeleting} // 新增：在刪除時禁用
+								>
+									<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+											  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" />
+									</svg>
+								</button>
+							</div>
 						</div>
-					);
-				})}
+					</div>
+				);
+			})}
 		</div>
 	);
 };

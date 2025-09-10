@@ -19,9 +19,9 @@ export interface FormRequest {
 	unitIds: string[];
 }
 
-export interface ChoiceOption {
+/*export interface ChoiceOption {
 	name: string;
-}
+}*/
 
 export interface Choice {
 	id: UUID;
@@ -37,8 +37,6 @@ export interface BaseQuestion {
 	description: string;
 	order: number;
 	choices?: Choice[];
-	createdAt: string;
-	updatedAt: string;
 }
 
 export interface QuestionRequest {
@@ -47,7 +45,7 @@ export interface QuestionRequest {
 	title: string;
 	description: string;
 	order: number;
-	choices?: ChoiceOption[];
+	choices?: Choice[];
 }
 
 export interface RecipientSelectionRequest {
