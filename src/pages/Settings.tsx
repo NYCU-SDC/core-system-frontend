@@ -2,8 +2,12 @@ import MemberCard from "@/components/settings/MemberCard.tsx";
 import { Button } from "@/components/ui";
 import { Input } from "@/components/ui/input.tsx";
 import { Menubar, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar.tsx";
+import { UnitSelectorContainer, UnitSelectorContent } from "@/components/settings/UnitSelector.tsx";
+import { useState } from "react";
 
 const Settings = () => {
+	const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
+
 	return (
 		<div className="flex flex-col pl-32 pt-24 pr-8 pb-4 gap-8">
 			<p className="text-slate-800 text-5xl font-bold">Settings</p>
@@ -34,20 +38,26 @@ const Settings = () => {
 					</div>
 					<div className="w-wrap">
 						<p>Unit</p>
-						<Menubar className="h-fit w-fit flex flex-wrap">
-							<MenubarMenu>
-								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
-							</MenubarMenu>
-							<MenubarMenu>
-								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
-							</MenubarMenu>
-							<MenubarMenu>
-								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
-							</MenubarMenu>
-							<MenubarMenu>
-								<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>
-							</MenubarMenu>
-						</Menubar>
+						{/*<Menubar className="h-fit w-fit flex flex-wrap">*/}
+						{/*	<MenubarMenu>*/}
+						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
+						{/*	</MenubarMenu>*/}
+						{/*	<MenubarMenu>*/}
+						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
+						{/*	</MenubarMenu>*/}
+						{/*	<MenubarMenu>*/}
+						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
+						{/*	</MenubarMenu>*/}
+						{/*	<MenubarMenu>*/}
+						{/*		<MenubarTrigger className="px-3 py-1.5">AAA</MenubarTrigger>*/}
+						{/*	</MenubarMenu>*/}
+						{/*</Menubar>*/}
+						<UnitSelectorContainer>
+							<UnitSelectorContent>AAA</UnitSelectorContent>
+							<UnitSelectorContent>BBB</UnitSelectorContent>
+							<UnitSelectorContent>CCC</UnitSelectorContent>
+							<UnitSelectorContent>DDD</UnitSelectorContent>
+						</UnitSelectorContainer>
 					</div>
 					<Button className="w-fit">Save</Button>
 				</div>
