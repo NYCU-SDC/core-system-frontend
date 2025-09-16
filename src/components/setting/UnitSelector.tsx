@@ -1,17 +1,11 @@
 import * as React from "react";
 
-type UnitSelectorContextType = {
-	selected: string;
-	toggle: (value: string) => void;
-	isSelected: (value: string) => boolean;
-};
-
 type UnitSelectorContainerProps = {
 	children: React.ReactNode;
 	value?: string[];
 };
 
-export function UnitSelectorContainer({ children, value }: UnitSelectorContainerProps) {
+export function UnitSelectorContainer({ children }: UnitSelectorContainerProps) {
 	return <div className="flex py-1 px-1.25 gap-1 bg-white rounded-[6px] w-fit">{children}</div>;
 }
 
