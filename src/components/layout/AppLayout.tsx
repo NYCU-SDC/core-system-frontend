@@ -1,21 +1,13 @@
-import { type ReactNode, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { type ReactNode, useEffect, useState } from "react";
+import { useLocation, useNavigate, Outlet, useParams } from "react-router-dom";
 import { Inbox, FileText, Settings, User, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-interface AppLayoutProps {
-	children: ReactNode;
-}
-
-interface Organization {
-	id: string;
-	name: string;
-	initial: string;
-}
+import { useGetOrganizations } from "@/hooks/useGetOrganizations.ts";
+import type { Organization } from "@/types/organization.ts";
 
 interface NavItemProps {
 	icon: ReactNode;
@@ -57,12 +49,12 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 				<div className="space-y-2 mt-4">
 					{organizations.map(org => (
 						<Button
-							key={org.id}
+							key={org.slug}
 							variant="ghost"
 							className={cn(
 								"w-full justify-start gap-3 h-auto p-3",
 								"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
-								org.id === currentOrg.id ? "bg-slate-100 ring-1 ring-slate-300" : ""
+								org.slug === currentOrg.slug ? "bg-slate-100 ring-1 ring-slate-300" : ""
 							)}
 							onClick={() => {
 								onOrgChange(org);
@@ -71,7 +63,7 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 						>
 							<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">{org.initial}</div>
 							<span className="text-slate-700 font-medium flex-1 text-left">{org.name}</span>
-							{org.id === currentOrg.id && <Check className="w-5 h-5 text-slate-600" />}
+							{org.slug === currentOrg.slug && <Check className="w-5 h-5 text-slate-600" />}
 						</Button>
 					))}
 				</div>
@@ -132,28 +124,36 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 	);
 };
 
-const AppLayout = ({ children }: AppLayoutProps) => {
+const AppLayout = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
 
-	// Mock organizations data - replace with real data from your API/store
-	const [organizations] = useState<Organization[]>([
-		{ id: "1", name: "Acme Corporation", initial: "A" },
-		{ id: "2", name: "Beta Solutions", initial: "B" },
-		{ id: "3", name: "Gamma Technologies", initial: "G" },
-		{ id: "4", name: "Delta Industries", initial: "D" }
-	]);
+	const { slug: orgSlug } = useParams();
+	const [currentOrg, setCurrentOrg] = useState<Organization>();
+	const { data: organizations, isError } = useGetOrganizations();
 
-	const [currentOrg, setCurrentOrg] = useState<Organization>(organizations[0]);
-
-	const handleNavigation = (path: string) => {
-		navigate(path);
-	};
+	useEffect(() => {
+		if (orgSlug && organizations) {
+			const org = organizations.find(o => o.slug === orgSlug);
+			if (org) {
+				setCurrentOrg({
+					slug: org.slug,
+					name: org.name,
+					initial: org.name.charAt(0).toUpperCase()
+				});
+			}
+		} else if (organizations && organizations.length > 0) {
+			setCurrentOrg({
+				slug: organizations[0].slug,
+				name: organizations[0].name,
+				initial: organizations[0].name.charAt(0).toUpperCase()
+			});
+		}
+	}, [organizations, orgSlug]);
 
 	const handleOrgChange = (org: Organization) => {
 		setCurrentOrg(org);
-		// Add your organization switching logic here
-		console.log("Switched to organization:", org.name);
+		navigate(`/${org.slug}/inbox`);
 	};
 
 	return (
@@ -163,42 +163,70 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 				{/* Top Section */}
 				<div className="flex flex-col items-center space-y-2">
 					{/* Organization Selector */}
-					<OrgSelector
-						currentOrg={currentOrg}
-						organizations={organizations}
-						onOrgChange={handleOrgChange}
-					/>
+					{isError ? (
+						<div
+							className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600 font-semibold text-sm"
+							title="Failed to load organizations"
+						>
+							!
+						</div>
+					) : !organizations || organizations.length === 0 ? (
+						<div className="w-10 h-10 rounded-lg bg-slate-100 animate-pulse"></div>
+					) : currentOrg ? (
+						organizations.length > 0 && (
+							<OrgSelector
+								currentOrg={currentOrg}
+								organizations={organizations.map(org => ({
+									slug: org.slug,
+									name: org.name,
+									initial: org.name.charAt(0).toUpperCase()
+								}))}
+								onOrgChange={handleOrgChange}
+							/>
+						)
+					) : null}
 
 					{/* Inbox */}
 					<NavItem
 						icon={<Inbox className="w-full h-full" />}
 						isActive={location.pathname === "/inbox"}
-						onClick={() => handleNavigation("/inbox")}
+						onClick={() => {
+							if (!currentOrg) {
+								navigate("/inbox");
+								return;
+							}
+							navigate(`/${currentOrg.slug}/inbox`);
+						}}
 						label="Inbox"
 					/>
 
 					{/* Form */}
-					<NavItem
-						icon={<FileText className="w-full h-full" />}
-						isActive={location.pathname === "/forms"}
-						onClick={() => handleNavigation("/forms")}
-						label="Forms"
-					/>
+					{currentOrg ? (
+						<NavItem
+							icon={<FileText className="w-full h=-full" />}
+							isActive={location.pathname === `/${currentOrg.slug}/forms`}
+							onClick={() => navigate(`/${currentOrg.slug}/forms`)}
+							label="Forms"
+						/>
+					) : null}
 				</div>
 
 				{/* Bottom Section - Profile */}
 				<div className="flex flex-col items-center">
 					{/* Settings */}
-					<NavItem
-						icon={<Settings className="w-full h-full" />}
-						isActive={location.pathname === "/settings"}
-						onClick={() => handleNavigation("/settings")}
-						label="Settings"
-					/>
+					{currentOrg ? (
+						<NavItem
+							icon={<Settings className="w-full h=-full" />}
+							isActive={location.pathname === `/${currentOrg.slug}/settings`}
+							onClick={() => navigate(`/${currentOrg.slug}/settings`)}
+							label="Settings"
+						/>
+					) : null}
+
 					<NavItem
 						icon={<User className="w-5 h-5 text-slate-50" />}
 						isActive={location.pathname === "/profile"}
-						onClick={() => handleNavigation("/profile")}
+						onClick={() => navigate("/profile")}
 						isProfile={true}
 						label="Profile"
 					/>
@@ -206,7 +234,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 			</aside>
 
 			{/* Main Content Area */}
-			<main className="flex-1 overflow-auto bg-slate-50">{children}</main>
+			<main className="flex-1 overflow-auto bg-slate-50">
+				<Outlet context={{ organization: currentOrg }} />
+			</main>
 		</div>
 	);
 };
