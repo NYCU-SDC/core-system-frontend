@@ -30,7 +30,7 @@ export default function UnreadSwitch({
         <div className={`flex items-center gap-2 ${className}`}>
             <Switch id="unread-switch" checked={checked} onCheckedChange={onChange} />
             <Label htmlFor="unread-switch" className="text-sm text-slate-700">
-                Unread only
+                Unread Only
             </Label>
         </div>
     );
