@@ -1,8 +1,21 @@
 import type { FormData } from "@/types/form.ts"
 import type { Question } from "@/types/question.ts";
 
+export type FormResponse = {
+	id: string;
+	title: string;
+	description: string;
+	status: string;
+	unitId: string;
+	lastEditor: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export type FormsResponse = FormResponse[];
+
 export interface FormCardProps {
-	form: FormData;
+	form: FormResponse;
 	onEdit?: (id: string) => void;
 	onDelete?: (id: string) => void;
 	onPublish?: (id: string) => void;

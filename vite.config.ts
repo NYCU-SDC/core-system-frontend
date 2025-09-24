@@ -12,7 +12,7 @@ export default defineConfig({
 			"@": path.resolve(__dirname, "src")
 		}
 	},
-	server: {
+	/*server: {
 		proxy: {
 			"/api": {
 				target: "https://dev.core-system.sdc.nycu.club",
@@ -23,5 +23,5 @@ export default defineConfig({
 				}
 			}
 		}
-	}
+	}*/
 });

@@ -2,6 +2,17 @@ export type UUID = string;
 export type FormStatus = 'draft' | 'published';
 export type QuestionType = 'short_text' | 'long_text' | 'single_choice' | 'multiple_choice' | 'date';
 
+export type FormResponse = {
+	id: string;
+	title: string;
+	description: string;
+	status: FormStatus;
+	unitId: string;
+	lastEditor: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
 export interface FormData {
 	id: UUID;
 	title: string;

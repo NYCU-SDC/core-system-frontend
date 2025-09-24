@@ -1,55 +1,16 @@
 import DraftFormCard from "@/components/form/DraftFormCard.tsx";
 import PublishedFormCard from "@/components/form/PublishedFormCard.tsx";
 import React from 'react';
+import { Button } from "@/components/ui";
+import { useParams } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
-import { useGetFormsQuery } from '@/lib/request/form.ts';
-import { useEffect } from 'react';
+import { useGetForms } from '@/hooks/useGetForms';
+import { useEffect, useState } from 'react';
 
-const FormList: React.FC = () => {
+const FormList = () => {
 	const navigate = useNavigate();
-	const queryResult = useGetFormsQuery();
-	const { data: forms, isLoading, error, refetch, isError, isSuccess, isFetching } = useGetFormsQuery();
-
-	/*console.log('=== FormList API Debug ===');
-	console.log('完整 query result:', queryResult);
-	console.log('isLoading:', isLoading);
-	console.log('isError:', isError);
-	console.log('isSuccess:', isSuccess);
-	console.log('isFetching:', isFetching);
-	console.log('error:', error);
-	console.log('data (forms):', forms);
-
-	useEffect(() => {
-		console.log('=== API 狀態變化 ===');
-		console.log('isLoading:', isLoading);
-		console.log('isError:', isError);
-		console.log('isSuccess:', isSuccess);
-		console.log('isFetching:', isFetching);
-		console.log('error 詳情:', error);
-
-		if (isError) {
-			console.error('API 請求失敗:', error);
-			// 檢查是否是網路錯誤、認證錯誤等
-			if ('status' in error) {
-				console.error('HTTP 狀態碼:', error.status);
-				console.error('錯誤數據:', error.data);
-			}
-		}
-
-		if (isSuccess) {
-			console.log('API 請求成功，但數據是:', forms);
-		}
-	}, [isLoading, isError, isSuccess, isFetching, error, forms]);*/
-
-	// 在組件載入時強制重新獲取一次數據
-	useEffect(() => {
-		console.log('FormList 組件載入，嘗試 refetch');
-		refetch().then((result) => {
-			console.log('refetch 結果:', result);
-		}).catch((err) => {
-			console.error('refetch 失敗:', err);
-		});
-	}, [refetch]);
+	// const queryResult = useGetFormsQuery();
+	const { data, isError, isLoading } = useGetForms();
 
 	const handleNewForm = () => {
 		console.log('Create new form');
@@ -70,17 +31,79 @@ const FormList: React.FC = () => {
 		console.log('Publish form:', id);
 	};
 
-	const safeFormsArray = forms || [];
-	const draftForms = safeFormsArray.filter(form => {
-		console.log('檢查表單:', form.id, 'status:', form.status);
-		return form.status === 'draft';
-	});
+	const safeFormsArray = data || [];
+	const draftForms = safeFormsArray.filter(form => form.status === 'draft');
 	const publishedForms = safeFormsArray.filter(form => form.status === 'published');
 
-	/*console.log('篩選後的 draftForms:', draftForms);
-	console.log('篩選後的 publishedForms:', publishedForms);*/
 
-	if (isLoading || isFetching) {
+	return (
+		<div className="px-22 py-15">
+			<h1 className="text-3xl font-bold text-gray-900 mb-4 pb-5">Forms</h1>
+			{
+				isLoading ? (
+					<div className="flex justify-center items-center h-64">
+						<p className="text-gray-600">Loading...</p>
+					</div>
+				) : isError ? (
+					<div className="flex justify-center items-center h-64">
+						<p className="text-red-600">Failed to load forms</p>
+					</div>
+				) : (
+					<div>
+						<div className="flex items-center mb-3">
+							<h2 className="text-2xl font-semibold text-gray-900">Draft</h2>
+							<button
+								onClick={handleNewForm}
+								className="btn btn-secondary ml-auto"
+							>New</button>
+						</div>
+						<div className="flex flex-wrap gap-6 mb-8">
+							{draftForms.length === 0 ? (
+								<div className="w-full py-8 text-gray-500">
+									No draft forms yet.
+								</div>
+							) : (
+								draftForms.map((form) => {
+									return (
+										<div key={form.id} className="flex">
+											<DraftFormCard
+												form={form}
+												onEdit={handleEditForm}
+												onPublish={handlePublishForm}
+											/>
+										</div>
+									);
+								})
+							)}
+						</div>
+						<h2 className="text-2xl font-semibold text-gray-900 mb-4">Published</h2>
+						<div className="flex flex-wrap gap-6 mb-8">
+							<div className="w-135">
+								{publishedForms.length === 0 ? (
+									<div className="w-full py-8 text-gray-500">
+										No published forms yet.
+									</div>
+								) : (
+									publishedForms.map((form) => {
+										return (
+											<div key={form.id} className="w-135">
+												<PublishedFormCard
+													form={form}
+													onViewResult={handleViewResult}
+												/>
+											</div>
+										);
+									})
+								)}
+							</div>
+						</div>
+					</div>
+				)
+			}
+		</div>
+	)
+
+	/*if (isLoading || isFetching) {
 		console.log('FormList 正在載入...');
 		return (
 			<div className="px-22 py-15">
@@ -106,7 +129,7 @@ const FormList: React.FC = () => {
 	}
 
 	// 顯示詳細的錯誤信息
-	if (isError) {
+	if (error) {
 		console.error('FormList 顯示錯誤狀態');
 		return (
 			<div className="px-22 py-15">
@@ -217,7 +240,7 @@ const FormList: React.FC = () => {
 				</div>
 			</div>
 		</div>
-	);
+	);*/
 };
 
 export default FormList;

@@ -1,15 +1,31 @@
 import React from 'react'
 import type { FormCardProps } from "@/types/forms.ts";
 import "./DraftFormCard.css"
-import { useNavigate } from 'react-router-dom';
-import { usePublishFormMutation } from '@/lib/request/form.ts';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { publishForm } from "@/lib/request/publishForm.ts";
+import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
 
 const DraftFormCard: React.FC<FormCardProps> = ({
 	form,
 }) => {
 	const navigate = useNavigate();
-	const [publishForm, { isLoading: isPublishing }] = usePublishFormMutation();
-	//const [showPublishModal, setShowPublishModal] = useState(false);
+	const queryClient = useQueryClient();
+	const { orgSlug } = useParams<{ orgSlug: string }>();
+	const { data: organization } = useGetOrganization(orgSlug || '');
+
+	const publishMutation = useMutation({
+		mutationFn: (data: {id: string; request: {orgId: string; unitIds: string[]}})=>
+			publishForm(data.id, data.request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['forms'] });
+			alert("Form published successfully!");
+		},
+		onError: (error) => {
+			console.error("Failed to publish form:", error);
+			alert("Failed to publish form. Please try again.");
+		},
+	})
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
@@ -27,24 +43,18 @@ const DraftFormCard: React.FC<FormCardProps> = ({
 
 	const handlePublish = async (id: string) => {
 		try {
-			const formUnits = form.unitId || [];
-			const units = Array.isArray(formUnits) ? formUnits : [formUnits].filter(Boolean);
+			//const formUnits = form.unitId || [];
+			const unitIds = Array.isArray(form.unitId) ? form.unitId : [form.unitId].filter(Boolean);
 
-			await publishForm({
+			await publishMutation.mutateAsync({
 				id,
-				recipients: {
-					unitIds: units
+				request: {
+					orgId: organization.id,
+					unitIds: unitIds
 				}
-			}).unwrap();
-
-			console.log("Form published successfully:", id);
-			alert("Form published successfully!");
-
-			// Optionally refresh the page or update the UI
-			window.location.reload();
+			});
 		} catch (error) {
-			console.error("Failed to publish form:", error);
-			alert("Failed to publish form. Please try again.");
+			console.error("Publish error:", error);
 		}
 	};
 
@@ -71,8 +81,8 @@ const DraftFormCard: React.FC<FormCardProps> = ({
 				</div>
 				<div className="form-actions">
 					<button className="btn btn-primary" onClick={()=>handleEdit(form.id)}>Edit</button>
-					<button className="btn btn-secondary" onClick={()=>handlePublish(form.id)} disabled={isPublishing}>
-						{isPublishing ? 'Publishing...' : 'Publish'}
+					<button className="btn btn-secondary" onClick={()=>handlePublish(form.id)} disabled={publishMutation.isPending}>
+						{publishMutation.isPending ? 'Publishing...' : 'Publish'}
 					</button>
 				</div>
 			</div>
