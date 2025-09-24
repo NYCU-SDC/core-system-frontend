@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { type Question, QuestionTypeLabels, type SingleChoiceQuestion, type MultipleChoiceQuestion, type ChoiceOption } from "@/types/question.ts";
-import { useUpdateQuestionMutation, useDeleteQuestionMutation } from '@/lib/request/form.ts';
+//import { useUpdateQuestionMutation, useDeleteQuestionMutation } from '@/lib/request/form.ts';
 import "@/components/form/DraftFormCard.css"
 
 interface QuestionListProps {
@@ -18,8 +18,10 @@ const QuestionList: React.FC<QuestionListProps> = ({
 													   onDeleteQuestion,
 													   onReorderQuestions
 												   }) => {
-	const [updateQuestionAPI, { isLoading: isUpdating }] = useUpdateQuestionMutation();
-	const [deleteQuestionAPI, { isLoading: isDeleting }] = useDeleteQuestionMutation();
+	//const [updateQuestionAPI, { isLoading: isUpdating }] = useUpdateQuestionMutation();
+	//const [deleteQuestionAPI, { isLoading: isDeleting }] = useDeleteQuestionMutation();
+
+	return null;
 
 	if (questions.length === 0) {
 		return null;
@@ -40,7 +42,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 			if (formId) {
 				try {
 					await Promise.all([
-						updateQuestionAPI({
+						/*updateQuestionAPI({
 							formId,
 							questionId: updatedQuestions[currentIndex].id,
 							data: updatedQuestions[currentIndex]
@@ -49,7 +51,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 							formId,
 							questionId: updatedQuestions[currentIndex - 1].id,
 							data: updatedQuestions[currentIndex - 1]
-						}).unwrap()
+						}).unwrap()*/
 					]);
 				} catch (error) {
 					console.error('Failed to reorder questions:', error);
@@ -75,7 +77,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 			if (formId) {
 				try {
 					await Promise.all([
-						updateQuestionAPI({
+						/*updateQuestionAPI({
 							formId,
 							questionId: updatedQuestions[currentIndex].id,
 							data: updatedQuestions[currentIndex]
@@ -84,7 +86,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 							formId,
 							questionId: updatedQuestions[currentIndex + 1].id,
 							data: updatedQuestions[currentIndex + 1]
-						}).unwrap()
+						}).unwrap()*/
 					]);
 				} catch (error) {
 					console.error('Failed to reorder questions:', error);
@@ -119,11 +121,11 @@ const QuestionList: React.FC<QuestionListProps> = ({
 		// 如果有 formId，才調用 API
 		if (formId) {
 			try {
-				await updateQuestionAPI({
+				/*await updateQuestionAPI({
 					formId,
 					questionId,
 					data: updatedQuestion
-				}).unwrap();
+				}).unwrap();*/
 			} catch (error) {
 				console.error('Failed to add option:', error);
 				// API 失敗時，本地狀態已經更新，不需要回滾
@@ -147,11 +149,11 @@ const QuestionList: React.FC<QuestionListProps> = ({
 
 		if (formId) {
 			try {
-				await updateQuestionAPI({
+				/*await updateQuestionAPI({
 					formId,
 					questionId,
 					data: updatedQuestion
-				}).unwrap();
+				}).unwrap();*/
 			} catch (error) {
 				console.error('Failed to remove option:', error);
 			}
@@ -179,11 +181,11 @@ const QuestionList: React.FC<QuestionListProps> = ({
 		// 新增：API 調用來更新問題
 		if (formId) {
 			try {
-				await updateQuestionAPI({
+				/*await updateQuestionAPI({
 					formId,
 					questionId,
 					data: updatedQuestion
-				}).unwrap();
+				}).unwrap();*/
 			} catch (error) {
 				console.error('Failed to update option:', error);
 			}
@@ -240,13 +242,13 @@ const QuestionList: React.FC<QuestionListProps> = ({
 								onChange={(e) => updateOption(question.id, option.id, e.target.value)}
 								rows={1}
 								className="flex-1 text-sm px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none"
-								disabled={isUpdating} // 新增：在更新時禁用
+								//disabled={isUpdating} // 新增：在更新時禁用
 							/>
 							<button
 								onClick={() => removeOption(question.id, option.id)}
 								className="p-1 text-gray-400 hover:text-black transition-colors -ml-10"
 								title="Delete option"
-								disabled={isUpdating} // 新增：在更新時禁用
+								//disabled={isUpdating} // 新增：在更新時禁用
 							>
 								<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -262,16 +264,16 @@ const QuestionList: React.FC<QuestionListProps> = ({
 							placeholder="Add an option..."
 							rows={1}
 							className="w-[396px] text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
-							disabled={isUpdating} // 新增：在更新時禁用
+							//disabled={isUpdating} // 新增：在更新時禁用
 						/>
 						<button
 							onClick={handleAddOption}
-							disabled={!newOptionText.trim() || isUpdating} // 修改：增加 isUpdating 條件
-							className={`px-3 py-2 text-xs rounded transition-colors ${
+							//disabled={!newOptionText.trim() || isUpdating} // 修改：增加 isUpdating 條件
+							/*className={`px-3 py-2 text-xs rounded transition-colors ${
 								newOptionText.trim() && !isUpdating
 									? 'btn btn-secondary'
 									: 'bg-gray-300 text-gray-500 cursor-not-allowed'
-							}`}
+							}`}*/
 						>
 							Add
 						</button>
@@ -326,7 +328,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 												placeholder="Enter question description (optional)"
 												rows={2}
 												className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
-												disabled={isUpdating} // 新增：在更新時禁用
+												//disabled={isUpdating} // 新增：在更新時禁用
 											/>
 										</div>
 										{(question.type === 'single_choice' || question.type === 'multiple_choice') && (
@@ -337,12 +339,12 @@ const QuestionList: React.FC<QuestionListProps> = ({
 								<div className="flex gap-2 ml-4">
 									<button
 										onClick={() => moveQuestionUp(question.id)}
-										disabled={isFirst || isUpdating} // 修改：增加 isUpdating 條件
-										className={`p-1 transition-colors ${
+										//disabled={isFirst || isUpdating} // 修改：增加 isUpdating 條件
+										/*className={`p-1 transition-colors ${
 											isFirst || isUpdating
 												? 'text-gray-300 cursor-not-allowed'
 												: 'text-gray-400 hover:text-slate-800 cursor-pointer'
-										}`}
+										}`}*/
 										title="Move up"
 									>
 										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -352,12 +354,12 @@ const QuestionList: React.FC<QuestionListProps> = ({
 									</button>
 									<button
 										onClick={() => moveQuestionDown(question.id)}
-										disabled={isLast || isUpdating} // 修改：增加 isUpdating 條件
-										className={`p-1 transition-colors ${
+										//disabled={isLast || isUpdating} // 修改：增加 isUpdating 條件
+										/*className={`p-1 transition-colors ${
 											isLast || isUpdating
 												? 'text-gray-300 cursor-not-allowed'
 												: 'text-gray-400 hover:text-slate-800 cursor-pointer'
-										}`}
+										}`}*/
 										title="Move down"
 									>
 										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

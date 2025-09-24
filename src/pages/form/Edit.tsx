@@ -13,19 +13,20 @@ import "@/components/form/DraftFormCard.css"
 import { GroupSelector } from "@/components/form/GroupSelector.tsx";
 import QuestionList from "@/components/form/QuestionList.tsx";
 import AddQuestion from "@/components/form/AddQuestion.tsx";
-import {
-	useGetFormQuery,
-	useGetQuestionsQuery,
-	useUpdateFormMutation,
-	useDeleteFormMutation,
-	useCreateFormMutation,
-	usePublishFormMutation,
-	useCreateQuestionMutation,
-	useUpdateQuestionMutation,
-	useDeleteQuestionMutation
-} from '@/lib/request/form.ts';
+// import {
+// 	useGetFormQuery,
+// 	useGetQuestionsQuery,
+// 	useUpdateFormMutation,
+// 	useDeleteFormMutation,
+// 	useCreateFormMutation,
+// 	usePublishFormMutation,
+// 	useCreateQuestionMutation,
+// 	useUpdateQuestionMutation,
+// 	useDeleteQuestionMutation
+// } from '@/lib/request/form.ts';
 
 const FormEdit: React.FC = () => {
+	return null;
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const isNewForm = id === 'new';

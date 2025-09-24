@@ -2,15 +2,15 @@ import DraftFormCard from "@/components/form/DraftFormCard.tsx";
 import PublishedFormCard from "@/components/form/PublishedFormCard.tsx";
 import React from 'react';
 import { Button } from "@/components/ui";
-import { useParams } from "react-router-dom";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useGetForms } from '@/hooks/useGetForms';
 import { useEffect, useState } from 'react';
 
 const FormList = () => {
 	const navigate = useNavigate();
 	// const queryResult = useGetFormsQuery();
-	const { data, isError, isLoading } = useGetForms();
+	const { data, isError, isLoading, status } = useGetForms();
+	console.log(status);
 
 	const handleNewForm = () => {
 		console.log('Create new form');
