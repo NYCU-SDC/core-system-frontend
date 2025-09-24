@@ -8,10 +8,21 @@ export type OrganizationResponse = {
 	slug: string;
 };
 
+export type OrganizationRequest = {
+	name: string;
+	description?: string;
+	metadata?: Record<string, string>;
+	slug: string;
+};
+
 export type Organization = {
 	slug: string;
 	name: string;
 	initial: string;
+};
+
+export type MemberRequest = {
+	email: string;
 };
 
 export type Member = {
