@@ -5,7 +5,7 @@ import "@/components/form/DraftFormCard.css"
 
 interface QuestionListProps {
 	formId?: string;
-	questions: Question[];
+	questions: BaseQuestion[];
 	onUpdateQuestion: (questionId: string, updatedQuestion: Question) => void;
 	onDeleteQuestion: (questionId: string) => void;
 	onReorderQuestions: (questions: Question[]) => void;

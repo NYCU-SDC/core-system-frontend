@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
-import type { FormData, QuestionType } from "@/types/form.ts";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { ChoiceOption, FormData, QuestionType, QuestionResponse, BaseQuestion } from "@/types/form.ts";
 import type {
 	DateQuestion,
-	LongTextQuestion, MultipleChoiceQuestion,
+	LongTextQuestion,
+	MultipleChoiceQuestion,
 	Question,
 	ShortTextQuestion,
 	SingleChoiceQuestion
@@ -13,90 +15,150 @@ import "@/components/form/DraftFormCard.css"
 import { GroupSelector } from "@/components/form/GroupSelector.tsx";
 import QuestionList from "@/components/form/QuestionList.tsx";
 import AddQuestion from "@/components/form/AddQuestion.tsx";
-// import {
-// 	useGetFormQuery,
-// 	useGetQuestionsQuery,
-// 	useUpdateFormMutation,
-// 	useDeleteFormMutation,
-// 	useCreateFormMutation,
-// 	usePublishFormMutation,
-// 	useCreateQuestionMutation,
-// 	useUpdateQuestionMutation,
-// 	useDeleteQuestionMutation
-// } from '@/lib/request/form.ts';
+import { useGetForm } from "@/hooks/useGetForm.ts";
+import { useGetQuestions } from "@/hooks/useGetQuestions.ts";
+import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
+import { useGetUnits } from "@/hooks/useGetUnits.ts";
+import { publishForm } from "@/lib/request/publishForm.ts";
+import { updateForm } from "@/lib/request/updateForm.ts";
+import { deleteForm } from "@/lib/request/deleteForm.ts";
+import { createForm } from "@/lib/request/createForm.ts";
+import { createQuestion } from "@/lib/request/createQuestion.ts";
+import { updateQuestion } from "@/lib/request/updateQuestion.ts";
+import { deleteQuestion } from "@/lib/request/deleteQuestion.ts";
 
-const FormEdit: React.FC = () => {
-	return null;
+const FormEdit = () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const isNewForm = id === 'new';
 
-	console.log('=== FormEdit Debug Info ===');
-	console.log('URL id:', id);
-	console.log('isNewForm:', isNewForm);
+	const { data: form, isLoading: formLoading, isError: formError } = useGetForm(id || '');
+	const { data: questionsData, isLoading: questionsLoading, isError: questionsError } = useGetQuestions(id || '');
 
-	const formQuery = useGetFormQuery(id!, { skip: isNewForm });
-	const questionsQuery = useGetQuestionsQuery(id!, { skip: isNewForm });
-
-	console.log('=== Form Query Debug ===');
-	console.log('formQuery:', formQuery);
-	console.log('formQuery.isLoading:', formQuery.isLoading);
-	console.log('formQuery.isError:', formQuery.isError);
-	console.log('formQuery.error:', formQuery.error);
-	console.log('formQuery.data:', formQuery.data);
-	console.log('formQuery.isSuccess:', formQuery.isSuccess);
-	console.log('formQuery.isFetching:', formQuery.isFetching);
-
-	console.log('=== Questions Query Debug ===');
-	console.log('questionsQuery:', questionsQuery);
-	console.log('questionsQuery.isLoading:', questionsQuery.isLoading);
-	console.log('questionsQuery.isError:', questionsQuery.isError);
-	console.log('questionsQuery.error:', questionsQuery.error);
-	console.log('questionsQuery.data:', questionsQuery.data);
-	console.log('questionsQuery.isSuccess:', questionsQuery.isSuccess);
-	console.log('questionsQuery.isFetching:', questionsQuery.isFetching);
-
-	const {
-		data: apiFormData,
-		isLoading: formLoading,
-		error: formError
-	} = useGetFormQuery(id!, { skip: isNewForm });
-
-	const {
-		data: apiQuestions = [],
-		isLoading: questionsLoading,
-		error: questionsError
-	} = useGetQuestionsQuery(id!, { skip: isNewForm });
-
-	const [updateForm, { isLoading: isUpdating }] = useUpdateFormMutation();
-	const [deleteForm, { isLoading: isDeleting }] = useDeleteFormMutation();
-	const [createForm, { isLoading: isCreating }] = useCreateFormMutation();
-	const [publishForm, { isLoading: isPublishing }] = usePublishFormMutation();
-
-	const [createQuestion] = useCreateQuestionMutation();
-	const [updateQuestion] = useUpdateQuestionMutation();
-	const [deleteQuestion] = useDeleteQuestionMutation();
+	const { slug } = useParams<{ slug: string }>();
+	const { unitId } = useParams<{ unitId: string }>();
+	const { data: organization } = useGetOrganization(slug || '');
+	const { data: units } = useGetUnits(slug || '');
 
 	const [formData, setFormData] = useState<FormData | null>(null);
-	const [questions, setQuestions] = useState<Question[]>([]);
+	const [questions, setQuestions] = useState<BaseQuestion[]>([]);
 	const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-	const availableGroups = ["General", "Administration", "Education", "Branding", "Finance", "Engineering"];
+	const [selectedPublishUnits, setSelectedPublishUnits] = useState<string[]>([]);
+	const availableGroups = units?.map(unit => unit.name);
 
-	useEffect(() => {
-		console.log('=== Query Status Changed ===');
-		console.log('formLoading:', formLoading);
-		console.log('questionsLoading:', questionsLoading);
-		console.log('formError:', formError);
-		console.log('questionsError:', questionsError);
-		console.log('apiFormData:', apiFormData);
-		console.log('apiQuestions:', apiQuestions);
-	}, [formLoading, questionsLoading, formError, questionsError, apiFormData, apiQuestions]);
+	const convertUnitNamesToIds = (unitNames: string[]): string[] => {
+		return unitNames.map(name => {
+			const unit = units.find(u => u.name === name);
+			return unit ? unit.id : '';
+		}).filter(Boolean);
+	};
+
+	// Mutations
+	const updateFormMutation = useMutation({
+		mutationFn:(data: {id: string; request: {title: string; description: string}}) =>
+			updateForm(data.id, data.request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['Form', id] });
+			queryClient.invalidateQueries({ queryKey: ['Forms'] });
+			setAutoSaveStatus('saved');
+			setHasUnsavedChanges(false);
+		},
+		onError: (error) => {
+			console.error('Failed to update form:', error);
+			setAutoSaveStatus('error');
+		}
+	})
+
+	const deleteFormMutation = useMutation({
+		mutationFn:(id: string) =>
+			deleteForm(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['Forms'] });
+		},
+		onError: (error) => {
+			console.error('Failed to delete form:', error);
+			alert("Failed to delete form. Please try again.");
+		}
+	})
+
+	const createFormMutation = useMutation({
+		mutationFn:(data: {slug: string; unitId: string; request: {title: string; description: string}}) =>
+			createForm(data.slug, data.unitId, data.request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['Forms'] });
+		},
+		onError: (error) => {
+			console.error('Failed to create form:', error);
+		}
+	})
+
+	const publishFormMutation = useMutation({
+		mutationFn: (data: { id: string; request: { orgId: string; unitIds: string[] } }) =>
+			publishForm(data.id, data.request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['Forms'] });
+			queryClient.invalidateQueries({ queryKey: ['Form', id] });
+			alert('Form published successfully!');
+			navigate('/forms');
+		},
+		onError: (error) => {
+			console.error('Failed to publish form:', error);
+			alert('Failed to publish form. Please try again.');
+		}
+	});
+
+	const createQuestionMutation = useMutation({
+		mutationFn: (data: { formId: string, request: {
+				required: boolean,
+				type: QuestionType,
+				title: string,
+				description: string,
+				order: number,
+				choices?: ChoiceOption[]
+			} }) =>
+			createQuestion(data.formId, data.request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['Questions', id] });
+		},
+		onError: (error) => {
+			console.error('Failed to create question:', error);
+		}
+	})
+
+	const updateQuestionMutation = useMutation({
+		mutationFn: (data: { formId: string, questionId: string, request: {
+				required: boolean,
+				type: QuestionType,
+				title: string,
+				description: string,
+				order: number,
+				choices?: ChoiceOption[]
+			} }) =>
+			updateQuestion(data.formId, data.questionId, data.request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['Questions', id] });
+		},
+		onError: (error) => {
+			console.error('Failed to update question:', error);
+		}
+	})
+
+	const deleteQuestionMutation = useMutation({
+		mutationFn: (data: {formId: string, questionId: string}) =>
+			deleteQuestion(data.formId, data.questionId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['Questions', id] });
+		},
+		onError: (error) => {
+			console.error('Failed to delete question:', error);
+		}
+	})
 
 	useEffect(() => {
 		if (isNewForm) {
-			console.log('設置新表單的預設資料');
 			setFormData({
 				id: '',
 				title: '',
@@ -107,77 +169,81 @@ const FormEdit: React.FC = () => {
 				createdAt: '',
 				updatedAt: ''
 			});
-		} else if (apiFormData) {
-			console.log('設置從 API 獲取的表單資料:', apiFormData);
+		} else if (form) {
 			setFormData({
-				...apiFormData,
-				createdAt: apiFormData.createdAt,
-				updatedAt: apiFormData.updatedAt,
-				lastEditor: apiFormData.lastEditor || 'Unknown',
-				unitId: Array.isArray(apiFormData.unitId) ? apiFormData.unitId : [apiFormData.unitId].filter(Boolean)
+				...form,
+				createdAt: form.createdAt,
+				updatedAt: form.updatedAt,
+				lastEditor: form.lastEditor || 'Unknown',
+				unitId: Array.isArray(form.unitId) ? form.unitId : [form.unitId].filter(Boolean)
 			});
 		}
-	}, [isNewForm, apiFormData]);
+	}, [isNewForm, form]);
 
 	useEffect(() => {
-		if (apiQuestions && apiQuestions.length > 0) {
-			console.log('設置從 API 獲取的問題資料:', apiQuestions);
-			setQuestions(apiQuestions);
+		if (questionsData && questionsData.length > 0) {
+			setQuestions(questionsData);
 		}
-	}, [apiQuestions]);
+	}, [questionsData]);
 
-	useEffect(() => {
-		if (!isNewForm && (formLoading || questionsLoading)) {
-			console.log('開始載入計時器...');
-			const timeout = setTimeout(() => {
-				console.error('載入超時！可能的原因：');
-				console.error('1. API 端點無回應');
-				console.error('2. 網路連線問題');
-				console.error('3. 伺服器錯誤');
-				console.error('目前查詢狀態：');
-				console.error('- formLoading:', formLoading);
-				console.error('- questionsLoading:', questionsLoading);
-				console.error('- formError:', formError);
-				console.error('- questionsError:', questionsError);
-			}, 10000); // 10秒超時
-
-			return () => clearTimeout(timeout);
-		}
-	}, [isNewForm, formLoading, questionsLoading, formError, questionsError]);
-
+	// Auto save
 	useEffect(() => {
 		if (isNewForm || !formData?.id || !hasUnsavedChanges) {
 			return;
 		}
 
-		// 使用 setTimeout 而不是 setInterval，實現 debounce 效果
 		const autoSaveTimeout = setTimeout(async () => {
-			try {
-				setAutoSaveStatus('saving');
-				await updateForm({
-					id: formData.id,
-					data: {
-						title: formData.title,
-						description: formData.description,
-						unitIds: formData.unitId
-					}
-				}).unwrap();
-				setAutoSaveStatus('saved');
-				setHasUnsavedChanges(false);
-			} catch (error) {
-				console.error('Auto-save failed:', error);
-				setAutoSaveStatus('error');
-			}
-		}, 2000); // 2 秒後自動保存
+			setAutoSaveStatus('saving');
+			updateFormMutation.mutate({
+				id: formData.id,
+				request: {
+					title: formData.title,
+					description: formData.description
+				}
+			});
+		}, 2000);
 
 		return () => {
 			clearTimeout(autoSaveTimeout);
 		};
-	}, [isNewForm, formData?.id, hasUnsavedChanges, formData?.title, formData?.description, formData?.unitId, updateForm]);
+	}, [isNewForm, formData?.id, hasUnsavedChanges, formData?.title, formData?.description, formData?.unitId]);
+
+	// useEffect(() => {
+	// 	if (isNewForm || !formData?.id || !hasUnsavedChanges) {
+	// 		return;
+	// 	}
+	//
+	// 	const autoSaveTimeout = setTimeout(async () => {
+	// 		try {
+	// 			setAutoSaveStatus('saving');
+	// 			await updateForm({
+	// 				id: formData.id,
+	// 				data: {
+	// 					title: formData.title,
+	// 					description: formData.description,
+	// 					unitIds: formData.unitId
+	// 				}
+	// 			}).unwrap();
+	// 			setAutoSaveStatus('saved');
+	// 			setHasUnsavedChanges(false);
+	// 		} catch (error) {
+	// 			console.error('Auto-save failed:', error);
+	// 			setAutoSaveStatus('error');
+	// 		}
+	// 	}, 2000);
+	//
+	// 	return () => {
+	// 		clearTimeout(autoSaveTimeout);
+	// 	};
+	// }, [isNewForm, formData?.id, hasUnsavedChanges, formData?.title, formData?.description, formData?.unitId, updateForm]);
 
 	const handleFormDataChange = (updates: Partial<FormData>) => {
 		setFormData(prev => prev ? { ...prev, ...updates } : null);
 		setHasUnsavedChanges(true);
+	};
+
+	const handlePublishUnitsChange = (selectedGroupNames: string[]) => {
+		setSelectedPublishUnits(selectedGroupNames);
 	};
 
 	const handleBackToForms = async () => {
@@ -185,22 +251,18 @@ const FormEdit: React.FC = () => {
 			try {
 				setAutoSaveStatus('saving');
 				if (isNewForm) {
-					console.log('新表單需要保存，開始保存...');
 					await handleSaveDraft();
 				} else if (formData) {
-					console.log('現有表單有更改，開始保存...');
-					await updateForm({
+					await updateFormMutation.mutateAsync({
 						id: formData.id,
-						data: {
+						request: {
 							title: formData.title,
 							description: formData.description,
-							unitIds: formData.unitId
 						}
-					}).unwrap();
+					});
 				}
 				setAutoSaveStatus('saved');
 				setHasUnsavedChanges(false);
-				console.log('表單已保存，準備導航回列表頁面');
 				navigate('/forms');
 			} catch (error) {
 				console.error('Failed to save before navigation:', error);
@@ -216,17 +278,16 @@ const FormEdit: React.FC = () => {
 
 	const handleDelete = async () => {
 		if (!formData?.id) {
-			navigate('/forms');
+			navigate(`/${slug}/forms`);
 			return;
 		}
 
 		if (window.confirm("Are you sure to delete this form?")) {
 			try {
-				await deleteForm(formData.id).unwrap();
-				navigate("/forms");
+				await deleteFormMutation.mutateAsync(formData.id);
+				navigate(`/${slug}/forms`);
 			} catch (error) {
-				console.error("Failed to delete form:", error);
-				alert("Failed to delete form. Please try again.");
+				//console.error('Failed to delete before navigation:', error);
 			}
 		}
 	};
@@ -236,75 +297,61 @@ const FormEdit: React.FC = () => {
 			throw new Error('No form data to save');
 		}
 
-		console.log('=== handleSaveDraft 開始 ===');
-		console.log('isNewForm:', isNewForm);
-		console.log('formData:', formData);
-		console.log('questions to save:', questions);
-
 		try {
-			const orgSlug = 'nycu-sdc';
-			const defaultUnitId = '09bab8cf-eeac-4ff5-a4e3-4fd7662f749b';
 			if (isNewForm) {
-				const requestData = {
-					orgSlug,
-					unitId: defaultUnitId,
-					data: {
-						title: formData.title || 'Untitled Form',
-						description: formData.description || '',
-						unitIds: formData.unitId
+				const newForm = await createFormMutation.mutateAsync({
+					slug: slug,
+					unitId: unitId,
+					request: {
+						title: formData.title,
+						description: formData.description,
 					}
-				};
+				});
 
-				console.log('準備創建新表單，參數:', requestData);
-				const newForm = await createForm(requestData).unwrap();
-				console.log('新表單創建成功:', newForm);
-
-				// 更新本地狀態
 				const updatedFormData = { ...formData, id: newForm.id };
 				setFormData(prev => prev ? { ...prev, id: newForm.id } : null);
-				//setHasUnsavedChanges(false);
 
 				if (questions.length > 0) {
 					console.log('開始保存問題:', questions.length, '個');
 					const createdQuestions = [];
 					for (const question of questions) {
 						try {
-							console.log('正在創建問題:', question.title);
-							const createdQuestion = await createQuestion({
+							const createdQuestion = await createQuestionMutation.mutateAsync({
 								formId: newForm.id,
-								data: {
+								request: {
+									required: question.required,
 									type: question.type,
 									title: question.title,
 									description: question.description,
-									required: question.required,
 									order: question.order,
+									choices: question.choices,
+
 									// 根據問題類型添加特定屬性
-									...(question.type === "short_text" && {
-										placeholder: question.placeholder,
-										maxLength: question.maxLength
-									}),
-									...(question.type === "long_text" && {
-										placeholder: question.placeholder,
-										maxLength: question.maxLength,
-										rows: question.rows
-									}),
-									...((question.type === "single_choice" ||
-										question.type === "multiple_choice") && {
-										options: question.options,
-										allowOther: question.allowOther
-									}),
-									...(question.type === "multiple_choice" && {
-										minSelections: question.minSelections,
-										maxSelections: question.maxSelections
-									}),
-									...(question.type === "date" && {
-										dateFormat: question.dateFormat,
-										minDate: question.minDate,
-										maxDate: question.maxDate
-									})
+									// ...(question.type === "short_text" && {
+									// 	placeholder: question.placeholder,
+									// 	maxLength: question.maxLength
+									// }),
+									// ...(question.type === "long_text" && {
+									// 	placeholder: question.placeholder,
+									// 	maxLength: question.maxLength,
+									// 	rows: question.rows
+									// }),
+									// ...((question.type === "single_choice" ||
+									// 	question.type === "multiple_choice") && {
+									// 	options: question.options,
+									// 	allowOther: question.allowOther
+									// }),
+									// ...(question.type === "multiple_choice" && {
+									// 	minSelections: question.minSelections,
+									// 	maxSelections: question.maxSelections
+									// }),
+									// ...(question.type === "date" && {
+									// 	dateFormat: question.dateFormat,
+									// 	minDate: question.minDate,
+									// 	maxDate: question.maxDate
+									// })
 								}
-							}).unwrap();
-							console.log('問題創建成功:', createdQuestion);
+							});
 							createdQuestions.push(createdQuestion);
 						} catch (error) {
 							console.error('Failed to create question:', error);
@@ -317,21 +364,18 @@ const FormEdit: React.FC = () => {
 				setHasUnsavedChanges(false);
 				return newForm;
 			} else {
-				const updatedForm = await updateForm({
+				const updatedForm = await updateFormMutation.mutateAsync({
 					id: formData.id,
-					data: {
+					request: {
 						title: formData.title,
 						description: formData.description,
-						unitIds: formData.unitId
 					}
-				}).unwrap();
-
+				})
 				setHasUnsavedChanges(false);
 				return updatedForm;
 			}
 		} catch (error) {
 			console.error('Failed to save form:', error);
-			console.error('錯誤詳情:', JSON.stringify(error, null, 2));
 			throw error;
 		}
 	};
@@ -339,8 +383,12 @@ const FormEdit: React.FC = () => {
 	const handlePublish = async () => {
 		if (!formData) return;
 
+		if (selectedPublishUnits.length === 0) {
+			alert('Please select at least one unit to publish to.');
+			return;
+		}
+
 		try {
-			// 如果是新表單，先儲存
 			let formToPublish = formData;
 			if (isNewForm || !formData.id) {
 				formToPublish = await handleSaveDraft();
@@ -351,20 +399,21 @@ const FormEdit: React.FC = () => {
 				return;
 			}
 
-			const recipients = {
-				unitIds: formToPublish.unitId,
-			};
+			const unitIds = convertUnitNamesToIds(selectedPublishUnits);
 
-			await publishForm({
+			// const recipients = {
+			// 	unitIds: formToPublish.unitId,
+			// };
+
+			await publishFormMutation.mutateAsync({
 				id: formToPublish.id,
-				recipients
-			}).unwrap();
-
-			alert('Form published successfully!');
-			navigate('/forms');
+				request: {
+					orgId: organization.id,
+					unitIds: unitIds
+				}
+			});
 		} catch (error) {
-			console.error('Failed to publish form:', error);
-			alert('Failed to publish form. Please try again.');
+			// in mutation
 		}
 	};
 
@@ -372,103 +421,89 @@ const FormEdit: React.FC = () => {
 		const newQuestion = createNewQuestion(type, questions.length);
 
 		if (!formData?.id) {
-			// 如果是新表單，只在本地狀態中添加
 			setQuestions([...questions, newQuestion]);
 			setHasUnsavedChanges(true);
 			return;
 		}
 
 		try {
-			// 調用 API 創建問題
-			const createdQuestion = await createQuestion({
+			const createdQuestion = await createQuestionMutation.mutateAsync({
 				formId: formData.id,
-				data: {
+				request: {
+					required: newQuestion.required,
 					type: newQuestion.type,
 					title: newQuestion.title,
 					description: newQuestion.description,
-					required: newQuestion.required,
 					order: newQuestion.order,
-					// 根據問題類型添加特定屬性
-					...(newQuestion.type === "short_text" && {
-						placeholder: newQuestion.placeholder,
-						maxLength: newQuestion.maxLength
-					}),
-					...(newQuestion.type === "long_text" && {
-						placeholder: newQuestion.placeholder,
-						maxLength: newQuestion.maxLength,
-						rows: newQuestion.rows
-					}),
-					...((newQuestion.type === "single_choice" ||
-						newQuestion.type === "multiple_choice") && {
-						options: newQuestion.options,
-						allowOther: newQuestion.allowOther
-					}),
-					...(newQuestion.type === "multiple_choice" && {
-						minSelections: newQuestion.minSelections,
-						maxSelections: newQuestion.maxSelections
-					}),
-					...(newQuestion.type === "date" && {
-						dateFormat: newQuestion.dateFormat,
-						minDate: newQuestion.minDate,
-						maxDate: newQuestion.maxDate
-					})
+					choices: newQuestion.choices,
+					// ...(newQuestion.type === "short_text" && {
+					// 	placeholder: newQuestion.placeholder,
+					// 	maxLength: newQuestion.maxLength
+					// }),
+					// ...(newQuestion.type === "long_text" && {
+					// 	placeholder: newQuestion.placeholder,
+					// 	maxLength: newQuestion.maxLength,
+					// 	rows: newQuestion.rows
+					// }),
+					// ...((newQuestion.type === "single_choice" ||
+					// 	newQuestion.type === "multiple_choice") && {
+					// 	options: newQuestion.options,
+					// 	allowOther: newQuestion.allowOther
+					// }),
+					// ...(newQuestion.type === "multiple_choice" && {
+					// 	minSelections: newQuestion.minSelections,
+					// 	maxSelections: newQuestion.maxSelections
+					// }),
+					// ...(newQuestion.type === "date" && {
+					// 	dateFormat: newQuestion.dateFormat,
+					// 	minDate: newQuestion.minDate,
+					// 	maxDate: newQuestion.maxDate
+					// })
 				}
-			}).unwrap();
+			})
 
 			setQuestions([...questions, createdQuestion]);
 		} catch (error) {
-			console.error("Failed to create question:", error);
-			// 如果 API 調用失敗，回退到本地狀態
 			setQuestions([...questions, newQuestion]);
 			setHasUnsavedChanges(true);
 		}
 	};
 
 	const handleUpdateQuestion = async (questionId: string, updatedQuestion: Question) => {
-		// 先更新本地狀態
 		setQuestions(questions.map(q => q.id === questionId ? updatedQuestion : q));
 		setHasUnsavedChanges(true);
 
-		// 如果是已儲存的表單，才調用 API
 		if (formData?.id && !isNewForm) {
 			try {
-				// 確保更新的問題有標題
 				const questionToUpdate = {
 					...updatedQuestion,
 					title: updatedQuestion.title?.trim() || `Untitled ${updatedQuestion.type.replace('_', ' ')} Question`
 				};
 
-				console.log('更新問題數據:', questionToUpdate);
-
-				await updateQuestion({
+				await updateQuestionMutation.mutateAsync({
 					formId: formData.id,
 					questionId,
-					data: questionToUpdate
-				}).unwrap();
-
-				console.log('問題更新成功');
+					request: questionToUpdate
+				});
 			} catch (error) {
-				console.error('Failed to update question:', error);
+				// in mutation
 			}
 		}
 	};
 
 
 	const handleDeleteQuestion = async (questionId: string) => {
-		// 先更新本地狀態
 		setQuestions(questions.filter(q => q.id !== questionId));
 		setHasUnsavedChanges(true);
 
-		// 如果是已儲存的表單，才調用 API
 		if (formData?.id && !isNewForm) {
 			try {
-				await deleteQuestion({
+				await deleteQuestionMutation.mutateAsync({
 					formId: formData.id,
 					questionId
-				}).unwrap();
+				});
 			} catch (error) {
-				console.error('Failed to delete question:', error);
-				// API 失敗時不回滾本地狀態
+				// in mutation
 			}
 		}
 	};
@@ -481,13 +516,12 @@ const FormEdit: React.FC = () => {
 			return;
 		}
 
-		// 如果是已保存的表單，更新每個問題的順序
 		try {
 			const updatePromises = reorderedQuestions.map((question, index) =>
-				updateQuestion({
+				updateQuestionMutation.mutateAsync({
 					formId: formData.id,
 					questionId: question.id,
-					data: {
+					request: {
 						...question,
 						order: index
 					}
@@ -585,14 +619,14 @@ const FormEdit: React.FC = () => {
 				<div className="flex gap-3">
 					<button
 						onClick={handleDelete}
-						disabled={isDeleting}
+						disabled={deleteFormMutation.isPending}
 						className="btn btn-primary bg-red-600 text-white"
-					>{isCreating ? 'Deleting...' : 'Delete'}</button>
+					>{deleteFormMutation.isPending ? 'Deleting...' : 'Delete'}</button>
 					<button
 						onClick={handlePublish}
-						disabled={isCreating || isPublishing}
+						disabled={createFormMutation.isPending || publishFormMutation.isPending}
 						className="btn btn-secondary"
-					>{isPublishing ? 'Publishing...' : 'Publish'}</button>
+					>{publishFormMutation.isPending ? 'Publishing...' : 'Publish'}</button>
 				</div>
 			</div>
 			<div className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5">
@@ -626,9 +660,9 @@ const FormEdit: React.FC = () => {
 						<label className="text-sm w-[89px] text-slate-800">Unit</label>
 						<div className="flex-1">
 							<GroupSelector
-								selectedGroups={formData?.unitId || []}
-								availableGroups={availableGroups}
-								onGroupsChange={(groups) => handleFormDataChange({ unitId: groups })}
+								selectedGroups={selectedPublishUnits || []}
+								availableGroups={availableGroups || []}
+								onGroupsChange={handlePublishUnitsChange}
 								label=""
 								placeholder="Select which unit to send to"
 							/>

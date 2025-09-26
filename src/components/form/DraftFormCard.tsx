@@ -58,13 +58,6 @@ const DraftFormCard: React.FC<FormCardProps> = ({
 		}
 	};
 
-	/*const handlePublishClick = (id: string) => {
-		// Simple confirmation - in production you might want a proper modal
-		if (window.confirm(`Are you sure you want to publish "${form.title}" to ${form.unitId?.join(', ')}?`)) {
-			handlePublish(id);
-		}
-	};*/
-
 	return (
 		<div className="draft-form-card">
 			<div className="card-header">

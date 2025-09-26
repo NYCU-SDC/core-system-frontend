@@ -13,6 +13,21 @@ export type FormResponse = {
 	updatedAt: string;
 }
 
+export type QuestionResponse = {
+	id: string;
+	formId: string;
+	required: boolean;
+	type: QuestionType;
+	title: string;
+	description: string;
+	order: number;
+	choices: Choice[];
+	createdAt: string;
+	updatedAt: string;
+}
+
+export type QuestionsResponse = QuestionResponse[];
+
 export interface FormData {
 	id: UUID;
 	title: string;

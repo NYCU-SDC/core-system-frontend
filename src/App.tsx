@@ -32,6 +32,14 @@ const AppContent = () => {
 					element={<FormList />}
 				/>
 				<Route
+					path="/:slug/forms/edit/:id"
+					element={<FormEdit />}
+				/>
+				<Route
+					path="/:slug/forms/results/:id"
+					element={<FormResults />}
+				/>
+				<Route
 					path="/:slug/settings"
 					element={<Settings />}
 				/>
