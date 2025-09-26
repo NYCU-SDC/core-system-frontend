@@ -10,11 +10,15 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import HoverCard from "@/components/inbox/HoverCard.tsx";
-import { useEffect, useMemo, useState } from "react";
-import { fetchInbox, type InboxItem } from "@/features/inbox/api/index";
 import MenuBar from "@/components/inbox/MenuBar.tsx";
 import UnreadSwitch from "@/components/inbox/UnreadSwitch.tsx";
 import SearchInput	 from "@/components/inbox/SearchInput.tsx";
+import HoverCardContainer from "@/components/inbox/HoverCardContainer.tsx";
+
+import { useEffect, useMemo, useState } from "react";
+import { useGetInboxList } from "@/hooks/useGetInboxList.ts";
+import {UnitSelectorContent} from "@/components/setting/UnitSelector.tsx";
+
 
 
 const ALL = "All";
@@ -23,6 +27,14 @@ const STATIC_DESC =
 
 
 const Inbox = () => {
+
+	const {data: inboxList, isError: getInboxListError} = useGetInboxList();
+	//test
+	if(getInboxListError){
+		console.log("get error");
+	}
+	else console.log("no error");
+	//
     const [items, setItems] = useState<InboxItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -32,28 +44,28 @@ const Inbox = () => {
 	const [selectedUnits, setSelectedUnits] = useState<string[]>([ALL]); // 初始 All
 	const [unreadOnly, setUnreadOnly] = useState(false);
 
-	useEffect(() => {
-		let cancelled = false;
+	// useEffect(() => {
+	// 	let cancelled = false;
+	//
+	// 	(async () => {
+	// 		try {
+	// 			setLoading(true);
+	// 			setError(null);
+	// 			const data = await fetchInbox();
+	// 			if (!cancelled) setItems(data.items);
+	// 		} catch (e: any) {
+	// 			if (!cancelled) setError(e?.message ?? "Failed to load inbox");
+	// 		} finally {
+	// 			if (!cancelled) setLoading(false);
+	// 		}
+	// 	})();
+	//
+	// 	return () => {
+	// 		cancelled = true;
+	// 	};
+	// }, []);
 
-		(async () => {
-			try {
-				setLoading(true);
-				setError(null);
-				const data = await fetchInbox();
-				if (!cancelled) setItems(data.items);
-			} catch (e: any) {
-				if (!cancelled) setError(e?.message ?? "Failed to load inbox");
-			} finally {
-				if (!cancelled) setLoading(false);
-			}
-		})();
 
-		return () => {
-			cancelled = true;
-		};
-	}, []);
-
-	// 由資料得出「可選單位列表」（不含 All）
 	const units = useMemo(() => {
 		const set = new Set<string>();
 		for (const it of items) {
@@ -62,7 +74,6 @@ const Inbox = () => {
 		return Array.from(set);
 	}, [items]);
 
-	// 套用兩段條件過濾
 	const filtered = useMemo(() => {
 		const useAll = selectedUnits.includes(ALL) || selectedUnits.length === 0;
 
@@ -70,7 +81,6 @@ const Inbox = () => {
 			// unread switch
 			if (unreadOnly && it.type.isRead) return false;
 
-			// menubar 過濾 postedBy（單位）
 			const unitId = it.message.postedBy;
 			if (useAll) return true;
 			return selectedUnits.includes(unitId);
@@ -84,7 +94,7 @@ const Inbox = () => {
 					<div className="tab-card-container w-full h-fit flex flex-col gap-[10px] px-4 pb-4 border-b ">
 						<div className="tab-card-header flex flex-row justify-between items-center w-full h-fit ">
 							<h2 className="font-semibold text-[30px] text-slate-800 ">Inbox</h2>
-							<UnreadSwitch />
+							{/*<UnreadSwitch />*/}
 						</div>
 						<SearchInput />
 						<MenuBar
@@ -93,24 +103,43 @@ const Inbox = () => {
 							onChange={setSelectedUnits}
 						/>
 					</div>
-					<div className="hover-card-container pr-4 pl-7 bg-white h-[545px] overflow-y-auto">
-						{loading && <p className="text-sm text-slate-500 py-3">Loading…</p>}
-						{error && <p className="text-sm text-red-500 py-3">{error}</p>}
-						{!loading && !error && items.length === 0 && (
+					<HoverCardContainer>
+						{getInboxListError ? (
+							<p className="text-sm text-red-500 py-3">Fail to load.</p>
+						) : !inboxList ? (
+							<p className="text-sm text-slate-500 py-3">Loading Inbox…</p>
+						) : units.length === 0 ? (
 							<p className="text-sm text-slate-500 py-3">No inbox items</p>
-						)}
-
-						{!loading &&
-							!error &&
+						) : (
 							items.map((it) => (
 								<HoverCard
-									key={it.id}
-									title={it.message.title}      // 對應 message.title
-									subtitle={it.message.subtitle} // 對應 message.subtitle
-									description={STATIC_DESC}      // 先寫死
+									contentId={it.id}
+									title={it.message.title}      // message.title
+									subtitle={it.message.subtitle} // message.subtitle
+									description={STATIC_DESC}
 								/>
-							))}
-					</div>
+							))
+							// units.map(unit => <UnitSelectorContent key={unit.id}>{unit.name}</UnitSelectorContent>)
+
+						)}
+
+						{/*{loading && <p className="text-sm text-slate-500 py-3">Loading…</p>}*/}
+						{/*{error && <p className="text-sm text-red-500 py-3">{error}</p>}*/}
+						{/*{!loading && !error && items.length === 0 && (*/}
+						{/*	<p className="text-sm text-slate-500 py-3">No inbox items</p>*/}
+						{/*)}*/}
+
+						{/*{!loading &&*/}
+						{/*	!error &&*/}
+						{/*	items.map((it) => (*/}
+						{/*		<HoverCard*/}
+						{/*			key={it.id}*/}
+						{/*			title={it.message.title}      // message.title*/}
+						{/*			subtitle={it.message.subtitle} // message.subtitle*/}
+						{/*			description={STATIC_DESC}*/}
+						{/*		/>*/}
+						{/*	))}*/}
+					</HoverCardContainer>
 
 				</div>
 				<div className="detail-container flex p-16 gap-4 flex-1 h-[982px] justify-center">

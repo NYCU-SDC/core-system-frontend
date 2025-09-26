@@ -1,16 +1,43 @@
+import {useGetInboxItemContent} from "@/hooks/useGetInboxItemContent.ts";
+
 type HoverCardProps = {
+    contentId: string;       // 對應 message.id
     title: string;           // 對應 message.title
     subtitle?: string;        // 對應 message.subtitle
     description?: string;     // 先寫死傳進來
 };
 
 export default function HoverCard({
+                                      contentId,
                                       title,
                                       subtitle,
                                       description,
 
                                   }: HoverCardProps) {
+    // const handleInboxItenClick (id: string) {
+    //     useGetInboxItemContent(id);
+    //     {getInboxListError ? (
+    //         <p className="text-sm text-red-500 py-3">Fail to load.</p>
+    //     ) : !inboxList ? (
+    //         <p className="text-sm text-slate-500 py-3">Loading Inbox…</p>
+    //     ) : units.length === 0 ? (
+    //         <p className="text-sm text-slate-500 py-3">No inbox items</p>
+    //     ) : (
+    //         items.map((it) => (
+    //             <HoverCard
+    //                 contentId={it.id}
+    //                 title={it.message.title}      // message.title
+    //                 subtitle={it.message.subtitle} // message.subtitle
+    //                 description={STATIC_DESC}
+    //             />
+    //         ))
+    //         // units.map(unit => <UnitSelectorContent key={unit.id}>{unit.name}</UnitSelectorContent>)
+    //
+    //     )}
+    // }
+
     return (
+        // <div className="hover-card  flex flex-col gap-4 pt-3 pr-2 pb-3 border-b h-[109px]" onClick={handleInboxItenClick(contentId)}>
         <div className="hover-card  flex flex-col gap-4 pt-3 pr-2 pb-3 border-b h-[109px]">
             <div className="hover-card-content  flex flex-col gap-1 bg-white ">
                 <div className="flex flex-row justify-between hover-card-header">
