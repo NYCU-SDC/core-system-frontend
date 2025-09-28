@@ -45,12 +45,20 @@ export interface InboxItemResponse {
     content: Content;
     type: ItemType;
 }
-
-// 列表中的項目（不包含 content）
-export interface InboxListResponse {
+export interface InboxItem {
     id: string;
     message: Message;
     type: ItemType;
+}
+
+// 列表中的項目（不包含 content）
+export interface InboxListResponse {
+    items: InboxItem[];
+    totalPages: number;
+    totalItems: number;
+    currentPage: number;
+    pageSize: number;
+    hasNextPage: boolean;
 }
 
 // 單一項目的 API 回應

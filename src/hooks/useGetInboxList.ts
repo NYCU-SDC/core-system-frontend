@@ -3,7 +3,7 @@ import type {InboxListResponse} from "@/types/inbox"
 import {getInboxList} from "@/lib/request/getInboxList.ts";
 
 export function useGetInboxList() {
-    return useQuery<InboxListResponse[]>({
+    return useQuery<InboxListResponse>({
         queryKey: ["Inbox"],
         queryFn: () => getInboxList()
     });

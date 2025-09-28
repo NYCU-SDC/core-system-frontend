@@ -17,18 +17,18 @@ import { Label } from "@/components/ui/label";
 
 type UnreadSwitchProps = {
     checked: boolean;
-    onChange: (next: boolean) => void;
     className?: string;
+    onCheckedChange?: (next: boolean) => void; // for compatibility with some switch implementations
 };
 
 export default function UnreadSwitch({
                                          checked,
-                                         onChange,
+                                         onCheckedChange,
                                          className = "",
                                      }: UnreadSwitchProps) {
     return (
         <div className={`flex items-center gap-2 ${className}`}>
-            <Switch id="unread-switch" checked={checked} onCheckedChange={onChange} />
+            <Switch id="unread-switch" checked={checked} onCheckedChange={onCheckedChange} />
             <Label htmlFor="unread-switch" className="text-sm text-slate-700">
                 Unread Only
             </Label>

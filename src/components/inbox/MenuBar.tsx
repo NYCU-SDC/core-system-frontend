@@ -33,6 +33,10 @@ export default function MenuBar ({
         else set.add(unit);
 
         const arr = Array.from(set);
+        if (arr.length === units.length) {
+            onChange([ALL]);
+            return;
+        }
         // 若清空了，就回到 All
         onChange(arr.length === 0 ? [ALL] : arr);
     };
@@ -46,7 +50,7 @@ export default function MenuBar ({
             </div>
             {units.map((u) => (
                 <div key={u} onClick={() => toggleUnit(u)}>
-                    <MenuItem active={isActive(u)}>{u}</MenuItem>
+                    <MenuItem active={isActive(u)} id={u}>{u}</MenuItem>
                 </div>
             ))}
         </div>

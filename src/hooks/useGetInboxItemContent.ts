@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import type {InboxItemContentResponse} from "@/types/inbox"
 
 
-export function useGetInboxItem(id: string) {
+export default function useGetInboxItemContent(id: string) {
     return useQuery<InboxItemContentResponse[]>({
         queryKey: ["form", id],
         queryFn: () => getInboxItemContent(id)
