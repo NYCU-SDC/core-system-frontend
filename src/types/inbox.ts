@@ -19,6 +19,7 @@ export interface Content {
     status: "draft" | "published" | string; // 可依實際需求擴充
     unitId: string;
     lastEditor: string;
+    deadline: string; // ISO timestamp
     createdAt: string; // ISO timestamp
     updatedAt: string; // ISO timestamp
 }
@@ -48,7 +49,9 @@ export interface InboxItemResponse {
 export interface InboxItem {
     id: string;
     message: Message;
-    type: ItemType;
+    isRead: boolean;
+    isStarred: boolean;
+    isArchived: boolean;
 }
 
 // 列表中的項目（不包含 content）
@@ -87,15 +90,48 @@ export type FormFieldType =
     | "multiple_choice"
     | "date";
 
-export interface InboxItemContentResponse {
+type FieldBase = {
     id: string;
     formId: string;
-    required: boolean;
-    type: FormFieldType;
     title: string;
+    order: number;
+    required: boolean;
     description: string;
-    order: number; // int32 整數
-    choices: Choice[]; // 用於 single_choice 和 multiple_choice 問題的可選項目
-    createdAt: string; // date-time 格式
-    updatedAt: string; // date-time 格式
-}
+    createdAt: string;
+    updatedAt: string;
+};
+export type ShortTextField = FieldBase & {
+    type: "short_text";
+    choices?: never;
+};
+export type LongTextField = FieldBase & {
+    type: "long_text";
+    choices?: never;
+};
+export type DateField = FieldBase & {
+    type: "date";
+    choices?: never;
+};
+
+export type SingleChoiceField = FieldBase & {
+    type: "single_choice";
+    choices: Choice[];
+};
+
+export type MultipleChoiceField = FieldBase & {
+    type: "multiple_choice";
+    choices: Choice[];
+};
+export type InboxItemContentResponse =  ShortTextField | SingleChoiceField | MultipleChoiceField | LongTextField | DateField;
+// export interface InboxItemContentResponse {
+//     id: string;
+//     formId: string;
+//     required: boolean;
+//     type: FormFieldType;
+//     title: string;
+//     description: string;
+//     order: number; // int32 整數
+//     choices: Choice[]; // 用於 single_choice 和 multiple_choice 問題的可選項目
+//     createdAt: string; // date-time 格式
+//     updatedAt: string; // date-time 格式
+// }
