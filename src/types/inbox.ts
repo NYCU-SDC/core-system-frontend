@@ -93,7 +93,7 @@ export type FormFieldType =
 type FieldBase = {
     id: string;
     formId: string;
-    title: string;
+    label: string;
     order: number;
     required: boolean;
     description: string;

@@ -35,11 +35,11 @@ const STATIC_DESC =
 const Inbox = () => {
 	//return null;
 	const { slug: organizationSlug } = useParams();
-	const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+	const [selectedId, setSelectedId] = useState<{itemId: string; contentId: string} | null>(null);
 	const {data: inboxList, isLoading: getListIsLoading,isError: getInboxListError} = useGetInboxList();
 	const updateInbox = useUpdateInbox(); // 只是建立 hook
-	const {data: inboxItemContent, isSuccess: getContentIsSuccess, isLoading: getContentIsLoading,isError: getInboxItemContentError} = useGetInboxItemContent(selectedContentId);
-	const {data: inboxItem, isSuccess: getItemtIsSuccess, isLoading: getItemIsLoading, isError: getInboxItemError} = useGetInboxItem(selectedContentId);
+	const {data: inboxItemContent, isSuccess: getContentIsSuccess, isLoading: getContentIsLoading,isError: getInboxItemContentError} = useGetInboxItemContent(selectedId?.contentId ?? null);
+	const {data: inboxItem, isSuccess: getItemtIsSuccess, isLoading: getItemIsLoading, isError: getInboxItemError} = useGetInboxItem(selectedId?.itemId ?? null);
 	//
     // const [items, setItems] = useState<InboxItem[]>([]);
     // const [loading, setLoading] = useState<boolean>(true);
@@ -81,10 +81,10 @@ const Inbox = () => {
 			return selectedUnits.includes(unitId);
 		});
 	}, [items, selectedUnits, unreadOnly]);
-	const handleCardClick = (contentId: string) => {
-		setSelectedContentId(contentId);
+	const handleCardClick = (itemId: string, contentId: string) => {
+		setSelectedId({ itemId, contentId });
 		// TODO: set to be read
-		// updateInbox.mutate({ id: contentId, flags:{
+		// updateInbox.mutate({ id: itemId, flags:{
 		// 		"isRead": true,
 		// 		"isStarred": false,
 		// 		"isArchived": false
@@ -113,7 +113,7 @@ const Inbox = () => {
 		const hour = parts.find(p => p.type === 'hour')?.value;
 		const minute = parts.find(p => p.type === 'minute')?.value;
 
-		return `${year} 年 ${month} ${day} 日（${weekday}）${hour}:${minute} 截止`;
+		return `${year} 年 ${month} 月 ${day} 日（${weekday}）${hour}:${minute} 截止`;
 	}
 
 
@@ -148,7 +148,8 @@ const Inbox = () => {
 							filtered.map((it) => (
 								<HoverCard
 									key={it.message.id}
-									contentId={it.message.id}
+									itemId={it.id}
+									contentId={it.message.contentId}
 									title={it.message.title}      // message.title
 									subtitle={it.message.subtitle} // message.subtitle
 									description={STATIC_DESC}
@@ -180,7 +181,7 @@ const Inbox = () => {
 				</div>
 				<InboxFormPage
 					// 狀態
-					hasSelected={!!selectedContentId}
+					hasSelected={!!selectedId}
 					isLoadingItem={getItemIsLoading}
 					isLoadingContent={getContentIsLoading}
 					isErrorItem={getInboxItemError}

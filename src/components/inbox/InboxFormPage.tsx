@@ -65,7 +65,7 @@ export default function InboxFormPage({
     return (
         <div className="detail-container flex p-16 gap-4 flex-1 h-[982px] justify-center">
             <div className="tab-card flex flex-col pt-16 px-8 pb-8 bg-white border-slate-200 w-[800px] h-[986px] gap-6 rounded-[6px]">
-                <div className="header w-full flex items-center flex-row gap-4 justify-between">
+                <div className="header w-full flex flex-col gap-4">
                     <div>
                         <p className="post-info text-[14px] text-slate-500 ">{inboxItem.message.subtitle}</p>
                         <p className="deadline text-sm text-slate-500">{formatDeadline(inboxItem.content.deadline)}</p>

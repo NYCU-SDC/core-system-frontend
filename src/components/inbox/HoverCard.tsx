@@ -2,16 +2,18 @@
 
 type HoverCardProps = {
 
+    itemId: string;          // 對應 item.id
     contentId: string;       // 對應 message.id
     title: string;           // 對應 message.title
     subtitle?: string;        // 對應 message.subtitle
     description?: string;     // 先寫死傳進來
     //onClick?: () => void;
-    onClick?: (contentId: string) => void;
+    onClick?: (itemId: string, contentId: string) => void;
 };
 
 export default function HoverCard({
 
+                                      itemId,
                                       contentId,
                                       title,
                                       subtitle,
@@ -42,7 +44,7 @@ export default function HoverCard({
 
     return (
         // <div className="hover-card  flex flex-col gap-4 pt-3 pr-2 pb-3 border-b h-[109px]" onClick={handleInboxItenClick(contentId)}>
-        <div className="hover-card  flex flex-col gap-4 pt-3 pr-2 pb-3 border-b h-[109px]" onClick={onClick}>
+        <div className="hover-card  flex flex-col gap-4 pt-3 pr-2 pb-3 border-b h-[109px]" onClick={() => onClick?.(itemId, contentId)}>
             <div className="hover-card-content  flex flex-col gap-1 bg-white ">
                 <div className="flex flex-row justify-between hover-card-header">
                     <p className="font-medium text-[17px]">{title}</p>

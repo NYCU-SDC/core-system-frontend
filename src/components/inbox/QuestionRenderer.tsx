@@ -20,21 +20,21 @@ const QuestionRenderer = ({ q, value, onChange }: QuestionRendererProps) => {
         case 'short_text':
             return (
                 <div className="short-input-container w-[350px] flex flex-col gap-1.5">
-                    <p className="input-title text-sm font-medium text-slate-900">{q.title}</p>
+                    <p className="input-title text-sm font-medium text-slate-900">{q.label}</p>
                     <Input type="text" placeholder={q.description}></Input>
                 </div>
             )
         case 'long_text':
             return(
                 <div className="long-input-container w-[350px] flex flex-col gap-1.5">
-                    <p className="input-title text-sm font-medium text-slate-900 border-slate-300">{q.title}</p>
+                    <p className="input-title text-sm font-medium text-slate-900 border-slate-300">{q.label}</p>
                     <Textarea placeholder={q.description}/>
                 </div>
             )
         case 'single_choice':
             return(
                 <div className="dropdown-container w-[350px] flex flex-col gap-1.5">
-                    <p className="input-title  text-sm font-medium text-slate-900">{q.title}</p>
+                    <p className="input-title  text-sm font-medium text-slate-900">{q.label}</p>
                     <Select >
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder={q.description} />
