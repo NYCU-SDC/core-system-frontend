@@ -3,38 +3,65 @@ import { Button } from "@/components/ui";
 import { Input } from "@/components/ui/input.tsx";
 import { useNavigate, useParams } from "react-router-dom";
 import { UnitSelectorContainer, UnitSelectorContent } from "@/components/setting/UnitSelector.tsx";
-import { useGetUnits } from "@/hooks/useGetUnits.ts";
-import { useGetOrganizationMembers } from "@/hooks/useGetOrganizationMembers.ts";
-import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
 import { useEffect, useState } from "react";
-import { useAddMember } from "@/hooks/useAddMember.ts";
 import { toast } from "sonner";
-import { useUpdateOrganization } from "@/hooks/useUpdateOrganization.ts";
-import type { OrganizationResponse } from "@/types/organization.ts";
+import type { Member, MemberRequest, OrganizationRequest, OrganizationResponse } from "@/types/organization.ts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getOrganization } from "@/lib/request/getOrganization.ts";
+import { getOrganizationMembers } from "@/lib/request/getOrganizationMembers.ts";
+import type { UnitResponse } from "@/types/unit.ts";
+import { getOrganizationUnits } from "@/lib/request/getOrganizationUnits.ts";
+import { updateOrganization } from "@/lib/request/updateOrganization.ts";
+import { addMember } from "@/lib/request/addMember.ts";
 
 const Settings = () => {
 	const navigate = useNavigate();
 	const { slug: organizationSlug } = useParams();
+	const queryClient = useQueryClient();
 
 	const [organization, setOrganization] = useState<OrganizationResponse | undefined>();
 	const [memberEmail, setMemberEmail] = useState("");
+	const [selectedUnit, setSelectedUnit] = useState<string[]>([]);
 
-	const { data: units, error: getUnitsError } = useGetUnits(organizationSlug!);
-	const { data: members, error: getMembersError } = useGetOrganizationMembers(organizationSlug!);
-	const { data: organizationResponse, error: getOrganizationError } = useGetOrganization(organizationSlug!);
+	// Fetch units and members
+	const { data: units, error: getUnitsError } = useQuery<UnitResponse[]>({
+		queryKey: ["organizationUnits", organizationSlug],
+		queryFn: () => getOrganizationUnits(organizationSlug!),
+		enabled: !!organizationSlug,
+		placeholderData: []
+	});
+	const { data: members, error: getMembersError } = useQuery<Member[]>({
+		queryKey: ["organizationMembers", organizationSlug],
+		queryFn: () => getOrganizationMembers(organizationSlug!),
+		enabled: !!organizationSlug,
+		placeholderData: []
+	});
+	const { data: organizationResponse, error: getOrganizationError } = useQuery<OrganizationResponse>({
+		queryKey: ["organization", organizationSlug],
+		queryFn: () => getOrganization(organizationSlug!)
+	});
 
-	const addMember = useAddMember(organizationSlug!, {
-		onSuccess: () => {
+	const addMemberMutation = useMutation({
+		mutationKey: ["addMember"],
+		mutationFn: (member: MemberRequest) => addMember(organizationSlug!, member),
+		onSuccess: async () => {
 			setMemberEmail("");
+			queryClient.invalidateQueries({ queryKey: ["organizationMembers", organizationSlug!] });
 		},
 		onError: () => {
 			toast.error("Failed to add member");
 		}
 	});
-	const updateOrganization = useUpdateOrganization(organizationSlug!, {
+
+	const updateOrganizationMutation = useMutation({
+		mutationFn: (request: OrganizationRequest) => updateOrganization(organizationSlug!, request),
 		onSuccess: () => {
 			toast.success("Organization updated");
-			navigate(`/${organization?.slug}/settings`);
+			queryClient.invalidateQueries({ queryKey: ["organization", organizationSlug] });
+			queryClient.invalidateQueries({ queryKey: ["organizations"] });
+			if (organization && organization.slug !== organizationSlug) {
+				navigate(`/${organization.slug}/settings`, { replace: true });
+			}
 		},
 		onError: () => {
 			toast.error("Failed to update organization");
@@ -46,11 +73,11 @@ const Settings = () => {
 	}, [organizationResponse]);
 
 	const handleAddMember = () => {
-		addMember.mutate({ email: memberEmail });
+		addMemberMutation.mutate({ email: memberEmail });
 	};
 	const handleUpdateOrganization = () => {
 		if (!organization) return;
-		updateOrganization.mutate({ name: organization.name, slug: organization.slug });
+		updateOrganizationMutation.mutate({ name: organization.name, slug: organization.slug });
 	};
 
 	return (
@@ -110,7 +137,10 @@ const Settings = () => {
 							</div>
 							<div className="w-wrap">
 								<p>Unit</p>
-								<UnitSelectorContainer>
+								<UnitSelectorContainer
+									value={selectedUnit}
+									onSelect={setSelectedUnit}
+								>
 									{getUnitsError ? (
 										<p className="text-red-500 py-1.5 px-3">Failed to load units</p>
 									) : !units ? (
@@ -118,7 +148,7 @@ const Settings = () => {
 									) : units.length === 0 ? (
 										<p className="text-gray-500 py-1.5 px-3">No units available</p>
 									) : (
-										units.map(unit => <UnitSelectorContent key={unit.id}>{unit.name}</UnitSelectorContent>)
+										units.map(unit => <UnitSelectorContent itemKey={unit.id}>{unit.name}</UnitSelectorContent>)
 									)}
 								</UnitSelectorContainer>
 							</div>
