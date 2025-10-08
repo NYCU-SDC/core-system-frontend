@@ -86,10 +86,10 @@ export const QuestionTypeLabels: Record<QuestionType, string> = {
 };
 
 export const createNewQuestion = (type: QuestionType, order: number): Question => {
-	const baseId = `question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+	// const baseId = `question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 	const base = {
-		id: baseId,
+		// id: baseId,
 		type,
 		title: 'untitled',
 		description: 'Not written',

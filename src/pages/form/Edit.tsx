@@ -13,6 +13,8 @@ import { useGetForm } from "@/hooks/useGetForm.ts";
 import { useGetQuestions } from "@/hooks/useGetQuestions.ts";
 import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
 import { useGetUnits } from "@/hooks/useGetUnits.ts";
+import { useToast } from "@/hooks/useToast.ts";
+import { UnauthorizedError } from "@/lib/request/api.ts";
 import { publishForm } from "@/lib/request/publishForm.ts";
 import { updateForm } from "@/lib/request/updateForm.ts";
 import { deleteForm } from "@/lib/request/deleteForm.ts";
@@ -26,6 +28,7 @@ const FormEdit = () => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const isNewForm = id === 'new';
+	const { showSuccess, showError } = useToast();
 
 	const { data: form, isLoading: formLoading, isError: formError } = useGetForm(id || '');
 	const { data: questionsData, isLoading: questionsLoading, isError: questionsError } = useGetQuestions(id || '');
@@ -79,7 +82,10 @@ const FormEdit = () => {
 		},
 		onError: (error) => {
 			console.error('Failed to update form:', error);
+			// Global error handler will catch 401 errors
+			if (error instanceof UnauthorizedError) return;
 			setAutoSaveStatus('error');
+			showError('儲存失敗', '無法更新表單，請稍後再試');
 		}
 	})
 
@@ -88,10 +94,13 @@ const FormEdit = () => {
 			deleteForm(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['Forms'] });
+			showSuccess('刪除成功', '表單已成功刪除');
 		},
 		onError: (error) => {
 			console.error('Failed to delete form:', error);
-			alert("Failed to delete form. Please try again.");
+			// Global error handler will catch 401 errors
+			if (error instanceof UnauthorizedError) return;
+			showError('刪除失敗', '無法刪除表單，請稍後再試');
 		}
 	})
 
@@ -100,9 +109,13 @@ const FormEdit = () => {
 			createForm(data.slug, data.unitId, data.request),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['Forms'] });
+			showSuccess('建立成功', '表單已成功建立');
 		},
 		onError: (error) => {
 			console.error('Failed to create form:', error);
+			// Global error handler will catch 401 errors
+			if (error instanceof UnauthorizedError) return;
+			showError('建立失敗', '無法建立表單，請稍後再試');
 		}
 	})
 
@@ -112,12 +125,14 @@ const FormEdit = () => {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['Forms'] });
 			queryClient.invalidateQueries({ queryKey: ['Form', id] });
-			alert('Form published successfully!');
+			showSuccess('發布成功', '表單已成功發布');
 			navigate(`/${slug}/forms`);
 		},
 		onError: (error) => {
 			console.error('Failed to publish form:', error);
-			alert('Failed to publish form. Please try again.');
+			// Global error handler will catch 401 errors
+			if (error instanceof UnauthorizedError) return;
+			showError('發布失敗', '無法發布表單，請稍後再試');
 		}
 	});
 
@@ -136,6 +151,9 @@ const FormEdit = () => {
 		},
 		onError: (error) => {
 			console.error('Failed to create question:', error);
+			// Global error handler will catch 401 errors
+			if (error instanceof UnauthorizedError) return;
+			showError('新增問題失敗', '無法新增問題，請稍後再試');
 		}
 	})
 
@@ -157,7 +175,10 @@ const FormEdit = () => {
 		},
 		onError: (error) => {
 			console.error('Failed to update question:', error);
+			// Global error handler will catch 401 errors
+			if (error instanceof UnauthorizedError) return;
 			setAutoSaveStatus('error');
+			showError('更新問題失敗', '無法儲存問題變更，請稍後再試');
 		}
 	})
 
@@ -169,6 +190,9 @@ const FormEdit = () => {
 		},
 		onError: (error) => {
 			console.error('Failed to delete question:', error);
+			// Global error handler will catch 401 errors
+			if (error instanceof UnauthorizedError) return;
+			showError('刪除問題失敗', '無法刪除問題，請稍後再試');
 		}
 	})
 

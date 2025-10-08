@@ -8,6 +8,9 @@ import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 // import {Counter} from "@/features/example/Counter.tsx";
 import { AppLayout, SimpleLayout } from "./components/layout";
+import { Toaster } from "@/components/ui/sonner";
+import { LoginPromptDialog } from "@/components/ui/login-prompt-dialog";
+import { useGlobalAuthError } from "@/hooks/useAuthError";
 
 const AppContent = () => {
 	return (
@@ -53,7 +56,19 @@ const AppContent = () => {
 };
 
 const App = () => {
-	return <AppContent />;
+	const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
+
+	return (
+		<>
+			<AppContent />
+			<Toaster />
+			<LoginPromptDialog
+				open={showLoginPrompt}
+				onOpenChange={closeLoginPrompt}
+				onLogin={handleLogin}
+			/>
+		</>
+	);
 };
 
 export default App;
