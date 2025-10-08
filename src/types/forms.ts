@@ -16,6 +16,7 @@ export type FormsResponse = FormResponse[];
 
 export interface FormCardProps {
 	form: FormResponse;
+	slug: string;
 	onEdit?: (id: string) => void;
 	onDelete?: (id: string) => void;
 	onPublish?: (id: string) => void;

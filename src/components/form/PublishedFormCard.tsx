@@ -4,7 +4,8 @@ import "./DraftFormCard.css"
 import { useNavigate } from 'react-router-dom';
 
 const PublishedFormCard: React.FC<FormCardProps> = ({
-	form
+	form,
+	slug
 }) => {
 	const navigate = useNavigate();
 
@@ -19,7 +20,7 @@ const PublishedFormCard: React.FC<FormCardProps> = ({
 
 	const handleViewResult = (id: string) => {
 		console.log('View Result:', id);
-		navigate(`/forms/results/${id}`);
+		navigate(`/${slug}/forms/results/${id}`);
 	};
 
 	const getDisplayUnits = () => {

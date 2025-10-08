@@ -61,34 +61,33 @@ export function GroupSelector({
 			</button>
 
 			{isOpen && (
-				<div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-slate-300 rounded-md shadow-lg">
-					<ScrollArea className="p-2 max-h-[120px]">
-						{availableGroups.map((group) => (
-							<div key={group} className="flex items-center gap-2 py-1 hover:bg-gray-100 px-2 rounded accent-slate-800">
-								<input
-									type="checkbox"
-									id={`group-${group}`}
-									checked={selectedGroups.includes(group)}
-									onChange={() => toggleGroup(group)}
-									className="cursor-pointer"
-								/>
-								<label
-									htmlFor={`group-${group}`}
-									className="text-sm cursor-pointer flex-1"
-								>
-									{group}
-								</label>
-							</div>
-						))}
-					</ScrollArea>
-				</div>
-			)}
-
-			{isOpen && (
-				<div
-					className="fixed inset-0 z-0"
-					onClick={() => setIsOpen(false)}
-				/>
+				<>
+					<div
+						className="fixed inset-0 z-[5]"
+						onClick={() => setIsOpen(false)}
+					/>
+					<div className="absolute top-full left-0 right-0 z-[10] mt-1 bg-white border border-slate-300 rounded-md shadow-lg">
+						<ScrollArea className="p-2 max-h-[120px]">
+							{availableGroups.map((group) => (
+								<div key={group} className="flex items-center gap-2 py-1 hover:bg-gray-100 px-2 rounded accent-slate-800">
+									<input
+										type="checkbox"
+										id={`group-${group}`}
+										checked={selectedGroups.includes(group)}
+										onChange={() => toggleGroup(group)}
+										className="cursor-pointer"
+									/>
+									<label
+										htmlFor={`group-${group}`}
+										className="text-sm cursor-pointer flex-1"
+									>
+										{group}
+									</label>
+								</div>
+							))}
+						</ScrollArea>
+					</div>
+				</>
 			)}
 		</div>
 	)

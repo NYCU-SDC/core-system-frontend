@@ -8,11 +8,13 @@ import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
 
 const DraftFormCard: React.FC<FormCardProps> = ({
 	form,
+	slug,
 }) => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { orgSlug } = useParams<{ orgSlug: string }>();
 	const { data: organization } = useGetOrganization(orgSlug || '');
+	//console.log("orgSlug: ", orgSlug);
 
 	const publishMutation = useMutation({
 		mutationFn: (data: {id: string; request: {orgId: string; unitIds: string[]}})=>
@@ -38,7 +40,7 @@ const DraftFormCard: React.FC<FormCardProps> = ({
 
 	const handleEdit = (id: string) => {
 		console.log('Edit:', id);
-		navigate(`/forms/edit/${id}`);
+		navigate(`/${slug}/forms/edit/${id}`);
 	};
 
 	const handlePublish = async (id: string) => {

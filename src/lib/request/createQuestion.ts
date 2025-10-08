@@ -10,7 +10,7 @@ export async function createQuestion(formId: string, data: {
 	choices?: ChoiceOption[]
 }) {
 	return api(`/forms/${formId}/questions`, {
-		method: "PUT",
+		method: "POST",
 		body: JSON.stringify(data),
 	});
 }

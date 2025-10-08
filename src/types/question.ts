@@ -1,4 +1,30 @@
-import type { BaseQuestion, QuestionType } from "@/types/form.ts";
+import type { BaseQuestion, QuestionType, QuestionResponse } from "@/types/form.ts";
+
+export type response = {
+	id: string;
+	submittedBy: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export type FormQuestionResponses = {
+	formId: string;
+	responses: response[];
+}
+
+export type answer = {
+	id: string;
+	responseId: string;
+	submittedBy: string;
+	value: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export type QuestionResponses = {
+	question: QuestionResponse;
+	answers: answer[];
+}
 
 export interface ShortTextQuestion extends BaseQuestion {
 	type: 'short_text';
@@ -19,6 +45,7 @@ export interface LongTextQuestion extends BaseQuestion {
 // 	value: string;
 // }
 export interface ChoiceOption {
+	id: string;
 	name: string;
 }
 
@@ -64,10 +91,10 @@ export const createNewQuestion = (type: QuestionType, order: number): Question =
 	const base = {
 		id: baseId,
 		type,
-		title: '',
-		description: '',
-		required: false,
-		order
+		title: 'untitled',
+		description: 'Not written',
+		required: true,
+		order: order
 	};
 
 	switch (type) {
@@ -92,7 +119,7 @@ export const createNewQuestion = (type: QuestionType, order: number): Question =
 			return {
 				...base,
 				type: "single_choice",
-				options: [],
+				choices: [{name:"Choice 1"}],
 				allowOther: false
 			} as unknown as SingleChoiceQuestion;
 
@@ -100,7 +127,7 @@ export const createNewQuestion = (type: QuestionType, order: number): Question =
 			return {
 				...base,
 				type: "multiple_choice",
-				options: [],
+				choices: [{name:"Choice 1"}],
 				allowOther: false
 			} as unknown as MultipleChoiceQuestion;
 

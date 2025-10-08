@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ChoiceOption, FormData, QuestionType, QuestionResponse, BaseQuestion } from "@/types/form.ts";
@@ -10,10 +10,9 @@ import type {
 	ShortTextQuestion,
 	SingleChoiceQuestion
 } from "@/types/question.ts";
-import { createNewQuestion } from '@/types/question.ts';
+import { createNewQuestion, QuestionTypeLabels } from '@/types/question.ts';
 import "@/components/form/DraftFormCard.css"
 import { GroupSelector } from "@/components/form/GroupSelector.tsx";
-import QuestionList from "@/components/form/QuestionList.tsx";
 import AddQuestion from "@/components/form/AddQuestion.tsx";
 import { useGetForm } from "@/hooks/useGetForm.ts";
 import { useGetQuestions } from "@/hooks/useGetQuestions.ts";
@@ -45,6 +44,7 @@ const FormEdit = () => {
 	const [questions, setQuestions] = useState<BaseQuestion[]>([]);
 	const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+	const [questionsInitialized, setQuestionsInitialized] = useState(false);
 
 	const [selectedPublishUnits, setSelectedPublishUnits] = useState<string[]>([]);
 	const availableGroups = units?.map(unit => unit.name);
@@ -102,7 +102,7 @@ const FormEdit = () => {
 			queryClient.invalidateQueries({ queryKey: ['Forms'] });
 			queryClient.invalidateQueries({ queryKey: ['Form', id] });
 			alert('Form published successfully!');
-			navigate('/forms');
+			navigate(`/${slug}/forms`);
 		},
 		onError: (error) => {
 			console.error('Failed to publish form:', error);
@@ -121,7 +121,7 @@ const FormEdit = () => {
 			} }) =>
 			createQuestion(data.formId, data.request),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['Questions', id] });
+			// Don't invalidate queries - we manage questions in local state
 		},
 		onError: (error) => {
 			console.error('Failed to create question:', error);
@@ -139,10 +139,14 @@ const FormEdit = () => {
 			} }) =>
 			updateQuestion(data.formId, data.questionId, data.request),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['Questions', id] });
+			// Don't invalidate queries here - we'll do it selectively
+			// to avoid losing focus during typing
+			setAutoSaveStatus('saved');
+			setHasUnsavedChanges(false);
 		},
 		onError: (error) => {
 			console.error('Failed to update question:', error);
+			setAutoSaveStatus('error');
 		}
 	})
 
@@ -150,7 +154,7 @@ const FormEdit = () => {
 		mutationFn: (data: {formId: string, questionId: string}) =>
 			deleteQuestion(data.formId, data.questionId),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['Questions', id] });
+			// Don't invalidate queries - we manage questions in local state
 		},
 		onError: (error) => {
 			console.error('Failed to delete question:', error);
@@ -181,14 +185,17 @@ const FormEdit = () => {
 	}, [isNewForm, form]);
 
 	useEffect(() => {
-		if (questionsData && questionsData.length > 0) {
+		// Only initialize questions once from server data
+		// After that, use local state to avoid losing focus during edits
+		if (questionsData && questionsData.length > 0 && !questionsInitialized) {
 			setQuestions(questionsData);
+			setQuestionsInitialized(true);
 		}
-	}, [questionsData]);
+	}, [questionsData, questionsInitialized]);
 
-	// Auto save
+	// Auto save for form data
 	useEffect(() => {
-		if (isNewForm || !formData?.id || !hasUnsavedChanges) {
+		if (isNewForm || !formData?.id) {
 			return;
 		}
 
@@ -203,42 +210,53 @@ const FormEdit = () => {
 			});
 		}, 2000);
 
-		return () => {
-			clearTimeout(autoSaveTimeout);
-		};
-	}, [isNewForm, formData?.id, hasUnsavedChanges, formData?.title, formData?.description, formData?.unitId]);
+		return () => clearTimeout(autoSaveTimeout);
+	}, [isNewForm, formData?.id, formData?.title, formData?.description]);
 
-	// useEffect(() => {
-	// 	if (isNewForm || !formData?.id || !hasUnsavedChanges) {
-	// 		return;
-	// 	}
-	//
-	// 	const autoSaveTimeout = setTimeout(async () => {
-	// 		try {
-	// 			setAutoSaveStatus('saving');
-	// 			await updateForm({
-	// 				id: formData.id,
-	// 				data: {
-	// 					title: formData.title,
-	// 					description: formData.description,
-	// 					unitIds: formData.unitId
-	// 				}
-	// 			}).unwrap();
-	// 			setAutoSaveStatus('saved');
-	// 			setHasUnsavedChanges(false);
-	// 		} catch (error) {
-	// 			console.error('Auto-save failed:', error);
-	// 			setAutoSaveStatus('error');
-	// 		}
-	// 	}, 2000);
-	//
-	// 	return () => {
-	// 		clearTimeout(autoSaveTimeout);
-	// 	};
-	// }, [isNewForm, formData?.id, hasUnsavedChanges, formData?.title, formData?.description, formData?.unitId, updateForm]);
+	// Auto save for questions
+	useEffect(() => {
+		if (isNewForm || !formData?.id) {
+			return;
+		}
+
+		const autoSaveTimeout = setTimeout(async () => {
+			setAutoSaveStatus('saving');
+
+			// Save all questions that need updating
+			// Note: We don't invalidate queries here to avoid losing focus
+			const updatePromises = questions.map(question => {
+				return updateQuestion(formData.id, question.id, {
+					required: question.required,
+					type: question.type,
+					title: question.title,
+					description: question.description || '',
+					order: question.order,
+					choices: question.choices
+				});
+			});
+
+			try {
+				await Promise.all(updatePromises);
+				setAutoSaveStatus('saved');
+				setHasUnsavedChanges(false);
+			} catch (error) {
+				console.error('Failed to auto-save questions:', error);
+				setAutoSaveStatus('error');
+			}
+		}, 2000);
+
+		return () => clearTimeout(autoSaveTimeout);
+	}, [isNewForm, formData?.id, questions]);
 
 	const handleFormDataChange = (updates: Partial<FormData>) => {
 		setFormData(prev => prev ? { ...prev, ...updates } : null);
+		setHasUnsavedChanges(true);
+	};
+
+	const handleQuestionChange = (questionId: string, updates: Partial<Question>) => {
+		setQuestions(questions.map(q =>
+			q.id === questionId ? { ...q, ...updates } : q
+		));
 		setHasUnsavedChanges(true);
 	};
 
@@ -246,8 +264,20 @@ const FormEdit = () => {
 		setSelectedPublishUnits(selectedGroupNames);
 	};
 
+	const formatDate = (dateString: string) => {
+		if (!dateString) return 'N/A';
+		const date = new Date(dateString);
+		return date.toLocaleDateString('en-US', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+	};
+
 	const handleBackToForms = async () => {
-		if (hasUnsavedChanges || (isNewForm && (formData?.title || formData?.description || questions.length > 0))) {
+		if (hasUnsavedChanges) {
 			try {
 				setAutoSaveStatus('saving');
 				if (isNewForm) {
@@ -263,16 +293,16 @@ const FormEdit = () => {
 				}
 				setAutoSaveStatus('saved');
 				setHasUnsavedChanges(false);
-				navigate('/forms');
+				navigate(`/${slug}/forms`);
 			} catch (error) {
 				console.error('Failed to save before navigation:', error);
 				const shouldContinue = window.confirm('There are unsaved changes. Do you want to leave without saving?');
 				if (shouldContinue) {
-					navigate('/forms');
+					navigate(`/${slug}/forms`);
 				}
 			}
 		} else {
-			navigate('/forms');
+			navigate(`/${slug}/forms`);
 		}
 	};
 
@@ -301,18 +331,16 @@ const FormEdit = () => {
 			if (isNewForm) {
 				const newForm = await createFormMutation.mutateAsync({
 					slug: slug,
-					unitId: unitId,
+					unitId: organization.id,
 					request: {
 						title: formData.title,
 						description: formData.description,
 					}
 				});
 
-				const updatedFormData = { ...formData, id: newForm.id };
 				setFormData(prev => prev ? { ...prev, id: newForm.id } : null);
 
 				if (questions.length > 0) {
-					console.log('開始保存問題:', questions.length, '個');
 					const createdQuestions = [];
 					for (const question of questions) {
 						try {
@@ -324,32 +352,7 @@ const FormEdit = () => {
 									title: question.title,
 									description: question.description,
 									order: question.order,
-									choices: question.choices,
-
-									// 根據問題類型添加特定屬性
-									// ...(question.type === "short_text" && {
-									// 	placeholder: question.placeholder,
-									// 	maxLength: question.maxLength
-									// }),
-									// ...(question.type === "long_text" && {
-									// 	placeholder: question.placeholder,
-									// 	maxLength: question.maxLength,
-									// 	rows: question.rows
-									// }),
-									// ...((question.type === "single_choice" ||
-									// 	question.type === "multiple_choice") && {
-									// 	options: question.options,
-									// 	allowOther: question.allowOther
-									// }),
-									// ...(question.type === "multiple_choice" && {
-									// 	minSelections: question.minSelections,
-									// 	maxSelections: question.maxSelections
-									// }),
-									// ...(question.type === "date" && {
-									// 	dateFormat: question.dateFormat,
-									// 	minDate: question.minDate,
-									// 	maxDate: question.maxDate
-									// })
+									choices: (question as any).choices,
 								}
 							});
 							createdQuestions.push(createdQuestion);
@@ -401,10 +404,6 @@ const FormEdit = () => {
 
 			const unitIds = convertUnitNamesToIds(selectedPublishUnits);
 
-			// const recipients = {
-			// 	unitIds: formToPublish.unitId,
-			// };
-
 			await publishFormMutation.mutateAsync({
 				id: formToPublish.id,
 				request: {
@@ -432,33 +431,10 @@ const FormEdit = () => {
 				request: {
 					required: newQuestion.required,
 					type: newQuestion.type,
-					title: newQuestion.title,
-					description: newQuestion.description,
+					title: newQuestion.title || "untitled",
+					description: newQuestion.description || "not written",
 					order: newQuestion.order,
-					choices: newQuestion.choices,
-					// ...(newQuestion.type === "short_text" && {
-					// 	placeholder: newQuestion.placeholder,
-					// 	maxLength: newQuestion.maxLength
-					// }),
-					// ...(newQuestion.type === "long_text" && {
-					// 	placeholder: newQuestion.placeholder,
-					// 	maxLength: newQuestion.maxLength,
-					// 	rows: newQuestion.rows
-					// }),
-					// ...((newQuestion.type === "single_choice" ||
-					// 	newQuestion.type === "multiple_choice") && {
-					// 	options: newQuestion.options,
-					// 	allowOther: newQuestion.allowOther
-					// }),
-					// ...(newQuestion.type === "multiple_choice" && {
-					// 	minSelections: newQuestion.minSelections,
-					// 	maxSelections: newQuestion.maxSelections
-					// }),
-					// ...(newQuestion.type === "date" && {
-					// 	dateFormat: newQuestion.dateFormat,
-					// 	minDate: newQuestion.minDate,
-					// 	maxDate: newQuestion.maxDate
-					// })
+					choices: (newQuestion as any).choices,
 				}
 			})
 
@@ -469,114 +445,286 @@ const FormEdit = () => {
 		}
 	};
 
-	const handleUpdateQuestion = async (questionId: string, updatedQuestion: Question) => {
+	const handleUpdateQuestion = (questionId: string, updatedQuestion: Question) => {
 		setQuestions(questions.map(q => q.id === questionId ? updatedQuestion : q));
 		setHasUnsavedChanges(true);
-
-		if (formData?.id && !isNewForm) {
-			try {
-				const questionToUpdate = {
-					...updatedQuestion,
-					title: updatedQuestion.title?.trim() || `Untitled ${updatedQuestion.type.replace('_', ' ')} Question`
-				};
-
-				await updateQuestionMutation.mutateAsync({
-					formId: formData.id,
-					questionId,
-					request: questionToUpdate
-				});
-			} catch (error) {
-				// in mutation
-			}
-		}
 	};
-
 
 	const handleDeleteQuestion = async (questionId: string) => {
 		setQuestions(questions.filter(q => q.id !== questionId));
-		setHasUnsavedChanges(true);
 
-		if (formData?.id && !isNewForm) {
+		if (formData?.id) {
 			try {
 				await deleteQuestionMutation.mutateAsync({
 					formId: formData.id,
 					questionId
 				});
 			} catch (error) {
-				// in mutation
+				console.error('Failed to delete question:', error);
 			}
 		}
 	};
 
-	const handleReorderQuestions = async (reorderedQuestions: Question[]) => {
+	const handleReorderQuestions = (reorderedQuestions: Question[]) => {
 		setQuestions(reorderedQuestions);
-
-		if (!formData?.id) {
-			setHasUnsavedChanges(true);
-			return;
-		}
-
-		try {
-			const updatePromises = reorderedQuestions.map((question, index) =>
-				updateQuestionMutation.mutateAsync({
-					formId: formData.id,
-					questionId: question.id,
-					request: {
-						...question,
-						order: index
-					}
-				})
-			);
-
-			await Promise.all(updatePromises);
-		} catch (error) {
-			console.error('Failed to reorder questions:', error);
-			setHasUnsavedChanges(true);
-		}
+		setHasUnsavedChanges(true);
 	};
 
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		return date.toLocaleDateString('zh-TW', {
-			year: 'numeric',
-			month: 'numeric',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-			hour12: false
-		});
-	};
+	// Question List Component (merged from QuestionList.tsx)
+	const QuestionListContent = () => {
+		const moveQuestionUp = async (questionId: string) => {
+			const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
+			const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
 
-	const isLoading = formLoading || questionsLoading;
-	const hasError = formError || questionsError;
+			if (currentIndex > 0) {
+				const updatedQuestions = [...sortedQuestions];
+				const temp = updatedQuestions[currentIndex].order;
+				updatedQuestions[currentIndex].order = updatedQuestions[currentIndex - 1].order;
+				updatedQuestions[currentIndex - 1].order = temp;
 
-	if (isLoading) {
-		return (
-			<div className="p-10">
-				<div className="flex justify-center items-center h-64">
-					<p className="text-gray-600">Loading form...</p>
-				</div>
-			</div>
-		);
-	}
+				handleReorderQuestions(updatedQuestions);
+			}
+		};
 
-	if (hasError) {
-		return (
-			<div className="p-10">
-				<div className="flex justify-center items-center h-64">
-					<div className="text-center">
-						<p className="text-red-600 mb-4">Failed to load form</p>
-						<button
-							onClick={() => navigate('/forms')}
-							className="btn btn-primary"
-						>
-							Back to Forms
-						</button>
+		const moveQuestionDown = async (questionId: string) => {
+			const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
+			const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
+
+			if (currentIndex < sortedQuestions.length - 1) {
+				const updatedQuestions = [...sortedQuestions];
+				const temp = updatedQuestions[currentIndex].order;
+				updatedQuestions[currentIndex].order = updatedQuestions[currentIndex + 1].order;
+				updatedQuestions[currentIndex + 1].order = temp;
+
+				handleReorderQuestions(updatedQuestions);
+			}
+		};
+
+		const addOption = (questionId: string, optionLabel: string) => {
+			const question = questions.find(q => q.id === questionId);
+			if (!question || (question.type !== 'single_choice' && question.type !== 'multiple_choice')) {
+				return;
+			}
+
+			const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
+			const newOption: ChoiceOption = {
+				id: `opt_${Date.now()}`,
+				name: optionLabel,
+				value: optionLabel.toLowerCase().replace(/\s+/g, '_')
+			};
+
+			const updatedQuestion = {
+				...choiceQuestion,
+				choices: [...choiceQuestion.choices, newOption]
+			};
+
+			handleUpdateQuestion(questionId, updatedQuestion);
+		};
+
+		const removeOption = (questionId: string, optionId: string) => {
+			const question = questions.find(q => q.id === questionId);
+			if (!question || (question.type !== 'single_choice' && question.type !== 'multiple_choice')) {
+				return;
+			}
+
+			const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
+			const updatedQuestion = {
+				...choiceQuestion,
+				options: choiceQuestion.options.filter(option => option.id !== optionId)
+			};
+
+			handleUpdateQuestion(questionId, updatedQuestion);
+		};
+
+		const updateOption = (questionId: string, optionId: string, newLabel: string) => {
+			const question = questions.find(q => q.id === questionId);
+			if (!question || (question.type !== 'single_choice' && question.type !== 'multiple_choice')) {
+				return;
+			}
+
+			const choiceQuestion = question as SingleChoiceQuestion | MultipleChoiceQuestion;
+			const updatedQuestion = {
+				...choiceQuestion,
+				options: choiceQuestion.options.map(option =>
+					option.id === optionId
+						? { ...option, name: newLabel, value: newLabel.toLowerCase().replace(/\s+/g, '_') }
+						: option
+				)
+			};
+
+			handleUpdateQuestion(questionId, updatedQuestion);
+		};
+
+		const OptionEditor: React.FC<{ question: SingleChoiceQuestion | MultipleChoiceQuestion }> = ({ question }) => {
+			const [newOptionText, setNewOptionText] = useState('');
+
+			const handleAddOption = () => {
+				if (newOptionText.trim()) {
+					addOption(question.id, newOptionText.trim());
+					setNewOptionText('');
+				}
+			};
+
+			const handleKeyPress = (e: React.KeyboardEvent) => {
+				if (e.key === 'Enter') {
+					handleAddOption();
+				}
+			};
+
+			return (
+				<div className="flex gap-6 mb-3 w-[600px]">
+					<label className="text-sm w-[89px] text-slate-800 pt-0.5">Options</label>
+					<div className="flex flex-col gap-3">
+						{question.choices.map((option) => (
+							<div key={option.id} className="flex items-center gap-2 md-3 w-[387.5px]">
+								<textarea
+									value={option.name}
+									onChange={(e) => updateOption(question.id, option.id, e.target.value)}
+									rows={1}
+									className="flex-1 text-sm px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none"
+								/>
+								<button
+									type="button"
+									onClick={() => removeOption(question.id, option.id)}
+									className="p-1 text-gray-400 hover:text-black transition-colors -ml-10"
+									title="Delete option"
+								>
+									<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+									</svg>
+								</button>
+							</div>
+						))}
+						<div className="flex gap-3">
+							<textarea
+								value={newOptionText}
+								onChange={(e) => setNewOptionText(e.target.value)}
+								onKeyPress={handleKeyPress}
+								placeholder="Add an option..."
+								rows={1}
+								className="w-[396px] text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+							/>
+							<button
+								type="button"
+								onClick={handleAddOption}
+							>
+								Add
+							</button>
+						</div>
 					</div>
 				</div>
+			);
+		};
+
+		if (questions.length === 0) {
+			return null;
+		}
+
+		return (
+			<div className="space-y-5">
+				{questions
+					.sort((a, b) => a.order - b.order)
+					.map((question, index) => {
+						const isFirst = index === 0;
+						const isLast = index === questions.length - 1;
+						const isUpdating = updateQuestionMutation.isPending;
+						const isDeleting = deleteQuestionMutation.isPending;
+
+						return (
+							<div
+								key={question.id}
+								className="bg-white border border-slate-300 rounded-md p-6 w-[800px]"
+							>
+								<div className="flex justify-between items-start">
+									<div className="flex-1">
+										<div className="flex items-center gap-2 mb-2">
+											<span className="font-medium text-base mb-5 text-slate-800">
+												{QuestionTypeLabels[question.type]}
+											</span>
+										</div>
+										<div className="w-[508px]">
+											<div className="flex items-center gap-6 mb-3">
+												<label className="text-sm w-[89px] text-slate-800">Title</label>
+												<textarea
+													value={question?.title || ''}
+													onChange={(e) => {
+														handleQuestionChange(question.id, { title: e.target.value });
+													}}
+													placeholder="Enter question title"
+													rows={1}
+													className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+												/>
+											</div>
+											<div className="flex items-center gap-6 mb-3">
+												<label className="text-sm w-[89px] text-slate-800">Description</label>
+												<textarea
+													value={question.description || ''}
+													onChange={(e) => {
+														handleQuestionChange(question.id, { description: e.target.value });
+													}}
+													placeholder="Enter question description (optional)"
+													rows={2}
+													className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+													
+												/>
+											</div>
+											{(question.type === 'single_choice' || question.type === 'multiple_choice') && (
+												<OptionEditor question={question as SingleChoiceQuestion | MultipleChoiceQuestion} />
+											)}
+										</div>
+									</div>
+									<div className="flex gap-2 ml-4">
+										<button
+											type="button"
+											onClick={() => moveQuestionUp(question.id)}
+											disabled={isFirst || isUpdating}
+											className={`p-1 transition-colors ${
+												isFirst || isUpdating
+													? 'text-gray-300 cursor-not-allowed'
+													: 'text-gray-400 hover:text-slate-800 cursor-pointer'
+											}`}
+											title="Move up"
+										>
+											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+													  d="M5 15l7-7 7 7" />
+											</svg>
+										</button>
+										<button
+											type="button"
+											onClick={() => moveQuestionDown(question.id)}
+											disabled={isLast || isUpdating}
+											className={`p-1 transition-colors ${
+												isLast || isUpdating
+													? 'text-gray-300 cursor-not-allowed'
+													: 'text-gray-400 hover:text-slate-800 cursor-pointer'
+											}`}
+											title="Move down"
+										>
+											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+													  d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+										<button
+											type="button"
+											onClick={() => handleDeleteQuestion(question.id)}
+											className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+											disabled={isDeleting}
+										>
+											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+													  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16" />
+											</svg>
+										</button>
+									</div>
+								</div>
+							</div>
+						);
+					})}
 			</div>
 		);
-	}
+	};
 
 	const pageTitle = isNewForm
 		? `New Form - ${formData?.title || 'Untitled'}`
@@ -585,6 +733,7 @@ const FormEdit = () => {
 	return (
 		<div className="px-22 py-15">
 			<button
+				type="button"
 				onClick={handleBackToForms}
 				className="text-sm mb-8 cursor-pointer">
 				Back to Forms
@@ -593,11 +742,11 @@ const FormEdit = () => {
 			<div className="flex items-center mb-5 gap-1.5">
 				<span className="pl-1">☁︎</span>
 				<span className="text-sm text-gray-600">
-          			{autoSaveStatus === 'saving' && 'Saving...'}
+					{autoSaveStatus === 'saving' && 'Saving...'}
 					{autoSaveStatus === 'saved' && !hasUnsavedChanges && 'All changes saved'}
 					{autoSaveStatus === 'saved' && hasUnsavedChanges && 'Has unsaved changes'}
 					{autoSaveStatus === 'error' && 'Failed to save'}
-        		</span>
+				</span>
 			</div>
 			<div className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5">
 				<div className="font-semibold text-lg leading-7 mb-3">Info</div>
@@ -618,11 +767,13 @@ const FormEdit = () => {
 				</div>
 				<div className="flex gap-3">
 					<button
+						type="button"
 						onClick={handleDelete}
 						disabled={deleteFormMutation.isPending}
 						className="btn btn-primary bg-red-600 text-white"
 					>{deleteFormMutation.isPending ? 'Deleting...' : 'Delete'}</button>
 					<button
+						type="button"
 						onClick={handlePublish}
 						disabled={createFormMutation.isPending || publishFormMutation.isPending}
 						className="btn btn-secondary"
@@ -670,13 +821,7 @@ const FormEdit = () => {
 					</div>
 				</div>
 			</div>
-			<QuestionList
-				formId={formData?.id}
-				questions={questions}
-				onUpdateQuestion={handleUpdateQuestion}
-				onDeleteQuestion={handleDeleteQuestion}
-				onReorderQuestions={handleReorderQuestions}
-			/>
+			<QuestionListContent />
 			<AddQuestion onAddQuestion={handleAddQuestion} />
 		</div>
 	)

@@ -23,6 +23,7 @@ const AddQuestion: React.FC<AddQuestionPanelProps> = ({ onAddQuestion }) => {
 				{questionTypes.map((type) => (
 					<button
 						key={type}
+						type="button"
 						onClick={() => onAddQuestion(type)}
 						className="btn btn-primary"
 					>{QuestionTypeLabels[type]}</button>
