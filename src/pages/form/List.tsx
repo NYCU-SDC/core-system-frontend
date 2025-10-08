@@ -99,27 +99,27 @@ const FormList = () => {
 								})
 							)}
 						</div>
-						<h2 className="text-2xl font-semibold text-gray-900 mb-4">Published</h2>
+						<div className="flex items-center mb-3">
+							<h2 className="text-2xl font-semibold text-gray-900">Published</h2>
+						</div>
 						<div className="flex flex-wrap gap-6 mb-8">
-							<div className="w-135">
-								{publishedForms.length === 0 ? (
-									<div className="w-full py-8 text-gray-500">
-										No published forms yet.
-									</div>
-								) : (
-									publishedForms.map((form) => {
-										return (
-											<div key={form.id} className="w-135">
-												<PublishedFormCard
-													form={form}
-													onViewResult={handleViewResult}
-													slug={slug}
-												/>
-											</div>
-										);
-									})
-								)}
-							</div>
+							{publishedForms.length === 0 ? (
+								<div className="w-full py-8 text-gray-500">
+									No published forms yet.
+								</div>
+							) : (
+								publishedForms.map((form) => {
+									return (
+										<div key={form.id} className="flex">
+											<PublishedFormCard
+												form={form}
+												onViewResult={handleViewResult}
+												slug={slug}
+											/>
+										</div>
+									);
+								})
+							)}
 						</div>
 					</div>
 				)

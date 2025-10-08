@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ChoiceOption, FormData, QuestionType, QuestionResponse, BaseQuestion } from "@/types/form.ts";
@@ -51,11 +51,16 @@ const FormEdit = () => {
 	const createQueueRef = useRef<BaseQuestion[]>([]); // Array of questions to create
 	const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const questionsRef = useRef<BaseQuestion[]>(questions); // Keep latest questions in ref
+	const formDataRef = useRef<FormData | null>(formData); // Keep latest formData in ref
 
-	// Update questionsRef when questions change
+	// Update refs when state changes
 	useEffect(() => {
 		questionsRef.current = questions;
 	}, [questions]);
+
+	useEffect(() => {
+		formDataRef.current = formData;
+	}, [formData]);
 
 	const [selectedPublishUnits, setSelectedPublishUnits] = useState<string[]>([]);
 	const availableGroups = units?.map(unit => unit.name);
@@ -234,8 +239,9 @@ const FormEdit = () => {
 	}, [isNewForm, formData?.id, formData?.title, formData?.description]);
 
 	// Process update queue - batch process all queued changes
-	const processUpdateQueue = async () => {
-		if (!formData?.id) return;
+	const processUpdateQueue = useCallback(async () => {
+		const currentFormData = formDataRef.current;
+		if (!currentFormData?.id) return;
 
 		const updateIds = Array.from(updateQueueRef.current);
 		const createItems = [...createQueueRef.current];
@@ -252,29 +258,33 @@ const FormEdit = () => {
 		setAutoSaveStatus('saving');
 
 		try {
-			// Process updates
+			// Process updates (only for existing questions, not temporary ones)
 			if (updateIds.length > 0) {
-				const updatePromises = updateIds.map(questionId => {
-					const question = questionsRef.current.find(q => q.id === questionId);
-					if (!question) return Promise.resolve();
+				const updatePromises = updateIds
+					.filter(questionId => !questionId.startsWith('question_temp_')) // Skip temporary IDs
+					.map(questionId => {
+						const question = questionsRef.current.find(q => q.id === questionId);
+						if (!question) return Promise.resolve();
 
-					return updateQuestion(formData.id, question.id, {
-						required: question.required,
-						type: question.type,
-						title: question.title,
-						description: question.description || '',
-						order: question.order,
-						choices: question.choices
+						return updateQuestion(currentFormData.id, question.id, {
+							required: question.required,
+							type: question.type,
+							title: question.title,
+							description: question.description || '',
+							order: question.order,
+							choices: question.choices
+						});
 					});
-				});
 
 				await Promise.all(updatePromises);
 			}
 
 			// Process creates one by one to get IDs back
 			if (createItems.length > 0) {
+				const idMapping = new Map<string, string>(); // Map old ID to new ID
+				
 				for (const newQuestion of createItems) {
-					const createdQuestion = await createQuestion(formData.id, {
+					const createdQuestion = await createQuestion(currentFormData.id, {
 						required: newQuestion.required,
 						type: newQuestion.type,
 						title: newQuestion.title || "untitled",
@@ -283,12 +293,33 @@ const FormEdit = () => {
 						choices: newQuestion.choices
 					});
 
-					// Update local state with the real ID from server
+					// Store the ID mapping
+					idMapping.set(newQuestion.id, (createdQuestion as BaseQuestion).id);
+				}
+
+				// Update all IDs at once to minimize re-renders
+				if (idMapping.size > 0) {
 					setQuestions(prev => 
-						prev.map(q => 
-							q.id === newQuestion.id ? { ...createdQuestion as BaseQuestion } : q
-						)
+						prev.map(q => {
+							const newId = idMapping.get(q.id);
+							if (newId) {
+								return { ...q, id: newId };
+							}
+							return q;
+						})
 					);
+					
+					// Update the queue to use new IDs
+					const oldIds = Array.from(idMapping.keys());
+					oldIds.forEach(oldId => {
+						if (updateQueueRef.current.has(oldId)) {
+							updateQueueRef.current.delete(oldId);
+							const newId = idMapping.get(oldId);
+							if (newId) {
+								updateQueueRef.current.add(newId);
+							}
+						}
+					});
 				}
 			}
 
@@ -298,13 +329,30 @@ const FormEdit = () => {
 			console.error('Failed to process update queue:', error);
 			setAutoSaveStatus('error');
 		}
-	};
+	}, []);
 
 	// Add question or update to queue and trigger delayed processing
-	const addToUpdateQueue = (questionId: string) => {
-		if (!formData?.id) return;
+	const addToUpdateQueue = useCallback((questionId: string) => {
+		const currentFormData = formDataRef.current;
+		if (!currentFormData?.id) return;
 
-		updateQueueRef.current.add(questionId);
+		// Check if this is a question in the create queue (has temporary ID)
+		const isInCreateQueue = createQueueRef.current.some(q => q.id === questionId);
+		
+		if (isInCreateQueue) {
+			// If it's in create queue, update the item in create queue with latest data
+			const latestQuestion = questionsRef.current.find(q => q.id === questionId);
+			if (latestQuestion) {
+				const index = createQueueRef.current.findIndex(q => q.id === questionId);
+				if (index !== -1) {
+					createQueueRef.current[index] = latestQuestion;
+				}
+			}
+		} else {
+			// Only add to update queue if it's an existing question (not temporary)
+			updateQueueRef.current.add(questionId);
+		}
+		
 		setHasUnsavedChanges(true);
 
 		// Clear existing timeout and set new one
@@ -315,11 +363,12 @@ const FormEdit = () => {
 		updateTimeoutRef.current = setTimeout(() => {
 			processUpdateQueue();
 		}, 2000);
-	};
+	}, [processUpdateQueue]);
 
 	// Add new question to create queue
-	const addToCreateQueue = (question: BaseQuestion) => {
-		if (!formData?.id) return;
+	const addToCreateQueue = useCallback((question: BaseQuestion) => {
+		const currentFormData = formDataRef.current;
+		if (!currentFormData?.id) return;
 
 		createQueueRef.current.push(question);
 		setHasUnsavedChanges(true);
@@ -332,20 +381,20 @@ const FormEdit = () => {
 		updateTimeoutRef.current = setTimeout(() => {
 			processUpdateQueue();
 		}, 2000);
-	};
+	}, [processUpdateQueue]);
 
 	const handleFormDataChange = (updates: Partial<FormData>) => {
 		setFormData(prev => prev ? { ...prev, ...updates } : null);
 		setHasUnsavedChanges(true);
 	};
 
-	const handleQuestionChange = (questionId: string, updates: Partial<Question>) => {
-		setQuestions(questions.map(q =>
+	const handleQuestionChange = useCallback((questionId: string, updates: Partial<Question>) => {
+		setQuestions(prev => prev.map(q =>
 			q.id === questionId ? { ...q, ...updates } : q
 		));
 		// Add to update queue
 		addToUpdateQueue(questionId);
-	};
+	}, [addToUpdateQueue]);
 
 	const handlePublishUnitsChange = (selectedGroupNames: string[]) => {
 		setSelectedPublishUnits(selectedGroupNames);
@@ -503,47 +552,49 @@ const FormEdit = () => {
 		}
 	};
 
-	const handleAddQuestion = (type: QuestionType) => {
-		const newQuestion = createNewQuestion(type, questions.length);
+	const handleAddQuestion = useCallback((type: QuestionType) => {
+		const newQuestion = createNewQuestion(type, questionsRef.current.length);
 
 		// Add to local state immediately
-		setQuestions([...questions, newQuestion]);
+		setQuestions(prev => [...prev, newQuestion]);
 
-		if (!formData?.id) {
+		const currentFormData = formDataRef.current;
+		if (!currentFormData?.id) {
 			setHasUnsavedChanges(true);
 			return;
 		}
 
 		// Add to create queue for batch processing
 		addToCreateQueue(newQuestion);
-	};
+	}, [addToCreateQueue]);
 
-	const handleUpdateQuestion = (questionId: string, updatedQuestion: Question) => {
-		setQuestions(questions.map(q => q.id === questionId ? updatedQuestion : q));
+	const handleUpdateQuestion = useCallback((questionId: string, updatedQuestion: Question) => {
+		setQuestions(prev => prev.map(q => q.id === questionId ? updatedQuestion : q));
 		// Add to update queue
 		addToUpdateQueue(questionId);
-	};
+	}, [addToUpdateQueue]);
 
-	const handleDeleteQuestion = async (questionId: string) => {
-		setQuestions(questions.filter(q => q.id !== questionId));
+	const handleDeleteQuestion = useCallback(async (questionId: string) => {
+		setQuestions(prev => prev.filter(q => q.id !== questionId));
 
-		if (formData?.id) {
+		const currentFormData = formDataRef.current;
+		if (currentFormData?.id) {
 			try {
 				await deleteQuestionMutation.mutateAsync({
-					formId: formData.id,
+					formId: currentFormData.id,
 					questionId
 				});
 			} catch (error) {
 				console.error('Failed to delete question:', error);
 			}
 		}
-	};
+	}, [deleteQuestionMutation]);
 
-	const handleReorderQuestions = (reorderedQuestions: Question[]) => {
-		setQuestions(reorderedQuestions);
+	const handleReorderQuestions = useCallback((reorderedQuestions: Question[]) => {
+		setQuestions(reorderedQuestions as BaseQuestion[]);
 		// Add all reordered questions to update queue
 		reorderedQuestions.forEach(q => addToUpdateQueue(q.id));
-	};
+	}, [addToUpdateQueue]);
 
 	// Question List Component (merged from QuestionList.tsx)
 	const QuestionListContent = () => {
