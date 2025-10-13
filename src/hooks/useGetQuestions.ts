@@ -5,7 +5,7 @@ import { getQuestions } from "@/lib/request/getQuestions.ts";
 export function useGetQuestions(formId: string) {
 	return useQuery<QuestionsResponse>({
 		queryKey: ["Questions", formId],
-		queryFn:() => getQuestions(formId),
+		queryFn: () => getQuestions(formId),
 		enabled: formId !== "new"
-	})
+	});
 }

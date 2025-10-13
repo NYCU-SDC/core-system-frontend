@@ -1,45 +1,41 @@
-import React from 'react'
+import React from "react";
 import type { FormCardProps } from "@/types/forms.ts";
-import "./DraftFormCard.css"
-import { useNavigate, useParams } from 'react-router-dom';
+import "./DraftFormCard.css";
+import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { publishForm } from "@/lib/request/publishForm.ts";
 import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
 
-const DraftFormCard: React.FC<FormCardProps> = ({
-	form,
-	slug,
-}) => {
+const DraftFormCard: React.FC<FormCardProps> = ({ form, slug }) => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { orgSlug } = useParams<{ orgSlug: string }>();
-	const { data: organization } = useGetOrganization(orgSlug || '');
+	const { data: organization } = useGetOrganization(orgSlug || "");
 	//console.log("orgSlug: ", orgSlug);
 
 	const publishMutation = useMutation({
-		mutationFn: (data: {id: string; request: {orgId: string; unitIds: string[]}})=>
-			publishForm(data.id, data.request),
+		mutationFn: (data: { id: string; request: { orgId: string; unitIds: string[] } }) => publishForm(data.id, data.request),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['forms'] });
+			queryClient.invalidateQueries({ queryKey: ["forms"] });
 			alert("Form published successfully!");
 		},
-		onError: (error) => {
+		onError: error => {
 			console.error("Failed to publish form:", error);
 			alert("Failed to publish form. Please try again.");
-		},
-	})
+		}
+	});
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleDateString('zh-TW', {
-			year: 'numeric',
-			month: 'numeric',
-			day: 'numeric',
+		return date.toLocaleDateString("zh-TW", {
+			year: "numeric",
+			month: "numeric",
+			day: "numeric"
 		});
 	};
 
 	const handleEdit = (id: string) => {
-		console.log('Edit:', id);
+		console.log("Edit:", id);
 		navigate(`/${slug}/forms/edit/${id}`);
 	};
 
@@ -75,14 +71,23 @@ const DraftFormCard: React.FC<FormCardProps> = ({
 					<span>{formatDate(form.createdAt)}</span>
 				</div>
 				<div className="form-actions">
-					<button className="btn btn-primary" onClick={()=>handleEdit(form.id)}>Edit</button>
-					<button className="btn btn-secondary" onClick={()=>handlePublish(form.id)} disabled={publishMutation.isPending}>
-						{publishMutation.isPending ? 'Publishing...' : 'Publish'}
+					<button
+						className="btn btn-primary"
+						onClick={() => handleEdit(form.id)}
+					>
+						Edit
+					</button>
+					<button
+						className="btn btn-secondary"
+						onClick={() => handlePublish(form.id)}
+						disabled={publishMutation.isPending}
+					>
+						{publishMutation.isPending ? "Publishing..." : "Publish"}
 					</button>
 				</div>
 			</div>
 		</div>
-	)
-}
+	);
+};
 
 export default DraftFormCard;

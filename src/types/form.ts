@@ -1,6 +1,6 @@
 export type UUID = string;
-export type FormStatus = 'draft' | 'published';
-export type QuestionType = 'short_text' | 'long_text' | 'single_choice' | 'multiple_choice' | 'date';
+export type FormStatus = "draft" | "published";
+export type QuestionType = "short_text" | "long_text" | "single_choice" | "multiple_choice" | "date";
 
 export type FormResponse = {
 	id: string;
@@ -12,7 +12,7 @@ export type FormResponse = {
 	lastEditor: string;
 	createdAt: string;
 	updatedAt: string;
-}
+};
 
 export type QuestionResponse = {
 	id: string;
@@ -25,7 +25,7 @@ export type QuestionResponse = {
 	choices: Choice[];
 	createdAt: string;
 	updatedAt: string;
-}
+};
 
 export type QuestionsResponse = QuestionResponse[];
 
@@ -161,16 +161,15 @@ export interface ProblemDetail {
 }
 
 export interface NotFound {
-	title: 'Not Found';
+	title: "Not Found";
 	status: 404;
-	type: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404';
+	type: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404";
 	detail: string;
 }
 
 export interface Unauthorized {
-	title: 'Unauthorized';
+	title: "Unauthorized";
 	status: 401;
-	type: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401';
+	type: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401";
 	detail: string;
 }
-

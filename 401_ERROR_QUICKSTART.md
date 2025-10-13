@@ -7,7 +7,7 @@
 ✅ 顯示友善的登入提示 Dialog  
 ✅ 一鍵導向登入頁面  
 ✅ 自動儲存當前位置，登入後可返回  
-✅ Toast 錯誤通知系統  
+✅ Toast 錯誤通知系統
 
 ## 📋 API 錯誤回應格式
 
@@ -15,9 +15,9 @@
 
 ```json
 {
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "missing access token"
+	"title": "Unauthorized",
+	"status": 401,
+	"detail": "missing access token"
 }
 ```
 
@@ -43,20 +43,20 @@ import { UnauthorizedError } from "./lib/request/api.ts";
 import { triggerAuthError } from "./hooks/useAuthError.ts";
 
 const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: (error) => {
-      if (error instanceof UnauthorizedError) {
-        triggerAuthError(); // 觸發全局登入提示
-      }
-    },
-  }),
-  mutationCache: new MutationCache({
-    onError: (error) => {
-      if (error instanceof UnauthorizedError) {
-        triggerAuthError(); // 觸發全局登入提示
-      }
-    },
-  }),
+	queryCache: new QueryCache({
+		onError: error => {
+			if (error instanceof UnauthorizedError) {
+				triggerAuthError(); // 觸發全局登入提示
+			}
+		}
+	}),
+	mutationCache: new MutationCache({
+		onError: error => {
+			if (error instanceof UnauthorizedError) {
+				triggerAuthError(); // 觸發全局登入提示
+			}
+		}
+	})
 });
 ```
 
@@ -67,19 +67,19 @@ import { useGlobalAuthError } from "@/hooks/useAuthError";
 import { LoginPromptDialog } from "@/components/ui/login-prompt-dialog";
 
 const App = () => {
-  const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
+	const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
 
-  return (
-    <>
-      <AppContent />
-      <Toaster />
-      <LoginPromptDialog
-        open={showLoginPrompt}
-        onOpenChange={closeLoginPrompt}
-        onLogin={handleLogin}
-      />
-    </>
-  );
+	return (
+		<>
+			<AppContent />
+			<Toaster />
+			<LoginPromptDialog
+				open={showLoginPrompt}
+				onOpenChange={closeLoginPrompt}
+				onLogin={handleLogin}
+			/>
+		</>
+	);
 };
 ```
 
@@ -95,23 +95,23 @@ import { useToast } from "@/hooks/useToast";
 import { UnauthorizedError } from "@/lib/request/api.ts";
 
 const MyComponent = () => {
-  const { showSuccess, showError } = useToast();
+	const { showSuccess, showError } = useToast();
 
-  const saveMutation = useMutation({
-    mutationFn: saveData,
-    onSuccess: () => {
-      showSuccess('儲存成功', '資料已成功儲存');
-    },
-    onError: (error) => {
-      // 401 錯誤已經被全局處理，這裡只需處理其他錯誤
-      if (error instanceof UnauthorizedError) return;
-      
-      // 處理其他錯誤
-      showError('儲存失敗', '請稍後再試');
-    }
-  });
+	const saveMutation = useMutation({
+		mutationFn: saveData,
+		onSuccess: () => {
+			showSuccess("儲存成功", "資料已成功儲存");
+		},
+		onError: error => {
+			// 401 錯誤已經被全局處理，這裡只需處理其他錯誤
+			if (error instanceof UnauthorizedError) return;
 
-  return <button onClick={() => saveMutation.mutate()}>儲存</button>;
+			// 處理其他錯誤
+			showError("儲存失敗", "請稍後再試");
+		}
+	});
+
+	return <button onClick={() => saveMutation.mutate()}>儲存</button>;
 };
 ```
 
@@ -144,6 +144,7 @@ const MyComponent = () => {
 ### 1. 模擬 401 錯誤
 
 清除瀏覽器的 token/cookies，然後執行任何需要認證的操作：
+
 - 載入表單列表
 - 編輯表單
 - 儲存變更
@@ -152,10 +153,13 @@ const MyComponent = () => {
 ### 2. 檢查 Console
 
 應該會看到：
+
 ```
 Query 401 error detected, triggering auth error
 ```
+
 或
+
 ```
 Mutation 401 error detected, triggering auth error
 ```
@@ -206,7 +210,7 @@ Mutation 401 error detected, triggering auth error
 ✅ **簡潔** - 不用在每個組件重複處理  
 ✅ **一致** - 所有頁面的體驗統一  
 ✅ **維護容易** - 只需要在一個地方修改  
-✅ **自動涵蓋** - 新增的 API 請求自動受保護  
+✅ **自動涵蓋** - 新增的 API 請求自動受保護
 
 ## 🤝 新增頁面
 
@@ -215,15 +219,15 @@ Mutation 401 error detected, triggering auth error
 只需要記得在 mutation 的 `onError` 中過濾掉 401：
 
 ```tsx
-onError: (error) => {
-  if (error instanceof UnauthorizedError) return; // 已被全局處理
-  showError('操作失敗', '請稍後再試');
-}
+onError: error => {
+	if (error instanceof UnauthorizedError) return; // 已被全局處理
+	showError("操作失敗", "請稍後再試");
+};
 ```
 
 ## 📞 支援
 
 如有問題，請參考：
+
 - [AUTH_ERROR_HANDLING.md](./AUTH_ERROR_HANDLING.md)
 - [TOAST_USAGE.md](./TOAST_USAGE.md)
-

@@ -11,22 +11,22 @@ import { triggerAuthError } from "./hooks/useAuthError.ts";
 
 const queryClient = new QueryClient({
 	queryCache: new QueryCache({
-		onError: (error) => {
+		onError: error => {
 			// Trigger auth error event for 401 in queries
 			if (error instanceof UnauthorizedError) {
-				console.log('Query 401 error detected, triggering auth error');
+				console.log("Query 401 error detected, triggering auth error");
 				triggerAuthError();
 			}
-		},
+		}
 	}),
 	mutationCache: new MutationCache({
-		onError: (error) => {
+		onError: error => {
 			// Trigger auth error event for 401 in mutations
 			if (error instanceof UnauthorizedError) {
-				console.log('Mutation 401 error detected, triggering auth error');
+				console.log("Mutation 401 error detected, triggering auth error");
 				triggerAuthError();
 			}
-		},
+		}
 	}),
 	defaultOptions: {
 		queries: {
@@ -36,9 +36,9 @@ const queryClient = new QueryClient({
 					return false;
 				}
 				return failureCount < 3;
-			},
-		},
-	},
+			}
+		}
+	}
 });
 
 createRoot(document.getElementById("root")!).render(

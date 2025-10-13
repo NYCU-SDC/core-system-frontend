@@ -10,23 +10,16 @@ interface FormSettingsProps {
 	onPublishUnitsChange: (selectedGroupNames: string[]) => void;
 }
 
-export const FormSettings = ({
-	formData,
-	isNewForm,
-	selectedPublishUnits,
-	availableGroups,
-	onFormDataChange,
-	onPublishUnitsChange,
-}: FormSettingsProps) => {
+export const FormSettings = ({ formData, isNewForm, selectedPublishUnits, availableGroups, onFormDataChange, onPublishUnitsChange }: FormSettingsProps) => {
 	return (
-		<div className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5">
+		<div className="bg-white border border-slate-300 rounded-md p-6 max-w-3xl mb-5">
 			<div className="font-medium text-base leading-4 mb-5 text-slate-800">Form Settings</div>
-			<div className="w-[508px]">
+			<div className="max-w-xl">
 				<div className="flex items-center gap-6 mb-3">
 					<label className="text-sm w-[89px] text-slate-800">Title</label>
 					<textarea
-						value={formData?.title || ''}
-						onChange={(e) => {
+						value={formData?.title || ""}
+						onChange={e => {
 							onFormDataChange({ title: e.target.value });
 						}}
 						placeholder={isNewForm ? "Enter form title" : formData?.title || "Enter form title"}
@@ -37,8 +30,8 @@ export const FormSettings = ({
 				<div className="flex items-center gap-6 mb-3">
 					<label className="text-sm w-[89px] text-slate-800">Description</label>
 					<textarea
-						value={formData?.description || ''}
-						onChange={(e) => {
+						value={formData?.description || ""}
+						onChange={e => {
 							onFormDataChange({ description: e.target.value });
 						}}
 						placeholder={isNewForm ? "Enter form description" : formData?.description || "Enter form description"}

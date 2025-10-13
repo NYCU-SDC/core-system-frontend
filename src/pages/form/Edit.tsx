@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ChoiceOption, FormData, QuestionType, BaseQuestion } from "@/types/form.ts";
 import type { Question } from "@/types/question.ts";
-import { createNewQuestion } from '@/types/question.ts';
-import "@/components/form/DraftFormCard.css"
+import { createNewQuestion } from "@/types/question.ts";
+import "@/components/form/DraftFormCard.css";
 import AddQuestion from "@/components/form/AddQuestion.tsx";
 import { QuestionList } from "@/components/form/QuestionList.tsx";
 import { FormInfo } from "@/components/form/FormInfo.tsx";
@@ -27,20 +27,20 @@ const FormEdit = () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const isNewForm = id === 'new';
+	const isNewForm = id === "new";
 	const { showSuccess, showError } = useToast();
 
-	const { data: form, isLoading: formLoading, isError: formError } = useGetForm(id || '');
-	const { data: questionsData, isLoading: questionsLoading, isError: questionsError } = useGetQuestions(id || '');
+	const { data: form, isLoading: formLoading, isError: formError } = useGetForm(id || "");
+	const { data: questionsData, isLoading: questionsLoading, isError: questionsError } = useGetQuestions(id || "");
 
 	const { slug } = useParams<{ slug: string }>();
 	const { unitId } = useParams<{ unitId: string }>();
-	const { data: organization } = useGetOrganization(slug || '');
-	const { data: units } = useGetUnits(slug || '');
+	const { data: organization } = useGetOrganization(slug || "");
+	const { data: units } = useGetUnits(slug || "");
 
 	const [formData, setFormData] = useState<FormData | null>(null);
 	const [questions, setQuestions] = useState<BaseQuestion[]>([]);
-	const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+	const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "error">("saved");
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 	const [questionsInitialized, setQuestionsInitialized] = useState(false);
 
@@ -64,156 +64,158 @@ const FormEdit = () => {
 	const availableGroups = units?.map(unit => unit.name);
 
 	const convertUnitNamesToIds = (unitNames: string[]): string[] => {
-		return unitNames.map(name => {
-			const unit = units.find(u => u.name === name);
-			return unit ? unit.id : '';
-		}).filter(Boolean);
+		return unitNames
+			.map(name => {
+				const unit = units.find(u => u.name === name);
+				return unit ? unit.id : "";
+			})
+			.filter(Boolean);
 	};
 
 	// Mutations
 	const updateFormMutation = useMutation({
-		mutationFn:(data: {id: string; request: {title: string; description: string}}) =>
-			updateForm(data.id, data.request),
+		mutationFn: (data: { id: string; request: { title: string; description: string } }) => updateForm(data.id, data.request),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['Form', id] });
-			queryClient.invalidateQueries({ queryKey: ['Forms'] });
-			setAutoSaveStatus('saved');
+			queryClient.invalidateQueries({ queryKey: ["Form", id] });
+			queryClient.invalidateQueries({ queryKey: ["Forms"] });
+			setAutoSaveStatus("saved");
 			setHasUnsavedChanges(false);
 		},
-		onError: (error) => {
-			console.error('Failed to update form:', error);
+		onError: error => {
+			console.error("Failed to update form:", error);
 			// Global error handler will catch 401 errors
 			if (error instanceof UnauthorizedError) return;
-			setAutoSaveStatus('error');
-			showError('儲存失敗', '無法更新表單，請稍後再試');
+			setAutoSaveStatus("error");
+			showError("儲存失敗", "無法更新表單，請稍後再試");
 		}
-	})
+	});
 
 	const deleteFormMutation = useMutation({
-		mutationFn:(id: string) =>
-			deleteForm(id),
+		mutationFn: (id: string) => deleteForm(id),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['Forms'] });
-			showSuccess('刪除成功', '表單已成功刪除');
+			queryClient.invalidateQueries({ queryKey: ["Forms"] });
+			showSuccess("刪除成功", "表單已成功刪除");
 		},
-		onError: (error) => {
-			console.error('Failed to delete form:', error);
+		onError: error => {
+			console.error("Failed to delete form:", error);
 			// Global error handler will catch 401 errors
 			if (error instanceof UnauthorizedError) return;
-			showError('刪除失敗', '無法刪除表單，請稍後再試');
+			showError("刪除失敗", "無法刪除表單，請稍後再試");
 		}
-	})
+	});
 
 	const createFormMutation = useMutation({
-		mutationFn:(data: {slug: string; unitId: string; request: {title: string; description: string}}) =>
-			createForm(data.slug, data.unitId, data.request),
+		mutationFn: (data: { slug: string; unitId: string; request: { title: string; description: string } }) => createForm(data.slug, data.unitId, data.request),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['Forms'] });
-			showSuccess('建立成功', '表單已成功建立');
+			queryClient.invalidateQueries({ queryKey: ["Forms"] });
+			showSuccess("建立成功", "表單已成功建立");
 		},
-		onError: (error) => {
-			console.error('Failed to create form:', error);
+		onError: error => {
+			console.error("Failed to create form:", error);
 			// Global error handler will catch 401 errors
 			if (error instanceof UnauthorizedError) return;
-			showError('建立失敗', '無法建立表單，請稍後再試');
+			showError("建立失敗", "無法建立表單，請稍後再試");
 		}
-	})
+	});
 
 	const publishFormMutation = useMutation({
-		mutationFn: (data: { id: string; request: { orgId: string; unitIds: string[] } }) =>
-			publishForm(data.id, data.request),
+		mutationFn: (data: { id: string; request: { orgId: string; unitIds: string[] } }) => publishForm(data.id, data.request),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['Forms'] });
-			queryClient.invalidateQueries({ queryKey: ['Form', id] });
-			showSuccess('發布成功', '表單已成功發布');
+			queryClient.invalidateQueries({ queryKey: ["Forms"] });
+			queryClient.invalidateQueries({ queryKey: ["Form", id] });
+			showSuccess("發布成功", "表單已成功發布");
 			navigate(`/${slug}/forms`);
 		},
-		onError: (error) => {
-			console.error('Failed to publish form:', error);
+		onError: error => {
+			console.error("Failed to publish form:", error);
 			// Global error handler will catch 401 errors
 			if (error instanceof UnauthorizedError) return;
-			showError('發布失敗', '無法發布表單，請稍後再試');
+			showError("發布失敗", "無法發布表單，請稍後再試");
 		}
 	});
 
 	const createQuestionMutation = useMutation({
-		mutationFn: (data: { formId: string, request: {
-				required: boolean,
-				type: QuestionType,
-				title: string,
-				description: string,
-				order: number,
-				choices?: ChoiceOption[]
-			} }) =>
-			createQuestion(data.formId, data.request),
+		mutationFn: (data: {
+			formId: string;
+			request: {
+				required: boolean;
+				type: QuestionType;
+				title: string;
+				description: string;
+				order: number;
+				choices?: ChoiceOption[];
+			};
+		}) => createQuestion(data.formId, data.request),
 		onSuccess: () => {
 			// Don't invalidate queries - we manage questions in local state
 		},
-		onError: (error) => {
-			console.error('Failed to create question:', error);
+		onError: error => {
+			console.error("Failed to create question:", error);
 			// Global error handler will catch 401 errors
 			if (error instanceof UnauthorizedError) return;
-			showError('新增問題失敗', '無法新增問題，請稍後再試');
+			showError("新增問題失敗", "無法新增問題，請稍後再試");
 		}
-	})
+	});
 
 	const updateQuestionMutation = useMutation({
-		mutationFn: (data: { formId: string, questionId: string, request: {
-				required: boolean,
-				type: QuestionType,
-				title: string,
-				description: string,
-				order: number,
-				choices?: ChoiceOption[]
-			} }) =>
-			updateQuestion(data.formId, data.questionId, data.request),
+		mutationFn: (data: {
+			formId: string;
+			questionId: string;
+			request: {
+				required: boolean;
+				type: QuestionType;
+				title: string;
+				description: string;
+				order: number;
+				choices?: ChoiceOption[];
+			};
+		}) => updateQuestion(data.formId, data.questionId, data.request),
 		onSuccess: () => {
 			// Don't invalidate queries here - we'll do it selectively
 			// to avoid losing focus during typing
-			setAutoSaveStatus('saved');
+			setAutoSaveStatus("saved");
 			setHasUnsavedChanges(false);
 		},
-		onError: (error) => {
-			console.error('Failed to update question:', error);
+		onError: error => {
+			console.error("Failed to update question:", error);
 			// Global error handler will catch 401 errors
 			if (error instanceof UnauthorizedError) return;
-			setAutoSaveStatus('error');
-			showError('更新問題失敗', '無法儲存問題變更，請稍後再試');
+			setAutoSaveStatus("error");
+			showError("更新問題失敗", "無法儲存問題變更，請稍後再試");
 		}
-	})
+	});
 
 	const deleteQuestionMutation = useMutation({
-		mutationFn: (data: {formId: string, questionId: string}) =>
-			deleteQuestion(data.formId, data.questionId),
+		mutationFn: (data: { formId: string; questionId: string }) => deleteQuestion(data.formId, data.questionId),
 		onSuccess: () => {
 			// Don't invalidate queries - we manage questions in local state
 		},
-		onError: (error) => {
-			console.error('Failed to delete question:', error);
+		onError: error => {
+			console.error("Failed to delete question:", error);
 			// Global error handler will catch 401 errors
 			if (error instanceof UnauthorizedError) return;
-			showError('刪除問題失敗', '無法刪除問題，請稍後再試');
+			showError("刪除問題失敗", "無法刪除問題，請稍後再試");
 		}
-	})
+	});
 
 	useEffect(() => {
 		if (isNewForm) {
 			setFormData({
-				id: '',
-				title: '',
-				description: '',
+				id: "",
+				title: "",
+				description: "",
 				unitId: [],
-				status: 'draft',
-				lastEditor: '',
-				createdAt: '',
-				updatedAt: ''
+				status: "draft",
+				lastEditor: "",
+				createdAt: "",
+				updatedAt: ""
 			});
 		} else if (form) {
 			setFormData({
 				...form,
 				createdAt: form.createdAt,
 				updatedAt: form.updatedAt,
-				lastEditor: form.lastEditor || 'Unknown',
+				lastEditor: form.lastEditor || "Unknown",
 				unitId: Array.isArray(form.unitId) ? form.unitId : [form.unitId].filter(Boolean)
 			});
 		}
@@ -244,7 +246,7 @@ const FormEdit = () => {
 		}
 
 		const autoSaveTimeout = setTimeout(async () => {
-			setAutoSaveStatus('saving');
+			setAutoSaveStatus("saving");
 			updateFormMutation.mutate({
 				id: formData.id,
 				request: {
@@ -270,17 +272,17 @@ const FormEdit = () => {
 		createQueueRef.current = [];
 
 		if (updateIds.length === 0 && createItems.length === 0) {
-			setAutoSaveStatus('saved');
+			setAutoSaveStatus("saved");
 			return;
 		}
 
-		setAutoSaveStatus('saving');
+		setAutoSaveStatus("saving");
 
 		try {
 			// Process updates (only for existing questions, not temporary ones)
 			if (updateIds.length > 0) {
 				const updatePromises = updateIds
-					.filter(questionId => !questionId.startsWith('question_temp_')) // Skip temporary IDs
+					.filter(questionId => !questionId.startsWith("question_temp_")) // Skip temporary IDs
 					.map(questionId => {
 						const question = questionsRef.current.find(q => q.id === questionId);
 						if (!question) return Promise.resolve();
@@ -289,7 +291,7 @@ const FormEdit = () => {
 							required: question.required,
 							type: question.type,
 							title: question.title,
-							description: question.description || '',
+							description: question.description || "",
 							order: question.order,
 							choices: question.choices
 						});
@@ -301,7 +303,7 @@ const FormEdit = () => {
 			// Process creates one by one to get IDs back
 			if (createItems.length > 0) {
 				const idMapping = new Map<string, string>(); // Map old ID to new ID
-				
+
 				for (const newQuestion of createItems) {
 					const createdQuestion = await createQuestion(currentFormData.id, {
 						required: newQuestion.required,
@@ -318,7 +320,7 @@ const FormEdit = () => {
 
 				// Update all IDs at once to minimize re-renders
 				if (idMapping.size > 0) {
-					setQuestions(prev => 
+					setQuestions(prev =>
 						prev.map(q => {
 							const newId = idMapping.get(q.id);
 							if (newId) {
@@ -327,7 +329,7 @@ const FormEdit = () => {
 							return q;
 						})
 					);
-					
+
 					// Update the queue to use new IDs
 					const oldIds = Array.from(idMapping.keys());
 					oldIds.forEach(oldId => {
@@ -342,99 +344,106 @@ const FormEdit = () => {
 				}
 			}
 
-			setAutoSaveStatus('saved');
+			setAutoSaveStatus("saved");
 			setHasUnsavedChanges(false);
 		} catch (error) {
-			console.error('Failed to process update queue:', error);
-			setAutoSaveStatus('error');
+			console.error("Failed to process update queue:", error);
+			setAutoSaveStatus("error");
 		}
 	}, []);
 
 	// Add question or update to queue and trigger delayed processing
-	const addToUpdateQueue = useCallback((questionId: string) => {
-		const currentFormData = formDataRef.current;
-		if (!currentFormData?.id) return;
+	const addToUpdateQueue = useCallback(
+		(questionId: string) => {
+			const currentFormData = formDataRef.current;
+			if (!currentFormData?.id) return;
 
-		// Check if this is a question in the create queue (has temporary ID)
-		const isInCreateQueue = createQueueRef.current.some(q => q.id === questionId);
-		
-		if (isInCreateQueue) {
-			// If it's in create queue, update the item in create queue with latest data
-			const latestQuestion = questionsRef.current.find(q => q.id === questionId);
-			if (latestQuestion) {
-				const index = createQueueRef.current.findIndex(q => q.id === questionId);
-				if (index !== -1) {
-					createQueueRef.current[index] = latestQuestion;
+			// Check if this is a question in the create queue (has temporary ID)
+			const isInCreateQueue = createQueueRef.current.some(q => q.id === questionId);
+
+			if (isInCreateQueue) {
+				// If it's in create queue, update the item in create queue with latest data
+				const latestQuestion = questionsRef.current.find(q => q.id === questionId);
+				if (latestQuestion) {
+					const index = createQueueRef.current.findIndex(q => q.id === questionId);
+					if (index !== -1) {
+						createQueueRef.current[index] = latestQuestion;
+					}
 				}
+			} else {
+				// Only add to update queue if it's an existing question (not temporary)
+				updateQueueRef.current.add(questionId);
 			}
-		} else {
-			// Only add to update queue if it's an existing question (not temporary)
-			updateQueueRef.current.add(questionId);
-		}
-		
-		setHasUnsavedChanges(true);
 
-		// Clear existing timeout and set new one
-		if (updateTimeoutRef.current) {
-			clearTimeout(updateTimeoutRef.current);
-		}
+			setHasUnsavedChanges(true);
 
-		updateTimeoutRef.current = setTimeout(() => {
-			processUpdateQueue();
-		}, 2000);
-	}, [processUpdateQueue]);
+			// Clear existing timeout and set new one
+			if (updateTimeoutRef.current) {
+				clearTimeout(updateTimeoutRef.current);
+			}
+
+			updateTimeoutRef.current = setTimeout(() => {
+				processUpdateQueue();
+			}, 2000);
+		},
+		[processUpdateQueue]
+	);
 
 	// Add new question to create queue
-	const addToCreateQueue = useCallback((question: BaseQuestion) => {
-		const currentFormData = formDataRef.current;
-		if (!currentFormData?.id) return;
+	const addToCreateQueue = useCallback(
+		(question: BaseQuestion) => {
+			const currentFormData = formDataRef.current;
+			if (!currentFormData?.id) return;
 
-		createQueueRef.current.push(question);
-		setHasUnsavedChanges(true);
+			createQueueRef.current.push(question);
+			setHasUnsavedChanges(true);
 
-		// Clear existing timeout and set new one
-		if (updateTimeoutRef.current) {
-			clearTimeout(updateTimeoutRef.current);
-		}
+			// Clear existing timeout and set new one
+			if (updateTimeoutRef.current) {
+				clearTimeout(updateTimeoutRef.current);
+			}
 
-		updateTimeoutRef.current = setTimeout(() => {
-			processUpdateQueue();
-		}, 2000);
-	}, [processUpdateQueue]);
+			updateTimeoutRef.current = setTimeout(() => {
+				processUpdateQueue();
+			}, 2000);
+		},
+		[processUpdateQueue]
+	);
 
 	const handleFormDataChange = (updates: Partial<FormData>) => {
-		setFormData(prev => prev ? { ...prev, ...updates } : null);
+		setFormData(prev => (prev ? { ...prev, ...updates } : null));
 		setHasUnsavedChanges(true);
 	};
 
-	const handleQuestionChange = useCallback((questionId: string, updates: Partial<Question>) => {
-		setQuestions(prev => prev.map(q =>
-			q.id === questionId ? { ...q, ...updates } : q
-		));
-		// Add to update queue
-		addToUpdateQueue(questionId);
-	}, [addToUpdateQueue]);
+	const handleQuestionChange = useCallback(
+		(questionId: string, updates: Partial<Question>) => {
+			setQuestions(prev => prev.map(q => (q.id === questionId ? { ...q, ...updates } : q)));
+			// Add to update queue
+			addToUpdateQueue(questionId);
+		},
+		[addToUpdateQueue]
+	);
 
 	const handlePublishUnitsChange = (selectedGroupNames: string[]) => {
 		setSelectedPublishUnits(selectedGroupNames);
 	};
 
 	const formatDate = (dateString: string) => {
-		if (!dateString) return 'N/A';
+		if (!dateString) return "N/A";
 		const date = new Date(dateString);
-		return date.toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
+		return date.toLocaleDateString("en-US", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit"
 		});
 	};
 
 	const handleBackToForms = async () => {
 		if (hasUnsavedChanges) {
 			try {
-				setAutoSaveStatus('saving');
+				setAutoSaveStatus("saving");
 				if (isNewForm) {
 					await handleSaveDraft();
 				} else if (formData) {
@@ -442,16 +451,16 @@ const FormEdit = () => {
 						id: formData.id,
 						request: {
 							title: formData.title,
-							description: formData.description,
+							description: formData.description
 						}
 					});
 				}
-				setAutoSaveStatus('saved');
+				setAutoSaveStatus("saved");
 				setHasUnsavedChanges(false);
 				navigate(`/${slug}/forms`);
 			} catch (error) {
-				console.error('Failed to save before navigation:', error);
-				const shouldContinue = window.confirm('There are unsaved changes. Do you want to leave without saving?');
+				console.error("Failed to save before navigation:", error);
+				const shouldContinue = window.confirm("There are unsaved changes. Do you want to leave without saving?");
 				if (shouldContinue) {
 					navigate(`/${slug}/forms`);
 				}
@@ -479,7 +488,7 @@ const FormEdit = () => {
 
 	const handleSaveDraft = async (): Promise<FormData> => {
 		if (!formData) {
-			throw new Error('No form data to save');
+			throw new Error("No form data to save");
 		}
 
 		try {
@@ -489,11 +498,11 @@ const FormEdit = () => {
 					unitId: organization.id,
 					request: {
 						title: formData.title,
-						description: formData.description,
+						description: formData.description
 					}
 				});
 
-				setFormData(prev => prev ? { ...prev, id: newForm.id } : null);
+				setFormData(prev => (prev ? { ...prev, id: newForm.id } : null));
 
 				if (questions.length > 0) {
 					const createdQuestions = [];
@@ -507,12 +516,12 @@ const FormEdit = () => {
 									title: question.title,
 									description: question.description,
 									order: question.order,
-									choices: (question as any).choices,
+									choices: (question as any).choices
 								}
 							});
 							createdQuestions.push(createdQuestion);
 						} catch (error) {
-							console.error('Failed to create question:', error);
+							console.error("Failed to create question:", error);
 						}
 					}
 					if (createdQuestions.length > 0) {
@@ -526,14 +535,14 @@ const FormEdit = () => {
 					id: formData.id,
 					request: {
 						title: formData.title,
-						description: formData.description,
+						description: formData.description
 					}
-				})
+				});
 				setHasUnsavedChanges(false);
 				return updatedForm;
 			}
 		} catch (error) {
-			console.error('Failed to save form:', error);
+			console.error("Failed to save form:", error);
 			throw error;
 		}
 	};
@@ -542,7 +551,7 @@ const FormEdit = () => {
 		if (!formData) return;
 
 		if (selectedPublishUnits.length === 0) {
-			alert('Please select at least one unit to publish to.');
+			alert("Please select at least one unit to publish to.");
 			return;
 		}
 
@@ -553,7 +562,7 @@ const FormEdit = () => {
 			}
 
 			if (!formToPublish.id) {
-				alert('Please save the form first before publishing.');
+				alert("Please save the form first before publishing.");
 				return;
 			}
 
@@ -571,102 +580,119 @@ const FormEdit = () => {
 		}
 	};
 
-	const handleAddQuestion = useCallback((type: QuestionType) => {
-		const newQuestion = createNewQuestion(type, questionsRef.current.length);
+	const handleAddQuestion = useCallback(
+		(type: QuestionType) => {
+			const newQuestion = createNewQuestion(type, questionsRef.current.length);
 
-		// Add to local state immediately
-		setQuestions(prev => [...prev, newQuestion]);
+			// Add to local state immediately
+			setQuestions(prev => [...prev, newQuestion]);
 
-		const currentFormData = formDataRef.current;
-		if (!currentFormData?.id) {
-			setHasUnsavedChanges(true);
-			return;
-		}
-
-		// Add to create queue for batch processing
-		addToCreateQueue(newQuestion);
-	}, [addToCreateQueue]);
-
-	const handleUpdateQuestion = useCallback((questionId: string, updatedQuestion: Question) => {
-		setQuestions(prev => prev.map(q => q.id === questionId ? updatedQuestion : q));
-		// Add to update queue
-		addToUpdateQueue(questionId);
-	}, [addToUpdateQueue]);
-
-	const handleDeleteQuestion = useCallback(async (questionId: string) => {
-		setQuestions(prev => prev.filter(q => q.id !== questionId));
-
-		const currentFormData = formDataRef.current;
-		if (currentFormData?.id) {
-			try {
-				await deleteQuestionMutation.mutateAsync({
-					formId: currentFormData.id,
-					questionId
-				});
-			} catch (error) {
-				console.error('Failed to delete question:', error);
+			const currentFormData = formDataRef.current;
+			if (!currentFormData?.id) {
+				setHasUnsavedChanges(true);
+				return;
 			}
-		}
-	}, [deleteQuestionMutation]);
 
-	const handleReorderQuestions = useCallback((reorderedQuestions: Question[]) => {
-		setQuestions(reorderedQuestions as BaseQuestion[]);
-		// Add all reordered questions to update queue
-		reorderedQuestions.forEach(q => addToUpdateQueue(q.id));
-	}, [addToUpdateQueue]);
+			// Add to create queue for batch processing
+			addToCreateQueue(newQuestion);
+		},
+		[addToCreateQueue]
+	);
+
+	const handleUpdateQuestion = useCallback(
+		(questionId: string, updatedQuestion: Question) => {
+			setQuestions(prev => prev.map(q => (q.id === questionId ? updatedQuestion : q)));
+			// Add to update queue
+			addToUpdateQueue(questionId);
+		},
+		[addToUpdateQueue]
+	);
+
+	const handleDeleteQuestion = useCallback(
+		async (questionId: string) => {
+			setQuestions(prev => prev.filter(q => q.id !== questionId));
+
+			const currentFormData = formDataRef.current;
+			if (currentFormData?.id) {
+				try {
+					await deleteQuestionMutation.mutateAsync({
+						formId: currentFormData.id,
+						questionId
+					});
+				} catch (error) {
+					console.error("Failed to delete question:", error);
+				}
+			}
+		},
+		[deleteQuestionMutation]
+	);
+
+	const handleReorderQuestions = useCallback(
+		(reorderedQuestions: Question[]) => {
+			setQuestions(reorderedQuestions as BaseQuestion[]);
+			// Add all reordered questions to update queue
+			reorderedQuestions.forEach(q => addToUpdateQueue(q.id));
+		},
+		[addToUpdateQueue]
+	);
 
 	// Move question up handler - use questionsRef to avoid recreating function
-	const moveQuestionUp = useCallback((questionId: string) => {
-		const sortedQuestions = [...questionsRef.current].sort((a, b) => a.order - b.order);
-		const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
+	const moveQuestionUp = useCallback(
+		(questionId: string) => {
+			const sortedQuestions = [...questionsRef.current].sort((a, b) => a.order - b.order);
+			const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
 
-		if (currentIndex > 0) {
-			const updatedQuestions = [...sortedQuestions];
-			const temp = updatedQuestions[currentIndex].order;
-			updatedQuestions[currentIndex].order = updatedQuestions[currentIndex - 1].order;
-			updatedQuestions[currentIndex - 1].order = temp;
+			if (currentIndex > 0) {
+				const updatedQuestions = [...sortedQuestions];
+				const temp = updatedQuestions[currentIndex].order;
+				updatedQuestions[currentIndex].order = updatedQuestions[currentIndex - 1].order;
+				updatedQuestions[currentIndex - 1].order = temp;
 
-			handleReorderQuestions(updatedQuestions);
-		}
-	}, [handleReorderQuestions]);
+				handleReorderQuestions(updatedQuestions);
+			}
+		},
+		[handleReorderQuestions]
+	);
 
-	const moveQuestionDown = useCallback((questionId: string) => {
-		const sortedQuestions = [...questionsRef.current].sort((a, b) => a.order - b.order);
-		const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
+	const moveQuestionDown = useCallback(
+		(questionId: string) => {
+			const sortedQuestions = [...questionsRef.current].sort((a, b) => a.order - b.order);
+			const currentIndex = sortedQuestions.findIndex(q => q.id === questionId);
 
-		if (currentIndex < sortedQuestions.length - 1) {
-			const updatedQuestions = [...sortedQuestions];
-			const temp = updatedQuestions[currentIndex].order;
-			updatedQuestions[currentIndex].order = updatedQuestions[currentIndex + 1].order;
-			updatedQuestions[currentIndex + 1].order = temp;
+			if (currentIndex < sortedQuestions.length - 1) {
+				const updatedQuestions = [...sortedQuestions];
+				const temp = updatedQuestions[currentIndex].order;
+				updatedQuestions[currentIndex].order = updatedQuestions[currentIndex + 1].order;
+				updatedQuestions[currentIndex + 1].order = temp;
 
-			handleReorderQuestions(updatedQuestions);
-		}
-	}, [handleReorderQuestions]);
+				handleReorderQuestions(updatedQuestions);
+			}
+		},
+		[handleReorderQuestions]
+	);
 
-	const pageTitle = isNewForm
-		? `New Form - ${formData?.title || 'Untitled'}`
-		: `Edit Form - ${formData?.title || 'Loading...'}`;
+	const pageTitle = isNewForm ? `New Form - ${formData?.title || "Untitled"}` : `Edit Form - ${formData?.title || "Loading..."}`;
 
 	return (
 		<div className="px-22 py-15">
 			<button
 				type="button"
 				onClick={handleBackToForms}
-				className="text-sm mb-8 cursor-pointer">
+				className="text-sm mb-8 cursor-pointer"
+			>
 				Back to Forms
 			</button>
 			<h1 className="text-3xl font-extrabold text-gray-900 mb-1 pb-5">{pageTitle}</h1>
 			<div className="flex items-center mb-5 gap-1.5">
-				<span className="pl-1">☁︎</span>
+				<span className="pl-1 text-4xl ">☁︎</span>
 				<span className="text-sm text-gray-600">
-					{autoSaveStatus === 'saving' && 'Saving...'}
-					{autoSaveStatus === 'saved' && !hasUnsavedChanges && 'All changes saved'}
-					{autoSaveStatus === 'saved' && hasUnsavedChanges && 'Has unsaved changes'}
-					{autoSaveStatus === 'error' && 'Failed to save'}
+					{autoSaveStatus === "saving" && "Saving..."}
+					{autoSaveStatus === "saved" && !hasUnsavedChanges && "All changes saved"}
+					{autoSaveStatus === "saved" && hasUnsavedChanges && "Has unsaved changes"}
+					{autoSaveStatus === "error" && "Failed to save"}
 				</span>
 			</div>
-			
+
 			<FormInfo
 				formData={formData}
 				isNewForm={isNewForm}
@@ -676,7 +702,7 @@ const FormEdit = () => {
 				isDeleting={deleteFormMutation.isPending}
 				isPublishing={createFormMutation.isPending || publishFormMutation.isPending}
 			/>
-			
+
 			<FormSettings
 				formData={formData}
 				isNewForm={isNewForm}
@@ -685,7 +711,7 @@ const FormEdit = () => {
 				onFormDataChange={handleFormDataChange}
 				onPublishUnitsChange={handlePublishUnitsChange}
 			/>
-			
+
 			<QuestionList
 				questions={questions}
 				isUpdating={updateQuestionMutation.isPending}
@@ -695,10 +721,10 @@ const FormEdit = () => {
 				onMoveDown={moveQuestionDown}
 				onDelete={handleDeleteQuestion}
 			/>
-			
+
 			<AddQuestion onAddQuestion={handleAddQuestion} />
 		</div>
-	)
-}
+	);
+};
 
 export default FormEdit;

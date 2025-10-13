@@ -5,7 +5,7 @@ import { getForm } from "@/lib/request/getForm.ts";
 import { getQuestions } from "@/lib/request/getQuestions";
 import { getResponses } from "@/lib/request/getResponses";
 import { getQuestionResponses } from "@/lib/request/getQuestionResponses";
-import "@/components/form/DraftFormCard.css"
+import "@/components/form/DraftFormCard.css";
 
 // interface PublishedFormData extends FormData {
 // 	replyNumber?: string;
@@ -33,29 +33,29 @@ const FormResults: React.FC = () => {
 	const { slug } = useParams<{ slug: string }>();
 
 	const { data: formData, isLoading: isFormLoading } = useQuery({
-		queryKey: ['form', id],
+		queryKey: ["form", id],
 		queryFn: () => getForm(id!),
-		enabled: !!id,
+		enabled: !!id
 	});
 
 	const { data: questionsData, isLoading: isQuestionsLoading } = useQuery({
-		queryKey: ['questions', id],
+		queryKey: ["questions", id],
 		queryFn: () => getQuestions(id!),
-		enabled: !!id,
+		enabled: !!id
 	});
 
 	const { data: responsesData, isLoading: isResponsesLoading } = useQuery({
-		queryKey: ['responses', id],
+		queryKey: ["responses", id],
 		queryFn: () => getResponses(id!),
-		enabled: !!id,
+		enabled: !!id
 	});
 
 	const questionAnswersQueries = useQueries({
-		queries: (questionsData || []).map((question) => ({
-			queryKey: ['questionAnswers', id, question.id],
+		queries: (questionsData || []).map(question => ({
+			queryKey: ["questionAnswers", id, question.id],
 			queryFn: () => getQuestionResponses(id!, question.id),
-			enabled: !!id && !!question.id,
-		})),
+			enabled: !!id && !!question.id
+		}))
 	});
 
 	// const [formData, setFormData] = useState<PublishedFormData | null>(null);
@@ -81,8 +81,7 @@ const FormResults: React.FC = () => {
 		navigate(`/${slug}/forms`);
 	};
 
-	const isLoading = isFormLoading || isQuestionsLoading || isResponsesLoading ||
-		questionAnswersQueries.some(q => q.isLoading);
+	const isLoading = isFormLoading || isQuestionsLoading || isResponsesLoading || questionAnswersQueries.some(q => q.isLoading);
 
 	if (isLoading) {
 		return (
@@ -94,7 +93,7 @@ const FormResults: React.FC = () => {
 		);
 	}
 
-	const pageTitle = `Result - ${formData?.title || 'Loading...'}`;
+	const pageTitle = `Result - ${formData?.title || "Loading..."}`;
 
 	const totalResponses = responsesData?.responses?.length || 0;
 	const respondents = responsesData?.responses?.map(r => r.submittedBy) || [];
@@ -106,11 +105,12 @@ const FormResults: React.FC = () => {
 		<div className="px-22 py-15">
 			<button
 				onClick={handleBackToForms}
-				className="text-sm mb-8 cursor-pointer">
+				className="text-sm mb-8 cursor-pointer"
+			>
 				Back to Forms
 			</button>
 			<h1 className="text-3xl font-extrabold text-gray-900 mb-1 pb-5">{pageTitle}</h1>
-			<div className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5">
+			<div className="bg-white border border-slate-300 rounded-md p-6 max-w-3xl mb-5">
 				<div className="font-semibold text-lg leading-7 mb-3">Info</div>
 				<div className="font-normal text-sm leading-6 text-slate-800 mb-2">
 					<div className="flex gap-1">
@@ -119,7 +119,7 @@ const FormResults: React.FC = () => {
 					</div>
 					<div className="flex gap-1">
 						<label>Reply from: </label>
-						<p>{uniqueRespondents.join(', ') || 'No responses yet'}</p>
+						<p>{uniqueRespondents.join(", ") || "No responses yet"}</p>
 					</div>
 				</div>
 			</div>
@@ -133,15 +133,13 @@ const FormResults: React.FC = () => {
 				return (
 					<div
 						key={question.id}
-						className="bg-white border border-slate-300 rounded-md p-6 w-[800px] mb-5 h-[302px] flex flex-col"
+						className="bg-white border border-slate-300 rounded-md p-6 max-w-3xl mb-5 h-[302px] flex flex-col"
 					>
-						<div className="font-semibold text-lg leading-7 mb-4">
-							{question.title}
-						</div>
+						<div className="font-semibold text-lg leading-7 mb-4">{question.title}</div>
 						<div className="flex-1 overflow-y-auto relative">
 							<div className="flex flex-col gap-3 items-start">
 								{answers.length > 0 ? (
-									answers.map((answer) => (
+									answers.map(answer => (
 										<button
 											key={answer.id}
 											className="btn btn-primary ml-2 text-sm"
@@ -159,7 +157,7 @@ const FormResults: React.FC = () => {
 				);
 			})}
 		</div>
-	)
-}
+	);
+};
 
 export default FormResults;

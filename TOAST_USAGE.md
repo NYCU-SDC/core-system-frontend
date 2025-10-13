@@ -14,19 +14,19 @@ import { LoginPromptDialog } from "@/components/ui/login-prompt-dialog";
 import { useGlobalAuthError } from "@/hooks/useAuthError";
 
 const App = () => {
-  const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
+	const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
 
-  return (
-    <>
-      <AppContent />
-      <Toaster />
-      <LoginPromptDialog
-        open={showLoginPrompt}
-        onOpenChange={closeLoginPrompt}
-        onLogin={handleLogin}
-      />
-    </>
-  );
+	return (
+		<>
+			<AppContent />
+			<Toaster />
+			<LoginPromptDialog
+				open={showLoginPrompt}
+				onOpenChange={closeLoginPrompt}
+				onLogin={handleLogin}
+			/>
+		</>
+	);
 };
 ```
 
@@ -36,18 +36,18 @@ const App = () => {
 import { useToast } from "@/hooks/useToast";
 
 const MyComponent = () => {
-  const { showSuccess, showError, showInfo, showWarning } = useToast();
+	const { showSuccess, showError, showInfo, showWarning } = useToast();
 
-  const handleSave = async () => {
-    try {
-      await saveData();
-      showSuccess('儲存成功', '資料已成功儲存');
-    } catch (error) {
-      showError('儲存失敗', '無法儲存資料，請稍後再試');
-    }
-  };
+	const handleSave = async () => {
+		try {
+			await saveData();
+			showSuccess("儲存成功", "資料已成功儲存");
+		} catch (error) {
+			showError("儲存失敗", "無法儲存資料，請稍後再試");
+		}
+	};
 
-  return <button onClick={handleSave}>儲存</button>;
+	return <button onClick={handleSave}>儲存</button>;
 };
 ```
 
@@ -67,10 +67,10 @@ const MyComponent = () => {
 ```tsx
 // API 會自動檢測 401 錯誤並拋出 UnauthorizedError
 export class UnauthorizedError extends Error {
-  constructor(public detail: string) {
-    super(detail);
-    this.name = 'UnauthorizedError';
-  }
+	constructor(public detail: string) {
+		super(detail);
+		this.name = "UnauthorizedError";
+	}
 }
 ```
 
@@ -81,40 +81,41 @@ import { useAuthError } from "@/hooks/useAuthError";
 import { LoginPromptDialog } from "@/components/ui/login-prompt-dialog";
 
 const MyComponent = () => {
-  const { showLoginPrompt, handleAuthError, handleLogin, closeLoginPrompt } = useAuthError();
+	const { showLoginPrompt, handleAuthError, handleLogin, closeLoginPrompt } = useAuthError();
 
-  const myMutation = useMutation({
-    mutationFn: myApiCall,
-    onError: (error) => {
-      // 檢查是否為認證錯誤
-      if (handleAuthError(error)) return;
-      
-      // 處理其他錯誤
-      showError('操作失敗', '請稍後再試');
-    }
-  });
+	const myMutation = useMutation({
+		mutationFn: myApiCall,
+		onError: error => {
+			// 檢查是否為認證錯誤
+			if (handleAuthError(error)) return;
 
-  return (
-    <>
-      {/* Your component JSX */}
-      <LoginPromptDialog
-        open={showLoginPrompt}
-        onOpenChange={closeLoginPrompt}
-        onLogin={handleLogin}
-      />
-    </>
-  );
+			// 處理其他錯誤
+			showError("操作失敗", "請稍後再試");
+		}
+	});
+
+	return (
+		<>
+			{/* Your component JSX */}
+			<LoginPromptDialog
+				open={showLoginPrompt}
+				onOpenChange={closeLoginPrompt}
+				onLogin={handleLogin}
+			/>
+		</>
+	);
 };
 ```
 
 #### 401 錯誤回應格式
 
 當 API 回應 401 時，預期的 JSON 格式：
+
 ```json
 {
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "missing access token"
+	"title": "Unauthorized",
+	"status": 401,
+	"detail": "missing access token"
 }
 ```
 
@@ -128,17 +129,17 @@ const { showLoginPrompt, handleAuthError, handleLogin, closeLoginPrompt } = useA
 
 // 儲存失敗
 updateFormMutation: {
-  onError: (error) => {
-    if (handleAuthError(error)) return; // 處理認證錯誤
-    showError('儲存失敗', '無法更新表單，請稍後再試');
-  }
+	onError: error => {
+		if (handleAuthError(error)) return; // 處理認證錯誤
+		showError("儲存失敗", "無法更新表單，請稍後再試");
+	};
 }
 
 // 刪除成功
 deleteFormMutation: {
-  onSuccess: () => {
-    showSuccess('刪除成功', '表單已成功刪除');
-  }
+	onSuccess: () => {
+		showSuccess("刪除成功", "表單已成功刪除");
+	};
 }
 ```
 

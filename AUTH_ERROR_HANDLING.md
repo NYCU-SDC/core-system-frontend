@@ -10,9 +10,9 @@
 
 ```json
 {
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "missing access token"
+	"title": "Unauthorized",
+	"status": 401,
+	"detail": "missing access token"
 }
 ```
 
@@ -22,28 +22,29 @@
 
 ```typescript
 export class UnauthorizedError extends Error {
-  constructor(public detail: string) {
-    super(detail);
-    this.name = 'UnauthorizedError';
-  }
+	constructor(public detail: string) {
+		super(detail);
+		this.name = "UnauthorizedError";
+	}
 }
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, options);
-  
-  if (!res.ok) {
-    if (res.status === 401) {
-      const errorData = await res.json();
-      throw new UnauthorizedError(errorData.detail || 'Unauthorized');
-    }
-    throw new Error(`API request failed with status ${res.status}`);
-  }
-  
-  return res.json();
+	const res = await fetch(`${BASE_URL}${path}`, options);
+
+	if (!res.ok) {
+		if (res.status === 401) {
+			const errorData = await res.json();
+			throw new UnauthorizedError(errorData.detail || "Unauthorized");
+		}
+		throw new Error(`API request failed with status ${res.status}`);
+	}
+
+	return res.json();
 }
 ```
 
 **功能：**
+
 - 攔截所有 401 回應
 - 解析錯誤詳情
 - 拋出自訂的 `UnauthorizedError`
@@ -61,6 +62,7 @@ const { showLoginPrompt, handleAuthError, handleLogin, closeLoginPrompt } = useA
 **用途：** 在個別組件中處理認證錯誤
 
 **方法：**
+
 - `showLoginPrompt`: boolean - 是否顯示登入 Dialog
 - `handleAuthError(error)`: 檢查錯誤是否為認證錯誤，是則顯示 Dialog
 - `handleLogin()`: 導向登入頁面
@@ -78,13 +80,14 @@ const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
 
 ```tsx
 <LoginPromptDialog
-  open={showLoginPrompt}
-  onOpenChange={closeLoginPrompt}
-  onLogin={handleLogin}
+	open={showLoginPrompt}
+	onOpenChange={closeLoginPrompt}
+	onLogin={handleLogin}
 />
 ```
 
 **顯示內容：**
+
 - 標題：「請先登入」
 - 說明：「您的登入狀態已過期或尚未登入。請重新登入以繼續使用系統。」
 - 按鈕：「取消」、「前往登入」
@@ -98,29 +101,29 @@ import { useAuthError } from "@/hooks/useAuthError";
 import { LoginPromptDialog } from "@/components/ui/login-prompt-dialog";
 
 const MyComponent = () => {
-  const { showLoginPrompt, handleAuthError, handleLogin, closeLoginPrompt } = useAuthError();
+	const { showLoginPrompt, handleAuthError, handleLogin, closeLoginPrompt } = useAuthError();
 
-  const myMutation = useMutation({
-    mutationFn: someApiCall,
-    onError: (error) => {
-      // 優先處理認證錯誤
-      if (handleAuthError(error)) return;
-      
-      // 處理其他錯誤
-      showError('操作失敗', '請稍後再試');
-    }
-  });
+	const myMutation = useMutation({
+		mutationFn: someApiCall,
+		onError: error => {
+			// 優先處理認證錯誤
+			if (handleAuthError(error)) return;
 
-  return (
-    <>
-      {/* 組件內容 */}
-      <LoginPromptDialog
-        open={showLoginPrompt}
-        onOpenChange={closeLoginPrompt}
-        onLogin={handleLogin}
-      />
-    </>
-  );
+			// 處理其他錯誤
+			showError("操作失敗", "請稍後再試");
+		}
+	});
+
+	return (
+		<>
+			{/* 組件內容 */}
+			<LoginPromptDialog
+				open={showLoginPrompt}
+				onOpenChange={closeLoginPrompt}
+				onLogin={handleLogin}
+			/>
+		</>
+	);
 };
 ```
 
@@ -131,19 +134,19 @@ import { useGlobalAuthError } from "@/hooks/useAuthError";
 import { LoginPromptDialog } from "@/components/ui/login-prompt-dialog";
 
 const App = () => {
-  const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
+	const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
 
-  return (
-    <>
-      <AppContent />
-      <Toaster />
-      <LoginPromptDialog
-        open={showLoginPrompt}
-        onOpenChange={closeLoginPrompt}
-        onLogin={handleLogin}
-      />
-    </>
-  );
+	return (
+		<>
+			<AppContent />
+			<Toaster />
+			<LoginPromptDialog
+				open={showLoginPrompt}
+				onOpenChange={closeLoginPrompt}
+				onLogin={handleLogin}
+			/>
+		</>
+	);
 };
 ```
 
@@ -175,12 +178,12 @@ VITE_LOGIN_URL=https://your-auth-domain.com/login
 在登入成功後的程式碼中：
 
 ```typescript
-const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+const redirectPath = sessionStorage.getItem("redirectAfterLogin");
 if (redirectPath) {
-  sessionStorage.removeItem('redirectAfterLogin');
-  navigate(redirectPath);
+	sessionStorage.removeItem("redirectAfterLogin");
+	navigate(redirectPath);
 } else {
-  navigate('/'); // 預設首頁
+	navigate("/"); // 預設首頁
 }
 ```
 
@@ -212,9 +215,9 @@ if (redirectPath) {
 
 ```json
 {
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "missing access token"
+	"title": "Unauthorized",
+	"status": 401,
+	"detail": "missing access token"
 }
 ```
 

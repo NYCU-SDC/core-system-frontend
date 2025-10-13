@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Inbox from "./pages/Inbox";
 import FormList from "./pages/form/List.tsx";
-import FormEdit from './pages/form/Edit.tsx';
+import FormEdit from "./pages/form/Edit.tsx";
 import FormResults from "./pages/form/Result.tsx";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";

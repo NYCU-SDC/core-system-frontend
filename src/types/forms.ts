@@ -1,4 +1,4 @@
-import type { FormData } from "@/types/form.ts"
+import type { FormData } from "@/types/form.ts";
 import type { Question } from "@/types/question.ts";
 
 export type FormResponse = {
@@ -10,7 +10,7 @@ export type FormResponse = {
 	lastEditor: string;
 	createdAt: string;
 	updatedAt: string;
-}
+};
 
 export type FormsResponse = FormResponse[];
 
@@ -52,13 +52,13 @@ export interface FormEditorConfig {
 }
 
 export type FormUpdateAction =
-	| { type: 'UPDATE_FORM'; payload: Partial<FormData> }
-	| { type: 'ADD_QUESTION'; payload: Question }
-	| { type: 'UPDATE_QUESTION'; payload: { id: string; question: Partial<Question> } }
-	| { type: 'DELETE_QUESTION'; payload: { id: string } }
-	| { type: 'REORDER_QUESTIONS'; payload: { questions: Question[] } }
-	| { type: 'SET_VALIDATION_ERRORS'; payload: ValidationErrors }
-	| { type: 'SET_DIRTY'; payload: boolean };
+	| { type: "UPDATE_FORM"; payload: Partial<FormData> }
+	| { type: "ADD_QUESTION"; payload: Question }
+	| { type: "UPDATE_QUESTION"; payload: { id: string; question: Partial<Question> } }
+	| { type: "DELETE_QUESTION"; payload: { id: string } }
+	| { type: "REORDER_QUESTIONS"; payload: { questions: Question[] } }
+	| { type: "SET_VALIDATION_ERRORS"; payload: ValidationErrors }
+	| { type: "SET_DIRTY"; payload: boolean };
 
 export interface FormOperationResult {
 	success: boolean;

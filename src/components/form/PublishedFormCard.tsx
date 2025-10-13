@@ -1,25 +1,22 @@
-import React from 'react'
+import React from "react";
 import type { FormCardProps } from "@/types/forms.ts";
-import "./DraftFormCard.css"
-import { useNavigate } from 'react-router-dom';
+import "./DraftFormCard.css";
+import { useNavigate } from "react-router-dom";
 
-const PublishedFormCard: React.FC<FormCardProps> = ({
-	form,
-	slug
-}) => {
+const PublishedFormCard: React.FC<FormCardProps> = ({ form, slug }) => {
 	const navigate = useNavigate();
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleDateString('zh-TW', {
-			year: 'numeric',
-			month: 'numeric',
-			day: 'numeric',
+		return date.toLocaleDateString("zh-TW", {
+			year: "numeric",
+			month: "numeric",
+			day: "numeric"
 		});
 	};
 
 	const handleViewResult = (id: string) => {
-		console.log('View Result:', id);
+		console.log("View Result:", id);
 		navigate(`/${slug}/forms/results/${id}`);
 	};
 
@@ -28,7 +25,7 @@ const PublishedFormCard: React.FC<FormCardProps> = ({
 		const units = Array.isArray(formUnits) ? formUnits : [formUnits].filter(Boolean);
 
 		if (units.length === 0) {
-			return 'No units';
+			return "No units";
 		}
 
 		if (units.length === 1) {
@@ -53,11 +50,16 @@ const PublishedFormCard: React.FC<FormCardProps> = ({
 					<span>{formatDate(form.updatedAt)}</span>
 				</div>
 				<div className="form-actions">
-					<button className="btn btn-secondary" onClick={()=>handleViewResult(form.id)}>View Result</button>
+					<button
+						className="btn btn-secondary"
+						onClick={() => handleViewResult(form.id)}
+					>
+						View Result
+					</button>
 				</div>
 			</div>
 		</div>
-	)
-}
+	);
+};
 
 export default PublishedFormCard;

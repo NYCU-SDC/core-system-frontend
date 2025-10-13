@@ -65,9 +65,9 @@
 
 1. 清除認證
 2. 快速執行多個需要認證的操作：
-   - 載入表單列表
-   - 編輯表單
-   - 儲存變更
+    - 載入表單列表
+    - 編輯表單
+    - 儲存變更
 3. 觀察 Dialog 數量
 
 **預期結果：**
@@ -155,20 +155,20 @@
 ### 使用 Mock Service Worker (MSW)
 
 ```typescript
-import { rest } from 'msw';
+import { rest } from "msw";
 
 // Mock 401 response
 const handlers = [
-  rest.get('/api/forms', (req, res, ctx) => {
-    return res(
-      ctx.status(401),
-      ctx.json({
-        title: 'Unauthorized',
-        status: 401,
-        detail: 'missing access token'
-      })
-    );
-  }),
+	rest.get("/api/forms", (req, res, ctx) => {
+		return res(
+			ctx.status(401),
+			ctx.json({
+				title: "Unauthorized",
+				status: 401,
+				detail: "missing access token"
+			})
+		);
+	})
 ];
 ```
 
@@ -177,14 +177,14 @@ const handlers = [
 ```typescript
 test('shows login dialog on 401 error', async () => {
   render(<App />);
-  
+
   // Trigger API call
   await userEvent.click(screen.getByText('載入表單'));
-  
+
   // Check dialog appears
   expect(screen.getByText('請先登入')).toBeInTheDocument();
   expect(screen.getByText('您的登入狀態已過期')).toBeInTheDocument();
-  
+
   // Check buttons
   expect(screen.getByText('取消')).toBeInTheDocument();
   expect(screen.getByText('前往登入')).toBeInTheDocument();
@@ -207,12 +207,12 @@ test('shows login dialog on 401 error', async () => {
 
 ```javascript
 // 檢查 Console
-console.log('Query 401 error detected, triggering auth error');
+console.log("Query 401 error detected, triggering auth error");
 // 如果沒看到這個訊息，問題在 QueryClient 設定
 
 // 檢查事件監聽
-window.addEventListener('authError', () => {
-  console.log('Auth error event fired');
+window.addEventListener("authError", () => {
+	console.log("Auth error event fired");
 });
 ```
 
@@ -230,10 +230,10 @@ window.addEventListener('authError', () => {
 ```tsx
 // 確保只在 App.tsx 有一個 LoginPromptDialog
 // 組件的 onError 中要 return
-onError: (error) => {
-  if (error instanceof UnauthorizedError) return; // 重要！
-  showError('操作失敗');
-}
+onError: error => {
+	if (error instanceof UnauthorizedError) return; // 重要！
+	showError("操作失敗");
+};
 ```
 
 ---
@@ -249,7 +249,7 @@ onError: (error) => {
 ```tsx
 // 確保只檢查 UnauthorizedError
 if (error instanceof UnauthorizedError) {
-  triggerAuthError();
+	triggerAuthError();
 }
 ```
 
@@ -279,10 +279,10 @@ if (error instanceof UnauthorizedError) {
 1. **開發環境**（localhost）
 2. **測試環境**（staging）
 3. **不同瀏覽器**
-   - Chrome
-   - Firefox  
-   - Safari
-   - Edge
+    - Chrome
+    - Firefox
+    - Safari
+    - Edge
 
 ---
 
@@ -304,6 +304,6 @@ if (error instanceof UnauthorizedError) {
 ✅ 使用者體驗流暢自然  
 ✅ 沒有 Console 錯誤  
 ✅ Dialog 文字清晰易懂  
-✅ 按鈕操作符合預期  
+✅ 按鈕操作符合預期
 
 測試通過後即可部署到生產環境！🎉

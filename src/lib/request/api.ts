@@ -3,7 +3,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export class UnauthorizedError extends Error {
 	constructor(public detail: string) {
 		super(detail);
-		this.name = 'UnauthorizedError';
+		this.name = "UnauthorizedError";
 	}
 }
 
@@ -13,15 +13,14 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 
 	console.log(`API Request: ${BASE_URL}${path}`, options);
 
-
 	const res = await fetch(`${BASE_URL}${path}`, {
 		...options,
 		headers: {
 			"Content-Type": "application/json",
-			...options.headers,
+			...options.headers
 		},
-		"credentials": "include", 
-	})
+		credentials: "include"
+	});
 
 	console.log(`API Response get`);
 
@@ -30,14 +29,14 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 		if (res.status === 401) {
 			try {
 				const errorData = await res.json();
-				console.error('Unauthorized:', errorData);
-				throw new UnauthorizedError(errorData.detail || 'Unauthorized');
+				console.error("Unauthorized:", errorData);
+				throw new UnauthorizedError(errorData.detail || "Unauthorized");
 			} catch (e) {
 				if (e instanceof UnauthorizedError) throw e;
-				throw new UnauthorizedError('Unauthorized - missing access token');
+				throw new UnauthorizedError("Unauthorized - missing access token");
 			}
 		}
-		
+
 		console.error(res.statusText);
 		throw new Error(`API request failed with status ${res.status}`);
 	}

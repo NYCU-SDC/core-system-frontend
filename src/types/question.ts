@@ -5,12 +5,12 @@ export type response = {
 	submittedBy: string;
 	createdAt: string;
 	updatedAt: string;
-}
+};
 
 export type FormQuestionResponses = {
 	formId: string;
 	responses: response[];
-}
+};
 
 export type answer = {
 	id: string;
@@ -19,21 +19,21 @@ export type answer = {
 	value: string;
 	createdAt: string;
 	updatedAt: string;
-}
+};
 
 export type QuestionResponses = {
 	question: QuestionResponse;
 	answers: answer[];
-}
+};
 
 export interface ShortTextQuestion extends BaseQuestion {
-	type: 'short_text';
+	type: "short_text";
 	placeholder?: string;
 	maxLength?: number;
 }
 
 export interface LongTextQuestion extends BaseQuestion {
-	type: 'long_text';
+	type: "long_text";
 	placeholder?: string;
 	maxLength?: number;
 	rows?: number;
@@ -50,13 +50,13 @@ export interface ChoiceOption {
 }
 
 export interface SingleChoiceQuestion extends BaseQuestion {
-	type: 'single_choice';
+	type: "single_choice";
 	options: ChoiceOption[];
 	allowOther?: boolean;
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {
-	type: 'multiple_choice';
+	type: "multiple_choice";
 	options: ChoiceOption[];
 	allowOther?: boolean;
 	minSelections?: number;
@@ -64,79 +64,69 @@ export interface MultipleChoiceQuestion extends BaseQuestion {
 }
 
 export interface DateQuestion extends BaseQuestion {
-	type: 'date';
-	dateFormat?: 'date' | 'datetime' | 'time';
+	type: "date";
+	dateFormat?: "date" | "datetime" | "time";
 	minDate?: string;
 	maxDate?: string;
 }
 
-export type Question =
-	| ShortTextQuestion
-	| LongTextQuestion
-	| SingleChoiceQuestion
-	| MultipleChoiceQuestion
-	| DateQuestion;
+export type Question = ShortTextQuestion | LongTextQuestion | SingleChoiceQuestion | MultipleChoiceQuestion | DateQuestion;
 
 export const QuestionTypeLabels: Record<QuestionType, string> = {
-	short_text: 'Short Text',
-	long_text: 'Long Text',
-	single_choice: 'Single Choice',
-	multiple_choice: 'Multiple Choice',
-	date: 'Date'
+	short_text: "Short Text",
+	long_text: "Long Text",
+	single_choice: "Single Choice",
+	multiple_choice: "Multiple Choice",
+	date: "Date"
 };
 
-export const createNewQuestion = (type: QuestionType, order: number): Question => {
-	// const baseId = `question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+export const createNewQuestion = (type: QuestionType, order: number): BaseQuestion => {
+	const baseId = `question_temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-	const base = {
-		// id: baseId,
+	const base: BaseQuestion = {
+		id: baseId,
+		formId: "", // Will be set when added to form
 		type,
-		title: 'untitled',
-		description: 'Not written',
+		title: "untitled",
+		description: "Not written",
 		required: true,
-		order: order
+		order: order,
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString()
 	};
 
 	switch (type) {
-		case 'short_text':
+		case "short_text":
 			return {
 				...base,
-				type: 'short_text',
-				placeholder: '',
-				maxLength: 100
-			} as ShortTextQuestion;
+				type: "short_text"
+			};
 
-		case 'long_text':
+		case "long_text":
 			return {
 				...base,
-				type: 'long_text',
-				placeholder: '',
-				maxLength: 1000,
-				rows: 4
-			} as LongTextQuestion;
+				type: "long_text"
+			};
 
-		case 'single_choice':
+		case "single_choice":
 			return {
 				...base,
 				type: "single_choice",
-				choices: [{name:"Choice 1"}],
-				allowOther: false
-			} as unknown as SingleChoiceQuestion;
+				choices: [{ id: `choice_temp_${Date.now()}`, name: "Choice 1" }]
+			};
 
-		case 'multiple_choice':
+		case "multiple_choice":
 			return {
 				...base,
 				type: "multiple_choice",
-				choices: [{name:"Choice 1"}],
-				allowOther: false
-			} as unknown as MultipleChoiceQuestion;
+				choices: [{ id: `choice_temp_${Date.now()}`, name: "Choice 1" }]
+			};
 
-		case 'date':
+		case "date":
 			return {
 				...base,
-				type: 'date',
-				dateFormat: 'date'
-			} as DateQuestion;
+				type: "date"
+			};
 
 		default:
 			throw new Error(`Unknown question type: ${type}`);

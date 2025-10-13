@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import type { BaseQuestion } from "@/types/form.ts";
 import type { Question } from "@/types/question.ts";
-import { QuestionItem } from './QuestionItem';
+import { QuestionItem } from "./QuestionItem";
 
 interface QuestionListProps {
 	questions: BaseQuestion[];
@@ -13,15 +13,7 @@ interface QuestionListProps {
 	onDelete: (questionId: string) => void;
 }
 
-export const QuestionList = ({
-	questions,
-	isUpdating,
-	isDeleting,
-	onQuestionChange,
-	onMoveUp,
-	onMoveDown,
-	onDelete,
-}: QuestionListProps) => {
+export const QuestionList = ({ questions, isUpdating, isDeleting, onQuestionChange, onMoveUp, onMoveDown, onDelete }: QuestionListProps) => {
 	// Memoize the question list rendering to prevent DOM recreation
 	const content = useMemo(() => {
 		if (questions.length === 0) {
