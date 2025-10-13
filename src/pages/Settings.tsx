@@ -9,10 +9,11 @@ import type { Member, MemberRequest, OrganizationRequest, OrganizationResponse }
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrganization } from "@/lib/request/getOrganization.ts";
 import { getOrganizationMembers } from "@/lib/request/getOrganizationMembers.ts";
-import type { UnitResponse } from "@/types/unit.ts";
+import type { UnitRequest, UnitResponse } from "@/types/unit.ts";
 import { getOrganizationUnits } from "@/lib/request/getOrganizationUnits.ts";
 import { updateOrganization } from "@/lib/request/updateOrganization.ts";
 import { addMember } from "@/lib/request/addMember.ts";
+import addUnit from "@/lib/request/addUnit.ts";
 
 const Settings = () => {
 	const navigate = useNavigate();
@@ -21,6 +22,7 @@ const Settings = () => {
 
 	const [organization, setOrganization] = useState<OrganizationResponse | undefined>();
 	const [memberEmail, setMemberEmail] = useState("");
+	const [newUnitName, setNewUnitName] = useState("");
 	const [selectedUnit, setSelectedUnit] = useState<string[]>([]);
 
 	// Fetch units and members
@@ -68,6 +70,17 @@ const Settings = () => {
 		}
 	});
 
+	const addUnitMutation = useMutation({
+		mutationFn: (request: UnitRequest) => addUnit(organizationSlug!, request),
+		onSuccess: () => {
+			setNewUnitName("");
+			queryClient.invalidateQueries({ queryKey: ["organizationUnits", organizationSlug!] });
+		},
+		onError: () => {
+			toast.error("Failed to add unit");
+		}
+	});
+
 	useEffect(() => {
 		setOrganization(organizationResponse);
 	}, [organizationResponse]);
@@ -78,6 +91,10 @@ const Settings = () => {
 	const handleUpdateOrganization = () => {
 		if (!organization) return;
 		updateOrganizationMutation.mutate({ name: organization.name, slug: organization.slug });
+	};
+	const handleAddUnit = () => {
+		if (!newUnitName) return;
+		addUnitMutation.mutate({ name: newUnitName });
 	};
 
 	return (
@@ -90,13 +107,13 @@ const Settings = () => {
 			) : (
 				<>
 					<p className="text-slate-800 text-3xl font-semibold">About</p>
-					<div className="flex gap-[27px]">
-						<p className="w-[170px] text-slate-400 text-2xl font-semibold">Name</p>
-						<div className="w-[350px] flex flex-col gap-6">
+					<div className="flex gap-6.75">
+						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Name</p>
+						<div className="max-w-87.5  flex flex-col gap-6">
 							<div>
 								<p>Team Name</p>
 								<Input
-									className="mt-[6px]"
+									className="mt-1.5"
 									value={organization.name}
 									onChange={e => {
 										setOrganization({ ...organization, name: e.target.value });
@@ -106,7 +123,7 @@ const Settings = () => {
 							<div>
 								<p>Slug</p>
 								<Input
-									className="mt-[6px]"
+									className="mt-1.5"
 									value={organization.slug}
 									onChange={e => {
 										setOrganization({ ...organization, slug: e.target.value });
@@ -114,7 +131,7 @@ const Settings = () => {
 								/>
 							</div>
 							<Button
-								className="w-fit"
+								className="w-fit cursor-pointer"
 								onClick={handleUpdateOrganization}
 							>
 								Save
@@ -122,13 +139,13 @@ const Settings = () => {
 						</div>
 					</div>
 					<p className="text-slate-800 text-3xl font-semibold">Team</p>
-					<div className="flex gap-[27px]">
-						<p className="w-[170px] text-slate-400 text-2xl font-semibold">Invite</p>
-						<div className="w-[350px] flex flex-col gap-6">
+					<div className="flex gap-6.75">
+						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Invite</p>
+						<div className="max-w-87.5 flex flex-col gap-6">
 							<div>
 								<p>Email</p>
 								<Input
-									className="mt-[6px]"
+									className="mt-1.5"
 									value={memberEmail}
 									onChange={e => {
 										setMemberEmail(e.target.value);
@@ -153,16 +170,54 @@ const Settings = () => {
 								</UnitSelectorContainer>
 							</div>
 							<Button
-								className="w-fit"
+								className="w-fit cursor-pointer"
 								onClick={handleAddMember}
 							>
 								Save
 							</Button>
 						</div>
 					</div>
-					<div className="flex gap-[27px]">
-						<p className="w-[170px] text-slate-400 text-2xl font-semibold">Members</p>
-						<div className="max-w-[802px] flex flex-wrap gap-6 items-center">
+					<div className="flex gap-6.75">
+						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Units</p>
+						<div className="flex flex-col gap-4">
+							<div className="flex flex-col gap-2">
+								<p>Current units</p>
+								{getUnitsError ? (
+									<p className="text-red-500 text-center">Failed to load units</p>
+								) : !units ? (
+									<p className="text-gray-500  text-center">Loading units...</p>
+								) : units.length === 0 ? (
+									<p className="text-gray-500  text-center">No units available</p>
+								) : (
+									units.map(unit => (
+										<div className="flex gap-4 items-center">
+											<p className="text-lg">{unit.name}</p>
+											<Button className="bg-slate-200 text-slate-800 hover:bg-slate-300 cursor-pointer">Delete</Button>
+										</div>
+									))
+								)}
+							</div>
+							<div className="flex flex-col">
+								<p>Create new unit</p>
+								<Input
+									className="mt-1.5"
+									value={newUnitName}
+									onChange={e => {
+										setNewUnitName(e.target.value);
+									}}
+								/>
+							</div>
+							<Button
+								className="w-fit"
+								onClick={handleAddUnit}
+							>
+								Create
+							</Button>
+						</div>
+					</div>
+					<div className="flex gap-6.75">
+						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Members</p>
+						<div className="max-w-200.5 flex flex-wrap gap-6 items-center">
 							{getMembersError ? (
 								<p className="text-red-500 text-center">Failed to load members</p>
 							) : !members ? (
@@ -181,13 +236,13 @@ const Settings = () => {
 						</div>
 					</div>
 					<p className="text-slate-800 text-3xl font-semibold">Dangerous Zone</p>
-					<div className="flex gap-[27px]">
-						<p className="w-[170px] text-slate-400 text-2xl font-semibold">Quit Team</p>
-						<Button className="w-fit bg-red-600 hover:bg-red-700">Quit</Button>
+					<div className="flex gap-6.75">
+						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Quit Team</p>
+						<Button className="w-fit bg-red-600 hover:bg-red-700 cursor-pointer">Quit</Button>
 					</div>
-					<div className="flex gap-[27px]">
-						<p className="w-[170px] text-slate-400 text-2xl font-semibold">Delete Project</p>
-						<Button className="w-fit bg-red-600 hover:bg-red-700">Delete</Button>
+					<div className="flex gap-6.75">
+						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Delete Project</p>
+						<Button className="w-fit bg-red-600 hover:bg-red-700 cursor-pointer">Delete</Button>
 					</div>
 				</>
 			)}
