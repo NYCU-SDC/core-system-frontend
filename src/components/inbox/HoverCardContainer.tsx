@@ -6,7 +6,7 @@ type HoverCardContainerProps = {
 
 export default function HoverCardContainer ({children}: HoverCardContainerProps){
     return (
-        <div className="hover-card-container pr-4 pl-7 bg-white h-[545px] overflow-y-auto">
+        <div className="hover-card-container px-4 bg-white h-[545px] overflow-y-auto">
             {children}
         </div>
     )

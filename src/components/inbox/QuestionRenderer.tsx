@@ -2,6 +2,11 @@ import type { InboxItemContentResponse } from '@/types/inbox.ts';
 import {Input} from "@/components/ui/input.tsx";
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover.tsx";
+import {Calendar} from "@/components/ui/calendar.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {CalendarIcon} from "lucide-react";
+import {cn} from "@/lib/utils";
 // import ShortTextQuestion from './ShortTextQuestion';
 // import LongTextQuestion from './LongTextQuestion';
 // import SingleChoiceQuestion from './SingleChoiceQuestion';
@@ -57,11 +62,35 @@ const QuestionRenderer = ({ q, value, onChange }: QuestionRendererProps) => {
                     </Select>
                 </div>
             )
+        case 'date':
+            return (
+                <div className="date-container w-[350px] flex flex-col gap-1.5">
+                    <p className="input-title text-sm font-medium text-slate-900">{q.title}</p>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !value && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {value ? new Date(value as string).toLocaleDateString('zh-TW') : <span>{q.description || "選擇日期"}</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={value ? new Date(value as string) : undefined}
+                                onSelect={(date) => onChange?.(date ? date.toISOString() : '')}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+            )
         // case 'multiple_choice':
-        //     return(
-        //
-        //     )
-        // case 'date':
         //     return(
         //
         //     )

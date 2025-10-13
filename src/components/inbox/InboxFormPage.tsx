@@ -107,15 +107,15 @@ export default function InboxFormPage({
                                 onChange={(value) => handleAnswerChange(q.id, value as string)}
                             />
                         ))}
+                        {/* Submit Button */}
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isPending}
+                            className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit text-sm text-white"
+                        >
+                            {isPending ? 'Submitting...' : 'Submit'}
+                        </button>
                     </div>
-                    {/* Submit Button */}
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isPending}
-                        className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit text-sm text-white"
-                    >
-                        {isPending ? 'Submitting...' : 'Submit'}
-                    </button>
                 </div>
             </div>
         </div>

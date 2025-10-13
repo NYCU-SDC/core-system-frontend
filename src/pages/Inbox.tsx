@@ -127,7 +127,7 @@ const Inbox = () => {
     return (
 		<>
 			<div className="flex flex-row">
-				<div  className="tab-card flex flex-col w-[344px]  bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-[986px]" >
+				<div  className="tab-card flex flex-col w-[400px] bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-[986px] rounded-l-lg" >
 					<div className="tab-card-container w-full h-fit flex flex-col gap-[10px] px-4 pb-4 border-b ">
 						<div className="tab-card-header flex flex-row justify-between items-center w-full h-fit ">
 							<h2 className="font-semibold text-[30px] text-slate-800 ">Inbox</h2>
@@ -160,6 +160,7 @@ const Inbox = () => {
 									org={it.message.org}
 									unit={it.message.unit}
 									previewMessage={it.message.previewMessage}
+									active={selectedId?.itemId === it.id}
 									onClick={handleCardClick}
 								/>
 							))
