@@ -5,8 +5,10 @@ export interface Message {
     id: string;
     postedBy: string;
     title: string;
-    subtitle: string;
+    org: string;
+    unit: string;
     type: "text" | "form" | string; // 可依實際需求擴充
+    previewMessage: string;
     contentId: string;
     createdAt: string; // ISO timestamp
     updatedAt: string; // ISO timestamp
@@ -16,6 +18,7 @@ export interface Content {
     id: string;
     title: string;
     description: string;
+    previewMessage: string;
     status: "draft" | "published" | string; // 可依實際需求擴充
     unitId: string;
     lastEditor: string;
@@ -44,7 +47,9 @@ export interface InboxItemResponse {
     id: string;
     message: Message;
     content: Content;
-    type: ItemType;
+    isRead: boolean;
+    isStarred: boolean;
+    isArchived: boolean;
 }
 export interface InboxItem {
     id: string;
@@ -93,7 +98,7 @@ export type FormFieldType =
 type FieldBase = {
     id: string;
     formId: string;
-    label: string;
+    title: string;
     order: number;
     required: boolean;
     description: string;

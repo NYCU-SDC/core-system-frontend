@@ -91,3 +91,25 @@ export async function fetchInboxById(id: string): Promise<InboxItem> {
   return data;
 }
 
+// POST form response
+export interface FormAnswerRequest {
+  answers: {
+    questionId: string;
+    value: string;
+  }[];
+}
+
+export async function submitFormResponse(formId: string, answers: FormAnswerRequest): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/forms/${formId}/responses`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(answers),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to submit form response: ${res.status} ${res.statusText}`);
+  }
+}
+

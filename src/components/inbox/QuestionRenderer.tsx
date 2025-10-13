@@ -1,4 +1,3 @@
-// components/form/QuestionRenderer.tsx - 問題渲染組件
 import type { InboxItemContentResponse } from '@/types/inbox.ts';
 import {Input} from "@/components/ui/input.tsx";
 import {Textarea} from "@/components/ui/textarea.tsx";
@@ -20,28 +19,37 @@ const QuestionRenderer = ({ q, value, onChange }: QuestionRendererProps) => {
         case 'short_text':
             return (
                 <div className="short-input-container w-[350px] flex flex-col gap-1.5">
-                    <p className="input-title text-sm font-medium text-slate-900">{q.label}</p>
-                    <Input type="text" placeholder={q.description}></Input>
+                    <p className="input-title text-sm font-medium text-slate-900">{q.title}</p>
+                    <Input
+                        type="text"
+                        placeholder={q.description}
+                        value={value as string || ''}
+                        onChange={(e) => onChange?.(e.target.value)}
+                    />
                 </div>
             )
         case 'long_text':
             return(
                 <div className="long-input-container w-[350px] flex flex-col gap-1.5">
-                    <p className="input-title text-sm font-medium text-slate-900 border-slate-300">{q.label}</p>
-                    <Textarea placeholder={q.description}/>
+                    <p className="input-title text-sm font-medium text-slate-900 border-slate-300">{q.title}</p>
+                    <Textarea
+                        placeholder={q.description}
+                        value={value as string || ''}
+                        onChange={(e) => onChange?.(e.target.value)}
+                    />
                 </div>
             )
         case 'single_choice':
             return(
                 <div className="dropdown-container w-[350px] flex flex-col gap-1.5">
-                    <p className="input-title  text-sm font-medium text-slate-900">{q.label}</p>
-                    <Select >
+                    <p className="input-title  text-sm font-medium text-slate-900">{q.title}</p>
+                    <Select value={value as string || ''} onValueChange={(v) => onChange?.(v)}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder={q.description} />
                         </SelectTrigger>
                         <SelectContent>
                             {q.choices.map((choice) => (
-                                <SelectItem key={choice.id} value={choice.name}>
+                                <SelectItem key={choice.id} value={choice.id}>
                                     {choice.name}
                                 </SelectItem>
                             ))}

@@ -1,13 +1,12 @@
 //import {useGetInboxItemContent} from "@/hooks/useGetInboxItemContent.ts";
 
 type HoverCardProps = {
-
-    itemId: string;          // 對應 item.id
-    contentId: string;       // 對應 message.id
-    title: string;           // 對應 message.title
-    subtitle?: string;        // 對應 message.subtitle
-    description?: string;     // 先寫死傳進來
-    //onClick?: () => void;
+    itemId: string;
+    contentId: string;
+    title: string;
+    org: string;
+    unit: string;
+    previewMessage: string;
     onClick?: (itemId: string, contentId: string) => void;
 };
 
@@ -16,8 +15,9 @@ export default function HoverCard({
                                       itemId,
                                       contentId,
                                       title,
-                                      subtitle,
-                                      description,
+                                      org,
+                                      unit,
+                                      previewMessage,
                                       onClick
                                   }: HoverCardProps) {
     // const handleInboxItenClick (id: string) {
@@ -48,10 +48,10 @@ export default function HoverCard({
             <div className="hover-card-content  flex flex-col gap-1 bg-white ">
                 <div className="flex flex-row justify-between hover-card-header">
                     <p className="font-medium text-[17px]">{title}</p>
-                    <p className="text-[13px] text-slate-500">3天前</p>
+                    <p className="text-[13px] text-slate-500">3 days ago</p>
                 </div>
-                <p className="hover-card-subtitle text-[13px] font-medium">{subtitle}</p>
-                <p className="hover-card-description text-[12px]">{description ?? "各位工人好，以下是活動當天的住宿、接駁、報到與用餐等相關資訊，活動日期..."}</p>
+                <p className="hover-card-subtitle text-[13px] font-medium">{org} {unit}</p>
+                <p className="hover-card-description text-[12px]">{previewMessage}</p>
             </div>
         </div>
     );

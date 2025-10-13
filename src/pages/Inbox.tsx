@@ -29,7 +29,7 @@ import {useParams} from "react-router-dom";
 
 const ALL = "All";
 const STATIC_DESC =
-	"各位工人好，以下是活動當天的住宿、接駁、報到與用餐等相關資訊，活動日期...";
+	"Hello everyone, here are the accommodation, transportation, check-in and dining information...";
 
 
 const Inbox = () => {
@@ -37,7 +37,7 @@ const Inbox = () => {
 	const { slug: organizationSlug } = useParams();
 	const [selectedId, setSelectedId] = useState<{itemId: string; contentId: string} | null>(null);
 	const {data: inboxList, isLoading: getListIsLoading,isError: getInboxListError} = useGetInboxList();
-	const updateInbox = useUpdateInbox(); // 只是建立 hook
+	const updateInbox = useUpdateInbox();
 	const {data: inboxItemContent, isSuccess: getContentIsSuccess, isLoading: getContentIsLoading,isError: getInboxItemContentError} = useGetInboxItemContent(selectedId?.contentId ?? null);
 	const {data: inboxItem, isSuccess: getItemtIsSuccess, isLoading: getItemIsLoading, isError: getInboxItemError} = useGetInboxItem(selectedId?.itemId ?? null);
 	//
@@ -45,8 +45,7 @@ const Inbox = () => {
     // const [loading, setLoading] = useState<boolean>(true);
     // const [error, setError] = useState<string | null>(null);
 	//
-	// 篩選狀態
-	const [selectedUnits, setSelectedUnits] = useState<string[]>([ALL]); // 初始 All
+	const [selectedUnits, setSelectedUnits] = useState<string[]>([ALL]);
 	const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
 
 
@@ -83,25 +82,32 @@ const Inbox = () => {
 	}, [items, selectedUnits, unreadOnly]);
 	const handleCardClick = (itemId: string, contentId: string) => {
 		setSelectedId({ itemId, contentId });
-		// TODO: set to be read
-		// updateInbox.mutate({ id: itemId, flags:{
-		// 		"isRead": true,
-		// 		"isStarred": false,
-		// 		"isArchived": false
-		// 	} }); // 手動觸發
+
+		// Find the current item to preserve its flags
+		const currentItem = items.find(item => item.id === itemId);
+		if (currentItem) {
+			updateInbox.mutate({
+				id: itemId,
+				flags: {
+					isRead: true,
+					isStarred: currentItem.isStarred,
+					isArchived: currentItem.isArchived
+				}
+			});
+		}
 	};
 
 	function formatDeadline(isoString: string): string {
 		const date = new Date(isoString);
 
-		// 格式化日期
 		const formatter = new Intl.DateTimeFormat('zh-TW', {
 			year: 'numeric',
-			month: 'long',
+			month: 'numeric',
 			day: 'numeric',
 			weekday: 'short',
 			hour: '2-digit',
 			minute: '2-digit',
+			hour12: false,
 			timeZone: 'Asia/Taipei'
 		});
 
@@ -150,9 +156,10 @@ const Inbox = () => {
 									key={it.message.id}
 									itemId={it.id}
 									contentId={it.message.contentId}
-									title={it.message.title}      // message.title
-									subtitle={it.message.subtitle} // message.subtitle
-									description={STATIC_DESC}
+									title={it.message.title}
+									org={it.message.org}
+									unit={it.message.unit}
+									previewMessage={it.message.previewMessage}
 									onClick={handleCardClick}
 								/>
 							))
@@ -180,16 +187,13 @@ const Inbox = () => {
 
 				</div>
 				<InboxFormPage
-					// 狀態
 					hasSelected={!!selectedId}
 					isLoadingItem={getItemIsLoading}
 					isLoadingContent={getContentIsLoading}
 					isErrorItem={getInboxItemError}
 					isErrorContent={getInboxItemContentError}
-					// 資料
 					inboxItem={inboxItem}
 					inboxItemContent={inboxItemContent}
-					// 工具函數
 					formatDeadline={formatDeadline}
 				/>
 				{/*<InboxFormPage>*/}
@@ -223,7 +227,7 @@ const Inbox = () => {
 
 					{/* form header */}
 				{/*	/!*<div>*!/*/}
-				{/*	/!*	<p className="post-info text-[14px] text-slate-500 ">Post by NYCU SDC 行政組</p>*!/*/}
+				{/*	/!*	<p className="post-info text-[14px] text-slate-500 ">Post by NYCU SDC Admin</p>*!/*/}
 				{/*	/!*	<div className="unit-info flex flex-1">*!/*/}
 				{/*	/!*		<div className="unit-container  rounded-full py-0.5 px-2 gap-[10px] bg-slate-400">*!/*/}
 				{/*	/!*			<p className="unit-name text-slate-50 text-[14px]">Unit5</p>*!/*/}
@@ -238,13 +242,13 @@ const Inbox = () => {
 				{/*	/!*<div className="form p-4 flex flex-col gap-6">*!/*/}
 					{/*	/!* short input *!/*/}
 					{/*	<div className="short-input-container w-[350px] flex flex-col gap-1.5">*/}
-					{/*		<p className="input-title text-sm font-medium text-slate-900">短輸入</p>*/}
+					{/*		<p className="input-title text-sm font-medium text-slate-900">Short input</p>*/}
 					{/*		<Input type="text" placeholder="Pietro Schirano"></Input>*/}
 					{/*	</div>*/}
 
 				{/*	/!*	/!* single choice *!/*!/*/}
 				{/*		<div className="dropdown-container w-[350px] flex flex-col gap-1.5">*/}
-				{/*			<p className="input-title  text-sm font-medium text-slate-900">選擇</p>*/}
+				{/*			<p className="input-title  text-sm font-medium text-slate-900">Selection</p>*/}
 				{/*			<Select >*/}
 				{/*				<SelectTrigger className="w-full">*/}
 				{/*					<SelectValue placeholder="@skirano" />*/}
@@ -259,7 +263,7 @@ const Inbox = () => {
 
 				{/*	/!*	/!* date *!/*!/*/}
 				{/*	/!*	<div className="date-container w-[350px] flex flex-col gap-1.5">*!/*/}
-				{/*	/!*		<p className="input-title  text-sm font-medium text-slate-900">日期選擇</p>*!/*/}
+				{/*	/!*		<p className="input-title  text-sm font-medium text-slate-900">Date selection</p>*!/*/}
 				{/*	/!*		<Select >*!/*/}
 				{/*	/!*			<SelectTrigger className="w-full">*!/*/}
 				{/*	/!*				<SelectValue placeholder="@skirano" />*!/*/}
@@ -293,13 +297,13 @@ const Inbox = () => {
 
 				{/*	/!*	/!* long input *!/*!/*/}
 				{/*		<div className="long-input-container w-[350px] flex flex-col gap-1.5">*/}
-				{/*			<p className="input-title text-sm font-medium text-slate-900 border-slate-300">長輸入</p>*/}
+				{/*			<p className="input-title text-sm font-medium text-slate-900 border-slate-300">Long input</p>*/}
 				{/*			<Textarea />*/}
 				{/*		</div>*/}
 
 				{/*	/!*	/!* submit button *!/*!/*/}
 				{/*	/!*	<div className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit ">*!/*/}
-				{/*	/!*		<button className="text-sm text-white">送出</button>*!/*/}
+				{/*	/!*		<button className="text-sm text-white">Submit</button>*!/*/}
 				{/*	/!*	</div>*!/*/}
 
 				{/*	/!*</div>*!/*/}
