@@ -6,3 +6,7 @@ export type UnitResponse = {
 	createdAt: string;
 	updatedAt: string;
 };
+
+export type UnitRequest = {
+	name: string;
+};

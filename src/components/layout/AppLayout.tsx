@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useGetOrganizations } from "@/hooks/useGetOrganizations.ts";
-import { useGetUser } from "@/hooks/useGetUser.ts";
-import type { Organization } from "@/types/organization.ts";
+import type { Organization, OrganizationResponse } from "@/types/organization.ts";
+import { useQuery } from "@tanstack/react-query";
+import { getOrganizations } from "@/lib/request/getOrganizations.ts";
+import { getUser } from "@/lib/request/getUser.ts";
 
 interface NavItemProps {
 	icon: ReactNode;
@@ -149,8 +150,14 @@ const AppLayout = () => {
 
 	const { slug: orgSlug } = useParams();
 	const [currentOrg, setCurrentOrg] = useState<Organization>();
-	const { data: organizations, isError } = useGetOrganizations();
-	const { data: user } = useGetUser();
+	const { data: organizations, isError } = useQuery<OrganizationResponse[]>({
+		queryKey: ["organizations"],
+		queryFn: getOrganizations
+	});
+	const { data: user } = useQuery({
+		queryKey: ["user"],
+		queryFn: getUser
+	});
 
 	useEffect(() => {
 		if (orgSlug && organizations) {
