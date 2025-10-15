@@ -4,6 +4,6 @@ import type { MemberRequest } from "@/types/organization.ts";
 export async function addOrganizationMember(orgSlug: string, member: MemberRequest) {
 	return api(`/orgs/${orgSlug}/members`, {
 		method: "POST",
-		body: JSON.stringify({ member })
+		body: JSON.stringify(member)
 	});
 }
