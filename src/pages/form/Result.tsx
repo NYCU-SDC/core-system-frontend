@@ -86,8 +86,7 @@ const FormResults: React.FC = () => {
 			</div>
 			{questions.map((question, index) => {
 				// 取得該問題的答案資料
-				const questionAnswersData = questionAnswersQueries[index]?.data;
-				const answers = questionAnswersData?.answers || [];
+				const answers = questionAnswersQueries[index]?.data || [];
 				console.log("answers len: ", answers.length);
 				console.log("answers: ", answers);
 
