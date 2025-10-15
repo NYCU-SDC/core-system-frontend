@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { Organization, OrganizationResponse } from "@/types/organization.ts";
 import { useQuery } from "@tanstack/react-query";
 import { getOrganizations } from "@/lib/request/getOrganizations.ts";
+import { getUser } from "@/lib/request/getUser.ts";
 
 interface NavItemProps {
 	icon: ReactNode;
@@ -152,6 +153,10 @@ const AppLayout = () => {
 	const { data: organizations, isError } = useQuery<OrganizationResponse[]>({
 		queryKey: ["organizations"],
 		queryFn: getOrganizations
+	});
+	const { data: user } = useQuery({
+		queryKey: ["user"],
+		queryFn: getUser
 	});
 
 	useEffect(() => {

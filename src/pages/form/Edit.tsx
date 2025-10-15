@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChoiceOption, FormData, QuestionType, BaseQuestion } from "@/types/form.ts";
 import type { Question } from "@/types/question.ts";
 import { createNewQuestion } from "@/types/question.ts";
@@ -10,8 +10,6 @@ import { FormInfo } from "@/components/form/FormInfo.tsx";
 import { FormSettings } from "@/components/form/FormSettings.tsx";
 import { useGetForm } from "@/hooks/useGetForm.ts";
 import { useGetQuestions } from "@/hooks/useGetQuestions.ts";
-import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
-import { useGetUnits } from "@/hooks/useGetUnits.ts";
 import { useToast } from "@/hooks/useToast.ts";
 import { UnauthorizedError } from "@/lib/request/api.ts";
 import { publishForm } from "@/lib/request/publishForm.ts";
@@ -21,6 +19,8 @@ import { createForm } from "@/lib/request/createForm.ts";
 import { createQuestion } from "@/lib/request/createQuestion.ts";
 import { updateQuestion } from "@/lib/request/updateQuestion.ts";
 import { deleteQuestion } from "@/lib/request/deleteQuestion.ts";
+import { getOrganization } from "@/lib/request/getOrganization.ts";
+import { getOrganizationUnits } from "@/lib/request/getOrganizationUnits.ts";
 
 const FormEdit = () => {
 	const { id } = useParams<{ id: string }>();
@@ -33,8 +33,16 @@ const FormEdit = () => {
 	const { data: questionsData } = useGetQuestions(id || "");
 
 	const { slug } = useParams<{ slug: string }>();
-	const { data: organization } = useGetOrganization(slug || "");
-	const { data: units } = useGetUnits(slug || "");
+	const { data: organization } = useQuery({
+		queryKey: ["Organization", slug],
+		queryFn: () => getOrganization(slug!),
+		enabled: !!slug
+	});
+	const { data: units } = useQuery({
+		queryKey: ["OrganizationUnits", slug],
+		queryFn: () => getOrganizationUnits(slug!),
+		enabled: !!slug
+	});
 
 	const [formData, setFormData] = useState<FormData | null>(null);
 	const [questions, setQuestions] = useState<BaseQuestion[]>([]);
