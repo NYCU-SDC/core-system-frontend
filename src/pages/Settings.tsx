@@ -148,7 +148,7 @@ const Settings = () => {
 	};
 
 	return (
-		<div className="flex flex-col pl-32 pt-24 pr-8 pb-4 gap-8">
+		<div className="flex flex-col pl-8 pt-24 pr-8 pb-4 gap-8 md:pl-32">
 			<p className="text-slate-800 text-5xl font-bold">Settings</p>
 			{getOrganizationError ? (
 				<p className="text-red-500">Failed to load organization</p>
@@ -157,7 +157,7 @@ const Settings = () => {
 			) : (
 				<>
 					<p className="text-slate-800 text-3xl font-semibold">About</p>
-					<div className="flex gap-6.75">
+					<div className="flex flex-col gap-6.75 md:flex-row">
 						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Name</p>
 						<div className="max-w-87.5  flex flex-col gap-6">
 							<div>
@@ -189,7 +189,7 @@ const Settings = () => {
 						</div>
 					</div>
 					<p className="text-slate-800 text-3xl font-semibold">Team</p>
-					<div className="flex gap-6.75">
+					<div className="flex flex-col gap-6.75 md:flex-row">
 						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Invite</p>
 						<div className="max-w-87.5 flex flex-col gap-6">
 							<div>
@@ -227,7 +227,7 @@ const Settings = () => {
 							</Button>
 						</div>
 					</div>
-					<div className="flex gap-6.75">
+					<div className="flex flex-col gap-6.75 md:flex-row">
 						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Units</p>
 						<div className="flex flex-col gap-4">
 							<div className="flex flex-col gap-2">
@@ -270,7 +270,7 @@ const Settings = () => {
 							</Button>
 						</div>
 					</div>
-					<div className="flex gap-6.75">
+					<div className="flex flex-col gap-6.75 md:flex-row">
 						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Members</p>
 						<div className="max-w-200.5 flex flex-wrap gap-6 items-center">
 							{getMembersError ? (
