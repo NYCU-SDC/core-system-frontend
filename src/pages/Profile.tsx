@@ -14,7 +14,7 @@ const Profile = () => {
 	const getInitials = (name: string) => {
 		return name
 			.split(" ")
-			.map((n) => n[0])
+			.map(n => n[0])
 			.join("")
 			.toUpperCase()
 			.slice(0, 2);
@@ -86,9 +86,7 @@ const Profile = () => {
 								src={user.avatarUrl}
 								alt={user.name}
 							/>
-							<AvatarFallback className="text-2xl font-semibold bg-gray-300 text-gray-700">
-								{getInitials(user.name)}
-							</AvatarFallback>
+							<AvatarFallback className="text-2xl font-semibold bg-gray-300 text-gray-700">{getInitials(user.name)}</AvatarFallback>
 						</Avatar>
 
 						<div className="mt-16">
@@ -108,9 +106,7 @@ const Profile = () => {
 							<div className="bg-gray-50 rounded-lg p-4">
 								<label className="text-sm font-medium text-gray-500">Role</label>
 								<div className="mt-1">
-									<span
-										className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}
-									>
+									<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
 										{user.role.charAt(0).toUpperCase() + user.role.slice(1)}
 									</span>
 								</div>

@@ -80,7 +80,7 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label, av
 		if (!name) return <User className="w-5 h-5" />;
 		return name
 			.split(" ")
-			.map((n) => n[0])
+			.map(n => n[0])
 			.join("")
 			.toUpperCase()
 			.slice(0, 2);
@@ -104,9 +104,7 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label, av
 										alt={userName || "User"}
 									/>
 								)}
-								<AvatarFallback className="bg-slate-600 text-slate-50 text-sm">
-									{getInitials(userName)}
-								</AvatarFallback>
+								<AvatarFallback className="bg-slate-600 text-slate-50 text-sm">{getInitials(userName)}</AvatarFallback>
 							</Avatar>
 						</Button>
 					</TooltipTrigger>
