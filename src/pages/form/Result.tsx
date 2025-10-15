@@ -6,7 +6,6 @@ import { getForm } from "@/lib/request/getForm.ts";
 import { getQuestions } from "@/lib/request/getQuestions";
 import { getResponses } from "@/lib/request/getResponses";
 import { getQuestionResponses } from "@/lib/request/getQuestionResponses";
-import "@/components/form/DraftFormCard.css";
 
 const FormResults: React.FC = () => {
 	const { id } = useParams<{ id: string }>();

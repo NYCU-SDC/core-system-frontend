@@ -1,7 +1,6 @@
 import React from "react";
 import { QuestionTypeLabels } from "@/types/question.ts";
 import type { QuestionType } from "@/types/form.ts";
-import "@/components/form/DraftFormCard.css";
 
 interface AddQuestionPanelProps {
 	onAddQuestion: (type: QuestionType) => void;
@@ -19,7 +18,7 @@ const AddQuestion: React.FC<AddQuestionPanelProps> = ({ onAddQuestion }) => {
 						key={type}
 						type="button"
 						onClick={() => onAddQuestion(type)}
-						className="btn btn-primary"
+						className="px-4 py-2 rounded-md bg-slate-100 text-slate-700 font-medium text-sm border border-slate-300 hover:bg-slate-200 hover:border-slate-400 active:bg-slate-300 transition-colors"
 					>
 						{QuestionTypeLabels[type]}
 					</button>

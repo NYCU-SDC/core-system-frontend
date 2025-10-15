@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ChoiceOption, FormData, QuestionType, BaseQuestion } from "@/types/form.ts";
 import type { Question } from "@/types/question.ts";
 import { createNewQuestion } from "@/types/question.ts";
-import "@/components/form/DraftFormCard.css";
 import AddQuestion from "@/components/form/AddQuestion.tsx";
 import { QuestionList } from "@/components/form/QuestionList.tsx";
 import { FormInfo } from "@/components/form/FormInfo.tsx";
