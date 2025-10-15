@@ -30,10 +30,10 @@ const FormEdit = () => {
 	const isNewForm = id === "new";
 	const { showSuccess, showError } = useToast();
 
- 	const { data: form } = useGetForm(id || "");
- 	const { data: questionsData } = useGetQuestions(id || "");
+	const { data: form } = useGetForm(id || "");
+	const { data: questionsData } = useGetQuestions(id || "");
 
- 	const { slug } = useParams<{ slug: string }>();
+	const { slug } = useParams<{ slug: string }>();
 	const { data: organization } = useGetOrganization(slug || "");
 	const { data: units } = useGetUnits(slug || "");
 
@@ -60,7 +60,7 @@ const FormEdit = () => {
 	}, [formData]);
 
 	const [selectedPublishUnits, setSelectedPublishUnits] = useState<string[]>([]);
- 	const availableGroups = units?.map(unit => unit.name) || [];
+	const availableGroups = units?.map(unit => unit.name) || [];
 
 	const convertUnitNamesToIds = (unitNames: string[]): string[] => {
 		return unitNames
@@ -513,9 +513,7 @@ const FormEdit = () => {
 								title: question.title,
 								description: question.description,
 								order: question.order,
-								...(question.type === 'single_choice' || question.type === 'multiple_choice' 
-									? { choices: (question as Question & { choices?: ChoiceOption[] }).choices }
-									: {})
+								...(question.type === "single_choice" || question.type === "multiple_choice" ? { choices: (question as Question & { choices?: ChoiceOption[] }).choices } : {})
 							};
 							const createdQuestion = (await createQuestionMutation.mutateAsync({
 								formId: newForm.id,
@@ -533,13 +531,13 @@ const FormEdit = () => {
 				setHasUnsavedChanges(false);
 				return newForm;
 			} else {
-					const updatedForm = (await updateFormMutation.mutateAsync({
-						id: formData.id,
-						request: {
-							title: formData.title,
-							description: formData.description
-						}
-					})) as FormData;
+				const updatedForm = (await updateFormMutation.mutateAsync({
+					id: formData.id,
+					request: {
+						title: formData.title,
+						description: formData.description
+					}
+				})) as FormData;
 				setHasUnsavedChanges(false);
 				return updatedForm;
 			}
