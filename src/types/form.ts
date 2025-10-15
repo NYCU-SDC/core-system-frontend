@@ -81,13 +81,6 @@ export interface RecipientSelectionRequest {
 	unitIds?: UUID[];
 }
 
-/*export interface RecipientUser {
-	id: UUID;
-	name: string;
-	organizationId?: UUID;
-	unitId?: UUID;
-}*/
-
 export interface RecipientSelectionResponse {
 	units: Array<{
 		id: string;

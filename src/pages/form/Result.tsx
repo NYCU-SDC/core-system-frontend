@@ -7,26 +7,6 @@ import { getResponses } from "@/lib/request/getResponses";
 import { getQuestionResponses } from "@/lib/request/getQuestionResponses";
 import "@/components/form/DraftFormCard.css";
 
-// interface PublishedFormData extends FormData {
-// 	replyNumber?: string;
-// 	replyFrom?: string[];
-// }
-
-// const fetchFormById = async (id: string): Promise<PublishedFormData | null> => {
-// 	await new Promise(resolve => setTimeout(resolve, 300));
-//
-// 	return {
-// 		id: id,
-// 		title: '請填寫 SDC 志工制服尺寸與飲食需求',
-// 		unit: ['Administration'],
-// 		description: '為了統一製作制服與安排餐點，請填寫以下資訊。若有特殊需求請於下方備註欄說明。',
-// 		time: '2025-04-23 16:00',
-// 		status: 'published',
-// 		replyNumber: '20',
-// 		replyFrom: ['EM', '小知', '海鷗', 'Ethel', 'Nikka']
-// 	};
-// }
-
 const FormResults: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
@@ -57,25 +37,6 @@ const FormResults: React.FC = () => {
 			enabled: !!id && !!question.id
 		}))
 	});
-
-	// const [formData, setFormData] = useState<PublishedFormData | null>(null);
-	// const [questions, setQuestions] = useState<Question[]>([]);
-	// const [loading, setLoading] = useState(true);
-
-	// useEffect(() => {
-	// 	const loadForm = async () => {
-	// 		try {
-	// 			setLoading(true);
-	// 			const data = await fetchFormById(id!);
-	// 			setFormData(data);
-	// 		} catch (error) {
-	// 			console.error('Failed to load form:', error);
-	// 		} finally {
-	// 			setLoading(false);
-	// 		}
-	// 	};
-	// 	loadForm();
-	// }, [id]);
 
 	const handleBackToForms = () => {
 		navigate(`/${slug}/forms`);

@@ -1,20 +1,18 @@
 import DraftFormCard from "@/components/form/DraftFormCard.tsx";
 import PublishedFormCard from "@/components/form/PublishedFormCard.tsx";
-//import React from 'react';
-//import { Button } from "@/components/ui";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetForms } from "@/hooks/useGetForms";
 import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
-import { publishForm } from "@/lib/request/publishForm.ts";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+// import { publishForm } from "@/lib/request/publishForm.ts";
+// import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const FormList = () => {
 	const navigate = useNavigate();
 	const { slug } = useParams<{ slug: string }>();
 	const { data: organization } = useGetOrganization(slug || "");
 	const unitId = organization?.id as string;
-	const { data, isError, isLoading, status } = useGetForms(slug || "", unitId);
-	const queryClient = useQueryClient();
+	const { data, isError, isLoading } = useGetForms(slug || "", unitId);
+	// const queryClient = useQueryClient();
 
 	const handleNewForm = () => {
 		console.log("Create new form");

@@ -39,11 +39,6 @@ export interface LongTextQuestion extends BaseQuestion {
 	rows?: number;
 }
 
-// export interface ChoiceOption {
-// 	id: string;
-// 	label: string;
-// 	value: string;
-// }
 export interface ChoiceOption {
 	id: string;
 	name: string;
