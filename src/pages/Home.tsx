@@ -2,8 +2,6 @@ import { Button } from "@/components/ui";
 
 const Home = () => {
 	const login = () => {
-		console.log(import.meta.env.VITE_API_BASE_URL);
-		console.log(window.location.origin);
 		window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login/oauth/google?r=${window.location.origin}/inbox`;
 	};
 
