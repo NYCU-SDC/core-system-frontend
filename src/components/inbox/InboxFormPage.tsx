@@ -27,11 +27,11 @@ export default function InboxFormPage({
   formatDeadline
 }: InboxFormPageProps) {
     // State to store form answers
-    const [formAnswers, setFormAnswers] = React.useState<Record<string, string>>({});
+    const [formAnswers, setFormAnswers] = React.useState<Record<string, string | string[]>>({});
 
     const { mutate: submitForm, isPending } = useSubmitFormResponse();
 
-    const handleAnswerChange = (questionId: string, value: string) => {
+    const handleAnswerChange = (questionId: string, value: string | string[]) => {
         setFormAnswers(prev => ({
             ...prev,
             [questionId]: value
@@ -46,7 +46,7 @@ export default function InboxFormPage({
 
         const answersArray = Object.entries(formAnswers).map(([questionId, value]) => ({
             questionId,
-            value
+            value: Array.isArray(value) ? value.join(',') : value
         }));
 
         submitForm({ formId: inboxItem.content.id, answers: { answers: answersArray } });
@@ -103,8 +103,8 @@ export default function InboxFormPage({
                             <QuestionRenderer
                                 key={q.id}
                                 q={q}
-                                value={formAnswers[q.id] || ''}
-                                onChange={(value) => handleAnswerChange(q.id, value as string)}
+                                value={formAnswers[q.id] || (q.type === 'multiple_choice' ? [] : '')}
+                                onChange={(value) => handleAnswerChange(q.id, value)}
                             />
                         ))}
                         {/* Submit Button */}

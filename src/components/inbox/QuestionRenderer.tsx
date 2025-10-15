@@ -5,6 +5,8 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover.tsx";
 import {Calendar} from "@/components/ui/calendar.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {Checkbox} from "@/components/ui/checkbox.tsx";
+import {Label} from "@/components/ui/label.tsx";
 import {CalendarIcon} from "lucide-react";
 import {cn} from "@/lib/utils";
 // import ShortTextQuestion from './ShortTextQuestion';
@@ -90,10 +92,41 @@ const QuestionRenderer = ({ q, value, onChange }: QuestionRendererProps) => {
                     </Popover>
                 </div>
             )
-        // case 'multiple_choice':
-        //     return(
-        //
-        //     )
+        case 'multiple_choice':
+            const selectedValues = (value as string[]) || [];
+
+            const handleToggle = (choiceId: string) => {
+                const newValues = selectedValues.includes(choiceId)
+                    ? selectedValues.filter(v => v !== choiceId)
+                    : [...selectedValues, choiceId];
+                onChange?.(newValues);
+            };
+
+            return (
+                <div className="multiple-choice-container w-[350px] flex flex-col gap-1.5">
+                    <p className="input-title text-sm font-medium text-slate-900">{q.title}</p>
+                    {q.description && (
+                        <p className="text-sm text-slate-500">{q.description}</p>
+                    )}
+                    <div className="flex flex-col gap-3">
+                        {q.choices.map((choice) => (
+                            <div key={choice.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={choice.id}
+                                    checked={selectedValues.includes(choice.id)}
+                                    onCheckedChange={() => handleToggle(choice.id)}
+                                />
+                                <Label
+                                    htmlFor={choice.id}
+                                    className="text-sm font-normal cursor-pointer"
+                                >
+                                    {choice.name}
+                                </Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
 
     }
 };
