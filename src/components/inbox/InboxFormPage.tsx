@@ -2,6 +2,9 @@ import * as React from "react";
 import type { InboxItemResponse, InboxItemContentResponse } from "@/types/inbox";
 import QuestionRenderer from "@/components/inbox/QuestionRenderer";
 import { useSubmitFormResponse } from "@/hooks/useSubmitFormResponse";
+import { useUpdateInbox } from "@/hooks/useUpdateInbox";
+import { Inbox } from "lucide-react";
+
 type InboxFormPageProps = {
 
     hasSelected: boolean;
@@ -30,6 +33,7 @@ export default function InboxFormPage({
     const [formAnswers, setFormAnswers] = React.useState<Record<string, string | string[]>>({});
 
     const { mutate: submitForm, isPending } = useSubmitFormResponse();
+    const updateInbox = useUpdateInbox();
 
     const handleAnswerChange = (questionId: string, value: string | string[]) => {
         setFormAnswers(prev => ({
@@ -39,23 +43,39 @@ export default function InboxFormPage({
     };
 
     const handleSubmit = () => {
-        if (!inboxItem?.content?.id) {
-            console.error("No form ID available");
+        if (!inboxItem?.content?.id || !inboxItem?.id) {
+            console.error("No form ID or inbox item ID available");
             return;
         }
 
         const answersArray = Object.entries(formAnswers).map(([questionId, value]) => ({
             questionId,
-            value: Array.isArray(value) ? value.join(',') : value
+            value: Array.isArray(value) ? value.join(';') : value
         }));
 
-        submitForm({ formId: inboxItem.content.id, answers: { answers: answersArray } });
+        submitForm(
+            { formId: inboxItem.content.id, answers: { answers: answersArray } },
+            {
+                onSuccess: () => {
+                    // Archive the inbox item after successful form submission
+                    updateInbox.mutate({
+                        id: inboxItem.id,
+                        flags: {
+                            isRead: inboxItem.isRead,
+                            isStarred: inboxItem.isStarred,
+                            isArchived: true
+                        }
+                    });
+                }
+            }
+        );
     };
 
     if (!hasSelected) {
         return (
-            <div className="detail-container flex p-16 gap-4 flex-1 h-[982px] justify-center items-center">
-                <p className="text-slate-500">Please select an item</p>
+            <div className="detail-container flex flex-col p-16 gap-4 flex-1 h-[982px] justify-center items-center">
+                <Inbox className="w-[40px] h-[32px] text-gray-400" strokeWidth={4} />
+                <p className="text-gray-400 font-medium text-[14px] leading-5">Please select an item to view details.</p>
             </div>
         );
     }
@@ -79,8 +99,9 @@ export default function InboxFormPage({
 
     if (!inboxItem?.id || !inboxItem?.content || !inboxItemContent || inboxItemContent.length === 0) {
         return (
-            <div className="detail-container flex p-16 gap-4 flex-1 h-[982px] justify-center items-center">
-                <p className="text-sm text-slate-500 py-3">No available Form</p>
+            <div className="detail-container flex flex-col p-16 gap-4 flex-1 h-[982px] justify-center items-center">
+                <Inbox className="w-[40px] h-[32px] text-gray-400" strokeWidth={4} />
+                <p className="text-gray-400 font-medium text-[14px] leading-5">Please select an item to view details.</p>
             </div>
         );
     }
@@ -113,7 +134,7 @@ export default function InboxFormPage({
                             disabled={isPending}
                             className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit text-sm text-white"
                         >
-                            {isPending ? 'Submitting...' : 'Submit'}
+                            {isPending ? '送出中' : '送出'}
                         </button>
                     </div>
                 </div>

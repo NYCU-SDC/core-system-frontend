@@ -1,4 +1,4 @@
-//import {useGetInboxItemContent} from "@/hooks/useGetInboxItemContent.ts";
+import { Check } from "lucide-react";
 
 type HoverCardProps = {
     itemId: string;
@@ -8,6 +8,8 @@ type HoverCardProps = {
     unit: string;
     previewMessage: string;
     active?: boolean;
+    isRead?: boolean;
+    isArchived?: boolean;
     onClick?: (itemId: string, contentId: string) => void;
 };
 
@@ -20,6 +22,8 @@ export default function HoverCard({
                                       unit,
                                       previewMessage,
                                       active = false,
+                                      isRead = false,
+                                      isArchived = false,
                                       onClick
                                   }: HoverCardProps) {
     // const handleInboxItenClick (id: string) {
@@ -45,15 +49,24 @@ export default function HoverCard({
     // }
 
     return (
-        // <div className="hover-card  flex flex-col gap-4 pt-3 pr-2 pb-3 border-b h-[109px]" onClick={handleInboxItenClick(contentId)}>
-        <div className={`hover-card flex flex-col gap-4 pt-3 px-3 pb-3 border-b h-[109px] rounded-lg ${active ? 'bg-slate-500 text-slate-100' : 'bg-white'}`} onClick={() => onClick?.(itemId, contentId)}>
+        <div className={`hover-card relative flex flex-col gap-4 pt-3 px-3 pb-3 border-b min-h-[109px] w-full rounded-lg ${active ? 'bg-slate-600' : 'bg-white'}`} onClick={() => onClick?.(itemId, contentId)}>
+            {/* Unread indicator - LEFT SIDE of hover-card */}
+            {!isRead && (
+                <div className="absolute left-[-20px] top-[18px] w-[9px] h-[9px] rounded-full bg-slate-400"></div>
+            )}
+
+            {/* Archived check mark - LEFT SIDE of hover-card */}
+            {isArchived && (
+                <Check className="absolute left-[-22px] top-[16px] w-4 h-4 text-green-600" />
+            )}
+
             <div className="hover-card-content flex flex-col gap-1">
-                <div className="flex flex-row justify-between hover-card-header">
-                    <p className="font-medium text-[17px]">{title}</p>
-                    <p className={`text-[13px] ${active ? 'text-slate-300' : 'text-slate-500'}`}>3 days ago</p>
+                <div className="flex flex-row justify-between items-start hover-card-header">
+                    <p className={`font-medium text-[17px] ${active ? 'text-white' : ''}`}>{title}</p>
+                    <p className={`text-[13px] whitespace-nowrap ${active ? 'text-white' : 'text-slate-500'}`}>3 days ago</p>
                 </div>
-                <p className={`hover-card-subtitle text-[13px] font-medium ${active ? 'text-slate-200' : ''}`}>{org} {unit}</p>
-                <p className={`hover-card-description text-[12px] ${active ? 'text-slate-300' : ''}`}>{previewMessage}</p>
+                <p className={`hover-card-subtitle text-[13px] font-medium ${active ? 'text-white' : ''}`}>{org} {unit}</p>
+                <p className={`hover-card-description text-[12px] ${active ? 'text-white' : ''}`}>{previewMessage}</p>
             </div>
         </div>
     );

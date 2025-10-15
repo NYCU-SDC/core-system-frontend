@@ -9,11 +9,6 @@ import {Checkbox} from "@/components/ui/checkbox.tsx";
 import {Label} from "@/components/ui/label.tsx";
 import {CalendarIcon} from "lucide-react";
 import {cn} from "@/lib/utils";
-// import ShortTextQuestion from './ShortTextQuestion';
-// import LongTextQuestion from './LongTextQuestion';
-// import SingleChoiceQuestion from './SingleChoiceQuestion';
-// import MultipleChoiceQuestion from './MultipleChoiceQuestion';
-
 
 type QuestionRendererProps = {
     q: InboxItemContentResponse;

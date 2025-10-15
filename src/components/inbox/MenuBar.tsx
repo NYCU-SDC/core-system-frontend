@@ -37,13 +37,13 @@ export default function MenuBar ({
     const isActive = (key: string) =>
         key === ALL ? hasAll : !hasAll && selected.includes(key);
     return (
-        <div className="flex flex-row gap-1.5 h-fit w-full">
-            <div onClick={toggleAll}>
+        <div className="flex flex-row flex-wrap gap-1.5 w-full items-center">
+            <div onClick={toggleAll} className="cursor-pointer">
                 <MenuItem active={isActive(ALL)}>{ALL}</MenuItem>
             </div>
             {units.map((u) => (
-                <div key={u} onClick={() => toggleUnit(u)}>
-                    <MenuItem active={isActive(u)} id={u}>{u}</MenuItem>
+                <div key={u} onClick={() => toggleUnit(u)} className="cursor-pointer">
+                    <MenuItem active={isActive(u)}>{u}</MenuItem>
                 </div>
             ))}
         </div>
