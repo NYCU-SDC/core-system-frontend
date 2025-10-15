@@ -1,11 +1,16 @@
 import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Inbox from "./pages/Inbox";
-import Forms from "./pages/Forms";
+import FormList from "./pages/form/List.tsx";
+import FormEdit from "./pages/form/Edit.tsx";
+import FormResults from "./pages/form/Result.tsx";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 // import {Counter} from "@/features/example/Counter.tsx";
 import { AppLayout, SimpleLayout } from "./components/layout";
+import { Toaster } from "@/components/ui/sonner";
+import { LoginPromptDialog } from "@/components/ui/login-prompt-dialog";
+import { useGlobalAuthError } from "@/hooks/useAuthError";
 
 const AppContent = () => {
 	return (
@@ -27,7 +32,15 @@ const AppContent = () => {
 				/>
 				<Route
 					path="/:slug/forms"
-					element={<Forms />}
+					element={<FormList />}
+				/>
+				<Route
+					path="/:slug/forms/edit/:id"
+					element={<FormEdit />}
+				/>
+				<Route
+					path="/:slug/forms/results/:id"
+					element={<FormResults />}
 				/>
 				<Route
 					path="/:slug/settings"
@@ -43,7 +56,18 @@ const AppContent = () => {
 };
 
 const App = () => {
-	return <AppContent />;
+	const { showLoginPrompt, closeLoginPrompt } = useGlobalAuthError();
+
+	return (
+		<>
+			<AppContent />
+			<Toaster />
+			<LoginPromptDialog
+				open={showLoginPrompt}
+				onOpenChange={closeLoginPrompt}
+			/>
+		</>
+	);
 };
 
 export default App;
