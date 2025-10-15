@@ -4,7 +4,13 @@ import { Inbox, FileText, Settings, User, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger
+} from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useGetOrganizations } from "@/hooks/useGetOrganizations.ts";
 import type { Organization } from "@/types/organization.ts";
@@ -35,7 +41,11 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 				<Button
 					variant="ghost"
 					size="icon"
-					className={cn("w-10 h-10 rounded-lg", "bg-slate-700 hover:bg-slate-600 text-slate-50 font-semibold text-sm shadow-sm", "focus:ring-2 focus:ring-slate-500/20")}
+					className={cn(
+						"w-10 h-10 rounded-lg",
+						"bg-slate-700 hover:bg-slate-600 text-slate-50 font-semibold text-sm shadow-sm",
+						"focus:ring-2 focus:ring-slate-500/20"
+					)}
 				>
 					{currentOrg.initial}
 				</Button>
@@ -54,16 +64,24 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 							className={cn(
 								"w-full justify-start gap-3 h-auto p-3",
 								"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
-								org.slug === currentOrg.slug ? "bg-slate-100 ring-1 ring-slate-300" : ""
+								org.slug === currentOrg.slug
+									? "bg-slate-100 ring-1 ring-slate-300"
+									: ""
 							)}
 							onClick={() => {
 								onOrgChange(org);
 								setIsOpen(false);
 							}}
 						>
-							<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">{org.initial}</div>
-							<span className="text-slate-700 font-medium flex-1 text-left">{org.name}</span>
-							{org.slug === currentOrg.slug && <Check className="w-5 h-5 text-slate-600" />}
+							<div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-50 font-semibold text-sm">
+								{org.initial}
+							</div>
+							<span className="text-slate-700 font-medium flex-1 text-left">
+								{org.name}
+							</span>
+							{org.slug === currentOrg.slug && (
+								<Check className="w-5 h-5 text-slate-600" />
+							)}
 						</Button>
 					))}
 				</div>
@@ -81,11 +99,17 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 						<Button
 							variant="ghost"
 							size="icon"
-							className={cn("p-3 rounded-lg transition-all duration-200", "hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20", isActive && "bg-slate-100 ring-1 ring-slate-300")}
+							className={cn(
+								"p-3 rounded-lg transition-all duration-200",
+								"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
+								isActive && "bg-slate-100 ring-1 ring-slate-300"
+							)}
 							onClick={onClick}
 						>
 							<Avatar className="w-8 h-8 bg-slate-600">
-								<AvatarFallback className="bg-slate-600 text-slate-50">{icon}</AvatarFallback>
+								<AvatarFallback className="bg-slate-600 text-slate-50">
+									{icon}
+								</AvatarFallback>
 							</Avatar>
 						</Button>
 					</TooltipTrigger>
@@ -107,10 +131,21 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 					<Button
 						variant="ghost"
 						size="icon"
-						className={cn("p-3 rounded-lg transition-all duration-200", "hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20", isActive && "bg-slate-100 ring-1 ring-slate-300")}
+						className={cn(
+							"p-3 rounded-lg transition-all duration-200",
+							"hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20",
+							isActive && "bg-slate-100 ring-1 ring-slate-300"
+						)}
 						onClick={onClick}
 					>
-						<div className={cn("w-6 h-6 transition-colors duration-200", isActive ? "text-slate-700" : "text-slate-600 hover:text-slate-900")}>{icon}</div>
+						<div
+							className={cn(
+								"w-6 h-6 transition-colors duration-200",
+								isActive ? "text-slate-700" : "text-slate-600 hover:text-slate-900"
+							)}
+						>
+							{icon}
+						</div>
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent
@@ -157,11 +192,11 @@ const AppLayout = () => {
 	};
 
 	return (
-		<div className="flex h-screen bg-slate-50">
+		<div className="flex flex-col md:flex-row h-screen bg-slate-50">
 			{/* Aside Navigation */}
-			<aside className="w-16 bg-slate-50 border-r border-slate-200 flex flex-col justify-between py-4 shadow-sm">
+			<aside className="fixed bottom-0 left-0 right-0 h-16 md:relative md:h-auto md:w-16 bg-slate-50 border-t md:border-t-0 md:border-r border-slate-200 flex flex-row md:flex-col justify-between px-4 md:px-0 md:py-4 shadow-sm z-50">
 				{/* Top Section */}
-				<div className="flex flex-col items-center space-y-2">
+				<div className="flex flex-row md:flex-col items-center space-x-2 md:space-x-0 md:space-y-2 flex-1 md:justify-start justify-around">
 					{/* Organization Selector */}
 					{isError ? (
 						<div
@@ -212,7 +247,7 @@ const AppLayout = () => {
 				</div>
 
 				{/* Bottom Section - Profile */}
-				<div className="flex flex-col items-center">
+				<div className="flex flex-row md:flex-col items-center space-x-2 md:space-x-0 flex-1 md:justify-end justify-around">
 					{/* Settings */}
 					{currentOrg ? (
 						<NavItem
@@ -234,8 +269,12 @@ const AppLayout = () => {
 			</aside>
 
 			{/* Main Content Area */}
-			<main className="flex-1 overflow-auto bg-slate-50">
-				<Outlet context={{ organization: currentOrg }} />
+			<main className="flex-1 overflow-auto bg-slate-50 pb-16 md:pb-0">
+				<Outlet
+					context={{
+						organization: currentOrg
+					}}
+				/>
 			</main>
 		</div>
 	);
