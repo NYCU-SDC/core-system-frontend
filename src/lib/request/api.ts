@@ -8,11 +8,6 @@ export class UnauthorizedError extends Error {
 }
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-	// if (!options.headers["Content-Type"])
-	// 	options.headers["Content-Type"] = "application/json";
-
-	console.log(`API Request: ${BASE_URL}${path}`, options);
-
 	const res = await fetch(`${BASE_URL}${path}`, {
 		...options,
 		headers: {
