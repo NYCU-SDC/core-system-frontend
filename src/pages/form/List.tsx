@@ -15,22 +15,6 @@ const FormList = () => {
 	const unitId = organization?.id as string;
 	const { data, isError, isLoading, status } = useGetForms(slug || "", unitId);
 	const queryClient = useQueryClient();
-	//console.log(status);
-
-	// const publishFormMutation = useMutation({
-	// 	mutationFn: (data: { id: string; request: { orgId: string; unitIds: string[] } }) =>
-	// 		publishForm(data.id, data.request),
-	// 	onSuccess: () => {
-	// 		queryClient.invalidateQueries({ queryKey: ['Forms'] });
-	// 		queryClient.invalidateQueries({ queryKey: ['Form', id] });
-	// 		alert('Form published successfully!');
-	// 		navigate('/forms');
-	// 	},
-	// 	onError: (error) => {
-	// 		console.error('Failed to publish form:', error);
-	// 		alert('Failed to publish form. Please try again.');
-	// 	}
-	// });
 
 	const handleNewForm = () => {
 		console.log("Create new form");
@@ -56,10 +40,9 @@ const FormList = () => {
 	const draftForms = safeFormsArray.filter(form => form.status === "draft");
 	const publishedForms = safeFormsArray.filter(form => form.status === "published");
 	console.log("Draft Forms: ", draftForms);
-	//console.log("Data....: ", safeFormsArray[0].Status);
 
 	return (
-		<div className="px-22 py-15">
+		<div className="px-4 sm:px-22 py-6 sm:py-15">
 			<h1 className="text-3xl font-bold text-gray-900 mb-4 pb-5">Forms</h1>
 			{isLoading ? (
 				<div className="flex justify-center items-center h-64">
@@ -86,17 +69,13 @@ const FormList = () => {
 						) : (
 							draftForms.map(form => {
 								return (
-									<div
+									<DraftFormCard
 										key={form.id}
-										className="flex"
-									>
-										<DraftFormCard
-											form={form}
-											slug={slug}
-											onEdit={handleEditForm}
-											onPublish={handlePublishForm}
-										/>
-									</div>
+										form={form}
+										slug={slug}
+										onEdit={handleEditForm}
+										onPublish={handlePublishForm}
+									/>
 								);
 							})
 						)}
@@ -110,16 +89,12 @@ const FormList = () => {
 						) : (
 							publishedForms.map(form => {
 								return (
-									<div
+									<PublishedFormCard
 										key={form.id}
-										className="flex"
-									>
-										<PublishedFormCard
-											form={form}
-											onViewResult={handleViewResult}
-											slug={slug}
-										/>
-									</div>
+										form={form}
+										onViewResult={handleViewResult}
+										slug={slug}
+									/>
 								);
 							})
 						)}

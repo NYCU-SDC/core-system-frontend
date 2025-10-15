@@ -551,7 +551,7 @@ const FormEdit = () => {
 		if (!formData) return;
 
 		if (selectedPublishUnits.length === 0) {
-			alert("Please select at least one unit to publish to.");
+			showError("請選擇發布單位", "請至少選擇一個單位來發布表單");
 			return;
 		}
 
@@ -562,7 +562,7 @@ const FormEdit = () => {
 			}
 
 			if (!formToPublish.id) {
-				alert("Please save the form first before publishing.");
+				showError("請先儲存表單", "發布前請先儲存表單");
 				return;
 			}
 
@@ -674,7 +674,8 @@ const FormEdit = () => {
 	const pageTitle = isNewForm ? `New Form - ${formData?.title || "Untitled"}` : `Edit Form - ${formData?.title || "Loading..."}`;
 
 	return (
-		<div className="px-22 py-15">
+		<div className="px-4 sm:px-22 py-6 sm:py-15">
+
 			<button
 				type="button"
 				onClick={handleBackToForms}

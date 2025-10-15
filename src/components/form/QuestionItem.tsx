@@ -46,90 +46,9 @@ export const QuestionItem = memo<QuestionItemProps>(
 
 		return (
 			<div className="bg-white border border-slate-300 rounded-md p-6 max-w-3xl">
-				<div className="flex justify-between items-start">
-					<div className="flex-1">
-						<div className="flex items-center gap-2 mb-2">
-							<span className="font-medium text-base mb-5 text-slate-800">{QuestionTypeLabels[question.type]}</span>
-						</div>
-						<div className="max-w-xl">
-							<div className="flex items-center gap-6 mb-3">
-								<label className="text-sm w-[89px] text-slate-800">Title</label>
-								<textarea
-									value={question?.title || ""}
-									onChange={e => {
-										onQuestionChange(question.id, { title: e.target.value });
-									}}
-									placeholder="Enter question title"
-									rows={1}
-									className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
-								/>
-							</div>
-							<div className="flex items-center gap-6 mb-3">
-								<label className="text-sm w-[89px] text-slate-800">Description</label>
-								<textarea
-									value={question.description || ""}
-									onChange={e => {
-										onQuestionChange(question.id, { description: e.target.value });
-									}}
-									placeholder="Enter question description (optional)"
-									rows={2}
-									className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
-								/>
-							</div>
-
-							{/* Choice Options Editor */}
-							{hasChoices && (
-								<div className="flex gap-6 mb-3">
-									<label className="text-sm w-[89px] text-slate-800 pt-2">Options</label>
-									<div className="flex-1">
-										{(question.choices || []).map((choice, idx) => (
-											<div
-												key={choice.id}
-												className="flex items-center gap-2 mb-2"
-											>
-												<span className="text-sm text-slate-600 w-6">{idx + 1}.</span>
-												<input
-													type="text"
-													value={choice.name}
-													onChange={e => handleUpdateChoice(choice.id, e.target.value)}
-													placeholder={`Option ${idx + 1}`}
-													className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent text-slate-900"
-												/>
-												<button
-													type="button"
-													onClick={() => handleDeleteChoice(choice.id)}
-													className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-													title="Delete option"
-												>
-													<svg
-														className="w-4 h-4"
-														fill="none"
-														stroke="currentColor"
-														viewBox="0 0 24 24"
-													>
-														<path
-															strokeLinecap="round"
-															strokeLinejoin="round"
-															strokeWidth={2}
-															d="M6 18L18 6M6 6l12 12"
-														/>
-													</svg>
-												</button>
-											</div>
-										))}
-										<button
-											type="button"
-											onClick={handleAddChoice}
-											className="text-sm text-slate-600 hover:text-slate-800 px-3 py-2 border border-dashed border-slate-300 rounded-md w-full transition-colors"
-										>
-											+ Add Option
-										</button>
-									</div>
-								</div>
-							)}
-						</div>
-					</div>
-					<div className="flex gap-2 ml-4">
+				<div className="flex items-center justify-between gap-4 mb-2 sm:flex-row flex-col-reverse">
+					<span className="font-medium text-base mb-5 text-slate-800">{QuestionTypeLabels[question.type]}</span>
+					<div className="flex gap-2">
 						<button
 							type="button"
 							onClick={() => onMoveUp(question.id)}
@@ -194,6 +113,81 @@ export const QuestionItem = memo<QuestionItemProps>(
 						</button>
 					</div>
 				</div>
+				<div className="flex sm:items-center gap-6 mb-3 sm:flex-row flex-col">
+					<label className="text-sm w-[89px] text-slate-800">Title</label>
+					<textarea
+						value={question?.title || ""}
+						onChange={e => {
+							onQuestionChange(question.id, { title: e.target.value });
+						}}
+						placeholder="Enter question title"
+						rows={1}
+						className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+					/>
+				</div>
+				<div className="flex sm:items-center gap-6 mb-3 sm:flex-row flex-col">
+					<label className="text-sm w-[89px] text-slate-800">Description</label>
+					<textarea
+						value={question.description || ""}
+						onChange={e => {
+							onQuestionChange(question.id, { description: e.target.value });
+						}}
+						placeholder="Enter question description (optional)"
+						rows={2}
+						className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent resize-none text-slate-900"
+					/>
+				</div>
+
+				{/* Choice Options Editor */}
+				{hasChoices && (
+					<div className="flex sm:items-center gap-6 mb-3 sm:flex-row flex-col">
+						<label className="text-sm w-[89px] text-slate-800 pt-2">Options</label>
+						<div className="flex-1">
+							{(question.choices || []).map((choice, idx) => (
+								<div
+									key={choice.id}
+									className="flex items-center gap-2 mb-2"
+								>
+									<span className="text-sm text-slate-600 w-6">{idx + 1}.</span>
+									<input
+										type="text"
+										value={choice.name}
+										onChange={e => handleUpdateChoice(choice.id, e.target.value)}
+										placeholder={`Option ${idx + 1}`}
+										className="text-sm flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent text-slate-900 w-full"
+									/>
+									<button
+										type="button"
+										onClick={() => handleDeleteChoice(choice.id)}
+										className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+										title="Delete option"
+									>
+										<svg
+											className="w-4 h-4"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={2}
+												d="M6 18L18 6M6 6l12 12"
+											/>
+										</svg>
+									</button>
+								</div>
+							))}
+							<button
+								type="button"
+								onClick={handleAddChoice}
+								className="text-sm text-slate-600 hover:text-slate-800 px-3 py-2 border border-dashed border-slate-300 rounded-md w-full transition-colors"
+							>
+								+ Add Option
+							</button>
+						</div>
+					</div>
+				)}
 			</div>
 		);
 	},
