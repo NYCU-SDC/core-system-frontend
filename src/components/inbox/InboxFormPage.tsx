@@ -73,7 +73,7 @@ export default function InboxFormPage({
 
     if (!hasSelected) {
         return (
-            <div className="detail-container flex flex-col p-16 gap-4 flex-1 h-[982px] justify-center items-center">
+            <div className="detail-container flex flex-col p-16 gap-4 flex-1 h-dvh justify-center items-center">
                 <Inbox className="w-[40px] h-[32px] text-gray-400" strokeWidth={4} />
                 <p className="text-gray-400 font-medium text-[14px] leading-5">Please select an item to view details.</p>
             </div>
@@ -82,7 +82,7 @@ export default function InboxFormPage({
 
     if (isLoadingItem || isLoadingContent) {
         return (
-            <div className="detail-container flex p-16 gap-4 flex-1 h-[982px] justify-center items-center">
+            <div className="detail-container flex p-16 gap-4 flex-1 h-dvh justify-center items-center">
                 <p className="text-sm text-slate-500 py-3">Loading Form…</p>
             </div>
         );
@@ -91,26 +91,26 @@ export default function InboxFormPage({
 
     if (isErrorItem || isErrorContent) {
         return (
-            <div className="detail-container flex p-16 gap-4 flex-1 h-[982px] justify-center items-center">
+            <div className="detail-container flex p-16 gap-4 flex-1 h-dvh justify-center items-center">
                 <p className="text-sm text-red-500 py-3">Fail to load.</p>
             </div>
         );
     }
 
-    if (!inboxItem?.id || !inboxItem?.content || !inboxItemContent || inboxItemContent.length === 0) {
+    if (!inboxItem?.id || !inboxItem?.content) {
         return (
-            <div className="detail-container flex flex-col p-16 gap-4 flex-1 h-[982px] justify-center items-center">
+            <div className="detail-container flex flex-col p-16 gap-4 flex-1 h-dvh justify-center items-center">
                 <Inbox className="w-[40px] h-[32px] text-gray-400" strokeWidth={4} />
                 <p className="text-gray-400 font-medium text-[14px] leading-5">Please select an item to view details.</p>
             </div>
         );
     }
 
-    const questions = inboxItemContent.sort((a, b) => a.order - b.order);
+    const questions = inboxItemContent ? inboxItemContent.sort((a, b) => a.order - b.order) : [];
 
     return (
-        <div className="detail-container flex p-16 gap-4 flex-1 h-[982px] justify-center">
-            <div className="tab-card flex flex-col pt-16 px-8 pb-8 bg-white border-slate-200 w-[800px] h-[986px] gap-6 rounded-[6px]">
+        <div className="detail-container flex p-16 gap-4 flex-1 h-dvh justify-center">
+            <div className="tab-card flex flex-col pt-16 px-8 pb-8 bg-white border-slate-200 w-[800px] h-dvh gap-6 rounded-[6px]">
                 <div className="header w-full flex flex-col gap-4">
                     <div className="flex justify-between items-center">
                         <p className="post-info text-[14px] text-slate-500">Post by {inboxItem.message.org} {inboxItem.message.unit}</p>
@@ -128,14 +128,16 @@ export default function InboxFormPage({
                                 onChange={(value) => handleAnswerChange(q.id, value)}
                             />
                         ))}
-                        {/* Submit Button */}
-                        <button
-                            onClick={handleSubmit}
-                            disabled={isPending}
-                            className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit text-sm text-white"
-                        >
-                            {isPending ? '送出中' : '送出'}
-                        </button>
+                        {/* Submit Button - only show if there are questions */}
+                        {questions.length > 0 && (
+                            <button
+                                onClick={handleSubmit}
+                                disabled={isPending}
+                                className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit text-sm text-white"
+                            >
+                                {isPending ? '送出中' : '送出'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

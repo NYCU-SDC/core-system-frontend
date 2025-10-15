@@ -122,7 +122,7 @@ const Inbox = () => {
     return (
 		<>
 			<div className="flex flex-row">
-				<div  className="tab-card flex flex-col w-[344px] min-w-[344px] max-w-[344px] bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-[986px] rounded-l-lg" >
+				<div  className="tab-card flex flex-col w-[344px] min-w-[344px] max-w-[344px] bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-dvh rounded-l-lg" >
 					<div className="tab-card-container w-full h-fit flex flex-col gap-[10px] px-4 pb-4 border-b ">
 						<div className="tab-card-header flex flex-row justify-between items-center w-full h-fit ">
 							<h2 className="font-semibold text-[30px] text-slate-800 ">Inbox</h2>
