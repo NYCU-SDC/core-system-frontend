@@ -12,21 +12,25 @@ import { getOrganizationMembers } from "@/lib/request/getOrganizationMembers.ts"
 import type { UnitRequest, UnitResponse } from "@/types/unit.ts";
 import { getOrganizationUnits } from "@/lib/request/getOrganizationUnits.ts";
 import { updateOrganization } from "@/lib/request/updateOrganization.ts";
-import { addMember } from "@/lib/request/addMember.ts";
+import { addOrganizationMember } from "@/lib/request/addOrganizationMember.ts";
 import addUnit from "@/lib/request/addUnit.ts";
+import { addUnitMember } from "@/lib/request/addUnitMember.ts";
+import { deleteUnit } from "@/lib/request/deleteUnit.ts";
+import { deleteMember } from "@/lib/request/deleteMember.ts";
 
 const Settings = () => {
 	const navigate = useNavigate();
 	const { slug: organizationSlug } = useParams();
 	const queryClient = useQueryClient();
 
-	const [organization, setOrganization] = useState<OrganizationResponse | undefined>();
+	const [organization, setOrganization] = useState<OrganizationResponse>();
+	const [units, setUnits] = useState<UnitResponse[]>([]);
 	const [memberEmail, setMemberEmail] = useState("");
 	const [newUnitName, setNewUnitName] = useState("");
 	const [selectedUnit, setSelectedUnit] = useState<string[]>([]);
 
 	// Fetch units and members
-	const { data: units, error: getUnitsError } = useQuery<UnitResponse[]>({
+	const { data: unitsResponse, error: getUnitsError } = useQuery<UnitResponse[]>({
 		queryKey: ["organizationUnits", organizationSlug],
 		queryFn: () => getOrganizationUnits(organizationSlug!),
 		enabled: !!organizationSlug,
@@ -43,15 +47,38 @@ const Settings = () => {
 		queryFn: () => getOrganization(organizationSlug!)
 	});
 
-	const addMemberMutation = useMutation({
-		mutationKey: ["addMember"],
-		mutationFn: (member: MemberRequest) => addMember(organizationSlug!, member),
+	const addOrgMemberMutation = useMutation({
+		mutationKey: ["addMember", "organization"],
+		mutationFn: (member: MemberRequest) => addOrganizationMember(organizationSlug!, member),
 		onSuccess: async () => {
 			setMemberEmail("");
 			queryClient.invalidateQueries({ queryKey: ["organizationMembers", organizationSlug!] });
 		},
 		onError: () => {
 			toast.error("Failed to add member");
+		}
+	});
+
+	const addUnitMemberMutation = useMutation({
+		mutationKey: ["addMember", "unit"],
+		mutationFn: ({ id, member }: { id: string; member: MemberRequest }) => addUnitMember(organizationSlug!, id, member),
+		onSuccess: async () => {
+			setMemberEmail("");
+			setSelectedUnit([]);
+			queryClient.invalidateQueries({ queryKey: ["organizationMembers", organizationSlug!] });
+		},
+		onError: () => {
+			toast.error("Failed to add member");
+		}
+	});
+
+	const deleteMemberMutation = useMutation({
+		mutationFn: (memberId: string) => deleteMember(organizationSlug!, memberId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["organizationMembers", organizationSlug!] });
+		},
+		onError: () => {
+			toast.error("Failed to delete member");
 		}
 	});
 
@@ -70,6 +97,16 @@ const Settings = () => {
 		}
 	});
 
+	const deleteUnitMutation = useMutation({
+		mutationFn: (unitId: string) => deleteUnit(organizationSlug!, unitId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["organizationUnits", organizationSlug!] });
+		},
+		onError: () => {
+			toast.error("Failed to delete unit");
+		}
+	});
+
 	const addUnitMutation = useMutation({
 		mutationFn: (request: UnitRequest) => addUnit(organizationSlug!, request),
 		onSuccess: () => {
@@ -84,9 +121,18 @@ const Settings = () => {
 	useEffect(() => {
 		setOrganization(organizationResponse);
 	}, [organizationResponse]);
+	useEffect(() => {
+		if (unitsResponse) setUnits(unitsResponse);
+	}, [unitsResponse]);
 
 	const handleAddMember = () => {
-		addMemberMutation.mutate({ email: memberEmail });
+		addOrgMemberMutation.mutate({ email: memberEmail });
+		for (const unitId of selectedUnit) {
+			addUnitMemberMutation.mutate({ id: unitId, member: { email: memberEmail } });
+		}
+	};
+	const handleDeleteMember = (memberId: string) => {
+		deleteMemberMutation.mutate(memberId);
 	};
 	const handleUpdateOrganization = () => {
 		if (!organization) return;
@@ -95,6 +141,10 @@ const Settings = () => {
 	const handleAddUnit = () => {
 		if (!newUnitName) return;
 		addUnitMutation.mutate({ name: newUnitName });
+	};
+	const handleDeleteUnit = (unitId: string) => {
+		setUnits(units.filter(unit => unit.id !== unitId));
+		deleteUnitMutation.mutate(unitId);
 	};
 
 	return (
@@ -192,7 +242,12 @@ const Settings = () => {
 									units.map(unit => (
 										<div className="flex gap-4 items-center">
 											<p className="text-lg">{unit.name}</p>
-											<Button className="bg-slate-200 text-slate-800 hover:bg-slate-300 cursor-pointer">Delete</Button>
+											<Button
+												className="bg-slate-200 text-slate-800 hover:bg-slate-300 cursor-pointer"
+												onClick={() => handleDeleteUnit(unit.id)}
+											>
+												Delete
+											</Button>
 										</div>
 									))
 								)}
@@ -229,7 +284,9 @@ const Settings = () => {
 									<MemberCard
 										key={member.id}
 										name={member.name}
+										id={member.id}
 										avatarUrl={member.avatarUrl}
+										onClick={handleDeleteMember}
 									/>
 								))
 							)}
