@@ -3,10 +3,11 @@ import { useLocation, useNavigate, Outlet, useParams } from "react-router-dom";
 import { Inbox, FileText, Settings, User, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useGetOrganizations } from "@/hooks/useGetOrganizations.ts";
+import { useGetUser } from "@/hooks/useGetUser.ts";
 import type { Organization } from "@/types/organization.ts";
 
 interface NavItemProps {
@@ -15,6 +16,8 @@ interface NavItemProps {
 	onClick?: () => void;
 	isProfile?: boolean;
 	label: string;
+	avatarUrl?: string;
+	userName?: string;
 }
 
 interface OrgSelectorProps {
@@ -72,7 +75,17 @@ const OrgSelector = ({ currentOrg, organizations, onOrgChange }: OrgSelectorProp
 	);
 };
 
-const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: NavItemProps) => {
+const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label, avatarUrl, userName }: NavItemProps) => {
+	const getInitials = (name?: string) => {
+		if (!name) return <User className="w-5 h-5" />;
+		return name
+			.split(" ")
+			.map(n => n[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2);
+	};
+
 	if (isProfile) {
 		return (
 			<TooltipProvider>
@@ -85,7 +98,13 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 							onClick={onClick}
 						>
 							<Avatar className="w-8 h-8 bg-slate-600">
-								<AvatarFallback className="bg-slate-600 text-slate-50">{icon}</AvatarFallback>
+								{avatarUrl && (
+									<AvatarImage
+										src={avatarUrl}
+										alt={userName || "User"}
+									/>
+								)}
+								<AvatarFallback className="bg-slate-600 text-slate-50 text-sm">{getInitials(userName)}</AvatarFallback>
 							</Avatar>
 						</Button>
 					</TooltipTrigger>
@@ -93,7 +112,7 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label }: 
 						side="right"
 						className="bg-slate-900 text-slate-50"
 					>
-						<p>{label}</p>
+						<p>{userName || label}</p>
 					</TooltipContent>
 				</Tooltip>
 			</TooltipProvider>
@@ -131,6 +150,7 @@ const AppLayout = () => {
 	const { slug: orgSlug } = useParams();
 	const [currentOrg, setCurrentOrg] = useState<Organization>();
 	const { data: organizations, isError } = useGetOrganizations();
+	const { data: user } = useGetUser();
 
 	useEffect(() => {
 		if (orgSlug && organizations) {
@@ -157,11 +177,11 @@ const AppLayout = () => {
 	};
 
 	return (
-		<div className="flex h-screen bg-slate-50">
+		<div className="flex flex-col md:flex-row h-screen bg-slate-50">
 			{/* Aside Navigation */}
-			<aside className="w-16 bg-slate-50 border-r border-slate-200 flex flex-col justify-between py-4 shadow-sm">
+			<aside className="fixed bottom-0 left-0 right-0 h-16 md:relative md:h-auto md:w-16 bg-slate-50 border-t md:border-t-0 md:border-r border-slate-200 flex flex-row md:flex-col justify-between px-4 md:px-0 md:py-4 shadow-sm z-50">
 				{/* Top Section */}
-				<div className="flex flex-col items-center space-y-2">
+				<div className="flex flex-row md:flex-col items-center space-x-2 md:space-x-0 md:space-y-2 flex-1 md:justify-start justify-around">
 					{/* Organization Selector */}
 					{isError ? (
 						<div
@@ -212,7 +232,7 @@ const AppLayout = () => {
 				</div>
 
 				{/* Bottom Section - Profile */}
-				<div className="flex flex-col items-center">
+				<div className="flex flex-row md:flex-col items-center space-x-2 md:space-x-0 flex-1 md:justify-end justify-around">
 					{/* Settings */}
 					{currentOrg ? (
 						<NavItem
@@ -229,13 +249,19 @@ const AppLayout = () => {
 						onClick={() => navigate("/profile")}
 						isProfile={true}
 						label="Profile"
+						avatarUrl={user?.avatarUrl}
+						userName={user?.name}
 					/>
 				</div>
 			</aside>
 
 			{/* Main Content Area */}
-			<main className="flex-1 overflow-auto bg-slate-50">
-				<Outlet context={{ organization: currentOrg }} />
+			<main className="flex-1 overflow-auto bg-slate-50 pb-16 md:pb-0">
+				<Outlet
+					context={{
+						organization: currentOrg
+					}}
+				/>
 			</main>
 		</div>
 	);
