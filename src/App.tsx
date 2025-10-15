@@ -56,7 +56,7 @@ const AppContent = () => {
 };
 
 const App = () => {
-	const { showLoginPrompt, handleLogin, closeLoginPrompt } = useGlobalAuthError();
+	const { showLoginPrompt, closeLoginPrompt } = useGlobalAuthError();
 
 	return (
 		<>
@@ -65,7 +65,6 @@ const App = () => {
 			<LoginPromptDialog
 				open={showLoginPrompt}
 				onOpenChange={closeLoginPrompt}
-				onLogin={handleLogin}
 			/>
 		</>
 	);
