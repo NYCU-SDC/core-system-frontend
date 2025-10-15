@@ -1,4 +1,5 @@
 import React from "react";
+import type { answer as Answer } from "@/types/question.ts";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getForm } from "@/lib/request/getForm.ts";
@@ -100,7 +101,7 @@ const FormResults: React.FC = () => {
 						<div className="flex-1 overflow-y-auto relative">
 							<div className="flex flex-col gap-3 items-start">
 								{answers.length > 0 ? (
-									answers.map(answer => (
+									answers.map((answer: Answer) => (
 										<button
 											key={answer.id}
 											className="btn btn-primary ml-2 text-sm"

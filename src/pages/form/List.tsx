@@ -70,7 +70,7 @@ const FormList = () => {
 									<DraftFormCard
 										key={form.id}
 										form={form}
-										slug={slug}
+										slug={slug || ""}
 										onEdit={handleEditForm}
 										onPublish={handlePublishForm}
 									/>
@@ -91,7 +91,7 @@ const FormList = () => {
 										key={form.id}
 										form={form}
 										onViewResult={handleViewResult}
-										slug={slug}
+										slug={slug || ""}
 									/>
 								);
 							})

@@ -4,10 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 interface LoginPromptDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onLogin: () => void;
 }
 
-export function LoginPromptDialog({ open, onOpenChange, onLogin }: LoginPromptDialogProps) {
+export function LoginPromptDialog({ open, onOpenChange }: LoginPromptDialogProps) {
 	return (
 		<Dialog
 			open={open}

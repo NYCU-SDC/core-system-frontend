@@ -30,11 +30,10 @@ const FormEdit = () => {
 	const isNewForm = id === "new";
 	const { showSuccess, showError } = useToast();
 
-	const { data: form, isLoading: formLoading, isError: formError } = useGetForm(id || "");
-	const { data: questionsData, isLoading: questionsLoading, isError: questionsError } = useGetQuestions(id || "");
+ 	const { data: form } = useGetForm(id || "");
+ 	const { data: questionsData } = useGetQuestions(id || "");
 
-	const { slug } = useParams<{ slug: string }>();
-	const { unitId } = useParams<{ unitId: string }>();
+ 	const { slug } = useParams<{ slug: string }>();
 	const { data: organization } = useGetOrganization(slug || "");
 	const { data: units } = useGetUnits(slug || "");
 
@@ -61,12 +60,12 @@ const FormEdit = () => {
 	}, [formData]);
 
 	const [selectedPublishUnits, setSelectedPublishUnits] = useState<string[]>([]);
-	const availableGroups = units?.map(unit => unit.name);
+ 	const availableGroups = units?.map(unit => unit.name) || [];
 
 	const convertUnitNamesToIds = (unitNames: string[]): string[] => {
 		return unitNames
 			.map(name => {
-				const unit = units.find(u => u.name === name);
+				const unit = units?.find(u => u.name === name);
 				return unit ? unit.id : "";
 			})
 			.filter(Boolean);
@@ -257,7 +256,7 @@ const FormEdit = () => {
 		}, 2000);
 
 		return () => clearTimeout(autoSaveTimeout);
-	}, [isNewForm, formData?.id, formData?.title, formData?.description]);
+	}, [isNewForm, formData?.id, formData?.title, formData?.description, updateFormMutation]);
 
 	// Process update queue - batch process all queued changes
 	const processUpdateQueue = useCallback(async () => {
@@ -480,7 +479,7 @@ const FormEdit = () => {
 			try {
 				await deleteFormMutation.mutateAsync(formData.id);
 				navigate(`/${slug}/forms`);
-			} catch (error) {
+			} catch {
 				//console.error('Failed to delete before navigation:', error);
 			}
 		}
@@ -493,14 +492,14 @@ const FormEdit = () => {
 
 		try {
 			if (isNewForm) {
-				const newForm = await createFormMutation.mutateAsync({
-					slug: slug,
-					unitId: organization.id,
+				const newForm = (await createFormMutation.mutateAsync({
+					slug: slug || "",
+					unitId: organization?.id || "",
 					request: {
 						title: formData.title,
 						description: formData.description
 					}
-				});
+				})) as FormData;
 
 				setFormData(prev => (prev ? { ...prev, id: newForm.id } : null));
 
@@ -508,17 +507,20 @@ const FormEdit = () => {
 					const createdQuestions = [];
 					for (const question of questions) {
 						try {
-							const createdQuestion = await createQuestionMutation.mutateAsync({
+							const questionRequest = {
+								required: question.required,
+								type: question.type,
+								title: question.title,
+								description: question.description,
+								order: question.order,
+								...(question.type === 'single_choice' || question.type === 'multiple_choice' 
+									? { choices: (question as Question & { choices?: ChoiceOption[] }).choices }
+									: {})
+							};
+							const createdQuestion = (await createQuestionMutation.mutateAsync({
 								formId: newForm.id,
-								request: {
-									required: question.required,
-									type: question.type,
-									title: question.title,
-									description: question.description,
-									order: question.order,
-									choices: (question as any).choices
-								}
-							});
+								request: questionRequest
+							})) as BaseQuestion;
 							createdQuestions.push(createdQuestion);
 						} catch (error) {
 							console.error("Failed to create question:", error);
@@ -531,13 +533,13 @@ const FormEdit = () => {
 				setHasUnsavedChanges(false);
 				return newForm;
 			} else {
-				const updatedForm = await updateFormMutation.mutateAsync({
-					id: formData.id,
-					request: {
-						title: formData.title,
-						description: formData.description
-					}
-				});
+					const updatedForm = (await updateFormMutation.mutateAsync({
+						id: formData.id,
+						request: {
+							title: formData.title,
+							description: formData.description
+						}
+					})) as FormData;
 				setHasUnsavedChanges(false);
 				return updatedForm;
 			}
@@ -571,11 +573,11 @@ const FormEdit = () => {
 			await publishFormMutation.mutateAsync({
 				id: formToPublish.id,
 				request: {
-					orgId: organization.id,
+					orgId: organization?.id || "",
 					unitIds: unitIds
 				}
 			});
-		} catch (error) {
+		} catch {
 			// in mutation
 		}
 	};
@@ -599,14 +601,7 @@ const FormEdit = () => {
 		[addToCreateQueue]
 	);
 
-	const handleUpdateQuestion = useCallback(
-		(questionId: string, updatedQuestion: Question) => {
-			setQuestions(prev => prev.map(q => (q.id === questionId ? updatedQuestion : q)));
-			// Add to update queue
-			addToUpdateQueue(questionId);
-		},
-		[addToUpdateQueue]
-	);
+	// handleUpdateQuestion removed - not used in this component
 
 	const handleDeleteQuestion = useCallback(
 		async (questionId: string) => {
@@ -628,8 +623,8 @@ const FormEdit = () => {
 	);
 
 	const handleReorderQuestions = useCallback(
-		(reorderedQuestions: Question[]) => {
-			setQuestions(reorderedQuestions as BaseQuestion[]);
+		(reorderedQuestions: BaseQuestion[]) => {
+			setQuestions(reorderedQuestions);
 			// Add all reordered questions to update queue
 			reorderedQuestions.forEach(q => addToUpdateQueue(q.id));
 		},

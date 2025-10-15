@@ -1,28 +1,9 @@
 import React from "react";
 import type { FormCardProps } from "@/types/forms.ts";
-import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { publishForm } from "@/lib/request/publishForm.ts";
-import { useGetOrganization } from "@/hooks/useGetOrganization.ts";
+import { useNavigate } from "react-router-dom";
 
 const DraftFormCard: React.FC<FormCardProps> = ({ form, slug }) => {
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
-	const { orgSlug } = useParams<{ orgSlug: string }>();
-	const { data: organization } = useGetOrganization(orgSlug || "");
-	//console.log("orgSlug: ", orgSlug);
-
-	const publishMutation = useMutation({
-		mutationFn: (data: { id: string; request: { orgId: string; unitIds: string[] } }) => publishForm(data.id, data.request),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["forms"] });
-			alert("Form published successfully!");
-		},
-		onError: error => {
-			console.error("Failed to publish form:", error);
-			alert("Failed to publish form. Please try again.");
-		}
-	});
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
@@ -36,23 +17,6 @@ const DraftFormCard: React.FC<FormCardProps> = ({ form, slug }) => {
 	const handleEdit = (id: string) => {
 		console.log("Edit:", id);
 		navigate(`/${slug}/forms/edit/${id}`);
-	};
-
-	const handlePublish = async (id: string) => {
-		try {
-			//const formUnits = form.unitId || [];
-			const unitIds = Array.isArray(form.unitId) ? form.unitId : [form.unitId].filter(Boolean);
-
-			await publishMutation.mutateAsync({
-				id,
-				request: {
-					orgId: organization.id,
-					unitIds: unitIds
-				}
-			});
-		} catch (error) {
-			console.error("Publish error:", error);
-		}
 	};
 
 	return (

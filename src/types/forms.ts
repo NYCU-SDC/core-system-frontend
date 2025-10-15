@@ -63,6 +63,6 @@ export type FormUpdateAction =
 export interface FormOperationResult {
 	success: boolean;
 	message?: string;
-	data?: any;
+	data?: FormData;
 	errors?: ValidationErrors;
 }
