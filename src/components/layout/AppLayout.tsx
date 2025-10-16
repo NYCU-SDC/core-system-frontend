@@ -130,7 +130,7 @@ const NavItem = ({ icon, isActive = false, onClick, isProfile = false, label, av
 						className={cn("p-3 rounded-lg transition-all duration-200", "hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20", isActive && "bg-slate-100 ring-1 ring-slate-300")}
 						onClick={onClick}
 					>
-						<div className={cn("w-6 h-6 transition-colors duration-200", isActive ? "text-slate-700" : "text-slate-600 hover:text-slate-900")}>{icon}</div>
+						<div className={cn("w-6 h-6 flex items-center justify-center transition-colors duration-200", isActive ? "text-slate-700" : "text-slate-600 hover:text-slate-900")}>{icon}</div>
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent
@@ -239,7 +239,7 @@ const AppLayout = () => {
 				</div>
 
 				{/* Bottom Section - Profile */}
-				<div className="flex flex-row md:flex-col items-center space-x-2 md:space-x-0 flex-1 md:justify-end justify-around">
+				<div className="flex flex-row md:flex-col items-center space-x-2 md:space-x-0 flex-1 md:justify-end justify-around gap-2">
 					{/* Settings */}
 					{currentOrg ? (
 						<NavItem
