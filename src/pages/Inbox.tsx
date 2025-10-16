@@ -1,44 +1,38 @@
 import HoverCard from "@/components/inbox/HoverCard.tsx";
 import MenuBar from "@/components/inbox/MenuBar.tsx";
 import UnreadSwitch from "@/components/inbox/UnreadSwitch.tsx";
-import SearchInput	 from "@/components/inbox/SearchInput.tsx";
+import SearchInput from "@/components/inbox/SearchInput.tsx";
 import HoverCardContainer from "@/components/inbox/HoverCardContainer.tsx";
 import InboxFormPage from "@/components/inbox/InboxFormPage.tsx";
 
 import { useMemo, useState } from "react";
 import { useGetInboxList } from "@/hooks/useGetInboxList.ts";
-import { useUpdateInbox} from "@/hooks/useUpdateInbox.ts";
-import {useGetInboxItem} from "@/hooks/useGetInboxItem.ts";
+import { useUpdateInbox } from "@/hooks/useUpdateInbox.ts";
+import { useGetInboxItem } from "@/hooks/useGetInboxItem.ts";
 import useGetInboxItemContent from "@/hooks/useGetInboxItemContent";
 
 import { Menu, X } from "lucide-react";
 
-
-
 const ALL = "All";
-
 
 const Inbox = () => {
 	//return null;
-	const [selectedId, setSelectedId] = useState<{itemId: string; contentId: string} | null>(null);
+	const [selectedId, setSelectedId] = useState<{ itemId: string; contentId: string } | null>(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-	const {data: inboxList, isLoading: getListIsLoading,isError: getInboxListError} = useGetInboxList();
+	const { data: inboxList, isLoading: getListIsLoading, isError: getInboxListError } = useGetInboxList();
 	const updateInbox = useUpdateInbox();
-	const {data: inboxItemContent, isError: getInboxItemContentError, isFetching: isFetchingContent} = useGetInboxItemContent(selectedId?.contentId ?? null);
-	const {data: inboxItem, isError: getInboxItemError, isFetching: isFetchingItem} = useGetInboxItem(selectedId?.itemId ?? null);
+	const { data: inboxItemContent, isError: getInboxItemContentError, isFetching: isFetchingContent } = useGetInboxItemContent(selectedId?.contentId ?? null);
+	const { data: inboxItem, isError: getInboxItemError, isFetching: isFetchingItem } = useGetInboxItem(selectedId?.itemId ?? null);
 	//
-    // const [items, setItems] = useState<InboxItem[]>([]);
-    // const [loading, setLoading] = useState<boolean>(true);
-    // const [error, setError] = useState<string | null>(null);
+	// const [items, setItems] = useState<InboxItem[]>([]);
+	// const [loading, setLoading] = useState<boolean>(true);
+	// const [error, setError] = useState<string | null>(null);
 	//
 	const [selectedUnits, setSelectedUnits] = useState<string[]>([ALL]);
 	const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
 
-
-
 	const items = inboxList?.items || []; // items of inboxList named to be items
 	const units = useMemo(() => {
-
 		const set = new Set<string>();
 		for (const it of items) {
 			if (it?.message?.unit) set.add(it.message.unit);
@@ -47,12 +41,11 @@ const Inbox = () => {
 	}, [items]);
 
 	const filtered = useMemo(() => {
-
 		const useAll = selectedUnits.includes(ALL) || selectedUnits.length === 0; // ALL scenario
-		if (getInboxListError || getListIsLoading || items.length == 0){
+		if (getInboxListError || getListIsLoading || items.length == 0) {
 			return [];
 		}
-		return items.filter((it) => {
+		return items.filter(it => {
 			// unread switch
 			if (unreadOnly && it.isRead) return false;
 
@@ -81,31 +74,29 @@ const Inbox = () => {
 	function formatDeadline(isoString: string): string {
 		const date = new Date(isoString);
 
-		const formatter = new Intl.DateTimeFormat('zh-TW', {
-			year: 'numeric',
-			month: 'numeric',
-			day: 'numeric',
-			weekday: 'short',
-			hour: '2-digit',
-			minute: '2-digit',
+		const formatter = new Intl.DateTimeFormat("zh-TW", {
+			year: "numeric",
+			month: "numeric",
+			day: "numeric",
+			weekday: "short",
+			hour: "2-digit",
+			minute: "2-digit",
 			hour12: false,
-			timeZone: 'Asia/Taipei'
+			timeZone: "Asia/Taipei"
 		});
 
 		const parts = formatter.formatToParts(date);
-		const year = parts.find(p => p.type === 'year')?.value;
-		const month = parts.find(p => p.type === 'month')?.value;
-		const day = parts.find(p => p.type === 'day')?.value;
-		const weekday = parts.find(p => p.type === 'weekday')?.value;
-		const hour = parts.find(p => p.type === 'hour')?.value;
-		const minute = parts.find(p => p.type === 'minute')?.value;
+		const year = parts.find(p => p.type === "year")?.value;
+		const month = parts.find(p => p.type === "month")?.value;
+		const day = parts.find(p => p.type === "day")?.value;
+		const weekday = parts.find(p => p.type === "weekday")?.value;
+		const hour = parts.find(p => p.type === "hour")?.value;
+		const minute = parts.find(p => p.type === "minute")?.value;
 
 		return `${year} 年 ${month} 月 ${day} 日（${weekday}）${hour}:${minute} 截止`;
 	}
 
-
-
-    return (
+	return (
 		<>
 			<div className="flex flex-row h-dvh overflow-hidden relative">
 				<button
@@ -117,9 +108,9 @@ const Inbox = () => {
 				</button>
 
 				{/* Sidebar */}
-				<div 
+				<div
 					className={`tab-card flex flex-col w-full lg:w-[344px] lg:min-w-[344px] lg:max-w-[344px] bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-dvh rounded-l-lg transition-transform duration-300 ease-in-out absolute lg:relative z-40 ${
-						isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+						isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
 					}`}
 				>
 					<div className="tab-card-container w-full h-fit flex flex-col gap-[10px] px-4 pb-4 border-b ">
@@ -145,7 +136,7 @@ const Inbox = () => {
 						) : filtered.length === 0 ? (
 							<p className="text-sm text-slate-500 py-3">No inbox items</p>
 						) : (
-							filtered.map((it) => (
+							filtered.map(it => (
 								<HoverCard
 									key={it.message.id}
 									itemId={it.id}
@@ -161,11 +152,8 @@ const Inbox = () => {
 								/>
 							))
 							// units.map(unit => <UnitSelectorContent key={unit.id}>{unit.name}</UnitSelectorContent>)
-
 						)}
-
 					</HoverCardContainer>
-
 				</div>
 				{isSidebarOpen && (
 					<div

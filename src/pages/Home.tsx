@@ -5,7 +5,7 @@ const Home = () => {
 		window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login/oauth/google?r=${window.location.origin}/inbox`;
 	};
 
-	console.log("Exectued")
+	console.log("Exectued");
 
 	return (
 		<div className="h-screen text-center flex flex-col items-center justify-center font-[Quantico]">
