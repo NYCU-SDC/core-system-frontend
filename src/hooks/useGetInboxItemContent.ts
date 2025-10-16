@@ -10,8 +10,7 @@ export default function useGetInboxItemContent(id: string | null) {
         queryKey: ["form", id],
         queryFn: () => getInboxItemContent(id),
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+        staleTime: 0, // Always refetch when switching items
         gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-        // placeholderData: [] as InboxItemContentResponse[]
     });
 }

@@ -38,8 +38,8 @@ const Inbox = () => {
 	const [selectedId, setSelectedId] = useState<{itemId: string; contentId: string} | null>(null);
 	const {data: inboxList, isLoading: getListIsLoading,isError: getInboxListError} = useGetInboxList();
 	const updateInbox = useUpdateInbox();
-	const {data: inboxItemContent, isSuccess: getContentIsSuccess, isLoading: getContentIsLoading,isError: getInboxItemContentError} = useGetInboxItemContent(selectedId?.contentId ?? null);
-	const {data: inboxItem, isSuccess: getItemtIsSuccess, isLoading: getItemIsLoading, isError: getInboxItemError} = useGetInboxItem(selectedId?.itemId ?? null);
+	const {data: inboxItemContent, isError: getInboxItemContentError, isFetching: isFetchingContent} = useGetInboxItemContent(selectedId?.contentId ?? null);
+	const {data: inboxItem, isError: getInboxItemError, isFetching: isFetchingItem} = useGetInboxItem(selectedId?.itemId ?? null);
 	//
     // const [items, setItems] = useState<InboxItem[]>([]);
     // const [loading, setLoading] = useState<boolean>(true);
@@ -170,10 +170,10 @@ const Inbox = () => {
 				</div>
 				<InboxFormPage
 					hasSelected={!!selectedId}
-					isLoadingItem={getItemIsLoading}
-					isLoadingContent={getContentIsLoading}
 					isErrorItem={getInboxItemError}
 					isErrorContent={getInboxItemContentError}
+					isLoadingItem={isFetchingItem}
+					isLoadingContent={isFetchingContent}
 					inboxItem={inboxItem}
 					inboxItemContent={inboxItemContent}
 					formatDeadline={formatDeadline}
