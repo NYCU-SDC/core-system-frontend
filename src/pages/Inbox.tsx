@@ -1,14 +1,3 @@
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import HoverCard from "@/components/inbox/HoverCard.tsx";
 import MenuBar from "@/components/inbox/MenuBar.tsx";
 import UnreadSwitch from "@/components/inbox/UnreadSwitch.tsx";
@@ -16,26 +5,23 @@ import SearchInput	 from "@/components/inbox/SearchInput.tsx";
 import HoverCardContainer from "@/components/inbox/HoverCardContainer.tsx";
 import InboxFormPage from "@/components/inbox/InboxFormPage.tsx";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useGetInboxList } from "@/hooks/useGetInboxList.ts";
 import { useUpdateInbox} from "@/hooks/useUpdateInbox.ts";
 import {useGetInboxItem} from "@/hooks/useGetInboxItem.ts";
 import useGetInboxItemContent from "@/hooks/useGetInboxItemContent";
 
-import {UnitSelectorContent} from "@/components/setting/UnitSelector.tsx";
-import {useParams} from "react-router-dom";
+import { Menu, X } from "lucide-react";
 
 
 
 const ALL = "All";
-const STATIC_DESC =
-	"Hello everyone, here are the accommodation, transportation, check-in and dining information...";
 
 
 const Inbox = () => {
 	//return null;
-	const { slug: organizationSlug } = useParams();
 	const [selectedId, setSelectedId] = useState<{itemId: string; contentId: string} | null>(null);
+	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 	const {data: inboxList, isLoading: getListIsLoading,isError: getInboxListError} = useGetInboxList();
 	const updateInbox = useUpdateInbox();
 	const {data: inboxItemContent, isError: getInboxItemContentError, isFetching: isFetchingContent} = useGetInboxItemContent(selectedId?.contentId ?? null);
@@ -121,8 +107,21 @@ const Inbox = () => {
 
     return (
 		<>
-			<div className="flex flex-row">
-				<div  className="tab-card flex flex-col w-[344px] min-w-[344px] max-w-[344px] bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-dvh rounded-l-lg" >
+			<div className="flex flex-row h-dvh overflow-hidden relative">
+				<button
+					onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+					className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white border border-slate-200 rounded-md shadow-md hover:bg-slate-50"
+					aria-label="Toggle sidebar"
+				>
+					{isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+				</button>
+
+				{/* Sidebar */}
+				<div 
+					className={`tab-card flex flex-col w-full lg:w-[344px] lg:min-w-[344px] lg:max-w-[344px] bg-white border-r border-slate-200 pt-8 pb-8 gap-[10px] box-border h-dvh rounded-l-lg transition-transform duration-300 ease-in-out absolute lg:relative z-40 ${
+						isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+					}`}
+				>
 					<div className="tab-card-container w-full h-fit flex flex-col gap-[10px] px-4 pb-4 border-b ">
 						<div className="tab-card-header flex flex-row justify-between items-center w-full h-fit ">
 							<h2 className="font-semibold text-[30px] text-slate-800 ">Inbox</h2>
@@ -168,16 +167,24 @@ const Inbox = () => {
 					</HoverCardContainer>
 
 				</div>
-				<InboxFormPage
-					hasSelected={!!selectedId}
-					isErrorItem={getInboxItemError}
-					isErrorContent={getInboxItemContentError}
-					isLoadingItem={isFetchingItem}
-					isLoadingContent={isFetchingContent}
-					inboxItem={inboxItem}
-					inboxItemContent={inboxItemContent}
-					formatDeadline={formatDeadline}
-				/>
+				{isSidebarOpen && (
+					<div
+						className="lg:hidden fixed inset-0 z-30"
+						onClick={() => setIsSidebarOpen(false)}
+					/>
+				)}
+				<div className="flex-1 overflow-hidden">
+					<InboxFormPage
+						hasSelected={!!selectedId}
+						isErrorItem={getInboxItemError}
+						isErrorContent={getInboxItemContentError}
+						isLoadingItem={isFetchingItem}
+						isLoadingContent={isFetchingContent}
+						inboxItem={inboxItem}
+						inboxItemContent={inboxItemContent}
+						formatDeadline={formatDeadline}
+					/>
+				</div>
 			</div>
 		</>
 	);

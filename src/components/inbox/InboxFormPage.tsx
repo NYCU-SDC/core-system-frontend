@@ -21,9 +21,15 @@ type InboxFormPageProps = {
 export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent, isLoadingItem, isLoadingContent, inboxItem, inboxItemContent, formatDeadline }: InboxFormPageProps) {
 	// State to store form answers
 	const [formAnswers, setFormAnswers] = React.useState<Record<string, string | string[]>>({});
+	const [isSubmitted, setIsSubmitted] = React.useState(false);
 
 	const { mutate: submitForm, isPending } = useSubmitFormResponse();
 	const updateInbox = useUpdateInbox();
+
+	React.useEffect(() => {
+		setFormAnswers({});
+		setIsSubmitted(false);
+	}, [inboxItem?.id]);
 
 	const handleAnswerChange = (questionId: string, value: string | string[]) => {
 		setFormAnswers(prev => ({
@@ -56,6 +62,8 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 							isArchived: true
 						}
 					});
+					// Mark as submitted
+					setIsSubmitted(true);
 				}
 			}
 		);
@@ -64,7 +72,7 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 	// Show "select an item" only if nothing is selected
 	if (!hasSelected) {
 		return (
-			<div className="detail-container flex flex-col p-16 gap-4 flex-1 h-dvh justify-center items-center">
+			<div className="detail-container flex flex-col p-4 md:p-8 lg:p-16 gap-4 flex-1 h-dvh justify-center items-center overflow-y-auto">
 				<Inbox
 					className="w-[40px] h-[32px] text-gray-400"
 					strokeWidth={4}
@@ -77,7 +85,7 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 	// Show error if there was a problem loading
 	if (isErrorItem || isErrorContent) {
 		return (
-			<div className="detail-container flex p-16 gap-4 flex-1 h-dvh justify-center items-center">
+			<div className="detail-container flex p-4 md:p-8 lg:p-16 gap-4 flex-1 h-dvh justify-center items-center overflow-y-auto">
 				<p className="text-sm text-red-500 py-3">Fail to load.</p>
 			</div>
 		);
@@ -87,8 +95,8 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 	// (hasSelected but no data yet means we should show loading)
 	if (isLoadingItem || isLoadingContent || !inboxItem || !inboxItemContent) {
 		return (
-			<div className="detail-container flex p-16 gap-4 flex-1 h-dvh justify-center">
-				<div className="tab-card flex flex-col pt-16 px-8 pb-8 bg-white border-slate-200 w-[800px] h-dvh gap-6 rounded-[6px] animate-pulse">
+			<div className="detail-container flex p-4 md:p-8 lg:p-16 gap-4 flex-1 h-dvh justify-center overflow-y-auto">
+				<div className="tab-card flex flex-col pt-8 md:pt-12 lg:pt-16 px-4 md:px-6 lg:px-8 pb-8 bg-white border-slate-200 w-full max-w-[800px] h-dvh gap-6 rounded-[6px] animate-pulse">
 					<div className="header w-full flex flex-col gap-4">
 						<div className="flex justify-between items-center">
 							<div className="h-5 bg-slate-200 rounded w-48"></div>
@@ -111,17 +119,17 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 	const questions = inboxItemContent ? inboxItemContent.sort((a, b) => a.order - b.order) : [];
 
 	return (
-		<div className="detail-container flex p-16 gap-4 flex-1 h-dvh justify-center">
-			<div className="tab-card flex flex-col pt-16 px-8 pb-8 bg-white border-slate-200 w-[800px] h-dvh gap-6 rounded-[6px]">
+		<div className="detail-container flex p-4 md:p-8 lg:p-16 gap-4 flex-1 h-dvh justify-center overflow-y-auto">
+			<div className="tab-card flex flex-col pt-8 md:pt-12 lg:pt-16 px-4 md:px-6 lg:px-8 pb-8 bg-white border-slate-200 w-full max-w-[800px] h-fit min-h-dvh gap-6 rounded-[6px]">
 				<div className="header w-full flex flex-col gap-4">
-					<div className="flex justify-between items-center">
+					<div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
 						<p className="post-info text-[14px] text-slate-500">
 							Post by {inboxItem.message.org} {inboxItem.message.unit}
 						</p>
 						<p className="deadline text-sm text-slate-500">{formatDeadline(inboxItem.content.deadline)}</p>
 					</div>
-					<h2 className="title text-3xl font-semibold text-slate-900">{inboxItem.content.title}</h2>
-					<p className="description text-sm text-slate-500">{inboxItem.content.description}</p>
+					<h2 className="title text-2xl md:text-3xl font-semibold text-slate-900 break-words">{inboxItem.content.title}</h2>
+					<p className="description text-sm text-slate-500 break-words">{inboxItem.content.description}</p>
 					{/* Form fields */}
 					<div className="form p-4 flex flex-col gap-6">
 						{questions.map(q => (
@@ -136,10 +144,10 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 						{questions.length > 0 && (
 							<button
 								onClick={handleSubmit}
-								disabled={isPending}
-								className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit text-sm text-white"
+								disabled={isPending || isSubmitted}
+								className="button-container inline-flex py-2 px-4 gap-[10px] bg-slate-900 rounded-md w-fit text-sm text-white disabled:opacity-50"
 							>
-								{isPending ? "送出中" : "送出"}
+								{isSubmitted ? "Sent" : isPending ? "Sending" : "Send"}
 							</button>
 						)}
 					</div>
