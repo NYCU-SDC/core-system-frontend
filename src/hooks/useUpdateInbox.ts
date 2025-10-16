@@ -26,7 +26,7 @@ export function useUpdateInbox() {
 			// Return a context object with the snapshotted value
 			return { previousInbox };
 		},
-		onSuccess: (data: InboxItem, variables) => {
+		onSuccess: (_data: InboxItem, variables) => {
 			console.log(`Succeed to update inbox item ${variables.id}:`);
 		},
 		onError: (error, variables, context) => {

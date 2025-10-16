@@ -32,7 +32,7 @@ export interface InboxResponse {
 	hasNextPage: boolean;
 }
 
-import { getMockInbox, getMockInboxItemById } from "./mock";
+import { getMockInbox } from "./mock";
 
 // // GET Inbox
 // export async function fetchInbox(): Promise<InboxResponse> {

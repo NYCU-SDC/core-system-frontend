@@ -5,7 +5,7 @@ export const MOCK_INBOX_ITEMS: InboxItem[] = Array.from({ length: 5 }).map((_, i
 	id: `mock-${i}`,
 	message: {
 		id: `mock-msg-${i}`,
-		postedBy: i,
+		postedBy: `${i}`,
 		title: "HITCON 工人聯絡組",
 		subtitle: "HITCON CMT 2024 工人行前通知",
 		type: "mock",
