@@ -90,7 +90,7 @@ const QuestionRenderer = ({ q, value, onChange }: QuestionRendererProps) => {
 					</Popover>
 				</div>
 			);
-		case "multiple_choice":
+		case "multiple_choice": {
 			const selectedValues = (value as string[]) || [];
 
 			const handleToggle = (choiceId: string) => {
@@ -124,6 +124,7 @@ const QuestionRenderer = ({ q, value, onChange }: QuestionRendererProps) => {
 					</div>
 				</div>
 			);
+		}
 	}
 };
 
