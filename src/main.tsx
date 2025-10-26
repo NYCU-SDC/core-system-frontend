@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { BrowserRouter } from "react-router-dom";
-import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { UnauthorizedError } from "./lib/request/api.ts";
 import { triggerAuthError } from "./hooks/useAuthError.ts";
@@ -45,7 +44,6 @@ createRoot(document.getElementById("root")!).render(
 		<BrowserRouter>
 			<QueryClientProvider client={queryClient}>
 				<App />
-				<Toaster expand={true} />
 			</QueryClientProvider>
 		</BrowserRouter>
 	</StrictMode>
