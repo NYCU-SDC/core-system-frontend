@@ -18,7 +18,7 @@ export type OrganizationRequest = {
 export type Organization = {
 	slug: string;
 	name: string;
-	initial: string;
+	initial: string | React.ReactNode;
 };
 
 export type MemberRequest = {

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useGetForms } from "@/hooks/useGetForms";
 import { useQuery } from "@tanstack/react-query";
 import { getOrganization } from "@/lib/request/getOrganization.ts";
+import { Button } from "@/components/ui/button";
 // import { publishForm } from "@/lib/request/publishForm.ts";
 // import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -59,12 +60,12 @@ const FormList = () => {
 				<div>
 					<div className="flex items-center mb-3">
 						<h2 className="text-2xl font-semibold text-gray-900">Draft</h2>
-						<button
+						<Button
 							onClick={handleNewForm}
-							className="btn btn-secondary ml-auto"
+							className="ml-auto"
 						>
 							New
-						</button>
+						</Button>
 					</div>
 					<div className="flex flex-wrap gap-6 mb-8">
 						{draftForms.length === 0 ? (

@@ -17,6 +17,7 @@ import addUnit from "@/lib/request/addUnit.ts";
 import { addUnitMember } from "@/lib/request/addUnitMember.ts";
 import { deleteUnit } from "@/lib/request/deleteUnit.ts";
 import { deleteMember } from "@/lib/request/deleteMember.ts";
+import { deleteOrganization } from "@/lib/request/deleteOrganization.ts";
 
 const Settings = () => {
 	const navigate = useNavigate();
@@ -118,6 +119,18 @@ const Settings = () => {
 		}
 	});
 
+	const deleteOrganizationMutation = useMutation({
+		mutationFn: () => deleteOrganization(organizationSlug!),
+		onSuccess: () => {
+			toast.success("Team deleted successfully");
+			queryClient.invalidateQueries({ queryKey: ["organizations"] });
+			navigate("/inbox");
+		},
+		onError: () => {
+			toast.error("Failed to delete team");
+		}
+	});
+
 	useEffect(() => {
 		setOrganization(organizationResponse);
 	}, [organizationResponse]);
@@ -145,6 +158,12 @@ const Settings = () => {
 	const handleDeleteUnit = (unitId: string) => {
 		setUnits(units.filter(unit => unit.id !== unitId));
 		deleteUnitMutation.mutate(unitId);
+	};
+
+	const handleDeleteOrganization = () => {
+		if (confirm("Are you sure you want to delete this team? This action cannot be undone and will delete all data.")) {
+			deleteOrganizationMutation.mutate();
+		}
 	};
 
 	return (
@@ -294,12 +313,13 @@ const Settings = () => {
 					</div>
 					<p className="text-slate-800 text-3xl font-semibold">Dangerous Zone</p>
 					<div className="flex gap-6.75">
-						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Quit Team</p>
-						<Button className="w-fit bg-red-600 hover:bg-red-700 cursor-pointer">Quit</Button>
-					</div>
-					<div className="flex gap-6.75">
 						<p className="max-w-42.5 text-slate-400 text-2xl font-semibold">Delete Project</p>
-						<Button className="w-fit bg-red-600 hover:bg-red-700 cursor-pointer">Delete</Button>
+						<Button
+							className="w-fit bg-red-600 hover:bg-red-700 cursor-pointer"
+							onClick={handleDeleteOrganization}
+						>
+							Delete
+						</Button>
 					</div>
 				</>
 			)}

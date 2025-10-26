@@ -17,10 +17,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 		credentials: "include"
 	});
 
-	console.log(`API Response get`);
-
 	if (!res.ok) {
-		// Check if it's a 401 Unauthorized error
 		if (res.status === 401) {
 			try {
 				const errorData = await res.json();
