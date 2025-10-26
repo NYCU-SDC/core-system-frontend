@@ -6,6 +6,7 @@ import FormEdit from "./pages/form/Edit.tsx";
 import FormResults from "./pages/form/Result.tsx";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
 // import {Counter} from "@/features/example/Counter.tsx";
 import { AppLayout, SimpleLayout } from "./components/layout";
 import { Toaster } from "@/components/ui/sonner";
@@ -51,6 +52,10 @@ const AppContent = () => {
 					element={<Profile />}
 				/>
 			</Route>
+			<Route
+				path="*"
+				element={<NotFound />}
+			/>
 		</Routes>
 	);
 };
