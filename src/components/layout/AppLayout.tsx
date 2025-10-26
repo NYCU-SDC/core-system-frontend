@@ -134,7 +134,7 @@ const OrgSelector = forwardRef<OrgSelectorHandle, OrgSelectorProps>(({ currentOr
 								{/* Home Button */}
 								<Button
 									variant="ghost"
-									className="w-full justify-start gap-3 h-auto p-3 hover:bg-slate-100 focus:ring-2 focus:ring-slate-500/20"
+									className="w-full justify-start gap-3 h-auto p-3 hover:bg-slate-100"
 									onClick={() => {
 										navigate("/inbox");
 										setIsOpen(false);
@@ -143,7 +143,7 @@ const OrgSelector = forwardRef<OrgSelectorHandle, OrgSelectorProps>(({ currentOr
 									<div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center">
 										<Home className="w-5 h-5 text-slate-600" />
 									</div>
-									<span className="text-slate-700 font-medium flex-1 text-left">Go to Home</span>
+									<span className="text-slate-700 font-medium flex-1 text-left">Overview</span>
 								</Button>
 
 								<div className="">
