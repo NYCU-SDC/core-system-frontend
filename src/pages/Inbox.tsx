@@ -31,7 +31,8 @@ const Inbox = () => {
 	const [selectedUnits, setSelectedUnits] = useState<string[]>([ALL]);
 	const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
 
-	const items = inboxList?.items || []; // items of inboxList named to be items
+	const items = useMemo(() => inboxList?.items || [], [inboxList?.items]);
+	
 	const units = useMemo(() => {
 		const set = new Set<string>();
 		for (const it of items) {
@@ -53,7 +54,7 @@ const Inbox = () => {
 			if (useAll) return true;
 			return selectedUnits.includes(unitName);
 		});
-	}, [items, selectedUnits, unreadOnly]);
+	}, [items, selectedUnits, unreadOnly, getInboxListError, getListIsLoading]);
 	const handleCardClick = (itemId: string, contentId: string) => {
 		setSelectedId({ itemId, contentId });
 
