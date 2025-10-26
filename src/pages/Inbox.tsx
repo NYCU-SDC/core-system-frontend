@@ -32,7 +32,7 @@ const Inbox = () => {
 	const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
 
 	const items = useMemo(() => inboxList?.items || [], [inboxList?.items]);
-	
+
 	const units = useMemo(() => {
 		const set = new Set<string>();
 		for (const it of items) {
