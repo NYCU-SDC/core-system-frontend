@@ -217,11 +217,21 @@ const FormEdit = () => {
 				updatedAt: ""
 			});
 		} else if (form) {
+			// Handle lastEditor - it might be a User object or a string
+			let editorName = "Unknown";
+			if (form.lastEditor) {
+				if (typeof form.lastEditor === "string") {
+					editorName = form.lastEditor;
+				} else if (typeof form.lastEditor === "object" && "name" in form.lastEditor) {
+					editorName = form.lastEditor.name || form.lastEditor.username || "Unknown";
+				}
+			}
+
 			setFormData({
 				...form,
 				createdAt: form.createdAt,
 				updatedAt: form.updatedAt,
-				lastEditor: form.lastEditor || "Unknown",
+				lastEditor: editorName,
 				unitId: Array.isArray(form.unitId) ? form.unitId : [form.unitId].filter(Boolean)
 			});
 		}
@@ -556,6 +566,11 @@ const FormEdit = () => {
 
 	const handlePublish = async () => {
 		if (!formData) return;
+
+		if (!formData.title || formData.title.trim() === "") {
+			showError("請輸入表單標題", "發布前請先輸入表單標題");
+			return;
+		}
 
 		if (selectedPublishUnits.length === 0) {
 			showError("請選擇發布單位", "請至少選擇一個單位來發布表單");
