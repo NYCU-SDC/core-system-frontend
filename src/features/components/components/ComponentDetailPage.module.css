@@ -1,0 +1,174 @@
+.container {
+  width: 100%;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-secondary);
+}
+
+.breadcrumb a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.separator {
+  color: var(--color-text-secondary);
+}
+
+.header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.badge {
+  display: inline-block;
+  background-color: var(--color-primary);
+  color: var(--color-background);
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.description {
+  font-size: 20px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.section {
+  margin: var(--spacing-xl) 0;
+}
+
+.sectionTitle {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.demo {
+  background-color: var(--color-background);
+  border: var(--border-width) solid var(--color-primary);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.demoGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.codeBlock {
+  background-color: #1a1a1a;
+  color: #f5f5f5;
+  border: var(--border-width) solid var(--color-primary);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  overflow-x: auto;
+  margin: 0;
+}
+
+.codeBlock code {
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.propsTable {
+  background-color: var(--color-background);
+  border: var(--border-width) solid var(--color-primary);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.propsHeader {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr 1fr 3fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--color-primary);
+  color: var(--color-background);
+  font-weight: 600;
+}
+
+.propsRow {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr 1fr 3fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-top: 1px solid rgba(255, 140, 0, 0.2);
+}
+
+.propName {
+  font-weight: 600;
+  color: var(--color-primary);
+  font-family: monospace;
+}
+
+.propType {
+  font-family: monospace;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.propDefault {
+  font-family: monospace;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.propDescription {
+  color: var(--color-text);
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 32px;
+  }
+
+  .propsHeader,
+  .propsRow {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xs);
+  }
+
+  .propsHeader div,
+  .propsRow div {
+    padding: var(--spacing-xs) 0;
+  }
+
+  .propsHeader {
+    display: none;
+  }
+
+  .propsRow div::before {
+    content: attr(data-label);
+    font-weight: 600;
+    display: inline-block;
+    width: 100px;
+  }
+}

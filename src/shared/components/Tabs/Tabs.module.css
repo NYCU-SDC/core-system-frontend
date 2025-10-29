@@ -1,0 +1,59 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background);
+  border: var(--border-width) solid var(--color-primary);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.list {
+  display: flex;
+  border-bottom: var(--border-width) solid var(--color-primary);
+  background-color: var(--color-background);
+}
+
+.trigger {
+  all: unset;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--color-background);
+  padding: var(--spacing-md) var(--spacing-lg);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  position: relative;
+}
+
+.trigger:hover {
+  color: var(--color-primary);
+  background-color: rgba(255, 140, 0, 0.05);
+}
+
+.trigger[data-state='active'] {
+  color: var(--color-primary);
+  font-weight: 600;
+  border-bottom-color: var(--color-primary);
+}
+
+.trigger:focus {
+  position: relative;
+  outline: none;
+}
+
+.content {
+  padding: var(--spacing-lg);
+  background-color: var(--color-background);
+  outline: none;
+}
+
+.content:focus {
+  outline: none;
+}

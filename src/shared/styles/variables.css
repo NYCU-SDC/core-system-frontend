@@ -1,0 +1,16 @@
+/* CSS Variables for the component library */
+:root {
+  --color-primary: #ff8c00; /* Dark Orange */
+  --color-primary-light: #ffa500; /* Orange */
+  --color-primary-dark: #ff6600;
+  --color-background: #ffffff; /* White */
+  --color-text: #1a1a1a;
+  --color-text-secondary: #666666;
+  --border-radius: 8px;
+  --border-width: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}

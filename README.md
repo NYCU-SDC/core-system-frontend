@@ -1,0 +1,1 @@
+Create a example website, uses Radix, and create our own component library styling which is orange border, white background. Use CSS module, and use same css variable for color.
