@@ -2,6 +2,14 @@ export type UUID = string;
 export type FormStatus = "draft" | "published";
 export type QuestionType = "short_text" | "long_text" | "single_choice" | "multiple_choice" | "date";
 
+export type User = {
+	id: string;
+	name: string;
+	username: string;
+	avatarUrl?: string;
+	emails?: string[];
+};
+
 export type FormResponse = {
 	id: string;
 	title: string;
@@ -9,7 +17,7 @@ export type FormResponse = {
 	/*previewMessage: string;*/
 	status: FormStatus;
 	unitId: string;
-	lastEditor: string;
+	lastEditor: User | string; // Can be User object or string
 	createdAt: string;
 	updatedAt: string;
 };
@@ -35,7 +43,7 @@ export interface FormData {
 	description: string;
 	status: FormStatus;
 	unitId: UUID[];
-	lastEditor: UUID;
+	lastEditor: string; // Always store as string (name or "Unknown")
 	createdAt: string;
 	updatedAt: string;
 }
