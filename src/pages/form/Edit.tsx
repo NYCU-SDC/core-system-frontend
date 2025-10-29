@@ -482,8 +482,7 @@ const FormEdit = () => {
 								description: formData.description
 							}
 						});
-					}
-					else if (questions.length > 0) {
+					} else if (questions.length > 0) {
 						for (const question of questions) {
 							await updateQuestionMutation.mutateAsync({
 								formId: question.formId,
@@ -499,7 +498,7 @@ const FormEdit = () => {
 							});
 						}
 					}
-				} 
+				}
 				setAutoSaveStatus("saved");
 				setHasUnsavedChanges(false);
 				navigate(`/${slug}/forms`);
