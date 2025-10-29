@@ -83,7 +83,7 @@ export const createNewQuestion = (type: QuestionType, order: number): BaseQuesti
 		formId: "", // Will be set when added to form
 		type,
 		title: "untitled",
-		description: "Not written",
+		description: "",
 		required: true,
 		order: order,
 		createdAt: new Date().toISOString(),

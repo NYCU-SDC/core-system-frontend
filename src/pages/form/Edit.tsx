@@ -30,7 +30,7 @@ const FormEdit = () => {
 	const { showSuccess, showError } = useToast();
 
 	const { data: form } = useGetForm(id || "");
-	const { data: questionsData } = useGetQuestions(id || "");
+	const { data: questionsData, isLoading: questionsLoading } = useGetQuestions(id || "");
 
 	const { slug } = useParams<{ slug: string }>();
 	const { data: organization } = useQuery({
@@ -153,7 +153,8 @@ const FormEdit = () => {
 			};
 		}) => createQuestion(data.formId, data.request),
 		onSuccess: () => {
-			// Don't invalidate queries - we manage questions in local state
+			// Invalidate questions query to ensure fresh data on next load
+			queryClient.invalidateQueries({ queryKey: ["Questions", id] });
 		},
 		onError: error => {
 			console.error("Failed to create question:", error);
@@ -177,8 +178,8 @@ const FormEdit = () => {
 			};
 		}) => updateQuestion(data.formId, data.questionId, data.request),
 		onSuccess: () => {
-			// Don't invalidate queries here - we'll do it selectively
-			// to avoid losing focus during typing
+			// Invalidate questions query to ensure fresh data on next load
+			queryClient.invalidateQueries({ queryKey: ["Questions", id] });
 			setAutoSaveStatus("saved");
 			setHasUnsavedChanges(false);
 		},
@@ -194,7 +195,8 @@ const FormEdit = () => {
 	const deleteQuestionMutation = useMutation({
 		mutationFn: (data: { formId: string; questionId: string }) => deleteQuestion(data.formId, data.questionId),
 		onSuccess: () => {
-			// Don't invalidate queries - we manage questions in local state
+			// Invalidate questions query to ensure fresh data on next load
+			queryClient.invalidateQueries({ queryKey: ["Questions", id] });
 		},
 		onError: error => {
 			console.error("Failed to delete question:", error);
@@ -238,13 +240,22 @@ const FormEdit = () => {
 	}, [isNewForm, form]);
 
 	useEffect(() => {
-		// Only initialize questions once from server data
-		// After that, use local state to avoid losing focus during edits
-		if (questionsData && questionsData.length > 0 && !questionsInitialized) {
+		// Initialize questions from server data when:
+		// 1. Not currently loading
+		// 2. We have data (even if empty array)
+		// 3. Haven't initialized yet for this form
+		if (!questionsLoading && questionsData !== undefined && !questionsInitialized) {
 			setQuestions(questionsData);
 			setQuestionsInitialized(true);
 		}
-	}, [questionsData, questionsInitialized]);
+	}, [questionsData, questionsLoading, questionsInitialized]);
+
+	// Reset questionsInitialized when form id changes
+	useEffect(() => {
+		setQuestionsInitialized(false);
+		// Don't clear questions here to avoid flickering
+		// They will be replaced when new data arrives
+	}, [id]);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -462,15 +473,33 @@ const FormEdit = () => {
 				setAutoSaveStatus("saving");
 				if (isNewForm) {
 					await handleSaveDraft();
-				} else if (formData) {
-					await updateFormMutation.mutateAsync({
-						id: formData.id,
-						request: {
-							title: formData.title,
-							description: formData.description
+				} else if (formData || questions.length > 0) {
+					if (formData) {
+						await updateFormMutation.mutateAsync({
+							id: formData.id,
+							request: {
+								title: formData.title,
+								description: formData.description
+							}
+						});
+					}
+					else if (questions.length > 0) {
+						for (const question of questions) {
+							await updateQuestionMutation.mutateAsync({
+								formId: question.formId,
+								questionId: question.id,
+								request: {
+									required: question.required,
+									type: question.type,
+									title: question.title,
+									description: question.description,
+									order: question.order,
+									choices: question.choices
+								}
+							});
 						}
-					});
-				}
+					}
+				} 
 				setAutoSaveStatus("saved");
 				setHasUnsavedChanges(false);
 				navigate(`/${slug}/forms`);
@@ -604,7 +633,8 @@ const FormEdit = () => {
 
 	const handleAddQuestion = useCallback(
 		(type: QuestionType) => {
-			const newQuestion = createNewQuestion(type, questionsRef.current.length);
+			// Order should start from 1, not 0
+			const newQuestion = createNewQuestion(type, questionsRef.current.length + 1);
 
 			// Add to local state immediately
 			setQuestions(prev => [...prev, newQuestion]);
