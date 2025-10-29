@@ -1,42 +1,42 @@
 // Documentation structure and content
 export const docCategories = [
-  {
-    category: 'getting-started',
-    title: 'Getting Started',
-    description: 'Learn the basics of using Core UI',
-    docs: [
-      { slug: 'installation', title: 'Installation', description: 'How to install and set up Core UI' },
-      { slug: 'quick-start', title: 'Quick Start', description: 'Get up and running in minutes' },
-      { slug: 'theming', title: 'Theming', description: 'Customize colors and styles' },
-    ],
-  },
-  {
-    category: 'guides',
-    title: 'Guides',
-    description: 'In-depth guides for common use cases',
-    docs: [
-      { slug: 'css-modules', title: 'CSS Modules', description: 'How we use CSS modules for styling' },
-      { slug: 'accessibility', title: 'Accessibility', description: 'Making your app accessible' },
-      { slug: 'best-practices', title: 'Best Practices', description: 'Recommended patterns and practices' },
-    ],
-  },
-  {
-    category: 'advanced',
-    title: 'Advanced',
-    description: 'Advanced topics and customization',
-    docs: [
-      { slug: 'custom-components', title: 'Custom Components', description: 'Build your own components' },
-      { slug: 'performance', title: 'Performance', description: 'Optimize your app' },
-      { slug: 'migration', title: 'Migration Guide', description: 'Migrate from other libraries' },
-    ],
-  },
+	{
+		category: "getting-started",
+		title: "Getting Started",
+		description: "Learn the basics of using Core UI",
+		docs: [
+			{ slug: "installation", title: "Installation", description: "How to install and set up Core UI" },
+			{ slug: "quick-start", title: "Quick Start", description: "Get up and running in minutes" },
+			{ slug: "theming", title: "Theming", description: "Customize colors and styles" },
+		],
+	},
+	{
+		category: "guides",
+		title: "Guides",
+		description: "In-depth guides for common use cases",
+		docs: [
+			{ slug: "css-modules", title: "CSS Modules", description: "How we use CSS modules for styling" },
+			{ slug: "accessibility", title: "Accessibility", description: "Making your app accessible" },
+			{ slug: "best-practices", title: "Best Practices", description: "Recommended patterns and practices" },
+		],
+	},
+	{
+		category: "advanced",
+		title: "Advanced",
+		description: "Advanced topics and customization",
+		docs: [
+			{ slug: "custom-components", title: "Custom Components", description: "Build your own components" },
+			{ slug: "performance", title: "Performance", description: "Optimize your app" },
+			{ slug: "migration", title: "Migration Guide", description: "Migrate from other libraries" },
+		],
+	},
 ];
 
 export const docContent = {
-  'getting-started': {
-    installation: {
-      title: 'Installation',
-      content: `
+	"getting-started": {
+		installation: {
+			title: "Installation",
+			content: `
 ## Installation
 
 Install Core UI via npm or pnpm:
@@ -69,10 +69,10 @@ import '@orange-ui/components/styles.css';
 
 You're now ready to use Core UI components!
       `,
-    },
-    'quick-start': {
-      title: 'Quick Start',
-      content: `
+		},
+		"quick-start": {
+			title: "Quick Start",
+			content: `
 ## Quick Start
 
 Get started with Core UI in just a few minutes.
@@ -111,10 +111,10 @@ function App() {
 
 All components use CSS variables for easy theming. See the Theming guide for details.
       `,
-    },
-    theming: {
-      title: 'Theming',
-      content: `
+		},
+		theming: {
+			title: "Theming",
+			content: `
 ## Theming
 
 Customize Core UI to match your brand with CSS variables.
@@ -155,12 +155,12 @@ Want a different accent color? Just change \`--color-primary\`:
 }
 \`\`\`
       `,
-    },
-  },
-  guides: {
-    'css-modules': {
-      title: 'CSS Modules',
-      content: `
+		},
+	},
+	guides: {
+		"css-modules": {
+			title: "CSS Modules",
+			content: `
 ## CSS Modules
 
 Core UI uses CSS Modules for scoped, maintainable styles.
@@ -194,10 +194,10 @@ Use template literals to combine classes:
 </div>
 \`\`\`
       `,
-    },
-    accessibility: {
-      title: 'Accessibility',
-      content: `
+		},
+		accessibility: {
+			title: "Accessibility",
+			content: `
 ## Accessibility
 
 Core UI is built on Radix UI primitives for full accessibility.
@@ -236,10 +236,10 @@ Components include proper ARIA attributes:
 <Switch />
 \`\`\`
       `,
-    },
-    'best-practices': {
-      title: 'Best Practices',
-      content: `
+		},
+		"best-practices": {
+			title: "Best Practices",
+			content: `
 ## Best Practices
 
 Follow these guidelines for optimal results.
@@ -279,12 +279,12 @@ src/
       Card.module.css
 \`\`\`
       `,
-    },
-  },
-  advanced: {
-    'custom-components': {
-      title: 'Custom Components',
-      content: `
+		},
+	},
+	advanced: {
+		"custom-components": {
+			title: "Custom Components",
+			content: `
 ## Custom Components
 
 Build your own components using Core UI patterns.
@@ -336,10 +336,10 @@ export const Tooltip = ({ children, content }) => {
 };
 \`\`\`
       `,
-    },
-    performance: {
-      title: 'Performance',
-      content: `
+		},
+		performance: {
+			title: "Performance",
+			content: `
 ## Performance
 
 Optimize your Core UI application.
@@ -394,10 +394,10 @@ Check your bundle size:
 npm run build -- --analyze
 \`\`\`
       `,
-    },
-    migration: {
-      title: 'Migration Guide',
-      content: `
+		},
+		migration: {
+			title: "Migration Guide",
+			content: `
 ## Migration Guide
 
 Migrate from other UI libraries to Core UI.
@@ -450,6 +450,6 @@ Use our codemods for automatic migration:
 npx @orange-ui/codemod migrate-from-mui
 \`\`\`
       `,
-    },
-  },
+		},
+	},
 };

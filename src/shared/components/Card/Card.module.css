@@ -1,43 +1,46 @@
 .card {
-  background-color: var(--color-background);
-  border: var(--border-width) solid var(--color-primary);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-lg);
-  transition: box-shadow 0.2s ease;
+	background-color: var(--color-background);
+	border: var(--border-width) solid var(--color-primary);
+	border-radius: var(--border-radius);
+	padding: var(--spacing-lg);
+	transition: box-shadow 0.2s ease;
 }
 
 .card:hover {
-  box-shadow: 0 8px 16px rgba(255, 140, 0, 0.15);
+	box-shadow: 0 8px 16px rgba(255, 140, 0, 0.15);
 }
 
 .cardHeader {
-  margin-bottom: var(--spacing-md);
+	margin-bottom: var(--spacing-md);
 }
 
 .cardTitle {
-  color: var(--color-primary);
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 var(--spacing-xs) 0;
-  font-family: system-ui, -apple-system, sans-serif;
+	color: var(--color-primary);
+	font-size: 24px;
+	font-weight: 700;
+	margin: 0 0 var(--spacing-xs) 0;
+	font-family:
+		system-ui,
+		-apple-system,
+		sans-serif;
 }
 
 .cardDescription {
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  margin: 0;
+	color: var(--color-text-secondary);
+	font-size: 14px;
+	margin: 0;
 }
 
 .cardContent {
-  color: var(--color-text);
-  line-height: 1.6;
+	color: var(--color-text);
+	line-height: 1.6;
 }
 
 .cardFooter {
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-primary);
-  display: flex;
-  gap: var(--spacing-sm);
-  justify-content: flex-end;
+	margin-top: var(--spacing-lg);
+	padding-top: var(--spacing-md);
+	border-top: 1px solid var(--color-primary);
+	display: flex;
+	gap: var(--spacing-sm);
+	justify-content: flex-end;
 }

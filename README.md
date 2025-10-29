@@ -2,11 +2,11 @@
 
 ## 技術線
 
-* [Radix UI](https://www.radix-ui.com/)
-* React
-* Vite
-* CSS Modules
-* 功能導向資料夾結構
+- [Radix UI](https://www.radix-ui.com/)
+- React
+- Vite
+- CSS Modules
+- 功能導向資料夾結構
 
 ## 專案架構
 
@@ -119,47 +119,47 @@ To add a new feature (e.g., `auth`):
 
 1. **Create structure:**
 
-    ```bash
-    mkdir -p src/features/auth/{components,hooks,services,types}
-    ```
+   ```bash
+   mkdir -p src/features/auth/{components,hooks,services,types}
+   ```
 
 2. **Add components:**
 
-    ```javascript
-    // features/auth/components/LoginPage.jsx
-    export const LoginPage = () => {
-        /* ... */
-    };
-    ```
+   ```javascript
+   // features/auth/components/LoginPage.jsx
+   export const LoginPage = () => {
+   	/* ... */
+   };
+   ```
 
 3. **Add services:**
 
-    ```javascript
-    // features/auth/services/authService.js
-    export const authService = {
-        /* ... */
-    };
-    ```
+   ```javascript
+   // features/auth/services/authService.js
+   export const authService = {
+   	/* ... */
+   };
+   ```
 
 4. **Add hooks:**
 
-    ```javascript
-    // features/auth/hooks/useAuth.js
-    export const useAuth = () => {
-        /* ... */
-    };
-    ```
+   ```javascript
+   // features/auth/hooks/useAuth.js
+   export const useAuth = () => {
+   	/* ... */
+   };
+   ```
 
 5. **Export public API:**
 
-    ```javascript
-    // features/auth/index.js
-    export { LoginPage } from "./components";
-    export { useAuth } from "./hooks/useAuth";
-    export { authService } from "./services/authService";
-    ```
+   ```javascript
+   // features/auth/index.js
+   export { LoginPage } from "./components";
+   export { useAuth } from "./hooks/useAuth";
+   export { authService } from "./services/authService";
+   ```
 
 6. **Use in routes:**
-    ```javascript
-    import { LoginPage } from "@/features/auth";
-    ```
+   ```javascript
+   import { LoginPage } from "@/features/auth";
+   ```
