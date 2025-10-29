@@ -61,6 +61,8 @@ export default function OrangeAgendaForm() {
 					required
 				/> */}
 
+                額我也不知道為什麼但 GPT 竟然沒有做 input。
+
 				<Label htmlFor="email">Email</Label>
 				{/* <Input
 					id="email"
