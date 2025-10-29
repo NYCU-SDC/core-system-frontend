@@ -11,28 +11,23 @@
 		"format": "prettier --write ."
 	},
 	"dependencies": {
-		"@radix-ui/react-dialog": "^1.1.15",
-		"@radix-ui/react-select": "^2.2.6",
-		"@radix-ui/react-switch": "^1.2.6",
-		"@radix-ui/react-tabs": "^1.1.13",
-		"@radix-ui/react-tooltip": "^1.2.8",
-		"radix-ui": "^1.4.3",
-		"react": "^19.1.1",
-		"react-dom": "^19.1.1",
+		"@nycu-sdc/orange-agenda": "^0.0.3",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
 		"react-router-dom": "^7.9.4"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.36.0",
-		"@types/react": "^19.1.16",
-		"@types/react-dom": "^19.1.9",
-		"@vitejs/plugin-react": "^5.0.4",
-		"eslint": "^9.36.0",
+		"@eslint/js": "^9.38.0",
+		"@types/react": "^19.2.2",
+		"@types/react-dom": "^19.2.2",
+		"@vitejs/plugin-react": "^5.1.0",
+		"eslint": "^9.38.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-prettier": "^5.5.4",
-		"eslint-plugin-react-hooks": "^5.2.0",
-		"eslint-plugin-react-refresh": "^0.4.22",
+		"eslint-plugin-react-hooks": "^7.0.1",
+		"eslint-plugin-react-refresh": "^0.4.24",
 		"globals": "^16.4.0",
 		"prettier": "^3.6.2",
-		"vite": "^7.1.7"
+		"vite": "^7.1.12"
 	}
 }
