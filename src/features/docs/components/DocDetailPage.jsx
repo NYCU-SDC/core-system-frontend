@@ -135,20 +135,17 @@ export const DocDetailPage = () => {
 							);
 						}
 
-						// Handle regular paragraphs
-						if (paragraph.trim()) {
-							// Process inline code and bold text
-							const processedParts = [];
-							const codeRegex = /`([^`]+)`/g;
-							const boldRegex = /\*\*([^*]+)\*\*/g;
-							let lastIndex = 0;
-							let match;
+					// Handle regular paragraphs
+					if (paragraph.trim()) {
+						// Process inline code and bold text
+						const processedParts = [];
+						let lastIndex = 0;
 
-							// Create a combined regex to match both code and bold
-							const combinedRegex = /(`[^`]+`|\*\*[^*]+\*\*)/g;
-							const matches = [...paragraph.matchAll(combinedRegex)];
+						// Create a combined regex to match both code and bold
+						const combinedRegex = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+						const matches = [...paragraph.matchAll(combinedRegex)];
 
-							matches.forEach((match, idx) => {
+						matches.forEach((match, idx) => {
 								// Add text before this match
 								if (match.index > lastIndex) {
 									processedParts.push(paragraph.slice(lastIndex, match.index));
