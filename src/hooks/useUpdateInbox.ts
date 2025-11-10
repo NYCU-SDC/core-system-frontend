@@ -35,6 +35,9 @@ export function useUpdateInbox() {
 			if (context?.previousInbox) {
 				queryClient.setQueryData(["Inbox"], context.previousInbox);
 			}
+		},
+		onSettled: () => {
+			queryClient.invalidateQueries({ queryKey: ["Inbox"] });
 		}
 	});
 }

@@ -21,8 +21,9 @@ const Inbox = () => {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 	const { data: inboxList, isLoading: getListIsLoading, isError: getInboxListError } = useGetInboxList();
 	const updateInbox = useUpdateInbox();
-	const { data: inboxItemContent, isError: getInboxItemContentError, isFetching: isFetchingContent } = useGetInboxItemContent(selectedId?.contentId ?? null);
-	const { data: inboxItem, isError: getInboxItemError, isFetching: isFetchingItem } = useGetInboxItem(selectedId?.itemId ?? null);
+	// Fetch item first, then content - use isLoading instead of isFetching to avoid background refetch loading states
+	const { data: inboxItem, isError: getInboxItemError, isLoading: isLoadingItem } = useGetInboxItem(selectedId?.itemId ?? null);
+	const { data: inboxItemContent, isError: getInboxItemContentError, isLoading: isLoadingContent } = useGetInboxItemContent(selectedId?.contentId ?? null);
 	//
 	// const [items, setItems] = useState<InboxItem[]>([]);
 	// const [loading, setLoading] = useState<boolean>(true);
@@ -56,7 +57,7 @@ const Inbox = () => {
 		});
 	}, [items, selectedUnits, unreadOnly, getInboxListError, getListIsLoading]);
 	const handleCardClick = (itemId: string, contentId: string) => {
-		setSelectedId({ itemId, contentId });
+
 
 		// Find the current item to preserve its flags
 		const currentItem = items.find(item => item.id === itemId);
@@ -70,6 +71,7 @@ const Inbox = () => {
 				}
 			});
 		}
+		setSelectedId({ itemId, contentId });
 	};
 
 	function formatDeadline(isoString: string): string {
@@ -167,9 +169,10 @@ const Inbox = () => {
 						hasSelected={!!selectedId}
 						isErrorItem={getInboxItemError}
 						isErrorContent={getInboxItemContentError}
-						isLoadingItem={isFetchingItem}
-						isLoadingContent={isFetchingContent}
-						inboxItem={inboxItem}
+						isLoadingItem={isLoadingItem}
+						isLoadingContent={isLoadingContent}
+						// Only pass data if it matches the selected item ID (prevent stale data mismatch)
+						inboxItem={inboxItem?.id === selectedId?.itemId ? inboxItem : undefined}
 						inboxItemContent={inboxItemContent}
 						formatDeadline={formatDeadline}
 					/>
