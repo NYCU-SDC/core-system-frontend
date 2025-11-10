@@ -71,6 +71,9 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 
 	// Show "select an item" only if nothing is selected
 	if (!hasSelected) {
+		//DEBUG
+		console.log("No item selected, showing placeholder.");
+
 		return (
 			<div className="detail-container flex flex-col p-4 md:p-8 lg:p-16 gap-4 flex-1 h-dvh justify-center items-center overflow-y-auto">
 				<Inbox
@@ -84,6 +87,14 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 
 	// Show error if there was a problem loading
 	if (isErrorItem || isErrorContent) {
+		// DEBUG
+		if(isErrorItem) {
+			console.error("Error loading inbox item.");
+		}
+		if(isErrorContent) {
+			console.error("Error loading inbox item content.");
+		}
+
 		return (
 			<div className="detail-container flex p-4 md:p-8 lg:p-16 gap-4 flex-1 h-dvh justify-center items-center overflow-y-auto">
 				<p className="text-sm text-red-500 py-3">Fail to load.</p>
@@ -94,6 +105,20 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 	// Show loading skeleton when data is being fetched OR when we're waiting for data
 	// (hasSelected but no data yet means we should show loading)
 	if (isLoadingItem || isLoadingContent || !inboxItem || !inboxItemContent) {
+
+		//DEBYUG
+		if(isLoadingItem) {
+			console.log("Loading inbox item...");
+		}
+		if(isLoadingContent) {
+			console.log("Loading inbox item content...");
+		}
+		if(!inboxItem) {
+			console.log("No inbox item yet...");
+		}
+		if(!inboxItemContent) {
+			console.log("No inbox item content data yet...");
+		}
 		return (
 			<div className="detail-container flex p-4 md:p-8 lg:p-16 gap-4 flex-1 h-dvh justify-center overflow-y-auto">
 				<div className="tab-card flex flex-col pt-8 md:pt-12 lg:pt-16 px-4 md:px-6 lg:px-8 pb-8 bg-white border-slate-200 w-full max-w-[800px] h-dvh gap-6 rounded-[6px] animate-pulse">
