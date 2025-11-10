@@ -57,8 +57,6 @@ const Inbox = () => {
 		});
 	}, [items, selectedUnits, unreadOnly, getInboxListError, getListIsLoading]);
 	const handleCardClick = (itemId: string, contentId: string) => {
-
-
 		// Find the current item to preserve its flags
 		const currentItem = items.find(item => item.id === itemId);
 		if (currentItem) {
