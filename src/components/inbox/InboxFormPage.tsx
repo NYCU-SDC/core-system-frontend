@@ -88,10 +88,10 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 	// Show error if there was a problem loading
 	if (isErrorItem || isErrorContent) {
 		// DEBUG
-		if(isErrorItem) {
+		if (isErrorItem) {
 			console.error("Error loading inbox item.");
 		}
-		if(isErrorContent) {
+		if (isErrorContent) {
 			console.error("Error loading inbox item content.");
 		}
 
@@ -105,18 +105,17 @@ export default function InboxFormPage({ hasSelected, isErrorItem, isErrorContent
 	// Show loading skeleton when data is being fetched OR when we're waiting for data
 	// (hasSelected but no data yet means we should show loading)
 	if (isLoadingItem || isLoadingContent || !inboxItem || !inboxItemContent) {
-
 		//DEBYUG
-		if(isLoadingItem) {
+		if (isLoadingItem) {
 			console.log("Loading inbox item...");
 		}
-		if(isLoadingContent) {
+		if (isLoadingContent) {
 			console.log("Loading inbox item content...");
 		}
-		if(!inboxItem) {
+		if (!inboxItem) {
 			console.log("No inbox item yet...");
 		}
-		if(!inboxItemContent) {
+		if (!inboxItemContent) {
 			console.log("No inbox item content data yet...");
 		}
 		return (
