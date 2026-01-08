@@ -1,2 +1,1 @@
-# core-system-frontend
-Core System Frontend
+# Core System
