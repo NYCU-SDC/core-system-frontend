@@ -1,59 +1,33 @@
-import { Box, Button, Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "../../../shared/components";
+import styles from "./LoginPage.module.css";
 
 export const LoginPage = () => {
 	return (
-		<Box>
-			<Flex direction="column" align="center" gap="6" py="8">
-				<Heading size="8">Welcome</Heading>
-				<Text color="gray">Sign in to your account</Text>
+		<div className={styles.container}>
+			<h1 className={styles.title}>Welcome</h1>
+			<p className={styles.subtitle}>Sign in to your account</p>
 
-				<Card style={{ width: "100%", maxWidth: "400px" }}>
-					<Flex direction="column" gap="4" p="4">
-						<Box>
-							<Text size="2" weight="medium" mb="2" style={{ display: "block" }}>
-								Email
-							</Text>
-							<input
-								type="email"
-								placeholder="Enter your email"
-								style={{
-									width: "100%",
-									padding: "0.5rem",
-									borderRadius: "var(--radius-2)",
-									border: "1px solid var(--gray-6)",
-									fontSize: "14px"
-								}}
-							/>
-						</Box>
+			<div className={styles.card}>
+				<div className={styles.form}>
+					<div className={styles.field}>
+						<label className={styles.label}>Email</label>
+						<input type="email" placeholder="Enter your email" className={styles.input} />
+					</div>
 
-						<Box>
-							<Text size="2" weight="medium" mb="2" style={{ display: "block" }}>
-								Password
-							</Text>
-							<input
-								type="password"
-								placeholder="Enter your password"
-								style={{
-									width: "100%",
-									padding: "0.5rem",
-									borderRadius: "var(--radius-2)",
-									border: "1px solid var(--gray-6)",
-									fontSize: "14px"
-								}}
-							/>
-						</Box>
+					<div className={styles.field}>
+						<label className={styles.label}>Password</label>
+						<input type="password" placeholder="Enter your password" className={styles.input} />
+					</div>
 
-						<Link to="/admin" style={{ textDecoration: "none" }}>
-							<Button size="3" style={{ width: "100%" }}>
-								<LogIn size={16} />
-								Sign In
-							</Button>
-						</Link>
-					</Flex>
-				</Card>
-			</Flex>
-		</Box>
+					<Link to="/admin" className={styles.link}>
+						<Button icon={LogIn} style={{ width: "100%" }}>
+							Sign In
+						</Button>
+					</Link>
+				</div>
+			</div>
+		</div>
 	);
 };

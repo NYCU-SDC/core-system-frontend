@@ -1,9 +1,9 @@
-import { Flex, Spinner } from "@radix-ui/themes";
+import styles from "./LoadingSpinner.module.css";
 
 export const LoadingSpinner = () => {
 	return (
-		<Flex align="center" justify="center" style={{ minHeight: "200px" }}>
-			<Spinner size="3" />
-		</Flex>
+		<div className={styles.container}>
+			<div className={styles.spinner} />
+		</div>
 	);
 };

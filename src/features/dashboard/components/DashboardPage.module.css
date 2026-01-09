@@ -1,0 +1,66 @@
+.container {
+	padding: 2rem 0;
+}
+
+.title {
+	font-size: 2rem;
+	margin-bottom: 0.5rem;
+}
+
+.subtitle {
+	color: var(--color-caption);
+	margin-bottom: 1.5rem;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+}
+
+.statCard {
+	background-color: var(--background-color-secondary);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.5rem;
+	padding: 1rem;
+}
+
+.icon {
+	color: var(--orange);
+	margin-bottom: 0.75rem;
+}
+
+.statLabel {
+	font-size: 0.875rem;
+	color: var(--color-caption);
+	display: block;
+	margin-bottom: 0.25rem;
+}
+
+.statValue {
+	font-size: 1.5rem;
+	font-weight: 600;
+	margin-bottom: 0.25rem;
+}
+
+.statChange {
+	font-size: 0.75rem;
+	color: var(--green);
+}
+
+.card {
+	background-color: var(--background-color-secondary);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.5rem;
+	padding: 1.25rem;
+}
+
+.cardTitle {
+	font-size: 1.25rem;
+	margin-bottom: 1rem;
+}
+
+.cardContent {
+	color: var(--color-caption);
+}

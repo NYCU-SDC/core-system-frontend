@@ -1,70 +1,47 @@
-import { Box, Card, Flex, Heading, Switch, Text } from "@radix-ui/themes";
+import { Switch } from "../../../shared/components";
+import styles from "./SettingsPage.module.css";
 
 export const SettingsPage = () => {
 	return (
-		<Box>
-			<Heading size="8" mb="2">
-				Settings
-			</Heading>
-			<Text color="gray" mb="6">
-				Manage your application settings and preferences.
-			</Text>
+		<div className={styles.container}>
+			<h1 className={styles.title}>Settings</h1>
+			<p className={styles.subtitle}>Manage your application settings and preferences.</p>
 
-			<Flex direction="column" gap="4">
-				<Card>
-					<Box p="5">
-						<Heading size="4" mb="4">
-							General Settings
-						</Heading>
-						<Flex direction="column" gap="4">
-							<Flex justify="between" align="center">
-								<Box>
-									<Text weight="medium" size="2">
-										Email Notifications
-									</Text>
-									<Text size="1" color="gray">
-										Receive email updates about your account
-									</Text>
-								</Box>
-								<Switch defaultChecked />
-							</Flex>
+			<div className={styles.cards}>
+				<div className={styles.card}>
+					<h2 className={styles.cardTitle}>General Settings</h2>
+					<div className={styles.settings}>
+						<div className={styles.settingItem}>
+							<div className={styles.settingInfo}>
+								<div className={styles.settingLabel}>Email Notifications</div>
+								<div className={styles.settingDescription}>Receive email updates about your account</div>
+							</div>
+							<Switch defaultChecked />
+						</div>
 
-							<Flex justify="between" align="center">
-								<Box>
-									<Text weight="medium" size="2">
-										Dark Mode
-									</Text>
-									<Text size="1" color="gray">
-										Enable dark theme across the application
-									</Text>
-								</Box>
-								<Switch />
-							</Flex>
+						<div className={styles.settingItem}>
+							<div className={styles.settingInfo}>
+								<div className={styles.settingLabel}>Dark Mode</div>
+								<div className={styles.settingDescription}>Enable dark theme across the application</div>
+							</div>
+							<Switch />
+						</div>
 
-							<Flex justify="between" align="center">
-								<Box>
-									<Text weight="medium" size="2">
-										Auto-save
-									</Text>
-									<Text size="1" color="gray">
-										Automatically save your changes
-									</Text>
-								</Box>
-								<Switch defaultChecked />
-							</Flex>
-						</Flex>
-					</Box>
-				</Card>
+						<div className={styles.settingItem}>
+							<div className={styles.settingInfo}>
+								<div className={styles.settingLabel}>Auto-save</div>
+								<div className={styles.settingDescription}>Automatically save your changes</div>
+							</div>
+							<Switch defaultChecked />
+						</div>
+					</div>
+				</div>
 
-				<Card>
-					<Box p="5">
-						<Heading size="4" mb="4">
-							Account Settings
-						</Heading>
-						<Text color="gray">Account management options coming soon.</Text>
-					</Box>
-				</Card>
-			</Flex>
-		</Box>
+				<div className={styles.card}>
+					<h2 className={styles.cardTitle}>Account Settings</h2>
+					<p className={styles.settingDescription}>Account management options coming soon.</p>
+				</div>
+			</div>
+		</div>
 	);
 };

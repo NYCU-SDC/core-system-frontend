@@ -1,4 +1,4 @@
-import { Box, Card, Heading, Table, Text } from "@radix-ui/themes";
+import styles from "./UsersPage.module.css";
 
 const users = [
 	{ id: 1, name: "John Doe", email: "john@example.com", role: "Admin" },
@@ -8,37 +8,30 @@ const users = [
 
 export const UsersPage = () => {
 	return (
-		<Box>
-			<Heading size="8" mb="2">
-				Users
-			</Heading>
-			<Text color="gray" mb="6">
-				Manage your application users.
-			</Text>
+		<div className={styles.container}>
+			<h1 className={styles.title}>Users</h1>
+			<p className={styles.subtitle}>Manage your application users.</p>
 
-			<Card>
-				<Box p="4">
-					<Table.Root>
-						<Table.Header>
-							<Table.Row>
-								<Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
-								<Table.ColumnHeaderCell>Email</Table.ColumnHeaderCell>
-								<Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
-							</Table.Row>
-						</Table.Header>
-
-						<Table.Body>
-							{users.map(user => (
-								<Table.Row key={user.id}>
-									<Table.Cell>{user.name}</Table.Cell>
-									<Table.Cell>{user.email}</Table.Cell>
-									<Table.Cell>{user.role}</Table.Cell>
-								</Table.Row>
-							))}
-						</Table.Body>
-					</Table.Root>
-				</Box>
-			</Card>
-		</Box>
+			<div className={styles.card}>
+				<table className={styles.table}>
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Email</th>
+							<th>Role</th>
+						</tr>
+					</thead>
+					<tbody>
+						{users.map(user => (
+							<tr key={user.id}>
+								<td>{user.name}</td>
+								<td>{user.email}</td>
+								<td>{user.role}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</div>
 	);
 };

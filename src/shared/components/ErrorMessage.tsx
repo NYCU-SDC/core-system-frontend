@@ -1,5 +1,5 @@
-import { Callout } from "@radix-ui/themes";
 import { AlertCircle } from "lucide-react";
+import styles from "./ErrorMessage.module.css";
 
 interface ErrorMessageProps {
 	message: string;
@@ -7,11 +7,11 @@ interface ErrorMessageProps {
 
 export const ErrorMessage = ({ message }: ErrorMessageProps) => {
 	return (
-		<Callout.Root color="red" role="alert">
-			<Callout.Icon>
+		<div className={styles.error} role="alert">
+			<div className={styles.icon}>
 				<AlertCircle size={20} />
-			</Callout.Icon>
-			<Callout.Text>{message}</Callout.Text>
-		</Callout.Root>
+			</div>
+			<div className={styles.message}>{message}</div>
+		</div>
 	);
 };

@@ -1,5 +1,5 @@
-import { Box, Card, Grid, Heading, Text } from "@radix-ui/themes";
 import { BarChart3, DollarSign, TrendingUp, Users } from "lucide-react";
+import styles from "./DashboardPage.module.css";
 
 const stats = [
 	{ icon: Users, label: "Total Users", value: "1,234", change: "+12%" },
@@ -10,46 +10,30 @@ const stats = [
 
 export const DashboardPage = () => {
 	return (
-		<Box>
-			<Heading size="8" mb="2">
-				Dashboard
-			</Heading>
-			<Text color="gray" mb="6">
-				Welcome back! Here's what's happening with your projects today.
-			</Text>
+		<div className={styles.container}>
+			<h1 className={styles.title}>Dashboard</h1>
+			<p className={styles.subtitle}>Welcome back! Here's what's happening with your projects today.</p>
 
-			<Grid columns={{ initial: "1", sm: "2", md: "4" }} gap="4" mb="6">
+			<div className={styles.grid}>
 				{stats.map(stat => {
 					const Icon = stat.icon;
 					return (
-						<Card key={stat.label}>
-							<Box p="4">
-								<Box mb="3" style={{ color: "var(--accent-9)" }}>
-									<Icon size={24} />
-								</Box>
-								<Text size="2" color="gray" style={{ display: "block" }} mb="1">
-									{stat.label}
-								</Text>
-								<Heading size="6" mb="1">
-									{stat.value}
-								</Heading>
-								<Text size="1" color="green">
-									{stat.change}
-								</Text>
-							</Box>
-						</Card>
+						<div key={stat.label} className={styles.statCard}>
+							<div className={styles.icon}>
+								<Icon size={24} />
+							</div>
+							<span className={styles.statLabel}>{stat.label}</span>
+							<div className={styles.statValue}>{stat.value}</div>
+							<span className={styles.statChange}>{stat.change}</span>
+						</div>
 					);
 				})}
-			</Grid>
+			</div>
 
-			<Card>
-				<Box p="5">
-					<Heading size="4" mb="4">
-						Recent Activity
-					</Heading>
-					<Text color="gray">No recent activity to show.</Text>
-				</Box>
-			</Card>
-		</Box>
+			<div className={styles.card}>
+				<h2 className={styles.cardTitle}>Recent Activity</h2>
+				<p className={styles.cardContent}>No recent activity to show.</p>
+			</div>
+		</div>
 	);
 };

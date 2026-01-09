@@ -1,0 +1,58 @@
+.container {
+	padding: 1rem;
+}
+
+.title {
+	font-size: 1.25rem;
+	font-weight: bold;
+	margin-bottom: 1.5rem;
+	display: block;
+}
+
+.nav {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.link {
+	text-decoration: none;
+	color: inherit;
+}
+
+.navItem {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	border-radius: 0.375rem;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.navItem:hover {
+	background-color: var(--background-color-tertiary);
+}
+
+.navItem.active {
+	background-color: var(--orange);
+	color: var(--background-color-primary);
+}
+
+.navLabel {
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.divider {
+	margin-top: 1.5rem;
+}
+
+.logoutItem {
+	composes: navItem;
+	color: var(--red);
+}
+
+.logoutItem:hover {
+	background-color: rgba(255, 85, 85, 0.1);
+}
