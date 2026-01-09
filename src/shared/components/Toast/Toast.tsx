@@ -19,7 +19,7 @@ const icons = {
 	info: Info
 };
 
-export function Toast({ open, onOpenChange, title, description, variant = "info", duration = 5000 }: ToastProps) {
+export const Toast = ({ open, onOpenChange, title, description, variant = "info", duration = 5000 }: ToastProps) => {
 	const Icon = icons[variant];
 
 	return (
@@ -36,13 +36,13 @@ export function Toast({ open, onOpenChange, title, description, variant = "info"
 			</ToastPrimitive.Close>
 		</ToastPrimitive.Root>
 	);
-}
+};
 
-export function ToastProvider({ children }: { children: ReactNode }) {
+export const ToastProvider = ({ children }: { children: ReactNode }) => {
 	return (
 		<ToastPrimitive.Provider>
 			{children}
 			<ToastPrimitive.Viewport className={styles.viewport} />
 		</ToastPrimitive.Provider>
 	);
-}
+};

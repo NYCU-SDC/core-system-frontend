@@ -14,7 +14,7 @@ export interface RadioProps extends ComponentPropsWithoutRef<typeof RadioGroup.R
 	themeColor?: string;
 }
 
-export function Radio({ options, themeColor, ...props }: RadioProps) {
+export const Radio = ({ options, themeColor, ...props }: RadioProps) => {
 	return (
 		<RadioGroup.Root className={styles.radioGroup} {...props}>
 			{options.map(option => {
@@ -34,4 +34,4 @@ export function Radio({ options, themeColor, ...props }: RadioProps) {
 			})}
 		</RadioGroup.Root>
 	);
-}
+};

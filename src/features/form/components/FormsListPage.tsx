@@ -16,7 +16,7 @@ const mockForms = [
 	}
 ];
 
-export function FormsListPage() {
+export const FormsListPage = () => {
 	const navigate = useNavigate();
 
 	const handleFormClick = (formId: string) => {
@@ -48,4 +48,4 @@ export function FormsListPage() {
 			</div>
 		</UserLayout>
 	);
-}
+};

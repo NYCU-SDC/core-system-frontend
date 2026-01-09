@@ -10,7 +10,7 @@ export interface ProgressBarProps extends ComponentPropsWithoutRef<typeof Progre
 	themeColor?: string;
 }
 
-export function ProgressBar({ value, max = 100, label, showPercentage = true, themeColor, className, ...props }: ProgressBarProps) {
+export const ProgressBar = ({ value, max = 100, label, showPercentage = true, themeColor, className, ...props }: ProgressBarProps) => {
 	const percentage = Math.round((value / max) * 100);
 
 	return (
@@ -32,4 +32,4 @@ export function ProgressBar({ value, max = 100, label, showPercentage = true, th
 			</Progress.Root>
 		</div>
 	);
-}
+};

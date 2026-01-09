@@ -5,7 +5,7 @@ import { UserLayout } from "../../../layouts";
 import { Button, Checkbox, Input, Radio, TextArea } from "../../../shared/components";
 import styles from "./FormDetailPage.module.css";
 
-export function FormDetailPage() {
+export const FormDetailPage = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState({
@@ -72,4 +72,4 @@ export function FormDetailPage() {
 			</div>
 		</UserLayout>
 	);
-}
+};

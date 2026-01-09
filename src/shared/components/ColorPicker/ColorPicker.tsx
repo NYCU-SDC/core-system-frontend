@@ -14,7 +14,7 @@ export interface ColorPickerProps {
 
 const defaultColors = ["#ff5555", "#ffb86c", "#f1fa8c", "#50fa7b", "#8be9fd", "#bd93f9", "#ff79c6", "#6272a4"];
 
-export function ColorPicker({ label, colors = defaultColors, value, onChange, allowCustom = true }: ColorPickerProps) {
+export const ColorPicker = ({ label, colors = defaultColors, value, onChange, allowCustom = true }: ColorPickerProps) => {
 	const [showCustomDialog, setShowCustomDialog] = useState(false);
 	const [customColor, setCustomColor] = useState(value || "#000000");
 
@@ -77,4 +77,4 @@ export function ColorPicker({ label, colors = defaultColors, value, onChange, al
 			)}
 		</div>
 	);
-}
+};

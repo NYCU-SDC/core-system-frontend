@@ -7,7 +7,7 @@ export interface AccountButtonProps extends ButtonHTMLAttributes<HTMLButtonEleme
 	connected?: boolean;
 }
 
-export function AccountButton({ logo, children, connected = false, className, ...props }: AccountButtonProps) {
+export const AccountButton = ({ logo, children, connected = false, className, ...props }: AccountButtonProps) => {
 	return (
 		<button className={`${styles.button} ${connected ? styles.connected : ""} ${className || ""}`} {...props}>
 			<div className={styles.logo}>{logo}</div>
@@ -15,4 +15,4 @@ export function AccountButton({ logo, children, connected = false, className, ..
 			{connected && <span className={styles.badge}>Connected</span>}
 		</button>
 	);
-}
+};

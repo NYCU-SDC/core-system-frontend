@@ -5,7 +5,7 @@ import styles from "./AdminFormDetailPage.module.css";
 
 type TabType = "info" | "edit" | "reply" | "design";
 
-export function AdminFormDetailPage() {
+export const AdminFormDetailPage = () => {
 	const { formid } = useParams();
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -51,4 +51,4 @@ export function AdminFormDetailPage() {
 			</div>
 		</AdminLayout>
 	);
-}
+};

@@ -5,7 +5,7 @@ import { UserLayout } from "../../../layouts";
 import { Button, Input } from "../../../shared/components";
 import styles from "./WelcomePage.module.css";
 
-export function WelcomePage() {
+export const WelcomePage = () => {
 	const navigate = useNavigate();
 	const [name, setName] = useState("");
 
@@ -38,4 +38,4 @@ export function WelcomePage() {
 			</div>
 		</UserLayout>
 	);
-}
+};

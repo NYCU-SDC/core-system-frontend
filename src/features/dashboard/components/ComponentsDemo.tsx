@@ -27,7 +27,7 @@ import {
 } from "../../../shared/components";
 import styles from "./ComponentsDemo.module.css";
 
-export function ComponentsDemo() {
+export const ComponentsDemo = () => {
 	const [switchValue, setSwitchValue] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [toastOpen, setToastOpen] = useState(false);
@@ -247,4 +247,4 @@ export function ComponentsDemo() {
 			</UserLayout>
 		</ToastProvider>
 	);
-}
+};

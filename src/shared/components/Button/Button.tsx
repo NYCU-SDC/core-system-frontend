@@ -11,7 +11,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	processing?: boolean;
 }
 
-export function Button({ children, icon: Icon, themeColor, variant = "primary", processing = false, style, className, disabled, ...props }: ButtonProps) {
+export const Button = ({ children, icon: Icon, themeColor, variant = "primary", processing = false, style, className, disabled, ...props }: ButtonProps) => {
 	const buttonStyle = themeColor ? { ...style, backgroundColor: themeColor } : style;
 
 	const variantClass = variant === "secondary" ? styles.secondary : styles.primary;
@@ -30,4 +30,4 @@ export function Button({ children, icon: Icon, themeColor, variant = "primary", 
 			{children}
 		</button>
 	);
-}
+};

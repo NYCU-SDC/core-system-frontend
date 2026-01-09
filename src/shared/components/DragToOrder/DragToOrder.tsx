@@ -13,7 +13,7 @@ export interface DragToOrderProps {
 	onReorder: (items: DragItem[]) => void;
 }
 
-export function DragToOrder({ items, onReorder }: DragToOrderProps) {
+export const DragToOrder = ({ items, onReorder }: DragToOrderProps) => {
 	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
 	const handleDragStart = (index: number) => {
@@ -56,4 +56,4 @@ export function DragToOrder({ items, onReorder }: DragToOrderProps) {
 			))}
 		</div>
 	);
-}
+};

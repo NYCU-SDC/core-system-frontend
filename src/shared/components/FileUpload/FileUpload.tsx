@@ -10,7 +10,7 @@ export interface FileUploadProps extends Omit<InputHTMLAttributes<HTMLInputEleme
 	accept?: string;
 }
 
-export function FileUpload({ label, onChange, error, accept = "image/*", ...props }: FileUploadProps) {
+export const FileUpload = ({ label, onChange, error, accept = "image/*", ...props }: FileUploadProps) => {
 	const [preview, setPreview] = useState<string | null>(null);
 	const [fileName, setFileName] = useState<string | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -80,4 +80,4 @@ export function FileUpload({ label, onChange, error, accept = "image/*", ...prop
 			{error && <span className={styles.errorMessage}>{error}</span>}
 		</div>
 	);
-}
+};

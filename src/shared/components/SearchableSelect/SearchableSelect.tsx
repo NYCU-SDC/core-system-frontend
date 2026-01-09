@@ -18,7 +18,7 @@ export interface SearchableSelectProps extends ComponentPropsWithoutRef<typeof R
 	themeColor?: string;
 }
 
-export function SearchableSelect({ label, placeholder, options, themeColor, ...props }: SearchableSelectProps) {
+export const SearchableSelect = ({ label, placeholder, options, themeColor, ...props }: SearchableSelectProps) => {
 	const [searchQuery, setSearchQuery] = useState("");
 	const triggerId = `select-${label?.replace(/\s/g, "-").toLowerCase()}`;
 
@@ -63,4 +63,4 @@ export function SearchableSelect({ label, placeholder, options, themeColor, ...p
 			</RadixSelect.Root>
 		</div>
 	);
-}
+};

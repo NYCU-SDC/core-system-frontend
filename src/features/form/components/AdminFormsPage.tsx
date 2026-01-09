@@ -22,7 +22,7 @@ const mockForms = [
 	}
 ];
 
-export function AdminFormsPage() {
+export const AdminFormsPage = () => {
 	const navigate = useNavigate();
 
 	const handleFormClick = (formId: string) => {
@@ -68,4 +68,4 @@ export function AdminFormsPage() {
 			</div>
 		</AdminLayout>
 	);
-}
+};

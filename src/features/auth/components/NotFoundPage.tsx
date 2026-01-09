@@ -4,7 +4,7 @@ import { UserLayout } from "../../../layouts";
 import { Button } from "../../../shared/components";
 import styles from "./NotFoundPage.module.css";
 
-export function NotFoundPage() {
+export const NotFoundPage = () => {
 	const navigate = useNavigate();
 
 	return (
@@ -21,4 +21,4 @@ export function NotFoundPage() {
 			</div>
 		</UserLayout>
 	);
-}
+};

@@ -7,7 +7,7 @@ interface AdminLayoutProps {
 	children: ReactNode;
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export const AdminLayout = ({ children }: AdminLayoutProps) => {
 	return (
 		<div className={styles.container}>
 			<nav className={styles.nav}>
@@ -44,4 +44,4 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 			</main>
 		</div>
 	);
-}
+};

@@ -20,7 +20,7 @@ const mockUsers = [
 	}
 ];
 
-export function AdminSettingsPage() {
+export const AdminSettingsPage = () => {
 	const [email, setEmail] = useState("");
 	const [users, setUsers] = useState(mockUsers);
 
@@ -82,4 +82,4 @@ export function AdminSettingsPage() {
 			</div>
 		</AdminLayout>
 	);
-}
+};

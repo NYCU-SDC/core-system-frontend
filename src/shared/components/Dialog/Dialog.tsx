@@ -13,7 +13,7 @@ export interface DialogProps {
 	backgroundColor?: string;
 }
 
-export function Dialog({ open, onOpenChange, title, description, children, footer, backgroundColor }: DialogProps) {
+export const Dialog = ({ open, onOpenChange, title, description, children, footer, backgroundColor }: DialogProps) => {
 	return (
 		<DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
 			<DialogPrimitive.Portal>
@@ -34,4 +34,4 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
 			</DialogPrimitive.Portal>
 		</DialogPrimitive.Root>
 	);
-}
+};

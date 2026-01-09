@@ -6,11 +6,11 @@ export interface LabelProps extends ComponentPropsWithoutRef<typeof RadixLabel.R
 	required?: boolean;
 }
 
-export function Label({ children, required, className, ...props }: LabelProps) {
+export const Label = ({ children, required, className, ...props }: LabelProps) => {
 	return (
 		<RadixLabel.Root className={`${styles.label} ${className || ""}`} {...props}>
 			{children}
 			{required && <span className={styles.required}>*</span>}
 		</RadixLabel.Root>
 	);
-}
+};

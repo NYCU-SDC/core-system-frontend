@@ -9,7 +9,7 @@ export interface TooltipProps {
 	delayDuration?: number;
 }
 
-export function Tooltip({ children, content, side = "top", delayDuration = 200 }: TooltipProps) {
+export const Tooltip = ({ children, content, side = "top", delayDuration = 200 }: TooltipProps) => {
 	return (
 		<TooltipPrimitive.Provider delayDuration={delayDuration}>
 			<TooltipPrimitive.Root>
@@ -25,4 +25,4 @@ export function Tooltip({ children, content, side = "top", delayDuration = 200 }
 			</TooltipPrimitive.Root>
 		</TooltipPrimitive.Provider>
 	);
-}
+};

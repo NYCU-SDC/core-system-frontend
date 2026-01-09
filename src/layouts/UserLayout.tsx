@@ -5,10 +5,11 @@ interface UserLayoutProps {
 	children: ReactNode;
 }
 
-export function UserLayout({ children }: UserLayoutProps) {
+
+export const UserLayout = ({ children }: UserLayoutProps) => {
 	return (
 		<div className={styles.container}>
 			<div className={styles.content}>{children}</div>
 		</div>
 	);
-}
+};

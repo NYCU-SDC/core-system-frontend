@@ -8,7 +8,7 @@ export interface SwitchProps extends ComponentPropsWithoutRef<typeof RadixSwitch
 	themeColor?: string;
 }
 
-export function Switch({ label, themeColor, id, style, ...props }: SwitchProps) {
+export const Switch = ({ label, themeColor, id, style, ...props }: SwitchProps) => {
 	const switchStyle = themeColor && props.checked ? { ...style, backgroundColor: themeColor } : style;
 
 	return (
@@ -23,4 +23,4 @@ export function Switch({ label, themeColor, id, style, ...props }: SwitchProps) 
 			)}
 		</div>
 	);
-}
+};

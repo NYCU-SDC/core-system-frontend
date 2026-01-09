@@ -17,7 +17,7 @@ export interface DropdownMenuProps {
 	align?: "start" | "center" | "end";
 }
 
-export function DropdownMenu({ trigger, items, align = "start" }: DropdownMenuProps) {
+export const DropdownMenu = ({ trigger, items, align = "start" }: DropdownMenuProps) => {
 	return (
 		<DropdownMenuPrimitive.Root>
 			<DropdownMenuPrimitive.Trigger asChild>
@@ -62,4 +62,4 @@ export function DropdownMenu({ trigger, items, align = "start" }: DropdownMenuPr
 			</DropdownMenuPrimitive.Portal>
 		</DropdownMenuPrimitive.Root>
 	);
-}
+};

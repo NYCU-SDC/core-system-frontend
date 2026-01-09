@@ -3,7 +3,7 @@ import { UserLayout } from "../../../layouts";
 import { Button } from "../../../shared/components";
 import styles from "./HomePage.module.css";
 
-export function HomePage() {
+export const HomePage = () => {
 	const handleGithubLogin = () => {
 		console.log("GitHub OAuth login");
 		// Implement OAuth flow
@@ -32,4 +32,4 @@ export function HomePage() {
 			</div>
 		</UserLayout>
 	);
-}
+};

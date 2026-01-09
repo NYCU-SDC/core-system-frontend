@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { UserLayout } from "../../../layouts";
 import styles from "./CallbackPage.module.css";
 
-export function CallbackPage() {
+export const CallbackPage = () => {
 	const navigate = useNavigate();
 
 	useEffect(() => {
@@ -33,4 +33,4 @@ export function CallbackPage() {
 			</div>
 		</UserLayout>
 	);
-}
+};

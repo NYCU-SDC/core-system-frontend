@@ -18,7 +18,7 @@ export interface SelectProps extends ComponentPropsWithoutRef<typeof RadixSelect
 	themeColor?: string;
 }
 
-export function Select({ label, placeholder, options, error, themeColor, ...props }: SelectProps) {
+export const Select = ({ label, placeholder, options, error, themeColor, ...props }: SelectProps) => {
 	const triggerId = `select-${label?.replace(/\s/g, "-").toLowerCase()}`;
 
 	return (
@@ -51,4 +51,4 @@ export function Select({ label, placeholder, options, error, themeColor, ...prop
 			{error && <span className={styles.errorMessage}>{error}</span>}
 		</div>
 	);
-}
+};

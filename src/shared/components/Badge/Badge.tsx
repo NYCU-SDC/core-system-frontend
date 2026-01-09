@@ -7,7 +7,7 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 	showDot?: boolean;
 }
 
-export function Badge({ children, variant = "default", showDot = false, className, ...props }: BadgeProps) {
+export const Badge = ({ children, variant = "default", showDot = false, className, ...props }: BadgeProps) => {
 	const variantClass = styles[variant];
 
 	return (
@@ -16,4 +16,4 @@ export function Badge({ children, variant = "default", showDot = false, classNam
 			{children}
 		</span>
 	);
-}
+};
