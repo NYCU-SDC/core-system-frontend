@@ -1,116 +1,116 @@
 .viewport {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem;
-  gap: 0.75rem;
-  width: 24rem;
-  max-width: 100vw;
-  margin: 0;
-  list-style: none;
-  z-index: 10000;
-  outline: none;
+	position: fixed;
+	bottom: 0;
+	right: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 1.5rem;
+	gap: 0.75rem;
+	width: 24rem;
+	max-width: 100vw;
+	margin: 0;
+	list-style: none;
+	z-index: 10000;
+	outline: none;
 }
 
 .root {
-  background-color: var(--background-color-secondary);
-  border: 0.0625rem solid var(--background-color-tertiary);
-  border-radius: 0.5rem;
-  padding: 1rem 1.25rem;
-  display: flex;
-  align-items: start;
-  gap: 1rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
+	background-color: var(--background-color-secondary);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.5rem;
+	padding: 1rem 1.25rem;
+	display: flex;
+	align-items: start;
+	gap: 1rem;
+	box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
 }
 
-.root[data-state='open'] {
-  animation: slideIn 0.15s ease;
+.root[data-state="open"] {
+	animation: slideIn 0.15s ease;
 }
 
-.root[data-state='closed'] {
-  animation: slideOut 0.1s ease;
+.root[data-state="closed"] {
+	animation: slideOut 0.1s ease;
 }
 
 @keyframes slideIn {
-  from {
-    transform: translateX(calc(100% + 1.5rem));
-  }
-  to {
-    transform: translateX(0);
-  }
+	from {
+		transform: translateX(calc(100% + 1.5rem));
+	}
+	to {
+		transform: translateX(0);
+	}
 }
 
 @keyframes slideOut {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(calc(100% + 1.5rem));
-  }
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(calc(100% + 1.5rem));
+	}
 }
 
 .icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
 }
 
 .icon.success {
-  color: var(--green);
+	color: var(--green);
 }
 
 .icon.error {
-  color: var(--red);
+	color: var(--red);
 }
 
 .icon.warning {
-  color: var(--yellow);
+	color: var(--yellow);
 }
 
 .icon.info {
-  color: var(--cyan);
+	color: var(--cyan);
 }
 
 .content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
 }
 
 .title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-heading);
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--color-heading);
 }
 
 .description {
-  font-size: 0.875rem;
-  color: var(--color-caption);
-  line-height: 1.4;
+	font-size: 0.875rem;
+	color: var(--color-caption);
+	line-height: 1.4;
 }
 
 .close {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.25rem;
-  border: none;
-  background-color: transparent;
-  color: var(--color-caption);
-  cursor: pointer;
-  transition: all 0.2s ease;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 0.25rem;
+	border: none;
+	background-color: transparent;
+	color: var(--color-caption);
+	cursor: pointer;
+	transition: all 0.2s ease;
 }
 
 .close:hover {
-  background-color: var(--background-color-tertiary);
-  color: var(--foreground);
+	background-color: var(--background-color-tertiary);
+	color: var(--foreground);
 }

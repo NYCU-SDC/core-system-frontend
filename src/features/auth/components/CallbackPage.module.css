@@ -1,28 +1,28 @@
 .container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  text-align: center;
-  gap: 2rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	text-align: center;
+	gap: 2rem;
 }
 
 .spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 0.25rem solid var(--background-color-tertiary);
-  border-top-color: var(--orange);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+	width: 3rem;
+	height: 3rem;
+	border: 0.25rem solid var(--background-color-tertiary);
+	border-top-color: var(--orange);
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .message {
-  color: var(--color-body);
+	color: var(--color-body);
 }

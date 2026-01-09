@@ -17,6 +17,5 @@
 	"jsxSingleQuote": false,
 	"singleAttributePerLine": false,
 	"plugins": ["prettier-plugin-organize-imports", "prettier-plugin-packagejson", "prettier-plugin-packagejson"],
-	"overrides": [
-	]
+	"overrides": []
 }

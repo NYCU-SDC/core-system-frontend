@@ -1,44 +1,44 @@
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 9999px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border-radius: 9999px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	white-space: nowrap;
 }
 
 .success {
-  background-color: var(--green);
-  color: var(--background-color-primary);
+	background-color: var(--green);
+	color: var(--background-color-primary);
 }
 
 .error {
-  background-color: var(--red);
-  color: var(--background-color-primary);
+	background-color: var(--red);
+	color: var(--background-color-primary);
 }
 
 .warning {
-  background-color: var(--yellow);
-  color: var(--background-color-primary);
+	background-color: var(--yellow);
+	color: var(--background-color-primary);
 }
 
 .info {
-  background-color: var(--cyan);
-  color: var(--background-color-primary);
+	background-color: var(--cyan);
+	color: var(--background-color-primary);
 }
 
 .default {
-  background-color: var(--background-color-tertiary);
-  color: var(--foreground);
+	background-color: var(--background-color-tertiary);
+	color: var(--foreground);
 }
 
 .dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background-color: currentColor;
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 50%;
+	background-color: currentColor;
 }

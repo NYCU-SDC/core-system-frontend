@@ -1,66 +1,66 @@
 .button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: var(--orange);
-  color: var(--background-color-primary);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	font-size: 1rem;
+	font-weight: 500;
+	border: none;
+	border-radius: 0.5rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background-color: var(--orange);
+	color: var(--background-color-primary);
 }
 
 .button:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-0.0625rem);
+	opacity: 0.9;
+	transform: translateY(-0.0625rem);
 }
 
 .button:active:not(:disabled) {
-  transform: translateY(0);
+	transform: translateY(0);
 }
 
 .button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
 }
 
 .button:focus-visible {
-  outline: 0.125rem solid var(--cyan);
-  outline-offset: 0.125rem;
+	outline: 0.125rem solid var(--cyan);
+	outline-offset: 0.125rem;
 }
 
 .primary {
-  background-color: var(--orange);
-  color: var(--background-color-primary);
+	background-color: var(--orange);
+	color: var(--background-color-primary);
 }
 
 .secondary {
-  background-color: var(--background-color-tertiary);
-  color: var(--foreground);
-  border: 0.0625rem solid var(--background-color-tertiary);
+	background-color: var(--background-color-tertiary);
+	color: var(--foreground);
+	border: 0.0625rem solid var(--background-color-tertiary);
 }
 
 .secondary:hover:not(:disabled) {
-  background-color: var(--selection);
+	background-color: var(--selection);
 }
 
 .icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .spinner {
-  animation: spin 1s linear infinite;
+	animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+	to {
+		transform: rotate(360deg);
+	}
 }

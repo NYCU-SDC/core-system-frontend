@@ -65,8 +65,8 @@ import { Plus } from 'lucide-react';
 </Button>
 
 // Input with label and error
-<Input 
-  label="Email" 
+<Input
+  label="Email"
   error="Invalid email"
   themeColor="var(--cyan)"
 />
@@ -84,6 +84,7 @@ import { Plus } from 'lucide-react';
 ## Routes
 
 ### User Routes (UserLayout)
+
 - `/` - Home page with OAuth login buttons
 - `/callback` - OAuth callback handler
 - `/welcome` - First-time user onboarding
@@ -92,6 +93,7 @@ import { Plus } from 'lucide-react';
 - `/logout` - Logout page
 
 ### Admin Routes (AdminLayout)
+
 - `/orgs/sdc/forms` - Forms management dashboard
 - `/orgs/sdc/forms/:formid/info` - Form information
 - `/orgs/sdc/forms/:formid/edit` - Form editor
@@ -100,6 +102,7 @@ import { Plus } from 'lucide-react';
 - `/orgs/sdc/settings` - Organization settings
 
 ### Redirects
+
 - `/orgs/xxx/*` → `/orgs/sdc/forms`
 - `/orgs` → `/orgs/sdc/forms`
 - `/orgs/sdc` → `/orgs/sdc/forms`
@@ -109,15 +112,7 @@ import { Plus } from 'lucide-react';
 The app uses a comprehensive color system with CSS variables:
 
 ```css
---background: #282a36
---foreground: #f8f8f2
---cyan: #8be9fd
---green: #50fa7b
---orange: #ffb86c (default theme color)
---pink: #ff79c6
---purple: #bd93f9
---red: #ff5555
---yellow: #f1fa8c
+--background: #282a36 --foreground: #f8f8f2 --cyan: #8be9fd --green: #50fa7b --orange: #ffb86c (default theme color) --pink: #ff79c6 --purple: #bd93f9 --red: #ff5555 --yellow: #f1fa8c;
 ```
 
 ## Development
@@ -142,11 +137,13 @@ pnpm lint
 ## Layouts
 
 ### UserLayout
+
 - No navigation bar
 - Centered content with max-width: 640px
 - Used for public pages and user forms
 
 ### AdminLayout
+
 - Fixed left sidebar navigation
 - Centered content with max-width: 1200px
 - Used for admin dashboard and management pages

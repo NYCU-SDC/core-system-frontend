@@ -1,179 +1,187 @@
 :root {
-  --background: #282a36;
-  --comment: #6272a4;
-  --selection: #44475a;
-  --foreground: #f8f8f2;
-  --cyan: #8be9fd;
-  --green: #50fa7b;
-  --orange: #ffb86c;
-  --pink: #ff79c6;
-  --purple: #bd93f9;
-  --red: #ff5555;
-  --yellow: #f1fa8c;
-  --code-background: #22212c;
-  --code-foreground: #f8f8f2;
-  --code-comment: #8b82c4;
-  --color: #8c76f9;
-  --color-caption: #b2afc0;
-  --color-body: #c2c0ce;
-  --color-heading: #d3d1db;
-  --color-display: #e3e2e9;
-  --background-color-primary: #0e0d11;
-  --background-color-secondary: #1c1b22;
-  --background-color-tertiary: #383645;
-  --background-color-overlay: #353437;
-  --hero-background-color-primary: #1a1726;
-  --hero-background-color-secondary: #564b8b;
+	--background: #282a36;
+	--comment: #6272a4;
+	--selection: #44475a;
+	--foreground: #f8f8f2;
+	--cyan: #8be9fd;
+	--green: #50fa7b;
+	--orange: #ffb86c;
+	--pink: #ff79c6;
+	--purple: #bd93f9;
+	--red: #ff5555;
+	--yellow: #f1fa8c;
+	--code-background: #22212c;
+	--code-foreground: #f8f8f2;
+	--code-comment: #8b82c4;
+	--color: #8c76f9;
+	--color-caption: #b2afc0;
+	--color-body: #c2c0ce;
+	--color-heading: #d3d1db;
+	--color-display: #e3e2e9;
+	--background-color-primary: #0e0d11;
+	--background-color-secondary: #1c1b22;
+	--background-color-tertiary: #383645;
+	--background-color-overlay: #353437;
+	--hero-background-color-primary: #1a1726;
+	--hero-background-color-secondary: #564b8b;
 
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 html {
-  font-size: 16px;
+	font-size: 16px;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  background-color: var(--background-color-primary);
-  color: var(--color-body);
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+	margin: 0;
+	padding: 0;
+	min-height: 100vh;
+	background-color: var(--background-color-primary);
+	color: var(--color-body);
+	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  margin: 0;
-  padding: 0;
-  font-weight: 600;
-  color: var(--color-heading);
-  line-height: 1.2;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin: 0;
+	padding: 0;
+	font-weight: 600;
+	color: var(--color-heading);
+	line-height: 1.2;
 }
 
 h1 {
-  font-size: 3rem;
+	font-size: 3rem;
 }
 
 h2 {
-  font-size: 2.5rem;
+	font-size: 2.5rem;
 }
 
 h3 {
-  font-size: 2rem;
+	font-size: 2rem;
 }
 
 h4 {
-  font-size: 1.5rem;
+	font-size: 1.5rem;
 }
 
 h5 {
-  font-size: 1.25rem;
+	font-size: 1.25rem;
 }
 
 h6 {
-  font-size: 1rem;
+	font-size: 1rem;
 }
 
 p {
-  margin: 0;
-  padding: 0;
+	margin: 0;
+	padding: 0;
 }
 
 a {
-  color: var(--cyan);
-  text-decoration: none;
+	color: var(--cyan);
+	text-decoration: none;
 }
 
 a:hover {
-  text-decoration: underline;
+	text-decoration: underline;
 }
 
 code {
-  font-family: 'Courier New', Courier, monospace;
-  background-color: var(--code-background);
-  color: var(--code-foreground);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
+	font-family: "Courier New", Courier, monospace;
+	background-color: var(--code-background);
+	color: var(--code-foreground);
+	padding: 0.125rem 0.25rem;
+	border-radius: 0.25rem;
+	font-size: 0.875rem;
 }
 
 pre {
-  font-family: 'Courier New', Courier, monospace;
-  background-color: var(--code-background);
-  color: var(--code-foreground);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin: 0;
+	font-family: "Courier New", Courier, monospace;
+	background-color: var(--code-background);
+	color: var(--code-foreground);
+	padding: 1rem;
+	border-radius: 0.5rem;
+	overflow-x: auto;
+	margin: 0;
 }
 
 pre code {
-  background-color: transparent;
-  padding: 0;
-  border-radius: 0;
-  font-size: 0.875rem;
+	background-color: transparent;
+	padding: 0;
+	border-radius: 0;
+	font-size: 0.875rem;
 }
 
-ul, ol {
-  margin: 0;
-  padding: 0;
-  list-style-position: inside;
+ul,
+ol {
+	margin: 0;
+	padding: 0;
+	list-style-position: inside;
 }
 
 button {
-  font-family: inherit;
-  cursor: pointer;
+	font-family: inherit;
+	cursor: pointer;
 }
 
-input, textarea, select {
-  font-family: inherit;
+input,
+textarea,
+select {
+	font-family: inherit;
 }
 
 #root {
-  width: 100%;
-  min-height: 100vh;
+	width: 100%;
+	min-height: 100vh;
 }
 
 kbd {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.875rem;
-  color: var(--foreground);
-  background-color: var(--background-color-tertiary);
-  border: 0.0625rem solid var(--selection);
-  border-radius: 0.25rem;
-  box-shadow: 0 0.125rem 0 var(--selection);
+	display: inline-block;
+	padding: 0.25rem 0.5rem;
+	font-family: "Courier New", Courier, monospace;
+	font-size: 0.875rem;
+	color: var(--foreground);
+	background-color: var(--background-color-tertiary);
+	border: 0.0625rem solid var(--selection);
+	border-radius: 0.25rem;
+	box-shadow: 0 0.125rem 0 var(--selection);
 }
 
 blockquote {
-  margin: 1rem 0;
-  padding: 1rem 1.5rem;
-  border-left: 0.25rem solid var(--orange);
-  background-color: var(--background-color-secondary);
-  color: var(--color-body);
-  font-style: italic;
+	margin: 1rem 0;
+	padding: 1rem 1.5rem;
+	border-left: 0.25rem solid var(--orange);
+	background-color: var(--background-color-secondary);
+	color: var(--color-body);
+	font-style: italic;
 }
 
 blockquote p {
-  margin: 0;
+	margin: 0;
 }
 
 blockquote cite {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-caption);
-  font-style: normal;
+	display: block;
+	margin-top: 0.5rem;
+	font-size: 0.875rem;
+	color: var(--color-caption);
+	font-style: normal;
 }

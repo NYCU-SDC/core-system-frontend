@@ -48,7 +48,7 @@ jobs:
       - name: Run Prettier
 
         run: pnpm prettier . --check
-    
+
   Build:
     name: Build Vite production
     runs-on: ubuntu-latest

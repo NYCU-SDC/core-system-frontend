@@ -1,5 +1,5 @@
-export { HomePage } from './HomePage';
-export { CallbackPage } from './CallbackPage';
-export { WelcomePage } from './WelcomePage';
-export { LogoutPage } from './LogoutPage';
-export { NotFoundPage } from './NotFoundPage';
+export { CallbackPage } from "./CallbackPage";
+export { HomePage } from "./HomePage";
+export { LogoutPage } from "./LogoutPage";
+export { NotFoundPage } from "./NotFoundPage";
+export { WelcomePage } from "./WelcomePage";

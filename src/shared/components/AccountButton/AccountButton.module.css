@@ -1,58 +1,58 @@
 .button {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border: 0.0625rem solid var(--background-color-tertiary);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: var(--background-color-secondary);
-  color: var(--foreground);
-  min-width: 16rem;
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.75rem 1.5rem;
+	font-size: 1rem;
+	font-weight: 500;
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.5rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background-color: var(--background-color-secondary);
+	color: var(--foreground);
+	min-width: 16rem;
 }
 
 .button:hover:not(:disabled) {
-  background-color: var(--background-color-tertiary);
-  border-color: var(--orange);
+	background-color: var(--background-color-tertiary);
+	border-color: var(--orange);
 }
 
 .button:focus-visible {
-  outline: 0.125rem solid var(--cyan);
-  outline-offset: 0.125rem;
+	outline: 0.125rem solid var(--cyan);
+	outline-offset: 0.125rem;
 }
 
 .button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 .logo {
-  width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+	width: 1.5rem;
+	height: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
 }
 
 .content {
-  flex: 1;
-  text-align: center;
+	flex: 1;
+	text-align: center;
 }
 
 .connected {
-  background-color: var(--background-color-tertiary);
-  border-color: var(--green);
+	background-color: var(--background-color-tertiary);
+	border-color: var(--green);
 }
 
 .badge {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  background-color: var(--green);
-  color: var(--background-color-primary);
-  border-radius: 0.25rem;
-  font-weight: 600;
+	padding: 0.25rem 0.5rem;
+	font-size: 0.75rem;
+	background-color: var(--green);
+	color: var(--background-color-primary);
+	border-radius: 0.25rem;
+	font-weight: 600;
 }

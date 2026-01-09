@@ -1,2 +1,2 @@
-export { UserLayout } from './UserLayout';
-export { AdminLayout } from './AdminLayout';
+export { AdminLayout } from "./AdminLayout";
+export { UserLayout } from "./UserLayout";
