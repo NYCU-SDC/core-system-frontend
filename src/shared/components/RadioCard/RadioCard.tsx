@@ -18,7 +18,7 @@ export const RadioCard = ({ options, themeColor, ...props }: RadioCardProps) => 
 	return (
 		<RadioGroup.Root className={styles.radioGroup} {...props}>
 			{options.map(option => {
-				const cardStyle: CSSProperties = themeColor ? { borderColor: themeColor, ["--indicator-color" as any]: themeColor } : {};
+				const cardStyle: CSSProperties = themeColor ? { borderColor: themeColor, ["--indicator-color" as string]: themeColor } : {};
 
 				return (
 					<label

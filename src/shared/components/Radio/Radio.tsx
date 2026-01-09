@@ -19,7 +19,7 @@ export const Radio = ({ options, themeColor, ...props }: RadioProps) => {
 		<RadioGroup.Root className={styles.radioGroup} {...props}>
 			{options.map(option => {
 				const itemId = `radio-${option.value}`;
-				const radioStyle: CSSProperties = themeColor ? { borderColor: themeColor, ["--indicator-color" as any]: themeColor } : {};
+				const radioStyle: CSSProperties = themeColor ? { borderColor: themeColor, ["--indicator-color" as string]: themeColor } : {};
 
 				return (
 					<div key={option.value} className={styles.radioItem}>
