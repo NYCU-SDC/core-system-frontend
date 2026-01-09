@@ -1,0 +1,85 @@
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.radioCard {
+  position: relative;
+  background-color: var(--background-color-secondary);
+  border: 0.125rem solid var(--background-color-tertiary);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radioCard:hover {
+  background-color: var(--background-color-tertiary);
+  border-color: var(--orange);
+}
+
+.radioCard[data-state='checked'] {
+  background-color: var(--background-color-tertiary);
+  border-color: var(--orange);
+}
+
+.radioCard:focus-within {
+  outline: 0.125rem solid var(--cyan);
+  outline-offset: 0.125rem;
+}
+
+.radioCard[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.radioButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: var(--background-color-secondary);
+  border: 0.0625rem solid var(--background-color-tertiary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.radioButton[data-state='checked'] {
+  border-color: var(--orange);
+}
+
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.indicator::after {
+  content: '';
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background-color: var(--indicator-color, var(--orange));
+}
+
+.content {
+  padding-right: 2rem;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  font-size: 0.875rem;
+  color: var(--color-caption);
+  line-height: 1.5;
+}

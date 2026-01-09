@@ -1,0 +1,83 @@
+.container {
+  padding: 2rem 0;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--color-caption);
+}
+
+.section {
+  background-color: var(--background-color-secondary);
+  border: 0.0625rem solid var(--background-color-tertiary);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.inviteForm {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.inviteInput {
+  flex: 1;
+}
+
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.userItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--background-color-tertiary);
+  border-radius: 0.5rem;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.userName {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.userEmail {
+  font-size: 0.875rem;
+  color: var(--color-caption);
+}
+
+.dangerZone {
+  border-color: var(--red);
+}
+
+.dangerTitle {
+  color: var(--red);
+}
+
+.dangerDescription {
+  color: var(--color-caption);
+  margin-bottom: 1rem;
+}
