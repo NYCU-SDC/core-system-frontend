@@ -1,6 +1,6 @@
+import { UserLayout } from "@/layouts";
+import { Button } from "@/shared/components";
 import { Github, Mail } from "lucide-react";
-import { UserLayout } from "../../../layouts";
-import { Button } from "../../../shared/components";
 import styles from "./HomePage.module.css";
 
 export const HomePage = () => {

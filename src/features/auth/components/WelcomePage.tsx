@@ -1,8 +1,8 @@
+import { UserLayout } from "@/layouts";
+import { Button, Input } from "@/shared/components";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserLayout } from "../../../layouts";
-import { Button, Input } from "../../../shared/components";
 import styles from "./WelcomePage.module.css";
 
 export const WelcomePage = () => {

@@ -1,7 +1,7 @@
+import { AdminLayout } from "@/layouts";
+import { Button, Input } from "@/shared/components";
 import { UserMinus, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { AdminLayout } from "../../../layouts";
-import { Button, Input } from "../../../shared/components";
 import styles from "./AdminSettingsPage.module.css";
 
 // Mock data

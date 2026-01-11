@@ -1,7 +1,5 @@
-import { Edit, Github, Save, Settings, Trash } from "lucide-react";
-import { useState } from "react";
-import { UserLayout } from "../../../layouts";
-import type { DragItem } from "../../../shared/components";
+import { UserLayout } from "@/layouts";
+import type { DragItem } from "@/shared/components";
 import {
 	AccountButton,
 	Badge,
@@ -24,7 +22,9 @@ import {
 	Toast,
 	ToastProvider,
 	Tooltip
-} from "../../../shared/components";
+} from "@/shared/components";
+import { Edit, Github, Save, Settings, Trash } from "lucide-react";
+import { useState } from "react";
 import styles from "./ComponentsDemo.module.css";
 
 export const ComponentsDemo = () => {

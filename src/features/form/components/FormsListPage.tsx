@@ -1,5 +1,5 @@
+import { UserLayout } from "@/layouts";
 import { useNavigate } from "react-router-dom";
-import { UserLayout } from "../../../layouts";
 import styles from "./FormsListPage.module.css";
 
 // Mock data

@@ -1,8 +1,8 @@
+import { UserLayout } from "@/layouts";
+import { Button, Checkbox, Input, Radio, TextArea } from "@/shared/components";
 import { Send } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { UserLayout } from "../../../layouts";
-import { Button, Checkbox, Input, Radio, TextArea } from "../../../shared/components";
 import styles from "./FormDetailPage.module.css";
 
 export const FormDetailPage = () => {

@@ -1,7 +1,7 @@
+import { AdminLayout } from "@/layouts";
+import { Button } from "@/shared/components";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { AdminLayout } from "../../../layouts";
-import { Button } from "../../../shared/components";
 import styles from "./AdminFormsPage.module.css";
 
 // Mock data

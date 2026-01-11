@@ -1,6 +1,6 @@
+import { AdminLayout } from "@/layouts";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AdminLayout } from "../../../layouts";
 import styles from "./AdminFormDetailPage.module.css";
 
 type TabType = "info" | "edit" | "reply" | "design";

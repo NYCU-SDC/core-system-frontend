@@ -1,12 +1,12 @@
+import { CallbackPage } from "@/features/auth/components/CallbackPage";
+import { HomePage } from "@/features/auth/components/HomePage";
+import { LogoutPage } from "@/features/auth/components/LogoutPage";
+import { NotFoundPage } from "@/features/auth/components/NotFoundPage";
+import { WelcomePage } from "@/features/auth/components/WelcomePage";
+import { AdminSettingsPage } from "@/features/dashboard/components/AdminSettingsPage";
+import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
+import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage } from "@/features/form/components";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { CallbackPage } from "../features/auth/components/CallbackPage";
-import { HomePage } from "../features/auth/components/HomePage";
-import { LogoutPage } from "../features/auth/components/LogoutPage";
-import { NotFoundPage } from "../features/auth/components/NotFoundPage";
-import { WelcomePage } from "../features/auth/components/WelcomePage";
-import { AdminSettingsPage } from "../features/dashboard/components/AdminSettingsPage";
-import { ComponentsDemo } from "../features/dashboard/components/ComponentsDemo";
-import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage } from "../features/form/components";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
 
 export const AppRouter = () => {

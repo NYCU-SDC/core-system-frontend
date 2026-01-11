@@ -1,6 +1,6 @@
+import { UserLayout } from "@/layouts";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserLayout } from "../../../layouts";
 import styles from "./CallbackPage.module.css";
 
 export const CallbackPage = () => {

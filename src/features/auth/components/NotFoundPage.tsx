@@ -1,7 +1,7 @@
+import { UserLayout } from "@/layouts";
+import { Button } from "@/shared/components";
 import { Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { UserLayout } from "../../../layouts";
-import { Button } from "../../../shared/components";
 import styles from "./NotFoundPage.module.css";
 
 export const NotFoundPage = () => {
