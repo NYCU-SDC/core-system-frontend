@@ -1,8 +1,8 @@
 import { UserLayout } from "@/layouts";
 import { Button } from "@/shared/components";
+import { SiGmail } from "@icons-pack/react-simple-icons";
 import { Github } from "lucide-react";
 import { Link } from "react-router-dom";
-import { SiGmail } from "@icons-pack/react-simple-icons";
 import styles from "./HomePage.module.css";
 
 export const HomePage = () => {

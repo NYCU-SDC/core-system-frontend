@@ -9,7 +9,13 @@
 		"format": "prettier --write .",
 		"preinstall": "npx only-allow pnpm",
 		"lint": "eslint .",
+		"prepare": "husky",
 		"preview": "vite preview"
+	},
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx,cjs,mjs,mts,json,css,html,md,yaml,yml,svg,sh,txt}": [
+			"prettier --write"
+		]
 	},
 	"dependencies": {
 		"@icons-pack/react-simple-icons": "^13.8.0",
@@ -41,6 +47,8 @@
 		"eslint-plugin-react-hooks": "^7.0.1",
 		"eslint-plugin-react-refresh": "^0.4.24",
 		"globals": "^16.5.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.7",
 		"prettier": "^3.7.4",
 		"prettier-plugin-organize-imports": "^4.3.0",
 		"prettier-plugin-packagejson": "^2.5.20",

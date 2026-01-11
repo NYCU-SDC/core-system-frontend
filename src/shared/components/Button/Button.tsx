@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
-import type { ComponentType, ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ComponentType, ReactNode } from "react";
 import styles from "./Button.module.css";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
