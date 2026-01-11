@@ -1,19 +1,11 @@
 import { UserLayout } from "@/layouts";
 import { Button } from "@/shared/components";
-import { Github, Mail } from "lucide-react";
+import { Github } from "lucide-react";
+import { Link } from "react-router-dom";
+import { SiGmail } from "@icons-pack/react-simple-icons";
 import styles from "./HomePage.module.css";
 
 export const HomePage = () => {
-	const handleGithubLogin = () => {
-		console.log("GitHub OAuth login");
-		// Implement OAuth flow
-	};
-
-	const handleGoogleLogin = () => {
-		console.log("Google OAuth login");
-		// Implement OAuth flow
-	};
-
 	return (
 		<UserLayout>
 			<div className={styles.container}>
@@ -22,12 +14,16 @@ export const HomePage = () => {
 					<p className={styles.subtitle}>Sign in to continue</p>
 				</div>
 				<div className={styles.buttons}>
-					<Button icon={Github} onClick={handleGithubLogin} themeColor="var(--purple)">
-						Continue with GitHub
-					</Button>
-					<Button icon={Mail} onClick={handleGoogleLogin} themeColor="var(--pink)">
-						Continue with Google
-					</Button>
+					<Link to="/welcome">
+						<Button icon={Github} themeColor="var(--purple)">
+							Continue with GitHub
+						</Button>
+					</Link>
+					<Link to="/orgs/sdc/forms">
+						<Button simpleIcon={SiGmail} themeColor="var(--red)">
+							Continue with Gmail
+						</Button>
+					</Link>
 				</div>
 			</div>
 		</UserLayout>
