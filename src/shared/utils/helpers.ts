@@ -1,10 +1,3 @@
-import { clsx, type ClassValue } from "clsx";
-
-// Utility function for conditional class names
-export const cn = (...inputs: ClassValue[]) => {
-	return clsx(inputs);
-};
-
 // Format currency
 export const formatCurrency = (amount: number): string => {
 	return new Intl.NumberFormat("en-US", {

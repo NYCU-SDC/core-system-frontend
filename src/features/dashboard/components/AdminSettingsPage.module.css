@@ -1,0 +1,88 @@
+.container {
+	padding: 2rem 0;
+}
+
+.title {
+	font-size: 2rem;
+	margin-bottom: 0.5rem;
+}
+
+.subtitle {
+	color: var(--color-caption);
+	margin-bottom: 1.5rem;
+}
+
+.cards {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.card {
+	background-color: var(--background-color-secondary);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.5rem;
+	padding: 1.25rem;
+}
+
+.cardTitle {
+	font-size: 1.25rem;
+	margin-bottom: 1rem;
+}
+
+.formGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	max-width: 32rem;
+}
+
+.membersList {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.memberCard {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1rem;
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.375rem;
+	background-color: var(--background-color-primary);
+}
+
+.memberInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.memberName {
+	font-weight: 500;
+	font-size: 0.875rem;
+}
+
+.memberEmail {
+	font-size: 0.75rem;
+	color: var(--color-caption);
+}
+
+.memberActions {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.memberRole {
+	font-size: 0.75rem;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+	background-color: var(--background-color-tertiary);
+	color: var(--color-caption);
+}
+
+.kickButton {
+	font-size: 0.875rem;
+}
