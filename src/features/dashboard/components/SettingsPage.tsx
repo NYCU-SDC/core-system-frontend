@@ -1,4 +1,4 @@
-import { Switch } from "../../../shared/components";
+import { Switch } from "@/shared/components";
 import styles from "./SettingsPage.module.css";
 
 export const SettingsPage = () => {

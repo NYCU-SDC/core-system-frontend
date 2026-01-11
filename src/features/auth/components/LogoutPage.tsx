@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserLayout } from "../../../layouts";
+import { UserLayout } from "@/layouts";
 import styles from "./LogoutPage.module.css";
 
 export const LogoutPage = () => {
