@@ -1,0 +1,17 @@
+name: core-system-frontend-stage
+
+services:
+  frontend:
+    image: nycusdc/core-system-frontend:stage
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core-system-frontend-stage.rule=Host(`stage.core-system.sdc.nycu.club`)"
+      - "traefik.http.routers.core-system-frontend-stage.entrypoints=websecure"
+      - "traefik.http.routers.core-system-frontend-stage.tls=true"
+      - "traefik.http.routers.core-system-frontend-stage.tls.certresolver=cloudflare"
+
+networks:
+  traefik:
+    external: true
