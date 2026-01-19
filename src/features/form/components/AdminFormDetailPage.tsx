@@ -2,11 +2,15 @@ import { AdminLayout } from "@/layouts";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./AdminFormDetailPage.module.css";
+import { AdminFormDesignPage } from "./AdminFormDetailPages/DesignPage";
+import { AdminFormEditPage } from "./AdminFormDetailPages/EditPage";
+import { AdminFormInfoPage } from "./AdminFormDetailPages/InfoPage";
+import { AdminSectionEditPage } from "./AdminFormDetailPages/SectionEditPage";
 
 type TabType = "info" | "edit" | "reply" | "design";
 
 export const AdminFormDetailPage = () => {
-	const { formid } = useParams();
+	const { formid, sectionId } = useParams();
 	const location = useLocation();
 	const navigate = useNavigate();
 
@@ -44,9 +48,27 @@ export const AdminFormDetailPage = () => {
 				</div>
 
 				<div className={styles.content}>
-					<div className={styles.placeholder}>
-						<p>Content for {activeTab} tab</p>
-					</div>
+					{activeTab === "info" && (
+						<div className={styles.info}>
+							<AdminFormInfoPage />
+						</div>
+					)}
+					{activeTab === "edit" && !sectionId && (
+						<div className={styles.edit}>
+							<AdminFormEditPage />
+						</div>
+					)}
+					{activeTab === "edit" && sectionId && (
+						<div className={styles.edit}>
+							<AdminSectionEditPage />
+						</div>
+					)}
+					{activeTab === "reply" && <div>Reply Page Content</div>}
+					{activeTab === "design" && (
+						<div className={styles.design}>
+							<AdminFormDesignPage />
+						</div>
+					)}
 				</div>
 			</div>
 		</AdminLayout>
