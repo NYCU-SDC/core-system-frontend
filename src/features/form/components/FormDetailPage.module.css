@@ -1,36 +1,123 @@
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	font-family: "Noto Sans TC", sans-serif;
+}
+
 .container {
-	padding: 2rem 0;
+	padding: 2rem;
+	width: 640px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 4rem;
+	background-color: var(--background-color-secondary);
+}
+
+.cover {
+	height: 13rem;
+	width: 640px;
+	margin: 0 auto;
+	display: block;
+	object-fit: cover;
+	background-color: aliceblue;
 }
 
 .header {
-	margin-bottom: 2rem;
+	/* margin-bottom: 2rem; */
 }
 
 .title {
-	font-size: 2rem;
-	margin-bottom: 0.5rem;
+	margin: 0 0 1.5rem 0;
+	text-align: center;
 }
 
 .description {
 	color: var(--color-caption);
+	font-size: 1rem;
+}
+
+.sectionHeader {
+	font-size: 1.6rem;
+	margin: 0;
+	color: var(--color-heading);
+	text-align: center;
+}
+
+.structure {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	background-color: var(--background-color-tertiary);
+	padding: 1.5rem;
+	border-radius: 3px;
+}
+
+.structureTitle {
+	display: flex;
+	align-items: flex-end;
+}
+
+.structureTitle h2 {
+	font-size: 1.5rem;
+}
+
+.structureTitle p {
+	font-size: 1rem;
+}
+
+.structureLegend {
+	display: flex;
+	font-size: 0.875rem;
+	color: var(--color-caption);
+	align-items: center;
+	gap: 0.3rem;
+}
+
+.structureLegend span {
+	width: 0.75rem;
+	height: 0.75rem;
+}
+
+.workflow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.workflowButton {
+	padding: 0.5rem 1rem;
+	background-color: var(--code-foreground);
+	border: 0.0625rem solid var(--code-foreground);
+	color: var(--background);
+	font-size: 1rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.workflowButton.active {
+	background-color: var(--orange);
+	border-color: var(--orange);
+	color: var(--background);
+	font-weight: 600;
+}
+
+.workflowButton.completed {
+	background-color: var(--color-caption);
+	border-color: var(--color-caption);
+	color: var(--background);
+}
+
+.workflowButton.completed.active {
+	background-color: var(--orange);
+	border-color: var(--orange);
 }
 
 .form {
 	display: flex;
 	flex-direction: column;
 	gap: 2rem;
-}
-
-.section {
-	background-color: var(--background-color-secondary);
-	border: 0.0625rem solid var(--background-color-tertiary);
-	border-radius: 0.5rem;
-	padding: 2rem;
-}
-
-.sectionTitle {
-	font-size: 1.5rem;
-	margin-bottom: 1.5rem;
 }
 
 .fields {
@@ -44,4 +131,103 @@
 	justify-content: flex-end;
 	gap: 1rem;
 	margin-top: 1rem;
+}
+
+.navigation {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.previewSection {
+	display: flex;
+	flex-direction: column;
+	gap: 4rem;
+}
+
+.previewBlock {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.previewHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding-bottom: 0.75rem;
+}
+
+.previewTitle {
+	font-size: 1.6rem;
+	font-weight: 520;
+	color: var(--color-heading);
+	margin: 0;
+}
+
+.previewList {
+	list-style: disc;
+	padding-left: 1.5rem;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.previewList li {
+	font-size: 1rem;
+	color: var(--color-body);
+	line-height: 1.5;
+}
+
+.previewList li strong {
+	color: var(--color-heading);
+	font-weight: 600;
+	margin-right: 0.5rem;
+}
+
+.successContainer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+	width: 100%;
+	position: fixed;
+	top: 0;
+	left: 0;
+	padding: 2rem;
+}
+
+.successBox {
+	width: 640px;
+	height: 360px;
+	background-color: var(--background-color-secondary);
+	border-radius: 0.5rem;
+	padding: 3rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	gap: 1rem;
+}
+
+.successTitle {
+	font-size: 2.6rem;
+	font-weight: 630;
+	color: var(--color-heading);
+	margin: 0;
+}
+
+.successMessage {
+	font-size: 1rem;
+	color: var(--color-body);
+	line-height: 1.6;
+	margin: 0;
+}
+
+.successActions {
+	display: flex;
+	gap: 1rem;
 }
