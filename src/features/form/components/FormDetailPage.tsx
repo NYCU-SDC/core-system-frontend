@@ -2,7 +2,7 @@ import { UserLayout } from "@/layouts";
 import { AccountButton, Button, Checkbox, DragToOrder, Input, Radio, SearchableSelect, TextArea } from "@/shared/components";
 import { Github } from "lucide-react";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
 // interface Question {
@@ -21,7 +21,7 @@ interface Section {
 }
 
 export const FormDetailPage = () => {
-	const { id } = useParams();
+	// const { id } = useParams();
 	const navigate = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
@@ -167,9 +167,9 @@ export const FormDetailPage = () => {
 					{currentStep === 0 && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
-								<Checkbox id="" label="Full Stack Intro. Training Program" checked={false} onCheckedChange={checked => {}} />
-								<Checkbox id="" label="Full Stack Advanced Training Program" checked={false} onCheckedChange={checked => {}} />
-								<Checkbox id="" label="High Performance Computing Team" checked={false} onCheckedChange={checked => {}} />
+								<Checkbox id="" label="Full Stack Intro. Training Program" checked={false} onCheckedChange={() => {}} />
+								<Checkbox id="" label="Full Stack Advanced Training Program" checked={false} onCheckedChange={() => {}} />
+								<Checkbox id="" label="High Performance Computing Team" checked={false} onCheckedChange={() => {}} />
 							</div>
 						</div>
 					)}
@@ -220,7 +220,7 @@ export const FormDetailPage = () => {
 										{ id: "project-c", content: "Project C" },
 										{ id: "project-d", content: "Project D" }
 									]}
-									onReorder={newOrder => {}}
+									onReorder={() => {}}
 								/>
 							</div>
 						</div>
