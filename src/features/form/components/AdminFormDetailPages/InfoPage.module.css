@@ -1,0 +1,33 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+.count {
+	display: flex;
+	gap: 0.25rem;
+}
+
+.count > .item {
+	display: flex;
+	min-width: 5.25rem;
+	min-height: 5.25rem;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	background-color: var(--selection);
+}
+
+.count > .item > .value {
+	margin: 0;
+}
+
+.switch {
+	display: flex;
+}
+
+.switch > .label {
+	flex: 1;
+	margin: 0;
+}
