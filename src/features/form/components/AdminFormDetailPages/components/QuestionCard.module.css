@@ -1,0 +1,49 @@
+.card {
+	display: flex;
+	flex-direction: column;
+	border-radius: 1rem;
+	background-color: var(--background-color-tertiary);
+	padding: 2rem;
+	transition: all 0.2s ease;
+	cursor: pointer;
+}
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.preview {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 1.5rem;
+	cursor: pointer;
+}
+
+.header {
+	display: flex;
+	gap: 1rem;
+}
+
+.input {
+	flex: 1;
+}
+
+.actions {
+	display: flex;
+	justify-content: end;
+	align-items: center;
+	gap: 1rem;
+}
+
+.switch {
+	display: flex;
+}
+
+.switch > .label {
+	flex: 1;
+	margin: 0;
+	min-width: 4rem;
+}
