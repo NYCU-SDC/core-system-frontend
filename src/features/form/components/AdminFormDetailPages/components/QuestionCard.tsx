@@ -84,7 +84,9 @@ export const QuestionCard = (props: QuestionCardProps) => {
 							<Input
 								value={props.title}
 								onChange={e => {
-									props.onTitleChange && props.onTitleChange(e.target.value);
+									if (props.onTitleChange) {
+										props.onTitleChange(e.target.value);
+									}
 								}}
 								placeholder="Question 標題"
 								variant="flushed"
@@ -94,7 +96,9 @@ export const QuestionCard = (props: QuestionCardProps) => {
 							<Input
 								value={props.description}
 								onChange={e => {
-									props.onDescriptionChange && props.onDescriptionChange(e.target.value);
+									if (props.onDescriptionChange) {
+										props.onDescriptionChange(e.target.value);
+									}
 								}}
 								placeholder="這裡可以寫一段描述"
 								variant="flushed"
