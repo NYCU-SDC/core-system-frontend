@@ -1,12 +1,22 @@
 import { UserLayout } from "@/layouts";
-import { Button, Checkbox, Input, Radio, TextArea } from "@/shared/components";
+import { AccountButton, Button, Checkbox, DragToOrder, Input, Radio, SearchableSelect, TextArea } from "@/shared/components";
+import { Github } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
+// interface Question {
+// 	id: string;
+// 	title: string;
+// 	type: "text" | "textarea" | "radio" | "checkbox";
+// 	options?: { value: string; label: string }[];
+// 	required: boolean;
+// }
+
 interface Section {
 	id: string;
 	title: string;
+	// questions?: Question[];
 	completed: boolean;
 }
 
@@ -25,9 +35,9 @@ export const FormDetailPage = () => {
 
 	const isSectionCompleted = (sectionId: string): boolean => {
 		switch (sectionId) {
-			case "basic":
+			case "group-intro":
 				return formData.name.trim() !== "" && formData.email.trim() !== "";
-			case "feedback":
+			case "personal-info":
 				return true;
 			default:
 				return false;
@@ -35,8 +45,13 @@ export const FormDetailPage = () => {
 	};
 
 	const sections: Section[] = [
-		{ id: "basic", title: "組別介紹", completed: isSectionCompleted("basic") },
-		{ id: "feedback", title: "個人資訊", completed: isSectionCompleted("feedback") },
+		{ id: "group-intro", title: "組別介紹", completed: isSectionCompleted("group-intro") },
+		{ id: "personal-info", title: "個人資訊", completed: isSectionCompleted("personal-info") },
+		{ id: "intro", title: "Full Stack Intro. Training Program", completed: false },
+		{ id: "advanced", title: "Full Stack Advanced Training Program", completed: false },
+		{ id: "hpc", title: "High Performance Computing Team", completed: false },
+		{ id: "project-teams", title: "Project Teams", completed: false },
+		{ id: "program-match", title: "Program Match", completed: false },
 		{ id: "preview", title: "填答結果預覽", completed: false }
 	];
 
@@ -152,8 +167,9 @@ export const FormDetailPage = () => {
 					{currentStep === 0 && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
-								<Input id="name" label="Full Name" placeholder="Enter your full name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-								<Input id="email" type="email" label="Email Address" placeholder="your@email.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
+								<Checkbox id="" label="Full Stack Intro. Training Program" checked={false} onCheckedChange={checked => {}} />
+								<Checkbox id="" label="Full Stack Advanced Training Program" checked={false} onCheckedChange={checked => {}} />
+								<Checkbox id="" label="High Performance Computing Team" checked={false} onCheckedChange={checked => {}} />
 							</div>
 						</div>
 					)}
@@ -161,8 +177,22 @@ export const FormDetailPage = () => {
 					{currentStep === 1 && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
+								<Input id="name" label="中文姓名" placeholder="請輸入文字..." value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
 								<TextArea id="message" label="Message" placeholder="Share your thoughts..." value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} rows={6} />
-
+								<SearchableSelect
+									label="Email Address"
+									placeholder="Select your email domain"
+									value={formData.email}
+									onValueChange={value => setFormData({ ...formData, email: value })}
+									options={[
+										{ value: "student.nycu.edu.tw", label: "student.nycu.edu.tw" },
+										{ value: "nycu.edu.tw", label: "nycu.edu.tw" },
+										{ value: "gmail.com", label: "gmail.com" }
+									]}
+								/>
+								<AccountButton logo={<Github size={24} />} connected>
+									GitHub Account
+								</AccountButton>
 								<Radio
 									options={[
 										{ value: "5", label: "Excellent" },
@@ -180,7 +210,23 @@ export const FormDetailPage = () => {
 						</div>
 					)}
 
-					{currentStep === 2 && (
+					{currentStep === 6 && (
+						<div className={styles.section}>
+							<div className={styles.fields}>
+								<DragToOrder
+									items={[
+										{ id: "project-a", content: "Project A" },
+										{ id: "project-b", content: "Project B" },
+										{ id: "project-c", content: "Project C" },
+										{ id: "project-d", content: "Project D" }
+									]}
+									onReorder={newOrder => {}}
+								/>
+							</div>
+						</div>
+					)}
+
+					{currentStep === 7 && (
 						<div className={styles.section}>
 							<div className={styles.previewSection}>
 								<div className={styles.previewBlock}>

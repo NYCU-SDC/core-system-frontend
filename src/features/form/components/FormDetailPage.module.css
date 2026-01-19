@@ -100,7 +100,6 @@
 	background-color: var(--orange);
 	border-color: var(--orange);
 	color: var(--background);
-	font-weight: 600;
 }
 
 .workflowButton.completed {
@@ -123,7 +122,7 @@
 .fields {
 	display: flex;
 	flex-direction: column;
-	gap: 1.5rem;
+	gap: 4rem;
 }
 
 .actions {
