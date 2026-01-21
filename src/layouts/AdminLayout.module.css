@@ -3,68 +3,10 @@
 	min-height: 100vh;
 }
 
-.nav {
-	width: 16rem;
-	position: fixed;
-	left: 0;
-	top: 0;
-	height: 100vh;
-	background-color: var(--background-color-secondary);
-	border-right: 0.0625rem solid var(--background-color-tertiary);
-	padding: 2rem 1rem;
-	overflow-y: auto;
-}
-
-.navTitle {
-	font-size: 1.25rem;
-	font-weight: 600;
-	color: var(--color-heading);
-	margin-bottom: 2rem;
-	padding: 0 0.75rem;
-}
-
-.navList {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-	list-style: none;
-}
-
-.navItem {
-	list-style: none;
-}
-
-.navLink {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	padding: 0.75rem;
-	border-radius: 0.5rem;
-	color: var(--color-body);
-	text-decoration: none;
-	transition: all 0.2s ease;
-}
-
-.navLink:hover {
-	background-color: var(--background-color-tertiary);
-	color: var(--foreground);
-	text-decoration: none;
-}
-
-.navLink.active {
-	background-color: var(--background-color-tertiary);
-	color: var(--orange);
-}
-
-.navIcon {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
 .main {
+	max-width: 1200px;
 	flex: 1;
-	margin-left: 16rem;
+	margin-left: 12rem;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -74,4 +16,5 @@
 .content {
 	width: 100%;
 	max-width: 75rem;
+	margin: 0 auto;
 }
