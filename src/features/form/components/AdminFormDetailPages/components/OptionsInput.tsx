@@ -1,17 +1,19 @@
 import { Checkbox, Input, Radio, type InputProps } from "@/shared/components";
 import { forwardRef } from "react";
-import styles from "./CheckInput.module.css";
+import styles from "./OptionsInput.module.css";
 
-type CheckInputType = "checkbox" | "radio";
+type OptionsInputType = "checkbox" | "radio" | "list";
 
-export interface CheckInputProps extends InputProps {
+export interface OptionsInputProps extends InputProps {
 	ref?: React.Ref<HTMLInputElement>;
-	type: CheckInputType;
+	type: OptionsInputType;
+	index?: number;
 }
 
-export const CheckInput = forwardRef<HTMLInputElement, CheckInputProps>(({ label, type, ...props }, ref) => {
+export const OptionsInput = forwardRef<HTMLInputElement, OptionsInputProps>(({ label, type, ...props }, ref) => {
 	return (
 		<div className={styles.wrapper}>
+			{type === "list" && <p>{props.index!!}.</p>}
 			{type === "checkbox" && <Checkbox disabled />}
 			{type === "radio" && (
 				<Radio
@@ -29,4 +31,4 @@ export const CheckInput = forwardRef<HTMLInputElement, CheckInputProps>(({ label
 	);
 });
 
-CheckInput.displayName = "CheckInput";
+OptionsInput.displayName = "OptionsInput";

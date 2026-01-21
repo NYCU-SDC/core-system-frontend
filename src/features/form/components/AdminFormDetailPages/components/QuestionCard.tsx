@@ -3,7 +3,7 @@ import { Input } from "@/shared/components/Input/Input";
 import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, List, ListOrdered, Rows3, SquareCheckBig, TextAlignStart, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { Option } from "../types/option";
-import { CheckQuestion } from "./CheckQuestion";
+import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";
 
 export interface QuestionCardProps {
@@ -118,7 +118,7 @@ export const QuestionCard = (props: QuestionCardProps) => {
 						</div>
 					</div>
 					{type === "MULTIPLE_CHOICE" && (
-						<CheckQuestion
+						<OptionsQuestion
 							type="checkbox"
 							options={props.options!!}
 							onAdd={() => {
@@ -139,8 +139,29 @@ export const QuestionCard = (props: QuestionCardProps) => {
 						/>
 					)}
 					{type === "SINGLE_CHOICE" && (
-						<CheckQuestion
+						<OptionsQuestion
 							type="radio"
+							options={props.options!!}
+							onAdd={() => {
+								if (props.onAddOption) {
+									props.onAddOption();
+								}
+							}}
+							onAddOther={() => {
+								if (props.onAddOtherOption) {
+									props.onAddOtherOption();
+								}
+							}}
+							onChange={(optionIndex, newLabel) => {
+								if (props.onChangeOption) {
+									props.onChangeOption(optionIndex, newLabel);
+								}
+							}}
+						/>
+					)}
+					{(type === "RANKING" || type === "DROPDOWN") && (
+						<OptionsQuestion
+							type="list"
 							options={props.options!!}
 							onAdd={() => {
 								if (props.onAddOption) {
