@@ -1,20 +1,14 @@
 import { AdminLayout } from "@/layouts";
-import { Badge, Button } from "@/shared/components";
+import { Button } from "@/shared/components";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
-
-type FormStatus = "published" | "draft" | "done";
-
-const statusConfig: Record<FormStatus, { label: string; className: string }> = {
-	published: { label: "已發佈", className: styles.badgePublished },
-	draft: { label: "草稿", className: styles.badgeDraft },
-	done: { label: "已結束", className: styles.badgeDone }
-};
+import { StatusTag, type StatusVariant } from "./StatusTag";
+import { TabButtons } from "./TabButtons";
 
 // Mock data
-const mockForms: { id: string; title: string; lastEdited: string; responses: number; status: FormStatus; deadline: string }[] = [
+const mockForms: { id: string; title: string; lastEdited: string; responses: number; status: StatusVariant; deadline: string }[] = [
 	{
 		id: "form-1",
 		title: "114 fall Full-stack intro training advanced",
@@ -99,20 +93,16 @@ export const AdminFormsPage = () => {
 				<div className={styles.header}>
 					<h1 className={styles.title}>表單</h1>
 					<div className={styles.options}>
-						<div className={styles.btnList}>
-							<button className={`${styles.btn} ${activeTab === "all" ? styles.btnActive : ""}`} onClick={() => setActiveTab("all")}>
-								所有表單
-							</button>
-							<button className={`${styles.btn} ${activeTab === "published" ? styles.btnActive : ""}`} onClick={() => setActiveTab("published")}>
-								草稿
-							</button>
-							<button className={`${styles.btn} ${activeTab === "draft" ? styles.btnActive : ""}`} onClick={() => setActiveTab("draft")}>
-								已發布
-							</button>
-							<button className={`${styles.btn} ${activeTab === "ended" ? styles.btnActive : ""}`} onClick={() => setActiveTab("ended")}>
-								已截止
-							</button>
-						</div>
+						<TabButtons
+							tabs={[
+								{ value: "all", label: "所有表單" },
+								{ value: "published", label: "草稿" },
+								{ value: "draft", label: "已發布" },
+								{ value: "ended", label: "已截止" }
+							]}
+							activeTab={activeTab}
+							onTabChange={setActiveTab}
+						/>
 						<Button icon={Plus} onClick={handleCreateForm}>
 							建立表單
 						</Button>
@@ -125,9 +115,7 @@ export const AdminFormsPage = () => {
 							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form.id)}>
 								<div className={styles.cardHeader}>
 									<h3 className={styles.cardTitle}>{form.title}</h3>
-									<Badge className={statusConfig[form.status].className} showDot>
-										{statusConfig[form.status].label}
-									</Badge>
+									<StatusTag variant={form.status} showDot />
 								</div>
 								<div className={styles.cardInfo}>
 									<span>Last edited: {form.lastEdited}</span>

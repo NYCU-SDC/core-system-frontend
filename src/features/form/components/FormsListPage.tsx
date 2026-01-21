@@ -3,6 +3,7 @@ import { Button } from "@/shared/components";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./FormsListPage.module.css";
+import { TabButtons } from "./TabButtons";
 
 // Mock data
 const mockForms = [
@@ -57,37 +58,35 @@ export const FormsListPage = () => {
 
 				{mockForms.length > 0 ? (
 					<div className={styles.list}>
-						<div className={styles.btnList}>
-							<button className={`${styles.btn} ${activeTab === "pending" ? styles.btnActive : ""}`} onClick={() => setActiveTab("pending")}>
-								待填寫
-							</button>
-							<button className={`${styles.btn} ${activeTab === "inProgress" ? styles.btnActive : ""}`} onClick={() => setActiveTab("inProgress")}>
-								填寫中
-							</button>
-							<button className={`${styles.btn} ${activeTab === "submitted" ? styles.btnActive : ""}`} onClick={() => setActiveTab("submitted")}>
-								已送出
-							</button>
-						</div>
+						<TabButtons
+							tabs={[
+								{ value: "pending", label: "待填寫" },
+								{ value: "inProgress", label: "填寫中" },
+								{ value: "submitted", label: "已送出" }
+							]}
+							activeTab={activeTab}
+							onTabChange={setActiveTab}
+						/>
 						{mockForms.map(form => (
 							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form.id)}>
 								<div className={styles.cardInfo}>
 									<h3 className={styles.cardTitle}>{form.title}</h3>
 									<p className={styles.cardDescription}>{form.description}</p>
 								</div>
-								<Button>{form.option}</Button>
+								<Button className={styles.sharedBtn}>{form.option}</Button>
 							</div>
 						))}
 					</div>
 				) : (
 					<div className={styles.list}>
-						<div className={styles.btnList}>
-							<button className={`${styles.btn} ${activeTab === "inProgress" ? styles.btnActive : ""}`} onClick={() => setActiveTab("inProgress")}>
-								填寫中
-							</button>
-							<button className={`${styles.btn} ${activeTab === "submitted" ? styles.btnActive : ""}`} onClick={() => setActiveTab("submitted")}>
-								已送出
-							</button>
-						</div>
+						<TabButtons
+							tabs={[
+								{ value: "inProgress", label: "填寫中" },
+								{ value: "submitted", label: "已送出" }
+							]}
+							activeTab={activeTab}
+							onTabChange={setActiveTab}
+						/>
 						<p className={styles.empty}>您沒有填寫中的表單。</p>
 					</div>
 				)}

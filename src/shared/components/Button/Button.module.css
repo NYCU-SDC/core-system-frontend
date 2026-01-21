@@ -12,6 +12,7 @@
 	transition: all 0.2s ease;
 	background-color: var(--orange);
 	color: var(--background-color-primary);
+	clip-path: polygon(0.75rem 0, 100% 0, 100% calc(100% - 0.75rem), calc(100% - 0.75rem) 100%, 0 100%, 0 0.75rem);
 }
 
 .button:hover:not(:disabled) {
