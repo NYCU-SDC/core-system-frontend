@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/QuestionCard";
+import type { Option } from "./types/option";
 
 type Question = {
 	type: "SHORT_TEXT" | "LONG_TEXT" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "DROPDOWN" | "DETAILED_MULTIPLE_CHOICE" | "DATE" | "UPLOAD_FILE" | "LINEAR_SCALE" | "RANKING";
 	title: string;
 	description: string;
+	options?: Array<Option>;
 	onTitleChange?: (newTitle: string) => void;
 	onDescriptionChange?: (newDescription: string) => void;
 };
@@ -43,7 +45,7 @@ export const AdminSectionEditPage = () => {
 	};
 
 	const handleAddQuestion = (type: Question["type"]) => {
-		setQuestions([...questions, { type, title: "", description: "" }]);
+		setQuestions([...questions, { type, title: "", description: "", options: [] }]);
 	};
 
 	const handleRemoveQuestion = (index: number) => {
@@ -65,6 +67,40 @@ export const AdminSectionEditPage = () => {
 		setQuestions(updatedQuestions);
 	};
 
+	const handleAddOption = (questionIndex: number, newOption: Option) => {
+		const updatedQuestions = [...questions];
+		if (!updatedQuestions[questionIndex].options) {
+			updatedQuestions[questionIndex].options = [];
+		}
+
+		const otherOptionIndex = updatedQuestions[questionIndex].options!.findIndex(option => option.isOther);
+		if (newOption.isOther) {
+			if (otherOptionIndex === -1) {
+				updatedQuestions[questionIndex].options!.push(newOption);
+			}
+		} else {
+			if (otherOptionIndex !== -1) {
+				updatedQuestions[questionIndex].options!.splice(otherOptionIndex, 0, newOption);
+			} else {
+				updatedQuestions[questionIndex].options!.push(newOption);
+			}
+		}
+
+		setQuestions(updatedQuestions);
+	};
+
+	const handleChangeOption = (questionIndex: number, optionIndex: number, newLabel: string) => {
+		const updatedQuestions = [...questions];
+		if (!updatedQuestions[questionIndex].options) {
+			updatedQuestions[questionIndex].options = [];
+		}
+		updatedQuestions[questionIndex].options![optionIndex] = {
+			...updatedQuestions[questionIndex].options![optionIndex],
+			label: newLabel
+		};
+		setQuestions(updatedQuestions);
+	};
+
 	return (
 		<>
 			<div className={styles.layout}>
@@ -81,9 +117,13 @@ export const AdminSectionEditPage = () => {
 								type={question.type}
 								title={question.title}
 								description={question.description}
+								options={question.options}
 								removeQuestion={() => handleRemoveQuestion(index)}
 								onTitleChange={newTitle => handleTitleChange(index, newTitle)}
 								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
+								onAddOption={() => handleAddOption(index, { label: "New Option" })}
+								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+								onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
 							/>
 						))}
 					</div>

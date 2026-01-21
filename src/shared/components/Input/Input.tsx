@@ -3,7 +3,7 @@ import type { InputHTMLAttributes } from "react";
 import { forwardRef } from "react";
 import styles from "./Input.module.css";
 
-export type InputVariant = "outline" | "flushed";
+export type InputVariant = "outline" | "flushed" | "none";
 
 export type InputTextSize = "default" | "h2";
 

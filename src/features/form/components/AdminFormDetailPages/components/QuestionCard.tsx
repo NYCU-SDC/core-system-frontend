@@ -2,15 +2,21 @@ import { Button, Switch } from "@/shared/components";
 import { Input } from "@/shared/components/Input/Input";
 import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, List, ListOrdered, Rows3, SquareCheckBig, TextAlignStart, Trash2 } from "lucide-react";
 import { useState } from "react";
+import type { Option } from "../types/option";
+import { CheckQuestion } from "./CheckQuestion";
 import styles from "./QuestionCard.module.css";
 
 export interface QuestionCardProps {
 	type: "SHORT_TEXT" | "LONG_TEXT" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "DROPDOWN" | "DETAILED_MULTIPLE_CHOICE" | "DATE" | "UPLOAD_FILE" | "LINEAR_SCALE" | "RANKING";
 	title?: string;
 	description?: string;
+	options?: Array<Option>;
 	onTitleChange?: (newTitle: string) => void;
 	onDescriptionChange?: (newDescription: string) => void;
 	removeQuestion?: () => void;
+	onAddOption?: () => void;
+	onAddOtherOption?: () => void;
+	onChangeOption?: (optionIndex: number, newLabel: string) => void;
 }
 
 type typeInfo = {
@@ -111,6 +117,48 @@ export const QuestionCard = (props: QuestionCardProps) => {
 							</Button>
 						</div>
 					</div>
+					{type === "MULTIPLE_CHOICE" && (
+						<CheckQuestion
+							type="checkbox"
+							options={props.options!!}
+							onAdd={() => {
+								if (props.onAddOption) {
+									props.onAddOption();
+								}
+							}}
+							onAddOther={() => {
+								if (props.onAddOtherOption) {
+									props.onAddOtherOption();
+								}
+							}}
+							onChange={(optionIndex, newLabel) => {
+								if (props.onChangeOption) {
+									props.onChangeOption(optionIndex, newLabel);
+								}
+							}}
+						/>
+					)}
+					{type === "SINGLE_CHOICE" && (
+						<CheckQuestion
+							type="radio"
+							options={props.options!!}
+							onAdd={() => {
+								if (props.onAddOption) {
+									props.onAddOption();
+								}
+							}}
+							onAddOther={() => {
+								if (props.onAddOtherOption) {
+									props.onAddOtherOption();
+								}
+							}}
+							onChange={(optionIndex, newLabel) => {
+								if (props.onChangeOption) {
+									props.onChangeOption(optionIndex, newLabel);
+								}
+							}}
+						/>
+					)}
 					<div className={styles.actions}>
 						<Copy />
 						<Trash2 onClick={removeQuestion} />
