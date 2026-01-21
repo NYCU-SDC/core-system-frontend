@@ -35,6 +35,7 @@ export const AppRouter = () => {
 				<Route path="/orgs/sdc/forms" element={<AdminFormsPage />} />
 				<Route path="/orgs/sdc/forms/:formid/info" element={<AdminFormDetailPage />} />
 				<Route path="/orgs/sdc/forms/:formid/edit" element={<AdminFormDetailPage />} />
+				<Route path="/orgs/sdc/forms/:formid/section/:sectionId/edit" element={<AdminFormDetailPage />} />
 				<Route path="/orgs/sdc/forms/:formid/reply" element={<AdminFormDetailPage />} />
 				<Route path="/orgs/sdc/forms/:formid/design" element={<AdminFormDetailPage />} />
 				<Route path="/orgs/sdc/settings" element={<AdminSettingsPage />} />

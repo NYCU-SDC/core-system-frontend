@@ -1,0 +1,15 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.addOptions {
+	display: flex;
+	align-items: center;
+}
+
+.addOther {
+	color: var(--orange);
+	padding: 0 0.5rem;
+}

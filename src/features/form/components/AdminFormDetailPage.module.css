@@ -50,3 +50,11 @@
 	padding: 3rem;
 	color: var(--comment);
 }
+
+.info {
+	max-width: 25rem;
+}
+
+.design {
+	max-width: 30rem;
+}
