@@ -25,7 +25,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 2rem;
-	background: rgba(28, 27, 34, 1);
+	background: var(--background-color-secondary);
 	max-width: 70rem;
 	max-height: 40rem;
 	padding: 2rem;
@@ -42,8 +42,7 @@
 
 .card {
 	display: flex;
-	background-color: var(--background-color-secondary);
-	background: rgba(68, 71, 90, 1);
+	background: var(--selection);
 	border: 0.0625rem solid var(--background-color-tertiary);
 	border-radius: 0.5rem;
 	padding: 1.5rem;
