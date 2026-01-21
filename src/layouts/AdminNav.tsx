@@ -32,9 +32,9 @@ export const AdminNav = () => {
 	const initials = displayName.slice(0, 2).toUpperCase();
 	const hasAvatar = !!user.avatarUrl;
 
-	const logOut = () => {
-		// TODO: call auth logout
-	};
+	// const logOut = () => {
+	// 	// TODO: call auth logout
+	// };
 
 	return (
 		<>
