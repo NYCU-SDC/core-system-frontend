@@ -10,7 +10,10 @@
 }
 
 .title {
-	font-size: 2rem;
+	font-family: "MiSans TC";
+	font-size: 3rem;
+	font-weight: 630;
+	line-height: 1.5;
 }
 
 .options {
@@ -20,10 +23,18 @@
 	align-items: center;
 }
 
+@media (max-width: 50.625rem) {
+	.options {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
+
 .grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
 	gap: 1.5rem;
+	align-items: center;
 }
 
 .card {
@@ -33,6 +44,8 @@
 	padding: 1.5rem;
 	transition: all 0.2s ease;
 	cursor: pointer;
+	height: fit-content;
+	min-width: 20rem;
 }
 
 .card:hover {
@@ -43,7 +56,7 @@
 .cardHeader {
 	display: flex;
 	align-items: center;
-	gap: 1rem;
+	gap: 0.5rem;
 	margin-bottom: 0.5rem;
 }
 
@@ -62,7 +75,7 @@
 
 	color: rgba(80, 250, 123, 1);
 	background: rgba(80, 250, 123, 0.3);
-	padding: 2px 8px;
+	padding: 0.125rem 0.5rem;
 }
 
 .cardInfo {
@@ -85,10 +98,10 @@
 	width: fit-content;
 	justify-content: center;
 	align-self: center;
-	gap: 2px;
+	gap: 0.125rem;
 	border-radius: 0.5rem;
-	padding: 2px;
-	clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+	padding: 0.125rem;
+	clip-path: polygon(0.625rem 0, 100% 0, 100% calc(100% - 0.625rem), calc(100% - 0.625rem) 100%, 0 100%, 0 0.625rem);
 }
 
 .btn {
@@ -102,7 +115,7 @@
 	transition: all 0.2s ease;
 	color: var(--foreground);
 	border-radius: 0.5rem;
-	clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+	clip-path: polygon(0.5625rem 0, 100% 0, 100% calc(100% - 0.5625rem), calc(100% - 0.5625rem) 100%, 0 100%, 0 0.5625rem);
 }
 
 .btn:hover {
@@ -113,4 +126,19 @@
 .btnActive {
 	background-color: var(--orange);
 	color: var(--background-color-primary);
+}
+
+.badgePublished {
+	background: rgba(80, 250, 123, 0.3);
+	color: rgba(80, 250, 123, 1);
+}
+
+.badgeDraft {
+	background: rgba(56, 54, 69, 1);
+	color: rgba(194, 192, 206, 1);
+}
+
+.badgeDone {
+	background: rgba(255, 184, 108, 0.3);
+	color: rgba(255, 184, 108, 1);
 }

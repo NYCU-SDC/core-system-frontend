@@ -51,7 +51,7 @@
 	justify-content: space-between;
 	transition: all 0.2s ease;
 	cursor: pointer;
-	clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+	clip-path: polygon(1.25rem 0, 100% 0, 100% calc(100% - 1.25rem), calc(100% - 1.25rem) 100%, 0 100%, 0 1.25rem);
 }
 
 .card:hover {
@@ -75,6 +75,11 @@
 	text-align: center;
 	padding: 3rem;
 	color: var(--comment);
+	align-self: center;
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 /* .listContainer {
@@ -87,10 +92,10 @@
 	width: fit-content;
 	justify-content: center;
 	align-self: center;
-	gap: 2px;
+	gap: 0.125rem;
 	border-radius: 0.5rem;
-	padding: 2px;
-	clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+	padding: 0.125rem;
+	clip-path: polygon(0.625rem 0, 100% 0, 100% calc(100% - 0.625rem), calc(100% - 0.625rem) 100%, 0 100%, 0 0.625rem);
 }
 .btn {
 	padding: 0.5rem 1rem;
@@ -103,7 +108,7 @@
 	transition: all 0.2s ease;
 	color: var(--foreground);
 	border-radius: 0.5rem;
-	clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+	clip-path: polygon(0.5625rem 0, 100% 0, 100% calc(100% - 0.5625rem), calc(100% - 0.5625rem) 100%, 0 100%, 0 0.5625rem);
 }
 
 .btn:hover {

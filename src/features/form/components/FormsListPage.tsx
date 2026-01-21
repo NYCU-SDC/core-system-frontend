@@ -37,6 +37,7 @@ const mockForms = [
 		option: "編輯"
 	}
 ];
+// const mockForms=[];
 
 export const FormsListPage = () => {
 	const navigate = useNavigate();
@@ -78,8 +79,16 @@ export const FormsListPage = () => {
 						))}
 					</div>
 				) : (
-					<div className={styles.empty}>
-						<p>No forms available at the moment</p>
+					<div className={styles.list}>
+						<div className={styles.btnList}>
+							<button className={`${styles.btn} ${activeTab === "inProgress" ? styles.btnActive : ""}`} onClick={() => setActiveTab("inProgress")}>
+								填寫中
+							</button>
+							<button className={`${styles.btn} ${activeTab === "submitted" ? styles.btnActive : ""}`} onClick={() => setActiveTab("submitted")}>
+								已送出
+							</button>
+						</div>
+						<p className={styles.empty}>您沒有填寫中的表單。</p>
 					</div>
 				)}
 			</div>

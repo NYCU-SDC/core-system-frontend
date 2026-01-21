@@ -1,18 +1,26 @@
 import { AdminLayout } from "@/layouts";
-import { Button } from "@/shared/components";
+import { Badge, Button } from "@/shared/components";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
 
+type FormStatus = "published" | "draft" | "done";
+
+const statusConfig: Record<FormStatus, { label: string; className: string }> = {
+	published: { label: "已發佈", className: styles.badgePublished },
+	draft: { label: "草稿", className: styles.badgeDraft },
+	done: { label: "已結束", className: styles.badgeDone }
+};
+
 // Mock data
-const mockForms = [
+const mockForms: { id: string; title: string; lastEdited: string; responses: number; status: FormStatus; deadline: string }[] = [
 	{
 		id: "form-1",
 		title: "114 fall Full-stack intro training advanced",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "已發佈",
+		status: "published",
 		deadline: "2025/12/31"
 	},
 	{
@@ -20,7 +28,7 @@ const mockForms = [
 		title: "114 fall Full-stack intro training advancedddddddddddd",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "草稿",
+		status: "draft",
 		deadline: "2025/12/31"
 	},
 	{
@@ -28,7 +36,7 @@ const mockForms = [
 		title: "Full Stack Intro 11/5 課程回饋",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "草稿",
+		status: "draft",
 		deadline: "2025/12/31"
 	},
 	{
@@ -36,7 +44,7 @@ const mockForms = [
 		title: "Full Stack Intro 11/5 課程回饋",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "已結束",
+		status: "done",
 		deadline: "2025/12/31"
 	},
 	{
@@ -44,7 +52,7 @@ const mockForms = [
 		title: "114 fall Full-stack intro training advanced",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "已發佈",
+		status: "published",
 		deadline: "2025/12/31"
 	},
 	{
@@ -52,7 +60,7 @@ const mockForms = [
 		title: "114 fall Full-stack intro training advanced",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "草稿",
+		status: "draft",
 		deadline: "2025/12/31"
 	},
 	{
@@ -60,7 +68,7 @@ const mockForms = [
 		title: "Full Stack Intro 11/5 課程回饋",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "草稿",
+		status: "draft",
 		deadline: "2025/12/31"
 	},
 	{
@@ -68,7 +76,7 @@ const mockForms = [
 		title: "Full Stack Intro 11/5 課程回饋",
 		lastEdited: "2025/12/25",
 		responses: 5,
-		status: "已結束",
+		status: "done",
 		deadline: "2025/12/31"
 	}
 ];
@@ -93,16 +101,16 @@ export const AdminFormsPage = () => {
 					<div className={styles.options}>
 						<div className={styles.btnList}>
 							<button className={`${styles.btn} ${activeTab === "all" ? styles.btnActive : ""}`} onClick={() => setActiveTab("all")}>
-								全部
+								所有表單
 							</button>
 							<button className={`${styles.btn} ${activeTab === "published" ? styles.btnActive : ""}`} onClick={() => setActiveTab("published")}>
-								已發佈
-							</button>
-							<button className={`${styles.btn} ${activeTab === "draft" ? styles.btnActive : ""}`} onClick={() => setActiveTab("draft")}>
 								草稿
 							</button>
+							<button className={`${styles.btn} ${activeTab === "draft" ? styles.btnActive : ""}`} onClick={() => setActiveTab("draft")}>
+								已發布
+							</button>
 							<button className={`${styles.btn} ${activeTab === "ended" ? styles.btnActive : ""}`} onClick={() => setActiveTab("ended")}>
-								已結束
+								已截止
 							</button>
 						</div>
 						<Button icon={Plus} onClick={handleCreateForm}>
@@ -117,7 +125,9 @@ export const AdminFormsPage = () => {
 							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form.id)}>
 								<div className={styles.cardHeader}>
 									<h3 className={styles.cardTitle}>{form.title}</h3>
-									<span className={styles.cardStatus}>{form.status}</span>
+									<Badge className={statusConfig[form.status].className} showDot>
+										{statusConfig[form.status].label}
+									</Badge>
 								</div>
 								<div className={styles.cardInfo}>
 									<span>Last edited: {form.lastEdited}</span>
