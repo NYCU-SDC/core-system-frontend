@@ -47,5 +47,5 @@
 .link {
 	text-decoration: underline;
 	text-decoration-color: var(--color-body);
-	text-underline-offset: 3px;
+	text-underline-offset: 0.2rem;
 }

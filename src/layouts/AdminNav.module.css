@@ -124,8 +124,8 @@
 	transform: translateY(-50%) translateX(-4px);
 	opacity: 0;
 	pointer-events: none;
-	padding: 6px 10px;
-	border-radius: 8px;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.5rem;
 	background: var(--background-color-primary);
 	border: 1px solid var(--background-color-tertiary);
 	color: var(--color-body);
@@ -159,7 +159,7 @@
 }
 
 /* ========== Responsive (mobile) ========== */
-@media (max-width: 480px) {
+@media (max-width: 30rem) {
 	.container {
 		width: 66px;
 		padding: 0.5rem;
