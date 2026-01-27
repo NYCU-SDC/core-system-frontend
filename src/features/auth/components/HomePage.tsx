@@ -1,3 +1,4 @@
+import { authService } from "@/features/auth/services/authService";
 import { UserLayout } from "@/layouts";
 import { Button } from "@/shared/components";
 import { SiGmail } from "@icons-pack/react-simple-icons";
@@ -15,12 +16,30 @@ export const HomePage = () => {
 				</div>
 				<div className={styles.buttons}>
 					<Link to="/welcome">
-						<Button icon={Github} themeColor="var(--purple)">
+						<Button
+							icon={Github}
+							themeColor="var(--purple)"
+							onClick={() =>
+								authService.redirectToOAuthLogin("google", {
+									callbackUrl: `${window.location.origin}/auth/callback`,
+									redirectUrl: "/dashboard"
+								})
+							}
+						>
 							Continue with GitHub
 						</Button>
 					</Link>
 					<Link to="/orgs/sdc/forms">
-						<Button simpleIcon={SiGmail} themeColor="var(--red)">
+						<Button
+							simpleIcon={SiGmail}
+							themeColor="var(--red)"
+							onClick={() =>
+								authService.redirectToOAuthLogin("google", {
+									callbackUrl: `${window.location.origin}/auth/callback`,
+									redirectUrl: "/dashboard"
+								})
+							}
+						>
 							Continue with Gmail
 						</Button>
 					</Link>
