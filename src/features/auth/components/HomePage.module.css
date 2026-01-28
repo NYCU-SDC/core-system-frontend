@@ -1,11 +1,12 @@
 .container {
+	flex: 1;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	min-height: 100vh;
 	text-align: center;
 	gap: 3rem;
+	margin-bottom: 2rem;
 }
 
 .hero {
@@ -24,13 +25,55 @@
 
 .subtitle {
 	font-size: 1.25rem;
-	color: var(--color-caption);
+	color: var(--color-heading);
+}
+.brMobile {
+	display: none;
 }
 
+@media screen and (max-width: 40rem) {
+	.title {
+		font-size: 2.5rem;
+	}
+	.subtitle {
+		font-size: 1rem;
+	}
+	.brMobile {
+		display: inline;
+	}
+}
 .buttons {
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
 	width: 100%;
 	max-width: 20rem;
+}
+.btnWrap {
+	position: relative;
+	display: inline-block;
+}
+
+.btnWrap::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: 0.5rem;
+	background: var(--selection);
+	z-index: 0;
+	pointer-events: none;
+
+	transition:
+		transform 220ms ease,
+		opacity 220ms ease;
+}
+
+.btnWrap > * {
+	position: relative;
+	z-index: 1;
+}
+
+.btnWrap:hover::before {
+	opacity: 0.9;
+	transform: translateY(-0.0625rem);
 }
