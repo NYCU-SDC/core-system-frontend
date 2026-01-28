@@ -1,8 +1,6 @@
 * {
-	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
-	font-family: "Noto Sans TC", sans-serif;
 }
 
 .container {
@@ -23,10 +21,6 @@
 	object-fit: cover;
 	background-color: aliceblue;
 }
-
-/* .header {
-	margin-bottom: 2rem;
-} */
 
 .title {
 	margin: 0 0 1.5rem 0;
@@ -122,7 +116,7 @@
 .fields {
 	display: flex;
 	flex-direction: column;
-	gap: 4rem;
+	gap: 2rem;
 }
 
 .actions {

@@ -10,6 +10,9 @@ export type { TextAreaProps } from "./TextArea/TextArea";
 export { Checkbox } from "./Checkbox/Checkbox";
 export type { CheckboxProps } from "./Checkbox/Checkbox";
 
+export { DetailedCheckbox } from "./DetailedCheckbox/DetailedCheckbox";
+export type { DetailedCheckboxProps } from "./DetailedCheckbox/DetailedCheckbox";
+
 export { Radio } from "./Radio/Radio";
 export type { RadioOption, RadioProps } from "./Radio/Radio";
 

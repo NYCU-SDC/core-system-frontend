@@ -1,5 +1,5 @@
 import { UserLayout } from "@/layouts";
-import { AccountButton, Button, Checkbox, DragToOrder, Input, Radio, SearchableSelect, TextArea } from "@/shared/components";
+import { AccountButton, Button, Checkbox, DetailedCheckbox, DragToOrder, Input, Radio, SearchableSelect, TextArea } from "@/shared/components";
 import { Github } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -167,9 +167,27 @@ export const FormDetailPage = () => {
 					{currentStep === 0 && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
-								<Checkbox id="" label="Full Stack Intro. Training Program" checked={false} onCheckedChange={() => {}} />
-								<Checkbox id="" label="Full Stack Advanced Training Program" checked={false} onCheckedChange={() => {}} />
-								<Checkbox id="" label="High Performance Computing Team" checked={false} onCheckedChange={() => {}} />
+								<DetailedCheckbox
+									id="intro-program"
+									title="Full Stack Intro. Training Program"
+									description="將帶大家從零開始認識前後端開發，非常歡迎對於前後端零基礎的學員加入&#10;在一學年的課程中，上學期會著重在前端開發：從環境設定、HTML、CSS、JavaScript 等基礎打好地基，並逐步學習版面切版、網頁動態效果實作，讓大家都能獨立完成屬於自己、能「動起來」的互動式履歷網站！下學期則帶大家入門後端開發：學習HTTP、RESTful API、Database 等基礎以及前後端整合，讓個人網站可以和訪客互動。&#10;期待和大家一同踏上這趟從零開始的學習旅程，親手打造出屬於自己的完整網站！&#10;時間：每週三 18:30 ~ 21:30"
+									checked={false}
+									onCheckedChange={() => {}}
+								/>
+								<DetailedCheckbox
+									id="advanced-program"
+									title="Full Stack Advanced Training Program"
+									description="將帶大家從零開始認識前後端開發，非常歡迎對於前後端零基礎的學員加入&#10;在一學年的課程中，上學期會著重在前端開發：從環境設定、HTML、CSS、JavaScript 等基礎打好地基，並逐步學習版面切版、網頁動態效果實作，讓大家都能獨立完成屬於自己、能「動起來」的互動式履歷網站！下學期則帶大家入門後端開發：學習HTTP、RESTful API、Database 等基礎以及前後端整合，讓個人網站可以和訪客互動。&#10;期待和大家一同踏上這趟從零開始的學習旅程，親手打造出屬於自己的完整網站！&#10;時間：每週三 18:30 ~ 21:30"
+									checked={false}
+									onCheckedChange={() => {}}
+								/>
+								<DetailedCheckbox
+									id="hpc-team"
+									title="High Performance Computing Team"
+									description="將帶大家從零開始認識前後端開發，非常歡迎對於前後端零基礎的學員加入&#10;在一學年的課程中，上學期會著重在前端開發：從環境設定、HTML、CSS、JavaScript 等基礎打好地基，並逐步學習版面切版、網頁動態效果實作，讓大家都能獨立完成屬於自己、能「動起來」的互動式履歷網站！下學期則帶大家入門後端開發：學習HTTP、RESTful API、Database 等基礎以及前後端整合，讓個人網站可以和訪客互動。&#10;期待和大家一同踏上這趟從零開始的學習旅程，親手打造出屬於自己的完整網站！&#10;時間：每週三 18:30 ~ 21:30"
+									checked={false}
+									onCheckedChange={() => {}}
+								/>
 							</div>
 						</div>
 					)}

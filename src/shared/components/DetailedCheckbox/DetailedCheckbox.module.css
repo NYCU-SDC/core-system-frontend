@@ -1,0 +1,174 @@
+.container {
+	position: relative;
+	background-color: var(--selection);
+	padding: 1rem 2rem;
+	overflow: hidden;
+}
+
+.cornerTopLeft {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 1.5rem 1.5rem 0 0;
+	border-color: var(--background) transparent transparent transparent;
+}
+
+.cornerBottomRight {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 0 0 1.5rem 1.5rem;
+	border-color: transparent transparent var(--background) transparent;
+}
+
+.content {
+	display: flex;
+	gap: 2rem;
+	align-items: flex-start;
+}
+
+.checkboxWrapper {
+	flex-shrink: 0;
+	padding-top: 0.25rem;
+}
+
+.checkbox {
+	width: 1.5rem;
+	height: 1.5rem;
+	background-color: var(--code-background);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.checkbox:hover {
+	border-color: var(--orange);
+}
+
+.checkbox:focus-visible {
+	outline: 0.125rem solid var(--cyan);
+	outline-offset: 0.125rem;
+}
+
+.checkbox[data-state="checked"] {
+	background-color: var(--orange);
+	border-color: var(--orange);
+}
+
+.checkbox[data-disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.indicator {
+	color: var(--background-color-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.textContent {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	min-width: 0;
+}
+
+.title {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: var(--color-heading);
+	line-height: 1.4;
+}
+
+.descriptionWrapper {
+	display: flex;
+	gap: 0.5rem;
+	align-items: flex-start;
+}
+
+.chevronButton {
+	flex-shrink: 0;
+	background: none;
+	border: none;
+	padding: 0.25rem;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--color-body);
+	transition: transform 0.2s ease;
+}
+
+.chevron {
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 0.417rem 0 0.417rem 0.75rem;
+	border-color: transparent transparent transparent var(--color-body);
+	transition: transform 0.2s ease;
+}
+
+.chevronExpanded {
+	transform: rotate(90deg);
+}
+
+.descriptionContent {
+	flex: 1;
+	min-width: 0;
+	position: relative;
+	cursor: pointer;
+	user-select: none;
+}
+
+.descriptionContent:focus-visible {
+	outline: 0.125rem solid var(--cyan);
+	outline-offset: 0.125rem;
+	border-radius: 0.25rem;
+}
+
+.description {
+	font-size: 1rem;
+	color: var(--color-body);
+	line-height: 1.6;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+}
+
+.description:not(.descriptionExpanded) {
+	max-height: calc(1.6em * 2);
+	overflow: hidden;
+	position: relative;
+}
+
+.descriptionExpanded {
+	display: block;
+}
+
+.showMoreButton {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: 0;
+	padding-left: 1.5rem;
+	font-size: 1rem;
+	line-height: 1.6;
+	color: var(--orange);
+	text-decoration: underline;
+	white-space: nowrap;
+	background: linear-gradient(to right, transparent, var(--selection) 1rem, var(--selection));
+	z-index: 1;
+	pointer-events: none;
+}
