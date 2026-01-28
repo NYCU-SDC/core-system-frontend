@@ -57,3 +57,5 @@ export type { TooltipProps } from "./Tooltip/Tooltip";
 
 export { Toast, ToastProvider } from "./Toast/Toast";
 export type { ToastProps } from "./Toast/Toast";
+
+export { WaveMarquee } from "./WaveMarquee/WaveMarquee";
