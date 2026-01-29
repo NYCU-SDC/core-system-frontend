@@ -3,11 +3,9 @@
 	align-items: center;
 	gap: 0.25rem;
 	padding: 0.25rem 0.75rem;
-	font-family: "Inter";
 	font-size: 0.875rem;
 	font-weight: 400;
 	line-height: 1.5;
-	/* border-radius: 9999px; */
 	white-space: nowrap;
 	clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
 }
@@ -20,16 +18,16 @@
 }
 
 .published {
-	background: rgba(80, 250, 123, 0.3);
-	color: rgba(80, 250, 123, 1);
+	background: var(--green-subtle);
+	color: var(--green);
 }
 
 .draft {
-	background: rgba(56, 54, 69, 1);
-	color: rgba(194, 192, 206, 1);
+	background: var(--background-color-tertiary);
+	color: var(--color-body);
 }
 
 .done {
-	background: rgba(255, 184, 108, 0.3);
-	color: rgba(255, 184, 108, 1);
+	background: var(--orange-subtle);
+	color: var(--orange);
 }

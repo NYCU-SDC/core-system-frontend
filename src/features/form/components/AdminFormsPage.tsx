@@ -11,7 +11,7 @@ import { TabButtons } from "./TabButtons";
 const mockForms: { id: string; title: string; lastEdited: string; responses: number; status: StatusVariant; deadline: string }[] = [
 	{
 		id: "form-1",
-		title: "114 fall Full-stack intro training advanced",
+		title: "114 fall Full-stack",
 		lastEdited: "2025/12/25",
 		responses: 5,
 		status: "published",

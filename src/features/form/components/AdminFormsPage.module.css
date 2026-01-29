@@ -10,7 +10,6 @@
 }
 
 .title {
-	font-family: "MiSans TC";
 	font-size: 3rem;
 	font-weight: 630;
 	line-height: 1.5;
@@ -19,7 +18,6 @@
 .options {
 	display: flex;
 	gap: 2rem;
-	/* justify-content: space-between; */
 	align-items: center;
 }
 
@@ -34,7 +32,7 @@
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
 	gap: 1.5rem;
-	align-items: center;
+	align-items: stretch;
 }
 
 .card {
@@ -44,7 +42,6 @@
 	padding: 1.5rem;
 	transition: all 0.2s ease;
 	cursor: pointer;
-	height: fit-content;
 	min-width: 20rem;
 }
 
@@ -64,18 +61,10 @@
 	font-size: 1.25rem;
 	flex: 1;
 	min-width: 0;
-	word-break: break-word;
-}
-
-.cardStatus {
-	font-size: 0.875rem;
-	font-weight: 400;
-	color: var(--color-caption);
-	flex-shrink: 0;
-
-	color: rgba(80, 250, 123, 1);
-	background: rgba(80, 250, 123, 0.3);
-	padding: 0.125rem 0.5rem;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .cardInfo {
