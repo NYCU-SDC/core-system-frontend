@@ -9,32 +9,23 @@ import { WaveMarquee } from "./WaveMarquee";
 export const HomePage = () => {
 	return (
 		<UserLayout>
-			<div className={styles.container}>
-				<div className={styles.hero}>
-					<h1 className={styles.title}>
-						Welcome to <br className={styles.brMobile} />
-						Core System
-					</h1>
-					<p className={styles.subtitle}>By NYCU SDC</p>
+			<h1 className={styles.title}>Welcome to Core System</h1>
+			<p className={styles.subtitle}>By NYCU SDC</p>
+			<Link to="/welcome">
+				<div className={styles.btn}>
+					<Button icon={School} themeColor="var(--color-caption)">
+						Login with NYCU Portal
+					</Button>
 				</div>
-				<div className={styles.buttons}>
-					<Link to="/welcome">
-						<div className={styles.btnWrap}>
-							<Button icon={School} themeColor="var(--color-caption)">
-								Login with NYCU Portal
-							</Button>
-						</div>
-					</Link>
-					<Link to="/orgs/sdc/forms">
-						<div className={styles.btnWrap}>
-							<Button simpleIcon={SiGoogle} themeColor="var(--orange)">
-								Login with Google
-							</Button>
-						</div>
-					</Link>
+			</Link>
+			<Link to="/orgs/sdc/forms">
+				<div className={styles.btn}>
+					<Button simpleIcon={SiGoogle} themeColor="var(--orange)">
+						Login with Google
+					</Button>
 				</div>
-				<WaveMarquee />
-			</div>
+			</Link>
+			<WaveMarquee />
 		</UserLayout>
 	);
 };
