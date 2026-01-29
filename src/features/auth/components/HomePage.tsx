@@ -1,9 +1,10 @@
 import { UserLayout } from "@/layouts";
-import { Button, WaveMarquee } from "@/shared/components";
+import { Button } from "@/shared/components";
 import { SiGoogle } from "@icons-pack/react-simple-icons";
 import { School } from "lucide-react";
 import { Link } from "react-router-dom";
 import styles from "./HomePage.module.css";
+import { WaveMarquee } from "./WaveMarquee";
 
 export const HomePage = () => {
 	return (
