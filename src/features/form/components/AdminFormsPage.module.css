@@ -9,12 +9,6 @@
 	gap: 1rem;
 }
 
-.title {
-	font-size: 3rem;
-	font-weight: 630;
-	line-height: 1.5;
-}
-
 .options {
 	display: flex;
 	gap: 2rem;
@@ -58,7 +52,6 @@
 }
 
 .cardTitle {
-	font-size: 1.25rem;
 	flex: 1;
 	min-width: 0;
 	display: -webkit-box;

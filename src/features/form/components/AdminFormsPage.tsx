@@ -114,7 +114,7 @@ export const AdminFormsPage = () => {
 						{mockForms.map(form => (
 							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form.id)}>
 								<div className={styles.cardHeader}>
-									<h3 className={styles.cardTitle}>{form.title}</h3>
+									<h4 className={styles.cardTitle}>{form.title}</h4>
 									<StatusTag variant={form.status} showDot />
 								</div>
 								<div className={styles.cardInfo}>
