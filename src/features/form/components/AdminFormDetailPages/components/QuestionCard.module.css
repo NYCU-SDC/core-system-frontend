@@ -50,3 +50,10 @@
 	margin: 0;
 	min-width: 4rem;
 }
+
+.linearScale {
+	display: flex;
+	flex-direction: column;
+	max-width: 12.5rem;
+	gap: 1rem;
+}

@@ -7,13 +7,15 @@ type OptionsInputType = "checkbox" | "radio" | "list";
 export interface OptionsInputProps extends InputProps {
 	ref?: React.Ref<HTMLInputElement>;
 	type: OptionsInputType;
-	index?: number;
+	listLabel?: string;
 }
 
-export const OptionsInput = forwardRef<HTMLInputElement, OptionsInputProps>(({ label, type, ...props }, ref) => {
+export const OptionsInput = forwardRef<HTMLInputElement, OptionsInputProps>(({ label, type, className, ...props }, ref) => {
+	const wrapperClasses = [styles.wrapper, className].join(" ");
+
 	return (
-		<div className={styles.wrapper}>
-			{type === "list" && <p>{props.index!!}.</p>}
+		<div className={wrapperClasses}>
+			{type === "list" && <p className={styles.listLabel}>{props.listLabel!!}</p>}
 			{type === "checkbox" && <Checkbox disabled />}
 			{type === "radio" && (
 				<Radio
@@ -26,7 +28,7 @@ export const OptionsInput = forwardRef<HTMLInputElement, OptionsInputProps>(({ l
 					]}
 				/>
 			)}
-			<Input ref={ref} {...props} />
+			<Input ref={ref} className={styles.input} {...props} />
 		</div>
 	);
 });

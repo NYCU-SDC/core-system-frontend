@@ -3,3 +3,11 @@
 	align-items: center;
 	gap: 0.5rem;
 }
+
+.listLabel {
+	min-width: 1rem;
+}
+
+.input {
+	flex: 1;
+}

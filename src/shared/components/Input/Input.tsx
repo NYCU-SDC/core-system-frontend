@@ -25,10 +25,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, t
 
 	const inputStyle = themeColorValue ? ({ ...style, "--custom-border-color": themeColorValue } as React.CSSProperties) : style;
 
-	const inputClasses = [styles.input, styles[variant], styles[`text-${textSize}`], error ? styles.error : "", className || ""].join(" ");
+	const inputClasses = [styles.input, styles[variant], styles[`text-${textSize}`], error ? styles.error : ""].join(" ");
+
+	const wrapperClasses = [styles.wrapper, className].join(" ");
 
 	return (
-		<div className={styles.wrapper}>
+		<div className={wrapperClasses}>
 			{label && (
 				<Label.Root className={styles.label} htmlFor={props.id}>
 					{label}

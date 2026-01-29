@@ -1,24 +1,16 @@
 import { Button, Input } from "@/shared/components";
-import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, List, ListOrdered, Rows3, SquareCheckBig, TextAlignStart } from "lucide-react";
+import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/QuestionCard";
-import type { Option } from "./types/option";
-
-type Question = {
-	type: "SHORT_TEXT" | "LONG_TEXT" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "DROPDOWN" | "DETAILED_MULTIPLE_CHOICE" | "DATE" | "UPLOAD_FILE" | "LINEAR_SCALE" | "RANKING";
-	title: string;
-	description: string;
-	options?: Array<Option>;
-	onTitleChange?: (newTitle: string) => void;
-	onDescriptionChange?: (newDescription: string) => void;
-};
+import type { Option, Question } from "./types/option";
 
 type NewQuestion = {
 	icon: React.ReactNode;
 	text: string;
 	type: Question["type"];
+	setDefaultQuestion: () => Question;
 };
 
 export const AdminSectionEditPage = () => {
@@ -28,30 +20,52 @@ export const AdminSectionEditPage = () => {
 	const [questions, setQuestions] = useState<Question[]>([]);
 
 	const newQuestionOptions: NewQuestion[] = [
-		{ icon: <CaseSensitive />, text: "文字簡答", type: "SHORT_TEXT" },
-		{ icon: <TextAlignStart />, text: "文字詳答", type: "LONG_TEXT" },
-		{ icon: <List />, text: "單選選擇題", type: "SINGLE_CHOICE" },
-		{ icon: <SquareCheckBig />, text: "核取方塊", type: "MULTIPLE_CHOICE" },
-		{ icon: <Rows3 />, text: "下拉選單", type: "DROPDOWN" },
-		{ icon: <LayoutList />, text: "詳細核取方塊", type: "DETAILED_MULTIPLE_CHOICE" },
-		{ icon: <CloudUpload />, text: "檔案上傳", type: "UPLOAD_FILE" },
-		{ icon: <Ellipsis />, text: "線性刻度", type: "LINEAR_SCALE" },
-		{ icon: <ListOrdered />, text: "排序", type: "RANKING" },
-		{ icon: <Calendar />, text: "日期選擇", type: "DATE" }
+		{
+			icon: <CaseSensitive />,
+			text: "文字簡答",
+			type: "SHORT_TEXT",
+			setDefaultQuestion: () => {
+				return { type: "SHORT_TEXT", title: "", description: "", isFromAnswer: false };
+			}
+		},
+		{ icon: <TextAlignStart />, text: "文字詳答", type: "LONG_TEXT", setDefaultQuestion: () => ({ type: "LONG_TEXT", title: "", description: "", isFromAnswer: false }) },
+		{ icon: <List />, text: "單選選擇題", type: "SINGLE_CHOICE", setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false }) },
+		{ icon: <SquareCheckBig />, text: "核取方塊", type: "MULTIPLE_CHOICE", setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false }) },
+		{ icon: <Rows3 />, text: "下拉選單", type: "DROPDOWN", setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", options: [], isFromAnswer: false }) },
+		{
+			icon: <LayoutList />,
+			text: "詳細核取方塊",
+			type: "DETAILED_MULTIPLE_CHOICE",
+			setDefaultQuestion: () => ({ type: "DETAILED_MULTIPLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false })
+		},
+		{ icon: <CloudUpload />, text: "檔案上傳", type: "UPLOAD_FILE", setDefaultQuestion: () => ({ type: "UPLOAD_FILE", title: "", description: "", isFromAnswer: false }) },
+		{ icon: <Ellipsis />, text: "線性刻度", type: "LINEAR_SCALE", setDefaultQuestion: () => ({ type: "LINEAR_SCALE", title: "", description: "", isFromAnswer: false, start: 1, end: 5 }) },
+		{ icon: <Star />, text: "評分", type: "RATING", setDefaultQuestion: () => ({ type: "RATING", title: "", description: "", isFromAnswer: false, start: 1, end: 5, icon: "STAR" }) },
+		{ icon: <ListOrdered />, text: "排序", type: "RANKING", setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", options: [], isFromAnswer: false }) },
+		{ icon: <Calendar />, text: "日期選擇", type: "DATE", setDefaultQuestion: () => ({ type: "DATE", title: "", description: "", isFromAnswer: false }) },
+		{ icon: <Link2 />, text: "超連結", type: "HYPERLINK", setDefaultQuestion: () => ({ type: "HYPERLINK", title: "", description: "", url: "", isFromAnswer: false }) }
 	];
 
 	const handleBack = () => {
 		navigate(`/orgs/sdc/forms/${formid}/edit`);
 	};
 
-	const handleAddQuestion = (type: Question["type"]) => {
-		setQuestions([...questions, { type, title: "", description: "", options: [] }]);
+	const handleAddQuestion = (setQuestion: () => Question) => {
+		console.log("Adding question:", setQuestion());
+		setQuestions([...questions, setQuestion()]);
 	};
 
 	const handleRemoveQuestion = (index: number) => {
 		const updatedQuestions = [...questions];
 		console.log("Removing question at index:", index);
 		updatedQuestions.splice(index, 1);
+		setQuestions(updatedQuestions);
+	};
+
+	const handleDuplicateQuestion = (index: number) => {
+		const updatedQuestions = [...questions];
+		const questionToDuplicate = updatedQuestions[index];
+		updatedQuestions.splice(index + 1, 0, { ...questionToDuplicate });
 		setQuestions(updatedQuestions);
 	};
 
@@ -89,6 +103,15 @@ export const AdminSectionEditPage = () => {
 		setQuestions(updatedQuestions);
 	};
 
+	const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
+		const updatedQuestions = [...questions];
+		if (!updatedQuestions[questionIndex].options) {
+			return;
+		}
+		updatedQuestions[questionIndex].options!.splice(optionIndex, 1);
+		setQuestions(updatedQuestions);
+	};
+
 	const handleChangeOption = (questionIndex: number, optionIndex: number, newLabel: string) => {
 		const updatedQuestions = [...questions];
 		if (!updatedQuestions[questionIndex].options) {
@@ -98,6 +121,24 @@ export const AdminSectionEditPage = () => {
 			...updatedQuestions[questionIndex].options![optionIndex],
 			label: newLabel
 		};
+		setQuestions(updatedQuestions);
+	};
+
+	const handleStartChange = (questionIndex: number, newStart: number) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].start = newStart;
+		setQuestions(updatedQuestions);
+	};
+
+	const handleEndChange = (questionIndex: number, newEnd: number) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].end = newEnd;
+		setQuestions(updatedQuestions);
+	};
+
+	const handleChangeIcon = (questionIndex: number, newIcon: Question["icon"]) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].icon = newIcon;
 		setQuestions(updatedQuestions);
 	};
 
@@ -114,16 +155,24 @@ export const AdminSectionEditPage = () => {
 						{questions.map((question, index) => (
 							<QuestionCard
 								key={index}
-								type={question.type}
-								title={question.title}
-								description={question.description}
-								options={question.options}
+								question={question}
+								duplicateQuestion={() => handleDuplicateQuestion(index)}
 								removeQuestion={() => handleRemoveQuestion(index)}
 								onTitleChange={newTitle => handleTitleChange(index, newTitle)}
 								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
 								onAddOption={() => handleAddOption(index, { label: "New Option" })}
 								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+								onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
+								onRemoveOtherOption={() =>
+									handleRemoveOption(
+										index,
+										question.options!.findIndex(option => option.isOther)
+									)
+								}
 								onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
+								onStartChange={newStart => handleStartChange(index, newStart)}
+								onEndChange={newEnd => handleEndChange(index, newEnd)}
+								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
 							/>
 						))}
 					</div>
@@ -132,7 +181,7 @@ export const AdminSectionEditPage = () => {
 					<div className={styles.sidebar}>
 						<p>新增</p>
 						{newQuestionOptions.map((option, index) => (
-							<button key={index} className={styles.newQuestion} onClick={() => handleAddQuestion(option.type)}>
+							<button key={index} className={styles.newQuestion} onClick={() => handleAddQuestion(option.setDefaultQuestion)}>
 								{option.icon}
 								{option.text}
 							</button>

@@ -1,30 +1,35 @@
 import { Button, Switch } from "@/shared/components";
 import { Input } from "@/shared/components/Input/Input";
-import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, List, ListOrdered, Rows3, SquareCheckBig, TextAlignStart, Trash2 } from "lucide-react";
-import { useState } from "react";
-import type { Option } from "../types/option";
+import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import type { Question } from "../types/option";
 import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";
+import { RangeQuestion } from "./RangeQuestion";
 
 export interface QuestionCardProps {
-	type: "SHORT_TEXT" | "LONG_TEXT" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "DROPDOWN" | "DETAILED_MULTIPLE_CHOICE" | "DATE" | "UPLOAD_FILE" | "LINEAR_SCALE" | "RANKING";
-	title?: string;
-	description?: string;
-	options?: Array<Option>;
+	question: Question;
 	onTitleChange?: (newTitle: string) => void;
 	onDescriptionChange?: (newDescription: string) => void;
-	removeQuestion?: () => void;
+	removeQuestion: () => void;
+	duplicateQuestion: () => void;
 	onAddOption?: () => void;
 	onAddOtherOption?: () => void;
+	onRemoveOption?: (optionIndex: number) => void;
+	onRemoveOtherOption?: () => void;
 	onChangeOption?: (optionIndex: number, newLabel: string) => void;
+	onStartChange?: (newStart: number) => void;
+	onEndChange?: (newEnd: number) => void;
+	onChangeIcon?: (newIcon: Question["icon"]) => void;
 }
 
 type typeInfo = {
 	icon: React.ReactNode;
 	label: string;
+	optionType?: "radio" | "checkbox" | "list";
 };
 
-const typeIconMap: Record<QuestionCardProps["type"], typeInfo> = {
+const typeMap: Record<Question["type"], typeInfo> = {
 	SHORT_TEXT: {
 		icon: <CaseSensitive />,
 		label: "文字簡答"
@@ -35,15 +40,18 @@ const typeIconMap: Record<QuestionCardProps["type"], typeInfo> = {
 	},
 	SINGLE_CHOICE: {
 		icon: <List />,
-		label: "單選選擇題"
+		label: "單選選擇題",
+		optionType: "radio"
 	},
 	MULTIPLE_CHOICE: {
 		icon: <SquareCheckBig />,
-		label: "核取方塊"
+		label: "核取方塊",
+		optionType: "checkbox"
 	},
 	DROPDOWN: {
 		icon: <Rows3 />,
-		label: "下拉選單"
+		label: "下拉選單",
+		optionType: "list"
 	},
 	DETAILED_MULTIPLE_CHOICE: {
 		icon: <LayoutList />,
@@ -57,18 +65,27 @@ const typeIconMap: Record<QuestionCardProps["type"], typeInfo> = {
 		icon: <Ellipsis />,
 		label: "線性刻度"
 	},
+	RATING: {
+		icon: <Star />,
+		label: "評分"
+	},
 	RANKING: {
 		icon: <ListOrdered />,
-		label: "排序"
+		label: "排序",
+		optionType: "list"
 	},
 	DATE: {
 		icon: <Calendar />,
 		label: "日期選擇"
+	},
+	HYPERLINK: {
+		icon: <Link2 />,
+		label: "超連結"
 	}
 };
 
-export const QuestionCard = (props: QuestionCardProps) => {
-	const { type, removeQuestion } = props;
+export const QuestionCard = (props: QuestionCardProps): ReactNode => {
+	const { question, removeQuestion, duplicateQuestion } = props;
 
 	const [isToggled, setIsToggled] = useState(false);
 
@@ -88,7 +105,7 @@ export const QuestionCard = (props: QuestionCardProps) => {
 					<div className={styles.header}>
 						<div className={styles.input}>
 							<Input
-								value={props.title}
+								value={question.title}
 								onChange={e => {
 									if (props.onTitleChange) {
 										props.onTitleChange(e.target.value);
@@ -100,7 +117,7 @@ export const QuestionCard = (props: QuestionCardProps) => {
 								textSize="h2"
 							/>
 							<Input
-								value={props.description}
+								value={question.description}
 								onChange={e => {
 									if (props.onDescriptionChange) {
 										props.onDescriptionChange(e.target.value);
@@ -113,14 +130,15 @@ export const QuestionCard = (props: QuestionCardProps) => {
 						</div>
 						<div>
 							<Button variant="secondary" className={styles.typeButton}>
-								{typeIconMap[type].icon} {typeIconMap[type].label}
+								{typeMap[question.type].icon} {typeMap[question.type].label}
 							</Button>
 						</div>
 					</div>
-					{type === "MULTIPLE_CHOICE" && (
+					{["SINGLE_CHOICE", "MULTIPLE_CHOICE", "RANKING", "DROPDOWN"].some(type => type === question.type) && (
 						<OptionsQuestion
-							type="checkbox"
-							options={props.options!!}
+							type={typeMap[question.type].optionType!!}
+							options={question.options!!}
+							isFromAnswer={question.isFromAnswer}
 							onAdd={() => {
 								if (props.onAddOption) {
 									props.onAddOption();
@@ -134,54 +152,41 @@ export const QuestionCard = (props: QuestionCardProps) => {
 							onChange={(optionIndex, newLabel) => {
 								if (props.onChangeOption) {
 									props.onChangeOption(optionIndex, newLabel);
+								}
+							}}
+							onRemove={optionIndex => {
+								if (props.onRemoveOption) {
+									props.onRemoveOption(optionIndex);
+								}
+							}}
+							onRemoveOther={() => {
+								if (props.onRemoveOtherOption) {
+									props.onRemoveOtherOption();
 								}
 							}}
 						/>
 					)}
-					{type === "SINGLE_CHOICE" && (
-						<OptionsQuestion
-							type="radio"
-							options={props.options!!}
-							onAdd={() => {
-								if (props.onAddOption) {
-									props.onAddOption();
-								}
-							}}
-							onAddOther={() => {
-								if (props.onAddOtherOption) {
-									props.onAddOtherOption();
-								}
-							}}
-							onChange={(optionIndex, newLabel) => {
-								if (props.onChangeOption) {
-									props.onChangeOption(optionIndex, newLabel);
-								}
-							}}
-						/>
+					{question.type === "LINEAR_SCALE" && (
+						<div className={styles.linearScale}>
+							<RangeQuestion start={question.start!!} end={question.end!!} hasIcon={false} onStartChange={props.onStartChange} onEndChange={props.onEndChange} />
+						</div>
 					)}
-					{(type === "RANKING" || type === "DROPDOWN") && (
-						<OptionsQuestion
-							type="list"
-							options={props.options!!}
-							onAdd={() => {
-								if (props.onAddOption) {
-									props.onAddOption();
-								}
-							}}
-							onAddOther={() => {
-								if (props.onAddOtherOption) {
-									props.onAddOtherOption();
-								}
-							}}
-							onChange={(optionIndex, newLabel) => {
-								if (props.onChangeOption) {
-									props.onChangeOption(optionIndex, newLabel);
-								}
-							}}
-						/>
+
+					{question.type === "RATING" && (
+						<div className={styles.linearScale}>
+							<RangeQuestion
+								start={question.start!!}
+								end={question.end!!}
+								hasIcon={true}
+								icon={question.icon}
+								onStartChange={props.onStartChange}
+								onEndChange={props.onEndChange}
+								onChangeIcon={props.onChangeIcon}
+							/>
+						</div>
 					)}
 					<div className={styles.actions}>
-						<Copy />
+						<Copy onClick={duplicateQuestion} />
 						<Trash2 onClick={removeQuestion} />
 						<div className={`${styles.switch}`}>
 							<p className={`${styles.label}`}>必填</p>
@@ -191,8 +196,8 @@ export const QuestionCard = (props: QuestionCardProps) => {
 				</div>
 			) : (
 				<div className={styles.preview}>
-					{typeIconMap[type].icon}
-					<p>{props.title || "Question 標題"}</p>
+					{typeMap[question.type].icon}
+					<p>{props.question.title || "Question 標題"}</p>
 				</div>
 			)}
 		</section>

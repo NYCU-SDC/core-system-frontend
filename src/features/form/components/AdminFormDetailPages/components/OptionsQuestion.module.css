@@ -4,6 +4,15 @@
 	gap: 1rem;
 }
 
+.optionWrapper {
+	display: flex;
+	gap: 1rem;
+}
+
+.optionInput {
+	flex: 1;
+}
+
 .addOptions {
 	display: flex;
 	align-items: center;
