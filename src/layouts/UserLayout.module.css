@@ -7,7 +7,12 @@
 	padding: 2rem 1rem;
 }
 
+.container.center {
+	justify-content: center;
+}
+
 .content {
 	width: 100%;
 	max-width: 40rem;
+	z-index: 1;
 }
