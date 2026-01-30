@@ -1,0 +1,70 @@
+:root {
+	--img-width: max(120vh, 65vw);
+	--unit-width: calc(var(--img-width) * 2);
+}
+
+.wrapper {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	height: 40vh;
+	overflow: hidden;
+	z-index: -1;
+}
+
+.track {
+	display: flex;
+	position: absolute;
+	bottom: 0;
+}
+
+.waveSet {
+	display: flex;
+	flex-shrink: 0;
+	gap: 0;
+}
+
+.waveSet img {
+	width: var(--img-width);
+	height: auto;
+	flex-shrink: 0;
+	object-fit: cover;
+	margin-left: -1px;
+}
+
+.flipped {
+	transform: scaleX(-1);
+}
+
+.frontTrack {
+	opacity: 1;
+	z-index: 2;
+	animation: moveLeft 30s linear infinite;
+}
+
+.backTrack {
+	opacity: 0.6;
+	z-index: 1;
+	animation: moveRight 30s linear infinite;
+	transform: scaleX(-1);
+}
+.backTrack .waveSet {
+	transform: scaleX(-1);
+}
+@keyframes moveLeft {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(calc(-1 * var(--unit-width)));
+	}
+}
+
+@keyframes moveRight {
+	from {
+		transform: translateX(calc(-1 * var(--unit-width)));
+	}
+	to {
+		transform: translateX(0);
+	}
+}
