@@ -10,6 +10,7 @@
 	animation: marquee-infinite linear infinite;
 	display: flex;
 	gap: 2rem;
+	padding-left: 1.5rem;
 }
 
 .track {

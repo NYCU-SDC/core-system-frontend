@@ -7,12 +7,13 @@
 	padding: 2rem 1rem;
 }
 
-.container.center {
-	justify-content: center;
-}
-
 .content {
 	width: 100%;
-	max-width: 40rem;
-	z-index: 1;
+	max-width: 1200px;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	min-height: 0;
 }

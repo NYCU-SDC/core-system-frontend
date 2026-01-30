@@ -1,18 +1,9 @@
-.container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 2rem;
-	flex: 1;
-}
-
 .content {
 	display: flex;
 	flex-direction: column;
 	margin-top: auto;
 	margin-bottom: auto;
-	gap: 1rem;
+	gap: 2rem;
 	background: var(--background-color-secondary);
 	padding: 4rem;
 	clip-path: polygon(2rem 0, 100% 0, 100% calc(100% - 2rem), calc(100% - 2rem) 100%, 0 100%, 0 2rem);
