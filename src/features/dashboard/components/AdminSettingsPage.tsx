@@ -14,17 +14,12 @@ type MemberRow = {
 	roleLabel: string;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-	return typeof value === "object" && value !== null;
-};
+/* ---------- API 資料轉 UI Model ---------- */
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
-const getString = (value: unknown): string | null => {
-	return typeof value === "string" ? value : null;
-};
+const getString = (value: unknown): string | null => (typeof value === "string" ? value : null);
 
-const getStringArray = (value: unknown): string[] => {
-	return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
-};
+const getStringArray = (value: unknown): string[] => (Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : []);
 
 const toMemberRow = (value: unknown): MemberRow | null => {
 	if (!isRecord(value)) return null;
@@ -65,12 +60,12 @@ export const AdminSettingsPage = () => {
 		return raw.map(toMemberRow).filter((m): m is MemberRow => m !== null);
 	}, [membersQuery.data]);
 
-	const handleSaveOrgName = async () => {
+	const handleSaveOrgName = () => {
 		if (!orgQuery.data) return;
-		const nextName = orgNameDraft ?? orgQuery.data.name;
+
 		updateOrgMutation.mutate(
 			{
-				name: nextName,
+				name: orgNameDraft ?? orgQuery.data.name,
 				description: orgQuery.data.description ?? "",
 				metadata: orgQuery.data.metadata ?? {},
 				slug: orgQuery.data.slug
@@ -81,9 +76,10 @@ export const AdminSettingsPage = () => {
 		);
 	};
 
-	const handleAddMember = async () => {
+	const handleAddMember = () => {
 		const trimmed = email.trim();
 		if (!trimmed) return;
+
 		addMemberMutation.mutate(
 			{ email: trimmed },
 			{
@@ -122,14 +118,7 @@ export const AdminSettingsPage = () => {
 					<div className={styles.card}>
 						<h2 className={styles.cardTitle}>Organization Name</h2>
 						<div className={styles.formGroup}>
-							<Input
-								label="Organization Name"
-								value={orgNameValue}
-								onChange={e => {
-									setOrgNameDraft(e.target.value);
-								}}
-								placeholder={orgQuery.isLoading ? "Loading…" : "Enter organization name"}
-							/>
+							<Input label="Organization Name" value={orgNameValue} onChange={e => setOrgNameDraft(e.target.value)} placeholder={orgQuery.isLoading ? "Loading…" : "Enter organization name"} />
 							<Button onClick={handleSaveOrgName} processing={updateOrgMutation.isPending} disabled={orgQuery.isLoading || !orgQuery.data}>
 								Save Changes
 							</Button>
@@ -164,7 +153,7 @@ export const AdminSettingsPage = () => {
 										</div>
 										<div className={styles.memberActions}>
 											<span className={styles.memberRole}>{member.roleLabel}</span>
-											<Button variant="secondary" icon={UserMinus} onClick={() => handleKickMember(member.id)} className={styles.kickButton} disabled={removeMemberMutation.isPending}>
+											<Button variant="secondary" icon={UserMinus} onClick={() => handleKickMember(member.id)} disabled={removeMemberMutation.isPending}>
 												Remove
 											</Button>
 										</div>

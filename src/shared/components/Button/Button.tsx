@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes, ComponentType, ReactNode } from "react";
 import styles from "./Button.module.css";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-	children: ReactNode;
+	children?: ReactNode;
 	icon?: LucideIcon;
 	simpleIcon?: ComponentType<{ size?: number; color?: string }>;
 	themeColor?: string;
