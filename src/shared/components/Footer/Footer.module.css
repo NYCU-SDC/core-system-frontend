@@ -1,0 +1,25 @@
+.footer {
+	background-color: var(--background-color-primary);
+	border-top: solid 1px var(--background-color-tertiary);
+}
+
+.footer a {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 0.2rem;
+}
+
+.inner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	max-width: 1200px;
+	width: 100%;
+	margin: 0 auto;
+	padding: 1rem 1.5rem;
+	gap: 1rem;
+}
+
+.credit {
+	flex-grow: 1;
+}
