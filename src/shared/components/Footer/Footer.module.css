@@ -1,6 +1,4 @@
 .footer {
-	width: 100%;
-	padding-left: 66px;
 	background-color: var(--background-color-primary);
 	border-top: solid 1px var(--background-color-tertiary);
 	outline: 1px solid var(--background-color-tertiary);

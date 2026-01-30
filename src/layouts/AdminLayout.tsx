@@ -13,9 +13,9 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 				<AdminNav />
 				<main className={styles.main}>
 					<div className={styles.content}>{children}</div>
+					<Footer></Footer>
 				</main>
 			</div>
-			<Footer></Footer>
 		</>
 	);
 };
