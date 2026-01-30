@@ -115,14 +115,14 @@ export const FormDetailPage = () => {
 					<h1 className={styles.title}>SDC 註冊表單</h1>
 					{currentStep === 0 ? (
 						<p className={styles.description}>
-							🌟 Welcome to SDC, the Software Development Club! 🌟<br></br>
-							<br></br>
-							我們是陽明交大軟體開發社（NYCU SDC），旨在聚集交清人才，加速推動兩校在資訊領域的發展，同時引領更多的新人（不限科系）成為人才，♾️ 循環。<br></br>
-							<br></br>
-							更多資訊請關注 SDC Instagram @nycu_sdc<br></br>
-							<br></br>
-							請使用您主要的 Google 帳號進行填寫，以便日後聯絡順利。<br></br>
-							<br></br>
+							🌟 Welcome to SDC, the Software Development Club! 🌟<br />
+							<br />
+							我們是陽明交大軟體開發社（NYCU SDC），旨在聚集交清人才，加速推動兩校在資訊領域的發展，同時引領更多的新人（不限科系）成為人才，♾️ 循環。<br />
+							<br />
+							更多資訊請關注 SDC Instagram @nycu_sdc<br />
+							<br />
+							請使用您主要的 Google 帳號進行填寫，以便日後聯絡順利。<br />
+							<br />
 							此表單內容提交後皆可修改，請安心填寫。
 						</p>
 					) : (
