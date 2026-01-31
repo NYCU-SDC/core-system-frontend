@@ -10,10 +10,10 @@ export interface OptionsInputProps extends InputProps {
 	listLabel?: string;
 }
 
-export const OptionsInput = forwardRef<HTMLInputElement, OptionsInputProps>(({ label, type, className, ...props }, ref) => {
+export const OptionsInput = forwardRef<HTMLInputElement, OptionsInputProps>(({ type, className, listLabel, ...props }, ref) => {
 	return (
 		<div className={`${styles.wrapper} ${className}`}>
-			{type === "list" && <p className={styles.listLabel}>{props.listLabel!!}</p>}
+			{type === "list" && <p className={styles.listLabel}>{listLabel}</p>}
 			{type === "checkbox" && <Checkbox disabled />}
 			{type === "radio" && (
 				<Radio

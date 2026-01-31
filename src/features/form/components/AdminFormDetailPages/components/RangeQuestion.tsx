@@ -30,7 +30,9 @@ export const RangeQuestion = (props: RangeQuestionProps) => {
 						value={props.icon}
 						onValueChange={value => {
 							const iconValue = value as Question["icon"];
-							props.onChangeIcon && props.onChangeIcon(iconValue);
+							if (props.onChangeIcon) {
+								props.onChangeIcon(iconValue);
+							}
 						}}
 						placeholder="icon"
 					></Select>

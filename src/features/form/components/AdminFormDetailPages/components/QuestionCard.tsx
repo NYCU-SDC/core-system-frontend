@@ -139,8 +139,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					</div>
 					{["SINGLE_CHOICE", "MULTIPLE_CHOICE", "RANKING", "DROPDOWN"].some(type => type === question.type) && (
 						<OptionsQuestion
-							type={typeMap[question.type].optionType!!}
-							options={question.options!!}
+							type={typeMap[question.type].optionType || "radio"}
+							options={question.options || []}
 							isFromAnswer={question.isFromAnswer}
 							onAdd={() => {
 								if (props.onAddOption) {
@@ -171,15 +171,15 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					)}
 					{question.type === "LINEAR_SCALE" && (
 						<div className={styles.linearScale}>
-							<RangeQuestion start={question.start!!} end={question.end!!} hasIcon={false} onStartChange={props.onStartChange} onEndChange={props.onEndChange} />
+							<RangeQuestion start={question.start || 1} end={question.end || 5} hasIcon={false} onStartChange={props.onStartChange} onEndChange={props.onEndChange} />
 						</div>
 					)}
 
 					{question.type === "RATING" && (
 						<div className={styles.linearScale}>
 							<RangeQuestion
-								start={question.start!!}
-								end={question.end!!}
+								start={question.start || 1}
+								end={question.end || 5}
 								hasIcon={true}
 								icon={question.icon}
 								onStartChange={props.onStartChange}
@@ -189,7 +189,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 						</div>
 					)}
 
-					{question.type === "DETAILED_MULTIPLE_CHOICE" && <DetailOptionsQuestion options={question.detailOptions!!} onAdd={props.onAddDetailOption!!} />}
+					{question.type === "DETAILED_MULTIPLE_CHOICE" && <DetailOptionsQuestion options={question.detailOptions || []} onAdd={props.onAddDetailOption || (() => {})} />}
 					{question.type === "UPLOAD_FILE" && <UploadQuestion />}
 
 					<div className={styles.actions}>
