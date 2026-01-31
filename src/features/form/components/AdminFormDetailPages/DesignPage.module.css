@@ -1,0 +1,38 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+.label {
+	margin: 0;
+	margin-bottom: 0.5rem;
+}
+
+.radio {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.color {
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 9999px;
+}
+
+.color.active {
+	border: 0.125rem solid var(--foreground);
+}
+
+.quote {
+	margin: 0;
+}
+
+.blockquote {
+	padding: 0;
+	padding-left: 1rem;
+}
+
+.link {
+	color: var(--orange);
+}

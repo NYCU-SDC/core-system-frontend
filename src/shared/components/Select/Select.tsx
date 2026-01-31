@@ -7,6 +7,7 @@ import styles from "./Select.module.css";
 export interface SelectOption {
 	value: string;
 	label: string;
+	icon?: React.ReactNode;
 	disabled?: boolean;
 }
 
@@ -41,7 +42,9 @@ export const Select = ({ label, placeholder, options, error, themeColor, ...prop
 						<RadixSelect.Viewport className={styles.viewport}>
 							{options.map(option => (
 								<RadixSelect.Item key={option.value} value={option.value} className={styles.item} disabled={option.disabled}>
-									<RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
+									<RadixSelect.ItemText>
+										{option.icon} {option.label}
+									</RadixSelect.ItemText>
 								</RadixSelect.Item>
 							))}
 						</RadixSelect.Viewport>
