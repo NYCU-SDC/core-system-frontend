@@ -5,6 +5,7 @@ import styles from "./AdminFormDetailPage.module.css";
 import { AdminFormDesignPage } from "./AdminFormDetailPages/DesignPage";
 import { AdminFormEditPage } from "./AdminFormDetailPages/EditPage";
 import { AdminFormInfoPage } from "./AdminFormDetailPages/InfoPage";
+import { AdminFormRepliesPage } from "./AdminFormDetailPages/RepliesPage";
 import { AdminSectionEditPage } from "./AdminFormDetailPages/SectionEditPage";
 
 type TabType = "info" | "edit" | "reply" | "design";
@@ -63,7 +64,11 @@ export const AdminFormDetailPage = () => {
 							<AdminSectionEditPage />
 						</div>
 					)}
-					{activeTab === "reply" && <div>Reply Page Content</div>}
+					{activeTab === "reply" && (
+						<div className={styles.replies}>
+							<AdminFormRepliesPage />
+						</div>
+					)}
 					{activeTab === "design" && (
 						<div className={styles.design}>
 							<AdminFormDesignPage />

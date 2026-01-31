@@ -24,6 +24,7 @@ export interface QuestionCardProps {
 	onStartChange?: (newStart: number) => void;
 	onEndChange?: (newEnd: number) => void;
 	onChangeIcon?: (newIcon: Question["icon"]) => void;
+	onToggleIsFromAnswer?: () => void;
 }
 
 type typeInfo = {
@@ -165,6 +166,11 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							onRemoveOther={() => {
 								if (props.onRemoveOtherOption) {
 									props.onRemoveOtherOption();
+								}
+							}}
+							onToggleIsFromAnswer={() => {
+								if (props.onToggleIsFromAnswer) {
+									props.onToggleIsFromAnswer();
 								}
 							}}
 						/>

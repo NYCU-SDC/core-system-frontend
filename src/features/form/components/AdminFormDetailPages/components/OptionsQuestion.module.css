@@ -22,3 +22,9 @@
 	color: var(--orange);
 	padding: 0 0.5rem;
 }
+
+.wrapper {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+}

@@ -151,6 +151,12 @@ export const AdminSectionEditPage = () => {
 		setQuestions(updatedQuestions);
 	};
 
+	const handleToggleIsFromAnswer = (questionIndex: number) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].isFromAnswer = !updatedQuestions[questionIndex].isFromAnswer;
+		setQuestions(updatedQuestions);
+	};
+
 	return (
 		<>
 			<div className={styles.layout}>
@@ -183,6 +189,7 @@ export const AdminSectionEditPage = () => {
 								onStartChange={newStart => handleStartChange(index, newStart)}
 								onEndChange={newEnd => handleEndChange(index, newEnd)}
 								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
+								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
 							/>
 						))}
 					</div>
