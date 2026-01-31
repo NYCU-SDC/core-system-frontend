@@ -1,0 +1,22 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.wrapper {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.status {
+	color: var(--green);
+	background-color: var(--green-subtle);
+	border-radius: 0;
+	clip-path: polygon(0.25rem 0, 100% 0, 100% 0, calc(100% - 0.25rem) 100%, 0 100%, 0 100%);
+}
+
+.checkButton {
+	background-color: white;
+}
