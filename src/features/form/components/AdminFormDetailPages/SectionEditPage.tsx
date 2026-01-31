@@ -36,7 +36,7 @@ export const AdminSectionEditPage = () => {
 			icon: <LayoutList />,
 			text: "詳細核取方塊",
 			type: "DETAILED_MULTIPLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "DETAILED_MULTIPLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false })
+			setDefaultQuestion: () => ({ type: "DETAILED_MULTIPLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false, detailOptions: [] })
 		},
 		{ icon: <CloudUpload />, text: "檔案上傳", type: "UPLOAD_FILE", setDefaultQuestion: () => ({ type: "UPLOAD_FILE", title: "", description: "", isFromAnswer: false }) },
 		{ icon: <Ellipsis />, text: "線性刻度", type: "LINEAR_SCALE", setDefaultQuestion: () => ({ type: "LINEAR_SCALE", title: "", description: "", isFromAnswer: false, start: 1, end: 5 }) },
@@ -103,6 +103,15 @@ export const AdminSectionEditPage = () => {
 		setQuestions(updatedQuestions);
 	};
 
+	const handleAddDetailOption = (questionIndex: number, newDetailOption: { label: string; description: string }) => {
+		const updatedQuestions = [...questions];
+		if (!updatedQuestions[questionIndex].detailOptions) {
+			updatedQuestions[questionIndex].detailOptions = [];
+		}
+		updatedQuestions[questionIndex].detailOptions!.push(newDetailOption);
+		setQuestions(updatedQuestions);
+	};
+
 	const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
 		const updatedQuestions = [...questions];
 		if (!updatedQuestions[questionIndex].options) {
@@ -162,6 +171,7 @@ export const AdminSectionEditPage = () => {
 								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
 								onAddOption={() => handleAddOption(index, { label: "New Option" })}
 								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+								onAddDetailOption={() => handleAddDetailOption(index, { label: "New Option", description: "Option Description" })}
 								onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
 								onRemoveOtherOption={() =>
 									handleRemoveOption(

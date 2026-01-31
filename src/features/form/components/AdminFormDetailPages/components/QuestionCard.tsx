@@ -3,6 +3,7 @@ import { Input } from "@/shared/components/Input/Input";
 import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { Question } from "../types/option";
+import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
 import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";
 import { RangeQuestion } from "./RangeQuestion";
@@ -17,6 +18,7 @@ export interface QuestionCardProps {
 	onAddOtherOption?: () => void;
 	onRemoveOption?: (optionIndex: number) => void;
 	onRemoveOtherOption?: () => void;
+	onAddDetailOption?: () => void;
 	onChangeOption?: (optionIndex: number, newLabel: string) => void;
 	onStartChange?: (newStart: number) => void;
 	onEndChange?: (newEnd: number) => void;
@@ -185,6 +187,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							/>
 						</div>
 					)}
+
+					{question.type === "DETAILED_MULTIPLE_CHOICE" && <DetailOptionsQuestion options={question.detailOptions!!} onAdd={props.onAddDetailOption!!} />}
+
 					<div className={styles.actions}>
 						<Copy onClick={duplicateQuestion} />
 						<Trash2 onClick={removeQuestion} />

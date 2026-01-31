@@ -4,6 +4,7 @@ export type Question = {
 	description: string;
 	isFromAnswer: boolean;
 	options?: Array<Option>;
+	detailOptions?: Array<DetailOption>;
 	start?: number;
 	end?: number;
 	icon?: "STAR" | "HEART" | "GOOD";
@@ -12,4 +13,9 @@ export type Question = {
 export type Option = {
 	label: string;
 	isOther?: boolean;
+};
+
+export type DetailOption = {
+	label: string;
+	description: string;
 };

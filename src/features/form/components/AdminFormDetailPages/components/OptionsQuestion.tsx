@@ -46,7 +46,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 				}
 			})}
 			<div className={styles.addOptions}>
-				<OptionsInput value="新增選項" type={props.type} variant="none" onClick={props.onAdd} listLabel={`${props.options.length + 1}.`} readOnly />
+				<OptionsInput value="新增選項" type={props.type} variant="none" onClick={props.onAdd} listLabel={`${props.options.length + 1}.`} readOnly className={styles.addOption} />
 				{!props.options.some(option => option.isOther) && props.type !== "list" && (
 					<>
 						或
