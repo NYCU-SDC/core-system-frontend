@@ -1,15 +1,22 @@
-// Authentication service
+import { AuthOAuthProviders } from "@nycu-sdc/core-system-sdk";
+
 export const authService = {
-	async login(email: string, password: string) {
-		// Replace with actual API call
-		const response = await fetch("/api/auth/login", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({ email, password })
+	redirectToOAuthLogin(
+		provider: AuthOAuthProviders,
+		options: {
+			callbackUrl: string;
+			redirectUrl?: string;
+		}
+	) {
+		const params = new URLSearchParams({
+			c: options.callbackUrl
 		});
-		return response.json();
+
+		if (options.redirectUrl) {
+			params.set("r", options.redirectUrl);
+		}
+
+		window.location.href = `/api/auth/login/oauth/${provider}?${params.toString()}`;
 	},
 
 	async logout() {

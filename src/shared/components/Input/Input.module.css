@@ -45,7 +45,7 @@
 }
 
 .input::placeholder {
-	color: var(--comment);
+	color: var(--color-body);
 }
 
 .input:focus {

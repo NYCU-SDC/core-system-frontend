@@ -1,44 +1,77 @@
-import { LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { ClipboardList, FileText, LogOut, Menu, Settings, X } from "lucide-react";
+import { useState } from "react";
+import { Link, matchPath, useLocation, useParams } from "react-router-dom";
 import styles from "./AdminNav.module.css";
 
-const navItems = [
-	{ path: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-	{ path: "/admin/users", icon: Users, label: "Users" },
-	{ path: "/admin/settings", icon: Settings, label: "Settings" }
-];
-
 export const AdminNav = () => {
-	const location = useLocation();
+	const { formid } = useParams();
+	const { pathname } = useLocation();
+
+	const DEMO_FORM_ID = ":formid";
+	const toInfo = `/orgs/sdc/forms/${formid ?? DEMO_FORM_ID}/info`;
+
+	const [isOpen, setIsOpen] = useState(false);
+
+	const isFormsDashboard = pathname === "/orgs/sdc/forms";
+	const isFormDetail = !!matchPath({ path: "/orgs/sdc/forms/:formid/*", end: false }, pathname);
+	const isSettings = pathname.startsWith("/orgs/sdc/settings");
+
+	const user = {
+		name: "Alice King",
+		username: "alice",
+		avatarUrl: ""
+	};
+
+	const displayName = user.name || user.username || "??";
+	const initials = displayName.slice(0, 2).toUpperCase();
+	const hasAvatar = !!user.avatarUrl;
 
 	return (
-		<div className={styles.container}>
-			<span className={styles.title}>Admin Panel</span>
+		<>
+			{/* Hamburger — 永遠獨立 */}
+			<button type="button" className={styles.burgerBtn} aria-expanded={isOpen} onClick={() => setIsOpen(v => !v)}>
+				{isOpen ? <X size={22} /> : <Menu size={22} />}
+			</button>
 
-			<nav className={styles.nav}>
-				{navItems.map(item => {
-					const Icon = item.icon;
-					const isActive = location.pathname === item.path;
-
-					return (
-						<Link key={item.path} to={item.path} className={styles.link}>
-							<div className={`${styles.navItem} ${isActive ? styles.active : ""}`}>
-								<Icon size={20} />
-								<span className={styles.navLabel}>{item.label}</span>
+			{/* Sidebar */}
+			<aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
+				<nav className={styles.nav}>
+					{/* Upper */}
+					<div className={styles.upperNav}>
+						<Link to="/orgs/sdc/forms" className={styles.link}>
+							<div className={`${styles.navItem} ${isFormsDashboard ? styles.navItemActive : ""}`}>
+								<ClipboardList size={22} />
 							</div>
 						</Link>
-					);
-				})}
 
-				<div className={styles.divider}>
-					<Link to="/" className={styles.link}>
-						<div className={styles.logoutItem}>
-							<LogOut size={20} />
-							<span className={styles.navLabel}>Logout</span>
+						<Link to={toInfo} className={styles.link}>
+							<div className={`${styles.navItem} ${isFormDetail ? styles.navItemActive : ""}`}>
+								<FileText size={22} />
+							</div>
+						</Link>
+					</div>
+
+					{/* Lower */}
+					<div className={styles.divider}>
+						<Link to="/orgs/sdc/settings" className={styles.link}>
+							<div className={`${styles.navItem} ${isSettings ? styles.navItemActive : ""}`}>
+								<Settings size={22} />
+							</div>
+						</Link>
+
+						{/* Avatar */}
+						<div className={styles.avatarContainer}>
+							{hasAvatar ? <img src={user.avatarUrl} alt={displayName} className={styles.avatarImg} /> : <div className={styles.avatarFallback}>{initials}</div>}
 						</div>
-					</Link>
-				</div>
-			</nav>
-		</div>
+
+						<Link to="/" className={styles.link}>
+							<div className={`${styles.navItem} ${styles.logoutItem}`}>
+								<LogOut size={22} />
+							</div>
+						</Link>
+					</div>
+				</nav>
+			</aside>
+		</>
 	);
 };
