@@ -1,11 +1,10 @@
 .wrapper {
-	display: inline-flex;
-	width: 70%;
+	display: flex;
 	align-items: start;
-	align-self: start;
 	gap: 0.5rem;
 	background-color: var(--selection);
 	padding: 1rem 2rem;
+	clip-path: polygon(1.25rem 0, 100% 0, 100% calc(100% - 1.25rem), calc(100% - 1.25rem) 100%, 0 100%, 0 1.25rem);
 }
 
 .checkbox {

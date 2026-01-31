@@ -7,6 +7,7 @@ import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
 import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";
 import { RangeQuestion } from "./RangeQuestion";
+import { UploadQuestion } from "./UploadQuestion";
 
 export interface QuestionCardProps {
 	question: Question;
@@ -189,6 +190,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					)}
 
 					{question.type === "DETAILED_MULTIPLE_CHOICE" && <DetailOptionsQuestion options={question.detailOptions!!} onAdd={props.onAddDetailOption!!} />}
+					{question.type === "UPLOAD_FILE" && <UploadQuestion />}
 
 					<div className={styles.actions}>
 						<Copy onClick={duplicateQuestion} />
