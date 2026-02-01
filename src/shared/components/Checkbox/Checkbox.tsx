@@ -9,12 +9,12 @@ export interface CheckboxProps extends ComponentPropsWithoutRef<typeof RadixChec
 	themeColor?: string;
 }
 
-export const Checkbox = ({ label, themeColor, style, id, ...props }: CheckboxProps) => {
+export const Checkbox = ({ label, themeColor, style, id, className, ...props }: CheckboxProps) => {
 	const checkboxStyle = themeColor ? { ...style, borderColor: themeColor, backgroundColor: props.checked ? themeColor : undefined } : style;
 
 	return (
 		<div className={styles.wrapper}>
-			<RadixCheckbox.Root className={styles.checkbox} style={checkboxStyle} id={id} {...props}>
+			<RadixCheckbox.Root className={`${styles.checkbox} ${className}`} style={checkboxStyle} id={id} {...props}>
 				<RadixCheckbox.Indicator className={styles.indicator}>
 					<Check size={16} />
 				</RadixCheckbox.Indicator>
