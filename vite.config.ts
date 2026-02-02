@@ -9,5 +9,17 @@ export default defineConfig({
 		alias: {
 			"@": path.resolve(__dirname, "./src")
 		}
+	},
+	server: {
+		proxy: {
+			"/api": {
+				target: "https://dev.core-system.sdc.nycu.club",
+				changeOrigin: true,
+				secure: true, // HTTPS
+				cookieDomainRewrite: {
+					"dev.core-system.sdc.nycu.club": "localhost"
+				}
+			}
+		}
 	}
 });
