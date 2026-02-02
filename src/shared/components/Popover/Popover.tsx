@@ -3,16 +3,14 @@ import type { ReactNode } from "react";
 import styles from "./Popover.module.css";
 
 export interface PopoverProps {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	side?: "top" | "right" | "bottom" | "left";
 	children: ReactNode;
 	content: ReactNode;
 }
 
-export const Popover = ({ open, onOpenChange, side = "bottom", children, content }: PopoverProps) => {
+export const Popover = ({ side = "bottom", children, content }: PopoverProps) => {
 	return (
-		<PopoverPrimitive.Root open={open} onOpenChange={onOpenChange}>
+		<PopoverPrimitive.Root>
 			<PopoverPrimitive.Trigger asChild>{children}</PopoverPrimitive.Trigger>
 			<PopoverPrimitive.Portal>
 				<PopoverPrimitive.Content className={styles.content} side={side} sideOffset={10}>
