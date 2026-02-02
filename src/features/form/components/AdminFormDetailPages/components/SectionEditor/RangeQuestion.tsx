@@ -1,6 +1,6 @@
 import { Select } from "@/shared/components";
 import { Heart, Star, ThumbsUp } from "lucide-react";
-import type { Question } from "../types/option";
+import type { Question } from "../../types/option";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./RangeQuestion.module.css";
 
