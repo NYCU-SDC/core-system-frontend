@@ -12,6 +12,7 @@ import {
 	FileUpload,
 	Input,
 	Label,
+	Popover,
 	ProgressBar,
 	Radio,
 	RadioCard,
@@ -31,6 +32,7 @@ export const ComponentsDemo = () => {
 	const [switchValue, setSwitchValue] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [toastOpen, setToastOpen] = useState(false);
+	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [progress, setProgress] = useState(45);
 	const [selectedColor, setSelectedColor] = useState("#ff5555");
 	const [dragItems, setDragItems] = useState<DragItem[]>([
@@ -242,6 +244,15 @@ export const ComponentsDemo = () => {
 							<p>This is a blockquote with some example text to demonstrate the styling.</p>
 							<cite>— Author Name</cite>
 						</blockquote>
+					</section>
+
+					<section className={styles.section}>
+						<h2>Popover</h2>
+						<div className={styles.row}>
+							<Popover open={popoverOpen} onOpenChange={setPopoverOpen} content={<p>This is the content of the popover.</p>}>
+								<Button>Open Popover</Button>
+							</Popover>
+						</div>
 					</section>
 				</div>
 			</UserLayout>
