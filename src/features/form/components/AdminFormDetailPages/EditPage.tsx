@@ -344,7 +344,7 @@ export const AdminFormEditPage = () => {
 		if ((nodeToMerge || nodeToDelete.isMergeNode) && nodeToDelete.type === "CONDITION" && nodeToDelete.nextTrue !== nodeToDelete.mergeId && nodeToDelete.nextFalse !== nodeToDelete.mergeId) {
 			setToastOpen(true);
 			setToastTitle("無法刪除條件節點");
-			setToastDescription("請確保只有一個可辨識的分支路後再嘗試刪除。");
+			setToastDescription("請確保只有一個可辨識的分支路徑後再嘗試刪除。");
 			return;
 		}
 
