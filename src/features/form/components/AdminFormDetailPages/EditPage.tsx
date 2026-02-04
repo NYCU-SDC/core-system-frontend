@@ -5,24 +5,25 @@ import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
 
 export const AdminFormEditPage = () => {
-	const getPath = (startId: string, nodeItems: NodeItem[]): string[] => {
+	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
 		const path: string[] = [];
 		let currentId: string | undefined = startId;
 		while (currentId) {
 			path.push(currentId);
-			const nextNode = nodeItems.find(n => n.id === currentId);
+			const nextNode = nodeMap.get(currentId);
 			if (!nextNode) break;
-			const mergeId = findMergeNodeId(nextNode, nodeItems);
+			const mergeId = findMergeNodeId(nextNode, nodeMap);
 			currentId = nextNode?.next || mergeId || undefined;
 		}
 		return path;
 	};
 
-	const findMergeNodeId = (node: NodeItem, nodeItems: NodeItem[]): string | null => {
+	const findMergeNodeId = (node: NodeItem, nodeMap: Map<string, NodeItem>): string | null => {
 		if (!node.nextTrue || !node.nextFalse) return null;
 
-		const truePath = getPath(node.nextTrue, nodeItems);
-		const falsePath = getPath(node.nextFalse, nodeItems);
+		const truePath = getPath(node.nextTrue, nodeMap);
+		const falsePath = getPath(node.nextFalse, nodeMap);
+
 		for (const id of truePath) {
 			if (falsePath.includes(id)) {
 				return id;
@@ -35,10 +36,11 @@ export const AdminFormEditPage = () => {
 	const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
 		console.log("Post-processing nodes:", nodes);
 		const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
+		const nodeMap = new Map<string, NodeItem>(updatedNodes.map(n => [n.id, n]));
 
 		updatedNodes.forEach(node => {
 			if (node.nextTrue || node.nextFalse) {
-				const mergeId = findMergeNodeId(node, updatedNodes);
+				const mergeId = findMergeNodeId(node, nodeMap);
 				if (node.nextTrue == mergeId && node.type !== "CONDITION") {
 					node.next = node.nextFalse;
 					node.nextFalse = undefined;
@@ -254,8 +256,9 @@ export const AdminFormEditPage = () => {
 			next: nodeToUpdate?.mergeId || undefined
 		};
 
-		const truePath = getPath(nodeToUpdate.nextTrue || "", prevNodes);
-		const falsePath = getPath(nodeToUpdate.nextFalse || "", prevNodes);
+		const nodeMap = new Map<string, NodeItem>(prevNodes.map(n => [n.id, n]));
+		const truePath = getPath(nodeToUpdate.nextTrue || "", nodeMap);
+		const falsePath = getPath(nodeToUpdate.nextFalse || "", nodeMap);
 
 		const updatedNodes = prevNodes.map(node => {
 			if (!truePath.includes(node.id) && !falsePath.includes(node.id)) {
@@ -304,8 +307,9 @@ export const AdminFormEditPage = () => {
 			next: nodeToUpdate?.mergeId || undefined
 		};
 
-		const truePath = getPath(nodeToUpdate.nextTrue || "", prevNodes);
-		const falsePath = getPath(nodeToUpdate.nextFalse || "", prevNodes);
+		const nodeMap = new Map<string, NodeItem>(prevNodes.map(n => [n.id, n]));
+		const truePath = getPath(nodeToUpdate.nextTrue || "", nodeMap);
+		const falsePath = getPath(nodeToUpdate.nextFalse || "", nodeMap);
 
 		const updatedNodes = prevNodes.map(node => {
 			if (!truePath.includes(node.id) && !falsePath.includes(node.id)) {
