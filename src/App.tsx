@@ -1,12 +1,7 @@
-import { ToastProvider } from "@radix-ui/react-toast";
 import { AppRouter } from "./routes/AppRouter";
 
 const App = () => {
-	return (
-		<ToastProvider>
-			<AppRouter />
-		</ToastProvider>
-	);
+	return <AppRouter />;
 };
 
 export default App;
