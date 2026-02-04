@@ -1,22 +1,70 @@
 import { Toast } from "@/shared/components/Toast/Toast";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
 import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
 import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
 
+const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
+	console.log("Post-processing nodes:", nodes);
+	const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
+	const getPath = (startId: string): string[] => {
+		const path: string[] = [];
+		let currentId: string | undefined = startId;
+		while (currentId) {
+			path.push(currentId);
+			const nextNode = updatedNodes.find(n => n.id === currentId);
+			currentId = nextNode?.next;
+		}
+		return path;
+	};
+
+	// Find the merge nodes of condition nodes
+	const findMergeNodeId = (node: NodeItem): string | null => {
+		if (!node.nextTrue || !node.nextFalse) return null;
+
+		const truePath = getPath(node.nextTrue);
+		const falsePath = getPath(node.nextFalse);
+
+		for (const id of truePath) {
+			if (falsePath.includes(id)) {
+				return id;
+			}
+		}
+
+		return null;
+	};
+
+	updatedNodes.forEach(node => {
+		if (node.nextTrue || node.nextFalse) {
+			const mergeId = findMergeNodeId(node);
+			if (node.nextTrue == mergeId && node.type !== "CONDITION") {
+				node.next = node.nextFalse;
+				node.nextFalse = undefined;
+				node.nextTrue = undefined;
+			}
+			if (node.nextFalse == mergeId && node.type !== "CONDITION") {
+				node.next = node.nextTrue;
+				node.nextFalse = undefined;
+				node.nextTrue = undefined;
+			}
+
+			if (mergeId) {
+				node.mergeId = mergeId;
+			}
+		}
+	});
+
+	updatedNodes.forEach(node => {
+		if (updatedNodes.filter(n => n.next === node.id || n.nextTrue === node.id || n.nextFalse === node.id).length > 1) {
+			node.isMergeNode = true;
+		}
+	});
+
+	return updatedNodes;
+};
+
 export const AdminFormEditPage = () => {
-	const [nodeItems, setNodeItems] = useState<NodeItem[]>([]);
-	const [toastOpen, setToastOpen] = useState(false);
-	const [toastTitle, setToastTitle] = useState("");
-	const [toastDescription, setToastDescription] = useState("");
-
-	const { formid } = useParams();
-	const navigate = useNavigate();
-
-	console.log("Rendering AdminFormEditPage with nodes:", nodeItems);
-
-	useEffect(() => {
+	const [nodeItems, setNodeItems] = useState<NodeItem[]>(() => {
 		const nodeItems: NodeItem[] = [
 			{ id: "start", label: "開始表單", type: "START", next: "groupSelection" },
 			{ id: "groupSelection", label: "選擇組別", type: "SECTION", next: "condition" },
@@ -26,72 +74,11 @@ export const AdminFormEditPage = () => {
 			{ id: "mergeNode", label: "合併節點", type: "SECTION", next: "end" },
 			{ id: "end", label: "確認 / 送出", type: "END" }
 		];
-		const processedNodes = postProcessNodes(nodeItems);
-		setNodeItems(processedNodes);
-	}, []);
-
-	const handleEditForm = (sectionId: string) => {
-		navigate(`/orgs/sdc/forms/${formid}/section/${sectionId}/edit`);
-	};
-
-	const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
-		console.log("Post-processing nodes:", nodes);
-		const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
-		const getPath = (startId: string): string[] => {
-			const path: string[] = [];
-			let currentId: string | undefined = startId;
-			while (currentId) {
-				path.push(currentId);
-				const nextNode = updatedNodes.find(n => n.id === currentId);
-				currentId = nextNode?.next;
-			}
-			return path;
-		};
-
-		// Find the merge nodes of condition nodes
-		const findMergeNodeId = (node: NodeItem): string | null => {
-			if (!node.nextTrue || !node.nextFalse) return null;
-
-			const truePath = getPath(node.nextTrue);
-			const falsePath = getPath(node.nextFalse);
-
-			for (const id of truePath) {
-				if (falsePath.includes(id)) {
-					return id;
-				}
-			}
-
-			return null;
-		};
-
-		updatedNodes.forEach(node => {
-			if (node.nextTrue || node.nextFalse) {
-				const mergeId = findMergeNodeId(node);
-				if (node.nextTrue == mergeId && node.type !== "CONDITION") {
-					node.next = node.nextFalse;
-					node.nextFalse = undefined;
-					node.nextTrue = undefined;
-				}
-				if (node.nextFalse == mergeId && node.type !== "CONDITION") {
-					node.next = node.nextTrue;
-					node.nextFalse = undefined;
-					node.nextTrue = undefined;
-				}
-
-				if (mergeId) {
-					node.mergeId = mergeId;
-				}
-			}
-		});
-
-		updatedNodes.forEach(node => {
-			if (updatedNodes.filter(n => n.next === node.id || n.nextTrue === node.id || n.nextFalse === node.id).length > 1) {
-				node.isMergeNode = true;
-			}
-		});
-
-		return updatedNodes;
-	};
+		return postProcessNodes(nodeItems);
+	});
+	const [toastOpen, setToastOpen] = useState(false);
+	const [toastTitle, setToastTitle] = useState("");
+	const [toastDescription, setToastDescription] = useState("");
 
 	const handleAddSection = (id: string) => {
 		const prevNodes = [...nodeItems];
