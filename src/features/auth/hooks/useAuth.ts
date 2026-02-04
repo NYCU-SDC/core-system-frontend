@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { authService } from "../services/authService";
 
-// Example hook for authentication
 export const useAuth = () => {
 	const { data: user, isLoading } = useQuery({
 		queryKey: ["auth", "user"],
 		queryFn: async () => {
-			// Replace with actual API call
-			return null;
-		}
+			return authService.getCurrentUser();
+		},
+		staleTime: 30_000
 	});
 
 	return {

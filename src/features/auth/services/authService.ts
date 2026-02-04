@@ -1,5 +1,13 @@
 import { AuthOAuthProviders } from "@nycu-sdc/core-system-sdk";
 
+async function readJsonSafely<T>(response: Response): Promise<T | null> {
+	const contentType = response.headers.get("content-type") || "";
+	if (!contentType.includes("application/json")) {
+		return null;
+	}
+	return (await response.json()) as T;
+}
+
 export const authService = {
 	redirectToOAuthLogin(
 		provider: AuthOAuthProviders,
@@ -20,16 +28,30 @@ export const authService = {
 	},
 
 	async logout() {
-		// Replace with actual API call
 		const response = await fetch("/api/auth/logout", {
-			method: "POST"
+			method: "POST",
+			credentials: "include"
 		});
-		return response.json();
+
+		if (!response.ok) {
+			throw new Error(`Logout failed (${response.status})`);
+		}
+
+		return readJsonSafely<unknown>(response);
 	},
 
-	async getCurrentUser() {
-		// Replace with actual API call
-		const response = await fetch("/api/auth/me");
-		return response.json();
+	async getCurrentUser<TUser = unknown>(): Promise<TUser | null> {
+		const response = await fetch("/api/auth/me", {
+			credentials: "include"
+		});
+
+		if (response.status === 401 || response.status === 403) {
+			return null;
+		}
+		if (!response.ok) {
+			throw new Error(`Get current user failed (${response.status})`);
+		}
+
+		return readJsonSafely<TUser>(response);
 	}
 };
