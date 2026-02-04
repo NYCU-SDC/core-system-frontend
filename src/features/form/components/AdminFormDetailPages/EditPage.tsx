@@ -377,7 +377,7 @@ export const AdminFormEditPage = () => {
 	return (
 		<>
 			<h2>表單結構</h2>
-			<blockquote className={styles.description}>點擊區塊已新增或編輯條件與問題</blockquote>
+			<blockquote className={styles.description}>點擊區塊以新增或編輯條件與問題</blockquote>
 			<Toast open={toastOpen} onOpenChange={setToastOpen} title={toastTitle} description={toastDescription} variant="error" />
 			<div className={styles.flowContainer}>
 				<FlowRenderer
