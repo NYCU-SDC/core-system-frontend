@@ -34,7 +34,6 @@ export const AdminFormEditPage = () => {
 	};
 
 	const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
-		console.log("Post-processing nodes:", nodes);
 		const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
 		const nodeMap = new Map<string, NodeItem>(updatedNodes.map(n => [n.id, n]));
 
