@@ -1,4 +1,4 @@
-import { Button } from "@/shared/components";
+import { Button, Select } from "@/shared/components";
 import { Popover } from "@/shared/components/Popover/Popover";
 import { useMemo } from "react";
 import type { NodeItem } from "../../types/workflow";
@@ -55,11 +55,11 @@ export const FlowRenderer = ({ nodes, onAddSection, onDeleteSection, onAddCondit
 					<>
 						<div className={styles.branchContainer}>
 							<div className={styles.branchColumn}>
-								<Arrow type="fail" className={`${styles.arrow} ${styles.falseArrow}`} />
+								<Arrow type="fail" className={`${styles.arrow} ${styles.falseArrow}`} line={node.type !== "CONDITION" ? "dashed" : "solid"} />
 								{node.nextFalse && renderNode(node.nextFalse, node.mergeId)}
 							</div>
 							<div className={styles.branchColumn}>
-								<Arrow type="success" className={styles.arrow} />
+								<Arrow type="success" className={styles.arrow} line={node.type !== "CONDITION" ? "dashed" : "solid"} />
 								{node.nextTrue && renderNode(node.nextTrue, node.mergeId)}
 							</div>
 						</div>
@@ -153,7 +153,18 @@ const FlowNode = ({ node, onAddSection, onDeleteSection, onAddCondition, onAddTr
 				</div>
 			}
 		>
-			<span className={`${styles.node} ${styles[node.type.toLowerCase()]} ${styles[node.isMergeNode ? "mergeNode" : ""]}`}>{node.label || ""}</span>
+			<div className={`${styles.node} ${styles[node.type.toLowerCase()]} ${styles[node.isMergeNode ? "mergeNode" : ""]}`}>
+				{node.type === "CONDITION" && (
+					<>
+						<p className={styles.text}>如果</p>
+						<Select options={[{ value: "section1", label: "區塊 1" }]} placeholder="選擇區塊" variant="text" />
+						<Select options={[{ value: "question1", label: "問題 1" }]} placeholder="選擇問題" variant="text" />
+						<p className={styles.text}>選擇</p>
+						<Select options={[{ value: "answer1", label: "答案 1" }]} placeholder="選擇答案" variant="text" />
+					</>
+				)}
+				{node.type !== "CONDITION" && <p>{node.label}</p>}
+			</div>
 		</Popover>
 	);
 };

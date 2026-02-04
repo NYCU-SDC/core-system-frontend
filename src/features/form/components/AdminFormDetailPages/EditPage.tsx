@@ -8,6 +8,8 @@ import type { NodeItem } from "./types/workflow";
 export const AdminFormEditPage = () => {
 	const [nodeItems, setNodeItems] = useState<NodeItem[]>([]);
 	const [toastOpen, setToastOpen] = useState(false);
+	const [toastTitle, setToastTitle] = useState("");
+	const [toastDescription, setToastDescription] = useState("");
 
 	const { formid } = useParams();
 	const navigate = useNavigate();
@@ -33,26 +35,22 @@ export const AdminFormEditPage = () => {
 	};
 
 	const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
+		console.log("Post-processing nodes:", nodes);
 		const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
-		updatedNodes.forEach(node => {
-			if (updatedNodes.filter(n => n.next === node.id || n.nextTrue === node.id || n.nextFalse === node.id).length > 1) {
-				node.isMergeNode = true;
+		const getPath = (startId: string): string[] => {
+			const path: string[] = [];
+			let currentId: string | undefined = startId;
+			while (currentId) {
+				path.push(currentId);
+				const nextNode = updatedNodes.find(n => n.id === currentId);
+				currentId = nextNode?.next;
 			}
-		});
+			return path;
+		};
+
 		// Find the merge nodes of condition nodes
 		const findMergeNodeId = (node: NodeItem): string | null => {
 			if (!node.nextTrue || !node.nextFalse) return null;
-
-			const getPath = (startId: string): string[] => {
-				const path: string[] = [];
-				let currentId: string | undefined = startId;
-				while (currentId) {
-					path.push(currentId);
-					const nextNode = updatedNodes.find(n => n.id === currentId);
-					currentId = nextNode?.next;
-				}
-				return path;
-			};
 
 			const truePath = getPath(node.nextTrue);
 			const falsePath = getPath(node.nextFalse);
@@ -67,15 +65,28 @@ export const AdminFormEditPage = () => {
 		};
 
 		updatedNodes.forEach(node => {
-			if (node.type === "CONDITION") {
-				const mergeNodeId = findMergeNodeId(node);
-				if (mergeNodeId) {
-					const mergeNode = updatedNodes.find(n => n.id === mergeNodeId);
-					if (mergeNode) {
-						mergeNode.isMergeNode = true;
-						node.mergeId = mergeNodeId;
-					}
+			if (node.nextTrue || node.nextFalse) {
+				const mergeId = findMergeNodeId(node);
+				if (node.nextTrue == mergeId && node.type !== "CONDITION") {
+					node.next = node.nextFalse;
+					node.nextFalse = undefined;
+					node.nextTrue = undefined;
 				}
+				if (node.nextFalse == mergeId && node.type !== "CONDITION") {
+					node.next = node.nextTrue;
+					node.nextFalse = undefined;
+					node.nextTrue = undefined;
+				}
+
+				if (mergeId) {
+					node.mergeId = mergeId;
+				}
+			}
+		});
+
+		updatedNodes.forEach(node => {
+			if (updatedNodes.filter(n => n.next === node.id || n.nextTrue === node.id || n.nextFalse === node.id).length > 1) {
+				node.isMergeNode = true;
 			}
 		});
 
@@ -222,13 +233,13 @@ export const AdminFormEditPage = () => {
 			id: `section_true_${prevNodes.length + 1}`,
 			label: `條件區塊 真 ${prevNodes.length + 1}`,
 			type: "SECTION",
-			next: prevNodes.find(node => node.id === id)?.next
+			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextTrue
 		};
 		const falseSectionNode: NodeItem = {
 			id: `section_false_${prevNodes.length + 1}`,
 			label: `條件區塊 假 ${prevNodes.length + 1}`,
 			type: "SECTION",
-			next: prevNodes.find(node => node.id === id)?.next
+			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextFalse
 		};
 		const updatedNodes = prevNodes.map(node => {
 			if (node.id === id) {
@@ -245,45 +256,38 @@ export const AdminFormEditPage = () => {
 		const prevNodes = [...nodeItems];
 		if (prevNodes.length <= 3) {
 			setToastOpen(true);
+			setToastTitle("無法刪除區塊");
+			setToastDescription("表單必須至少包含開始、結束及一個區塊。");
 			return;
 		}
 		const nodeToDelete = prevNodes.find(node => node.id === id);
-
-		const trueBranch: NodeItem[] = [];
-		if (nodeToDelete?.type === "CONDITION") {
-			let nextId = nodeToDelete.nextTrue;
-			while (nextId) {
-				const nextNode = prevNodes.find(node => node.id === nextId);
-				if (nextNode && !nextNode.isMergeNode) {
-					trueBranch.push(nextNode);
-					nextId = nextNode.next;
-				} else {
-					break;
-				}
-			}
+		const nodeToMerge = prevNodes.find(node => node.nextFalse === id || node.nextTrue === id);
+		if (!nodeToDelete) return;
+		if (nodeToMerge && nodeToDelete.type === "CONDITION" && nodeToDelete.nextTrue !== nodeToDelete.mergeId && nodeToDelete.nextFalse !== nodeToDelete.mergeId) {
+			setToastOpen(true);
+			setToastTitle("無法刪除條件節點");
+			setToastDescription("請確保只有一個可辨識的分支路後再嘗試刪除。");
+			return;
 		}
-
-		console.log("Deleting node:", nodeToDelete);
 
 		if (!nodeToDelete) return;
 		const updatedNodes = prevNodes
-			.filter(node => node.id !== id && !trueBranch.some(tbNode => tbNode.id === node.id))
+			.filter(node => node.id !== id)
 			.map(node => {
 				if (node.next === id) {
-					if (nodeToDelete.type === "CONDITION") {
-						return { ...node, next: nodeToDelete.nextFalse || nodeToDelete.next };
-					}
-					return { ...node, next: nodeToDelete.next };
+					return { ...node, next: nodeToDelete.next, nextTrue: nodeToDelete.nextTrue, nextFalse: nodeToDelete.nextFalse };
 				}
 				if (node.nextFalse === id) {
-					return { ...node, nextFalse: nodeToDelete.next };
+					return { ...node, nextFalse: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextFalse) };
 				}
 				if (node.nextTrue === id) {
-					return { ...node, nextTrue: nodeToDelete.next };
+					return { ...node, nextTrue: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextFalse) };
 				}
 				return node;
 			});
-		setNodeItems(updatedNodes);
+
+		const processedNodes = postProcessNodes(updatedNodes);
+		setNodeItems(processedNodes);
 	};
 
 	return (
@@ -291,7 +295,7 @@ export const AdminFormEditPage = () => {
 			<h2>表單結構</h2>
 			<blockquote className={styles.description}>點擊區塊已新增或編輯條件與問題</blockquote>
 			<button onClick={() => handleEditForm("test")}>Edit Form</button>
-			<Toast open={toastOpen} onOpenChange={setToastOpen} title="Error!" description="At least one section must remain." variant="error" />
+			<Toast open={toastOpen} onOpenChange={setToastOpen} title={toastTitle} description={toastDescription} variant="error" />
 			<div className={styles.flowContainer}>
 				<FlowRenderer
 					nodes={nodeItems}
