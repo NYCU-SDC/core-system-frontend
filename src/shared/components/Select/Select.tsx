@@ -17,9 +17,10 @@ export interface SelectProps extends ComponentPropsWithoutRef<typeof RadixSelect
 	options: SelectOption[];
 	error?: string;
 	themeColor?: string;
+	variant?: "default" | "text";
 }
 
-export const Select = ({ label, placeholder, options, error, themeColor, ...props }: SelectProps) => {
+export const Select = ({ label, placeholder, options, error, themeColor, variant = "default", ...props }: SelectProps) => {
 	const triggerId = `select-${label?.replace(/\s/g, "-").toLowerCase()}`;
 
 	return (
@@ -30,11 +31,17 @@ export const Select = ({ label, placeholder, options, error, themeColor, ...prop
 				</Label.Root>
 			)}
 			<RadixSelect.Root {...props}>
-				<RadixSelect.Trigger className={`${styles.trigger} ${error ? styles.error : ""}`} id={triggerId} style={themeColor ? { borderColor: themeColor } : undefined}>
+				<RadixSelect.Trigger
+					className={`${styles.trigger} ${error ? styles.error : ""} ${variant === "text" ? styles.text : ""}`}
+					id={triggerId}
+					style={themeColor ? { borderColor: themeColor } : undefined}
+				>
 					<RadixSelect.Value placeholder={placeholder || "Select an option"} />
-					<RadixSelect.Icon className={styles.icon}>
-						<ChevronDown size={20} />
-					</RadixSelect.Icon>
+					{variant !== "text" && (
+						<RadixSelect.Icon className={styles.icon}>
+							<ChevronDown size={16} />
+						</RadixSelect.Icon>
+					)}
 				</RadixSelect.Trigger>
 
 				<RadixSelect.Portal>

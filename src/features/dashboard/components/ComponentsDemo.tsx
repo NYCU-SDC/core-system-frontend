@@ -12,6 +12,7 @@ import {
 	FileUpload,
 	Input,
 	Label,
+	Popover,
 	ProgressBar,
 	Radio,
 	RadioCard,
@@ -242,6 +243,15 @@ export const ComponentsDemo = () => {
 							<p>This is a blockquote with some example text to demonstrate the styling.</p>
 							<cite>— Author Name</cite>
 						</blockquote>
+					</section>
+
+					<section className={styles.section}>
+						<h2>Popover</h2>
+						<div className={styles.row}>
+							<Popover content={<p>This is the content of the popover.</p>}>
+								<Button>Open Popover</Button>
+							</Popover>
+						</div>
 					</section>
 				</div>
 			</UserLayout>
