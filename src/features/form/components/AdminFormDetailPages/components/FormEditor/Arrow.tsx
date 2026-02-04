@@ -9,7 +9,7 @@ interface ArrowProps extends React.SVGAttributes<SVGSVGElement> {
 export const Arrow = ({ type = "info", line = "solid", className, ...props }: ArrowProps) => {
 	return (
 		<div className={`${styles.arrowContainer} ${className || ""}`}>
-			<svg className={`${styles.arrow}`} {...props} transform="rotate(180)" strokeLinecap="round" strokeLinejoin="round">
+			<svg {...props} transform="rotate(180)" strokeLinecap="round" strokeLinejoin="round">
 				<line x1="50%" y1="0" x2="50%" y2="100%" className={`${styles[type]}`} strokeWidth="2px" strokeDasharray={line === "dashed" ? "4 2" : undefined} />
 				<line x1="28" y1="6" x2="32" y2="0" className={`${styles[type]}`} strokeWidth="2px" />
 				<line x1="32" y1="0" x2="36" y2="6" className={`${styles[type]}`} strokeWidth="2px" />
