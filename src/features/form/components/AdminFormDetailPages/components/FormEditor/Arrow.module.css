@@ -1,0 +1,16 @@
+.info {
+	stroke: white;
+}
+
+.success {
+	stroke: var(--green);
+}
+
+.fail {
+	stroke: var(--pink);
+}
+
+.arrow {
+	width: 100%;
+	height: 100%;
+}

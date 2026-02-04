@@ -1,0 +1,64 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.conditionWrapper {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+}
+
+.branchContainer {
+	display: flex;
+	justify-content: center;
+	gap: 2rem;
+	width: 100%;
+	align-items: stretch;
+}
+
+.branchColumn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 0 1 auto;
+	min-width: 2rem;
+}
+
+.arrow {
+	height: 2rem;
+	width: 4rem;
+	flex-grow: 1;
+}
+
+.node {
+	padding: 0.5rem 2rem;
+	background-color: var(--background-color-tertiary);
+	font-weight: 600;
+	text-align: center;
+	line-height: 1.5rem;
+}
+
+.start {
+	background-color: var(--background-color-primary);
+	border-radius: 999px;
+}
+
+.end {
+	background-color: var(--background-color-primary);
+	border-radius: 999px;
+}
+
+.popoverContent {
+	display: flex;
+}
+
+.mergeNode {
+	width: 100%;
+}
+
+.condition {
+	width: 100%;
+}
