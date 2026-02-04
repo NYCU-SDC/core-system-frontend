@@ -4,27 +4,25 @@ import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
 import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
 
-const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
-	console.log("Post-processing nodes:", nodes);
-	const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
-	const getPath = (startId: string): string[] => {
+export const AdminFormEditPage = () => {
+	const getPath = (startId: string, nodeItems: NodeItem[]): string[] => {
 		const path: string[] = [];
 		let currentId: string | undefined = startId;
 		while (currentId) {
 			path.push(currentId);
-			const nextNode = updatedNodes.find(n => n.id === currentId);
-			currentId = nextNode?.next;
+			const nextNode = nodeItems.find(n => n.id === currentId);
+			if (!nextNode) break;
+			const mergeId = findMergeNodeId(nextNode, nodeItems);
+			currentId = nextNode?.next || mergeId || undefined;
 		}
 		return path;
 	};
 
-	// Find the merge nodes of condition nodes
-	const findMergeNodeId = (node: NodeItem): string | null => {
+	const findMergeNodeId = (node: NodeItem, nodeItems: NodeItem[]): string | null => {
 		if (!node.nextTrue || !node.nextFalse) return null;
 
-		const truePath = getPath(node.nextTrue);
-		const falsePath = getPath(node.nextFalse);
-
+		const truePath = getPath(node.nextTrue, nodeItems);
+		const falsePath = getPath(node.nextFalse, nodeItems);
 		for (const id of truePath) {
 			if (falsePath.includes(id)) {
 				return id;
@@ -34,36 +32,39 @@ const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
 		return null;
 	};
 
-	updatedNodes.forEach(node => {
-		if (node.nextTrue || node.nextFalse) {
-			const mergeId = findMergeNodeId(node);
-			if (node.nextTrue == mergeId && node.type !== "CONDITION") {
-				node.next = node.nextFalse;
-				node.nextFalse = undefined;
-				node.nextTrue = undefined;
+	const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
+		console.log("Post-processing nodes:", nodes);
+		const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
+
+		updatedNodes.forEach(node => {
+			if (node.nextTrue || node.nextFalse) {
+				const mergeId = findMergeNodeId(node, updatedNodes);
+				if (node.nextTrue == mergeId && node.type !== "CONDITION") {
+					node.next = node.nextFalse;
+					node.nextFalse = undefined;
+					node.nextTrue = undefined;
+				}
+				if (node.nextFalse == mergeId && node.type !== "CONDITION") {
+					node.next = node.nextTrue;
+					node.nextFalse = undefined;
+					node.nextTrue = undefined;
+				}
+
+				if (mergeId) {
+					node.mergeId = mergeId;
+				}
 			}
-			if (node.nextFalse == mergeId && node.type !== "CONDITION") {
-				node.next = node.nextTrue;
-				node.nextFalse = undefined;
-				node.nextTrue = undefined;
+		});
+
+		updatedNodes.forEach(node => {
+			if (updatedNodes.filter(n => n.next === node.id || n.nextTrue === node.id || n.nextFalse === node.id).length > 1) {
+				node.isMergeNode = true;
 			}
+		});
 
-			if (mergeId) {
-				node.mergeId = mergeId;
-			}
-		}
-	});
+		return updatedNodes;
+	};
 
-	updatedNodes.forEach(node => {
-		if (updatedNodes.filter(n => n.next === node.id || n.nextTrue === node.id || n.nextFalse === node.id).length > 1) {
-			node.isMergeNode = true;
-		}
-	});
-
-	return updatedNodes;
-};
-
-export const AdminFormEditPage = () => {
 	const [nodeItems, setNodeItems] = useState<NodeItem[]>(() => {
 		const nodeItems: NodeItem[] = [
 			{ id: "start", label: "開始表單", type: "START", next: "groupSelection" },
@@ -239,6 +240,93 @@ export const AdminFormEditPage = () => {
 		setNodeItems(processedNodes);
 	};
 
+	const handleAddMergeSection = (id: string) => {
+		const prevNodes = [...nodeItems];
+		const nodeToUpdate = prevNodes.find(node => node.id === id);
+		if (!nodeToUpdate) {
+			return;
+		}
+		const newMergeNodeId = `merge_${prevNodes.length + 1}`;
+		const newMergeNode: NodeItem = {
+			id: newMergeNodeId,
+			label: `合併節點 ${prevNodes.length + 1}`,
+			type: "SECTION",
+			next: nodeToUpdate?.mergeId || undefined
+		};
+
+		const truePath = getPath(nodeToUpdate.nextTrue || "", prevNodes);
+		const falsePath = getPath(nodeToUpdate.nextFalse || "", prevNodes);
+
+		const updatedNodes = prevNodes.map(node => {
+			if (!truePath.includes(node.id) && !falsePath.includes(node.id)) {
+				return node;
+			}
+			if (node.next === nodeToUpdate.mergeId) {
+				return { ...node, next: newMergeNodeId };
+			}
+			if (node.nextTrue === nodeToUpdate.mergeId) {
+				return { ...node, nextTrue: newMergeNodeId };
+			}
+			if (node.nextFalse === nodeToUpdate.mergeId) {
+				return { ...node, nextFalse: newMergeNodeId };
+			}
+			return node;
+		});
+		updatedNodes.push(newMergeNode);
+		const processedNodes = postProcessNodes(updatedNodes);
+		setNodeItems(processedNodes);
+	};
+
+	const handleAddMergeCondition = (id: string) => {
+		const prevNodes = [...nodeItems];
+		const nodeToUpdate = prevNodes.find(node => node.id === id);
+		if (!nodeToUpdate) {
+			return;
+		}
+		const newConditionId = `merge_condition_${prevNodes.length + 1}`;
+		const newConditionNode: NodeItem = {
+			id: newConditionId,
+			label: `新條件 ${prevNodes.length + 1}`,
+			type: "CONDITION",
+			nextTrue: `section_true_${prevNodes.length + 1}`,
+			nextFalse: `section_false_${prevNodes.length + 1}`
+		};
+		const trueSectionNode: NodeItem = {
+			id: `section_true_${prevNodes.length + 1}`,
+			label: `條件區塊 真 ${prevNodes.length + 1}`,
+			type: "SECTION",
+			next: nodeToUpdate?.mergeId || undefined
+		};
+		const falseSectionNode: NodeItem = {
+			id: `section_false_${prevNodes.length + 1}`,
+			label: `條件區塊 假 ${prevNodes.length + 1}`,
+			type: "SECTION",
+			next: nodeToUpdate?.mergeId || undefined
+		};
+
+		const truePath = getPath(nodeToUpdate.nextTrue || "", prevNodes);
+		const falsePath = getPath(nodeToUpdate.nextFalse || "", prevNodes);
+
+		const updatedNodes = prevNodes.map(node => {
+			if (!truePath.includes(node.id) && !falsePath.includes(node.id)) {
+				return node;
+			}
+			if (node.next === nodeToUpdate.mergeId) {
+				return { ...node, next: newConditionId };
+			}
+			if (node.nextTrue === nodeToUpdate.mergeId) {
+				return { ...node, nextTrue: newConditionId };
+			}
+			if (node.nextFalse === nodeToUpdate.mergeId) {
+				return { ...node, nextFalse: newConditionId };
+			}
+			return node;
+		});
+		updatedNodes.push(newConditionNode, trueSectionNode, falseSectionNode);
+		const processedNodes = postProcessNodes(updatedNodes);
+		setNodeItems(processedNodes);
+	};
+
 	const handleDeleteSection = (id: string) => {
 		const prevNodes = [...nodeItems];
 		if (prevNodes.length <= 3) {
@@ -250,7 +338,7 @@ export const AdminFormEditPage = () => {
 		const nodeToDelete = prevNodes.find(node => node.id === id);
 		const nodeToMerge = prevNodes.find(node => node.nextFalse === id || node.nextTrue === id);
 		if (!nodeToDelete) return;
-		if (nodeToMerge && nodeToDelete.type === "CONDITION" && nodeToDelete.nextTrue !== nodeToDelete.mergeId && nodeToDelete.nextFalse !== nodeToDelete.mergeId) {
+		if ((nodeToMerge || nodeToDelete.isMergeNode) && nodeToDelete.type === "CONDITION" && nodeToDelete.nextTrue !== nodeToDelete.mergeId && nodeToDelete.nextFalse !== nodeToDelete.mergeId) {
 			setToastOpen(true);
 			setToastTitle("無法刪除條件節點");
 			setToastDescription("請確保只有一個可辨識的分支路後再嘗試刪除。");
@@ -262,13 +350,18 @@ export const AdminFormEditPage = () => {
 			.filter(node => node.id !== id)
 			.map(node => {
 				if (node.next === id) {
-					return { ...node, next: nodeToDelete.next, nextTrue: nodeToDelete.nextTrue, nextFalse: nodeToDelete.nextFalse };
+					return {
+						...node,
+						next: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.mergeId === nodeToDelete.nextFalse ? nodeToDelete.nextTrue : undefined),
+						nextTrue: nodeToDelete.nextTrue,
+						nextFalse: nodeToDelete.nextFalse
+					};
 				}
 				if (node.nextFalse === id) {
-					return { ...node, nextFalse: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextFalse) };
+					return { ...node, nextFalse: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue) };
 				}
 				if (node.nextTrue === id) {
-					return { ...node, nextTrue: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextFalse) };
+					return { ...node, nextTrue: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue) };
 				}
 				return node;
 			});
@@ -292,6 +385,8 @@ export const AdminFormEditPage = () => {
 					onAddFalseSection={handleAddFalseSection}
 					onAddTrueCondition={handleAddTrueCondition}
 					onAddFalseCondition={handleAddFalseCondition}
+					onAddMergeSection={handleAddMergeSection}
+					onAddMergeCondition={handleAddMergeCondition}
 				/>
 			</div>
 		</>

@@ -14,9 +14,22 @@ export interface FlowRendererProps {
 	onAddFalseSection: (id: string) => void;
 	onAddTrueCondition: (id: string) => void;
 	onAddFalseCondition: (id: string) => void;
+	onAddMergeSection: (id: string) => void;
+	onAddMergeCondition: (id: string) => void;
 }
 
-export const FlowRenderer = ({ nodes, onAddSection, onDeleteSection, onAddCondition, onAddTrueSection, onAddFalseSection, onAddTrueCondition, onAddFalseCondition }: FlowRendererProps) => {
+export const FlowRenderer = ({
+	nodes,
+	onAddSection,
+	onDeleteSection,
+	onAddCondition,
+	onAddTrueSection,
+	onAddFalseSection,
+	onAddTrueCondition,
+	onAddFalseCondition,
+	onAddMergeSection,
+	onAddMergeCondition
+}: FlowRendererProps) => {
 	const nodeMap = useMemo(() => {
 		return nodes.reduce(
 			(map, node) => {
@@ -50,6 +63,8 @@ export const FlowRenderer = ({ nodes, onAddSection, onDeleteSection, onAddCondit
 					onAddFalseSection={() => onAddFalseSection(node.id)}
 					onAddTrueCondition={() => onAddTrueCondition(node.id)}
 					onAddFalseCondition={() => onAddFalseCondition(node.id)}
+					onAddMergeSection={() => onAddMergeSection(node.id)}
+					onAddMergeCondition={() => onAddMergeCondition(node.id)}
 				/>
 				{!node.next && node.nextFalse && node.nextTrue && (
 					<>
@@ -92,9 +107,22 @@ interface FlowNodeProps {
 	onAddFalseSection: () => void;
 	onAddTrueCondition: () => void;
 	onAddFalseCondition: () => void;
+	onAddMergeSection: () => void;
+	onAddMergeCondition: () => void;
 }
 
-const FlowNode = ({ node, onAddSection, onDeleteSection, onAddCondition, onAddTrueSection, onAddFalseSection, onAddTrueCondition, onAddFalseCondition }: FlowNodeProps) => {
+const FlowNode = ({
+	node,
+	onAddSection,
+	onDeleteSection,
+	onAddCondition,
+	onAddTrueSection,
+	onAddFalseSection,
+	onAddTrueCondition,
+	onAddFalseCondition,
+	onAddMergeSection,
+	onAddMergeCondition
+}: FlowNodeProps) => {
 	return (
 		<Popover
 			side="right"
@@ -113,6 +141,21 @@ const FlowNode = ({ node, onAddSection, onDeleteSection, onAddCondition, onAddTr
 					)}
 					{node.type === "CONDITION" && (
 						<>
+							<Popover
+								side="bottom"
+								content={
+									<div className={styles.popoverContent}>
+										<Button variant="secondary" onClick={onAddMergeSection}>
+											區域
+										</Button>
+										<Button variant="secondary" onClick={onAddMergeCondition}>
+											條件
+										</Button>
+									</div>
+								}
+							>
+								<Button variant="secondary">新增合併點</Button>
+							</Popover>
 							<Popover
 								side="bottom"
 								content={

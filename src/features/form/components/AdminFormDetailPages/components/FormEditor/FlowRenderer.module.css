@@ -43,6 +43,10 @@
 	line-height: 1.5rem;
 }
 
+.node:focus {
+	outline: solid 1rem var(--orange);
+}
+
 .start {
 	background-color: var(--background-color-primary);
 	border-radius: 999px;
