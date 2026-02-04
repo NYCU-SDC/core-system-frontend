@@ -1,3 +1,4 @@
+import { ToastProvider } from "@radix-ui/react-toast";
 import { AppRouter } from "./routes/AppRouter";
 import { ToastProvider } from "./shared/components";
 
