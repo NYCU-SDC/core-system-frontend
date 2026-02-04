@@ -294,7 +294,6 @@ export const AdminFormEditPage = () => {
 		<>
 			<h2>表單結構</h2>
 			<blockquote className={styles.description}>點擊區塊已新增或編輯條件與問題</blockquote>
-			<button onClick={() => handleEditForm("test")}>Edit Form</button>
 			<Toast open={toastOpen} onOpenChange={setToastOpen} title={toastTitle} description={toastDescription} variant="error" />
 			<div className={styles.flowContainer}>
 				<FlowRenderer
