@@ -129,7 +129,7 @@ const FlowNode = ({
 			content={
 				<div className={styles.popoverContent}>
 					{node.type === "SECTION" && <Button variant="secondary">編輯</Button>}
-					{node.type != "END" && node.type != "CONDITION" && (
+					{node.type !== "END" && node.type !== "CONDITION" && (
 						<Button variant="secondary" onClick={onAddSection}>
 							新增區域
 						</Button>
