@@ -1,59 +1,192 @@
 import { UserLayout } from "@/layouts";
-import { AccountButton, Button, Checkbox, DetailedCheckbox, DragToOrder, Input, Radio, SearchableSelect, TextArea } from "@/shared/components";
-import { Github } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Button, Checkbox, DetailedCheckbox, Input, Radio, TextArea } from "@/shared/components";
+import {
+	formsGetFormById,
+	formsListQuestions,
+	responsesCreateFormResponse,
+	responsesGetFormResponse,
+	responsesListResponseSections,
+	responsesSubmitFormResponse,
+	responsesUpdateFormResponse,
+	type FormsForm,
+	type FormsQuestionResponse,
+	type ResponsesAnswersRequestUpdate,
+	type ResponsesResponseSections
+} from "@nycu-sdc/core-system-sdk";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
-
-// interface Question {
-// 	id: string;
-// 	title: string;
-// 	type: "text" | "textarea" | "radio" | "checkbox";
-// 	options?: { value: string; label: string }[];
-// 	required: boolean;
-// }
 
 interface Section {
 	id: string;
 	title: string;
-	// questions?: Question[];
 	completed: boolean;
+	questions?: FormsQuestionResponse[];
 }
 
 export const FormDetailPage = () => {
-	// const { id } = useParams();
+	const { id: formId } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
-	const [formData, setFormData] = useState({
-		name: "",
-		email: "",
-		message: "",
-		agree: false,
-		rating: ""
-	});
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [form, setForm] = useState<FormsForm | null>(null);
+	const [responseId, setResponseId] = useState<string | null>(null);
+	const [sections, setSections] = useState<Section[]>([]);
+	const [answers, setAnswers] = useState<Record<string, string>>({}); // questionId -> answer value
 
-	const isSectionCompleted = (sectionId: string): boolean => {
-		switch (sectionId) {
-			case "group-intro":
-				return formData.name.trim() !== "" && formData.email.trim() !== "";
-			case "personal-info":
-				return true;
-			default:
-				return false;
+	const saveAnswers = async () => {
+		if (!responseId) return;
+
+		try {
+			const answersArray = Object.entries(answers)
+				.filter(([_, value]) => value !== "")
+				.map(([questionId, value]) => ({
+					questionId,
+					value
+				}));
+
+			if (answersArray.length === 0) return;
+
+			const answersUpdate: ResponsesAnswersRequestUpdate = {
+				answers: answersArray
+			};
+
+			await responsesUpdateFormResponse(responseId, answersUpdate, { credentials: "include" });
+		} catch (error) {
+			console.error("儲存答案失敗:", error);
 		}
 	};
 
-	const sections: Section[] = [
-		{ id: "group-intro", title: "組別介紹", completed: isSectionCompleted("group-intro") },
-		{ id: "personal-info", title: "個人資訊", completed: isSectionCompleted("personal-info") },
-		{ id: "intro", title: "Full Stack Intro. Training Program", completed: false },
-		{ id: "advanced", title: "Full Stack Advanced Training Program", completed: false },
-		{ id: "hpc", title: "High Performance Computing Team", completed: false },
-		{ id: "project-teams", title: "Project Teams", completed: false },
-		{ id: "program-match", title: "Program Match", completed: false },
-		{ id: "preview", title: "填答結果預覽", completed: false }
-	];
+	useEffect(() => {
+		if (!responseId) return;
+
+		const timer = setTimeout(() => {
+			saveAnswers();
+		}, 1000); // 1 秒後儲存
+
+		return () => clearTimeout(timer);
+	}, [FormData, responseId]);
+
+	// 載入表單資料
+	useEffect(() => {
+		const loadForm = async () => {
+			if (!formId) {
+				setError("表單 ID 不存在");
+				setIsLoading(false);
+				return;
+			}
+
+			try {
+				setIsLoading(true);
+				setError(null);
+
+				// 取得表單資訊
+				const formResponse = await formsGetFormById(formId, { credentials: "include" });
+				if (formResponse.status === 200) {
+					setForm(formResponse.data);
+
+					// 建立或取得表單回覆
+					const responseCreation = await responsesCreateFormResponse(formId, { credentials: "include" });
+					if (responseCreation.status === 201) {
+						setResponseId(responseCreation.data.id);
+
+						// 已有回覆資料
+						if (responseCreation.data.id) {
+							const existingResponse = await responsesGetFormResponse(formId, responseCreation.data.id, { credentials: "include" });
+							if (existingResponse.status === 200) {
+								// TODO: 根據 existingResponse.data 來填充 formData
+							}
+
+							// 載入 sections 和 questions
+							const sectionsResponse = await responsesListResponseSections(responseCreation.data.id, { credentials: "include" });
+							if (sectionsResponse.status === 200) {
+								const loadedSections: Section[] = await Promise.all(
+									sectionsResponse.data.sections.map(async (section: ResponsesResponseSections) => {
+										try {
+											const questionsResponse = await formsListQuestions(section.id, { responseId: responseCreation.data.id }, { credentials: "include" });
+
+											const questions = questionsResponse.status === 200 ? questionsResponse.data : [];
+
+											return {
+												id: section.id,
+												title: section.title,
+												completed: false,
+												questions
+											};
+										} catch (err) {
+											console.error(`載入 section ${section.id} 的問題失敗:`, err);
+											return {
+												id: section.id,
+												title: section.title,
+												completed: false,
+												questions: []
+											};
+										}
+									})
+								);
+
+								setSections(loadedSections);
+							}
+
+							if (existingResponse.status === 200 && existingResponse.data.questionAnswerPairs) {
+								const loadedAnswers: Record<string, string> = {};
+								existingResponse.data.questionAnswerPairs.forEach((pair: any) => {
+									if (pair.questionId && pair.answer) {
+										loadedAnswers[pair.questionId] = pair.answer;
+									}
+								});
+								setAnswers(loadedAnswers);
+							}
+						}
+					}
+				} else {
+					throw new Error(`取得表單失敗: HTTP ${formResponse.status}`);
+				}
+
+				setIsLoading(false);
+			} catch (err) {
+				let errorMessage = "載入表單時發生錯誤";
+				if (err instanceof Error) {
+					errorMessage = err.message;
+
+					// JSON 解析錯誤
+					if (err.message.includes("JSON") || err.message.includes("<!doctype")) {
+						errorMessage = "API 連線錯誤：伺服器返回了非預期的回應。請確認：\n1. 開發伺服器是否正在運行\n2. API 端點是否正確\n3. 是否需要先登入";
+					}
+				}
+
+				setError(errorMessage);
+				setIsLoading(false);
+			}
+		};
+
+		loadForm();
+	}, [formId]);
+
+	const isSectionCompleted = (section: Section): boolean => {
+		if (!section.questions || section.questions.length === 0) {
+			return false;
+		}
+
+		return section.questions.every(question => {
+			if (!question.required) return true;
+			return answers[question.id] !== undefined && answers[question.id] !== "";
+		});
+	};
+
+	// 更新完成狀態
+	useEffect(() => {
+		if (sections.length > 0) {
+			setSections(prevSections =>
+				prevSections.map(section => ({
+					...section,
+					completed: isSectionCompleted(section)
+				}))
+			);
+		}
+	}, [answers]);
 
 	const isLastStep = currentStep === sections.length - 1;
 	const isFirstStep = currentStep === 0;
@@ -74,11 +207,136 @@ export const FormDetailPage = () => {
 		setCurrentStep(index);
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const updateAnswer = (questionId: string, value: string) => {
+		setAnswers(prev => ({
+			...prev,
+			[questionId]: value
+		}));
+	};
+
+	const renderQuestion = (question: FormsQuestionResponse) => {
+		const value = answers[question.id] || "";
+
+		switch (question.type) {
+			case "SHORT_TEXT":
+				return (
+					<Input
+						key={question.id}
+						id={question.id}
+						label={question.title}
+						placeholder={question.description || "請輸入..."}
+						value={value}
+						onChange={e => updateAnswer(question.id, e.target.value)}
+						required={question.required}
+					/>
+				);
+
+			case "LONG_TEXT":
+				return (
+					<TextArea
+						key={question.id}
+						id={question.id}
+						label={question.title}
+						placeholder={question.description || "請輸入..."}
+						value={value}
+						onChange={e => updateAnswer(question.id, e.target.value)}
+						rows={6}
+						required={question.required}
+					/>
+				);
+
+			case "SINGLE_CHOICE":
+			case "DROPDOWN":
+				return (
+					<div key={question.id}>
+						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						<Radio
+							options={
+								question.choices?.map(choice => ({
+									value: choice.id,
+									label: choice.name
+								})) || []
+							}
+							value={value}
+							onValueChange={newValue => updateAnswer(question.id, newValue)}
+						/>
+					</div>
+				);
+
+			case "MULTIPLE_CHOICE":
+				return (
+					<div key={question.id}>
+						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						{question.choices?.map(choice => (
+							<Checkbox
+								key={choice.id}
+								id={`${question.id}-${choice.id}`}
+								label={choice.name}
+								checked={value.includes(choice.id)}
+								onCheckedChange={checked => {
+									const currentValues = value ? value.split(",") : [];
+									const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
+									updateAnswer(question.id, newValues.join(","));
+								}}
+							/>
+						))}
+					</div>
+				);
+
+			case "DETAILED_MULTIPLE_CHOICE":
+				return (
+					<div key={question.id} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+						{question.choices?.map(choice => (
+							<DetailedCheckbox
+								key={choice.id}
+								id={`${question.id}-${choice.id}`}
+								title={choice.name}
+								description={choice.description || ""}
+								checked={value.includes(choice.id)}
+								onCheckedChange={checked => {
+									const currentValues = value ? value.split(",") : [];
+									const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
+									updateAnswer(question.id, newValues.join(","));
+								}}
+							/>
+						))}
+					</div>
+				);
+
+			default:
+				return (
+					<div key={question.id}>
+						<p>不支援的問題類型: {question.type}</p>
+						<p style={{ color: "var(--color-caption)" }}>{question.title}</p>
+					</div>
+				);
+		}
+	};
+
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (currentStep === sections.length - 1) {
-			console.log("Form submitted:", formData);
-			setIsSubmitted(true);
+		if (currentStep === sections.length - 1 && responseId) {
+			try {
+				await saveAnswers();
+				const submitResponse = await responsesSubmitFormResponse(responseId, { credentials: "include" });
+
+				if (submitResponse.status === 200) {
+					setIsSubmitted(true);
+				} else {
+					throw new Error("提交失敗");
+				}
+			} catch (error) {
+				console.error("提交表單失敗:", error);
+				alert("提交失敗，請稍後再試");
+			}
 		}
 	};
 
@@ -107,31 +365,39 @@ export const FormDetailPage = () => {
 		);
 	}
 
+	// 載入中
+	if (isLoading) {
+		return (
+			<UserLayout>
+				<div className={styles.container}>
+					<p>載入表單中...</p>
+				</div>
+			</UserLayout>
+		);
+	}
+
+	// 錯誤處理
+	if (error || !form) {
+		return (
+			<UserLayout>
+				<div className={styles.container}>
+					<h1 className={styles.title}>載入失敗</h1>
+					<pre style={{ whiteSpace: "pre-wrap", color: "red", marginBottom: "1rem" }}>{error || "找不到表單"}</pre>
+					<Button onClick={() => navigate("/forms")} themeColor="var(--orange)">
+						返回表單列表
+					</Button>
+				</div>
+			</UserLayout>
+		);
+	}
+
 	return (
 		<UserLayout>
-			<img src="" className={styles.cover} alt="Form Cover" />
+			<img src={formId ? `/api/forms/${formId}/cover` : ""} className={styles.cover} alt="Form Cover" />
 			<div className={styles.container}>
 				<div className={styles.header}>
-					<h1 className={styles.title}>SDC 註冊表單</h1>
-					{currentStep === 0 ? (
-						<p className={styles.description}>
-							🌟 Welcome to SDC, the Software Development Club! 🌟
-							<br />
-							<br />
-							我們是陽明交大軟體開發社（NYCU SDC），旨在聚集交清人才，加速推動兩校在資訊領域的發展，同時引領更多的新人（不限科系）成為人才，♾️ 循環。
-							<br />
-							<br />
-							更多資訊請關注 SDC Instagram @nycu_sdc
-							<br />
-							<br />
-							請使用您主要的 Google 帳號進行填寫，以便日後聯絡順利。
-							<br />
-							<br />
-							此表單內容提交後皆可修改，請安心填寫。
-						</p>
-					) : (
-						<h2 className={styles.sectionHeader}>{sections[currentStep].title}</h2>
-					)}
+					<h1 className={styles.title}>{form.title}</h1>
+					{currentStep === 0 ? <p className={styles.description}>{form.description}</p> : <h2 className={styles.sectionHeader}>{sections[currentStep].title}</h2>}
 				</div>
 
 				<div className={styles.structure}>
@@ -168,135 +434,12 @@ export const FormDetailPage = () => {
 				</div>
 
 				<form className={styles.form} onSubmit={handleSubmit}>
-					{currentStep === 0 && (
+					{sections[currentStep] && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
-								<DetailedCheckbox
-									id="intro-program"
-									title="Full Stack Intro. Training Program"
-									description="將帶大家從零開始認識前後端開發，非常歡迎對於前後端零基礎的學員加入&#10;在一學年的課程中，上學期會著重在前端開發：從環境設定、HTML、CSS、JavaScript 等基礎打好地基，並逐步學習版面切版、網頁動態效果實作，讓大家都能獨立完成屬於自己、能「動起來」的互動式履歷網站！下學期則帶大家入門後端開發：學習HTTP、RESTful API、Database 等基礎以及前後端整合，讓個人網站可以和訪客互動。&#10;期待和大家一同踏上這趟從零開始的學習旅程，親手打造出屬於自己的完整網站！&#10;時間：每週三 18:30 ~ 21:30"
-									checked={false}
-									onCheckedChange={() => {}}
-								/>
-								<DetailedCheckbox
-									id="advanced-program"
-									title="Full Stack Advanced Training Program"
-									description="將帶大家從零開始認識前後端開發，非常歡迎對於前後端零基礎的學員加入&#10;在一學年的課程中，上學期會著重在前端開發：從環境設定、HTML、CSS、JavaScript 等基礎打好地基，並逐步學習版面切版、網頁動態效果實作，讓大家都能獨立完成屬於自己、能「動起來」的互動式履歷網站！下學期則帶大家入門後端開發：學習HTTP、RESTful API、Database 等基礎以及前後端整合，讓個人網站可以和訪客互動。&#10;期待和大家一同踏上這趟從零開始的學習旅程，親手打造出屬於自己的完整網站！&#10;時間：每週三 18:30 ~ 21:30"
-									checked={false}
-									onCheckedChange={() => {}}
-								/>
-								<DetailedCheckbox
-									id="hpc-team"
-									title="High Performance Computing Team"
-									description="將帶大家從零開始認識前後端開發，非常歡迎對於前後端零基礎的學員加入&#10;在一學年的課程中，上學期會著重在前端開發：從環境設定、HTML、CSS、JavaScript 等基礎打好地基，並逐步學習版面切版、網頁動態效果實作，讓大家都能獨立完成屬於自己、能「動起來」的互動式履歷網站！下學期則帶大家入門後端開發：學習HTTP、RESTful API、Database 等基礎以及前後端整合，讓個人網站可以和訪客互動。&#10;期待和大家一同踏上這趟從零開始的學習旅程，親手打造出屬於自己的完整網站！&#10;時間：每週三 18:30 ~ 21:30"
-									checked={false}
-									onCheckedChange={() => {}}
-								/>
-							</div>
-						</div>
-					)}
+								{sections[currentStep].questions?.map(question => renderQuestion(question))}
 
-					{currentStep === 1 && (
-						<div className={styles.section}>
-							<div className={styles.fields}>
-								<Input id="name" label="中文姓名" placeholder="請輸入文字..." value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-								<TextArea id="message" label="Message" placeholder="Share your thoughts..." value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} rows={6} />
-								<SearchableSelect
-									label="Email Address"
-									placeholder="Select your email domain"
-									value={formData.email}
-									onValueChange={value => setFormData({ ...formData, email: value })}
-									options={[
-										{ value: "student.nycu.edu.tw", label: "student.nycu.edu.tw" },
-										{ value: "nycu.edu.tw", label: "nycu.edu.tw" },
-										{ value: "gmail.com", label: "gmail.com" }
-									]}
-								/>
-								<AccountButton logo={<Github size={24} />} connected>
-									GitHub Account
-								</AccountButton>
-								<Radio
-									options={[
-										{ value: "5", label: "Excellent" },
-										{ value: "4", label: "Good" },
-										{ value: "3", label: "Average" },
-										{ value: "2", label: "Poor" },
-										{ value: "1", label: "Very Poor" }
-									]}
-									value={formData.rating}
-									onValueChange={value => setFormData({ ...formData, rating: value })}
-								/>
-
-								<Checkbox id="agree" label="I agree to the terms and conditions" checked={formData.agree} onCheckedChange={checked => setFormData({ ...formData, agree: checked as boolean })} />
-							</div>
-						</div>
-					)}
-
-					{currentStep === 6 && (
-						<div className={styles.section}>
-							<div className={styles.fields}>
-								<DragToOrder
-									items={[
-										{ id: "project-a", content: "Project A" },
-										{ id: "project-b", content: "Project B" },
-										{ id: "project-c", content: "Project C" },
-										{ id: "project-d", content: "Project D" }
-									]}
-									onReorder={() => {}}
-								/>
-							</div>
-						</div>
-					)}
-
-					{currentStep === 7 && (
-						<div className={styles.section}>
-							<div className={styles.previewSection}>
-								<div className={styles.previewBlock}>
-									<div className={styles.previewHeader}>
-										<h3 className={styles.previewTitle}>組別介紹</h3>
-										<Button type="button" onClick={() => handleSectionClick(0)} themeColor="var(--orange)" style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}>
-											返回編輯此項目
-										</Button>
-									</div>
-									<ul className={styles.previewList}>
-										{formData.name && (
-											<li>
-												<strong>Full Name:</strong> {formData.name}
-											</li>
-										)}
-										{formData.email && (
-											<li>
-												<strong>Email Address:</strong> {formData.email}
-											</li>
-										)}
-									</ul>
-								</div>
-
-								<div className={styles.previewBlock}>
-									<div className={styles.previewHeader}>
-										<h3 className={styles.previewTitle}>個人資訊</h3>
-										<Button type="button" onClick={() => handleSectionClick(1)} themeColor="var(--orange)" style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}>
-											返回編輯此項目
-										</Button>
-									</div>
-									<ul className={styles.previewList}>
-										{formData.message && (
-											<li>
-												<strong>Message:</strong> {formData.message}
-											</li>
-										)}
-										{formData.rating && (
-											<li>
-												<strong>Rating:</strong> {formData.rating}
-											</li>
-										)}
-										{formData.agree && (
-											<li>
-												<strong>Agreement:</strong> 已同意條款
-											</li>
-										)}
-									</ul>
-								</div>
+								{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此 section 目前沒有問題</p>}
 							</div>
 						</div>
 					)}
@@ -306,9 +449,7 @@ export const FormDetailPage = () => {
 							上一頁
 						</Button>
 						{isLastStep ? (
-							<Button type="submit" disabled={!formData.agree}>
-								送出
-							</Button>
+							<Button type="submit">送出</Button>
 						) : (
 							<Button type="button" onClick={handleNext}>
 								下一頁
