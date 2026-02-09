@@ -58,10 +58,12 @@ export const AdminFormEditPage = () => {
 		});
 
 		updatedNodes.forEach(node => {
-			if (updatedNodes.filter(n => n.next === node.id || n.nextTrue === node.id || n.nextFalse === node.id).length > 1) {
+			if (updatedNodes.filter(n => n.next === node.id).length + updatedNodes.filter(n => n.nextTrue === node.id).length + updatedNodes.filter(n => n.nextFalse === node.id).length > 1) {
 				node.isMergeNode = true;
 			}
 		});
+
+		console.log("Post-processed Nodes:", updatedNodes);
 
 		return updatedNodes;
 	};
@@ -361,10 +363,18 @@ export const AdminFormEditPage = () => {
 					};
 				}
 				if (node.nextFalse === id) {
-					return { ...node, nextFalse: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue) };
+					return {
+						...node,
+						nextFalse: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue),
+						nextTrue: node.type === "CONDITION" && nodeToDelete.isMergeNode ? nodeToDelete.next : node.nextTrue
+					};
 				}
 				if (node.nextTrue === id) {
-					return { ...node, nextTrue: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue) };
+					return {
+						...node,
+						nextTrue: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue),
+						nextFalse: node.type === "CONDITION" && nodeToDelete.isMergeNode ? nodeToDelete.next : node.nextFalse
+					};
 				}
 				return node;
 			});
