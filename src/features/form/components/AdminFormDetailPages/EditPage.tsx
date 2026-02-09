@@ -1,5 +1,6 @@
 import { Toast } from "@/shared/components/Toast/Toast";
 import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
 import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
@@ -86,7 +87,7 @@ export const AdminFormEditPage = () => {
 
 	const handleAddSection = (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionId = `section_${prevNodes.length + 1}`;
+		const newSectionId = uuidv4();
 		const newSectionNode: NodeItem = {
 			id: newSectionId,
 			label: `新區塊 ${prevNodes.length + 1}`,
@@ -106,7 +107,7 @@ export const AdminFormEditPage = () => {
 
 	const handleAddTrueSection = (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionId = `section_${prevNodes.length + 1}`;
+		const newSectionId = uuidv4();
 		const newSectionNode: NodeItem = {
 			id: newSectionId,
 			label: `新區塊 ${prevNodes.length + 1}`,
@@ -126,22 +127,24 @@ export const AdminFormEditPage = () => {
 
 	const handleAddTrueCondition = (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionId = `condition_${prevNodes.length + 1}`;
+		const newConditionId = uuidv4();
+		const newTrueSectionId = uuidv4();
+		const newFalseSectionId = uuidv4();
 		const newConditionNode: NodeItem = {
 			id: newConditionId,
 			label: `新條件 ${prevNodes.length + 1}`,
 			type: "CONDITION",
-			nextTrue: `section_true_${prevNodes.length + 1}`,
-			nextFalse: `section_false_${prevNodes.length + 1}`
+			nextTrue: newTrueSectionId,
+			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: `section_true_${prevNodes.length + 1}`,
+			id: newTrueSectionId,
 			label: `條件區塊 真 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: prevNodes.find(node => node.id === id)?.nextTrue
 		};
 		const falseSectionNode: NodeItem = {
-			id: `section_false_${prevNodes.length + 1}`,
+			id: newFalseSectionId,
 			label: `條件區塊 假 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: prevNodes.find(node => node.id === id)?.nextTrue
@@ -159,7 +162,7 @@ export const AdminFormEditPage = () => {
 
 	const handleAddFalseSection = (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionId = `section_${prevNodes.length + 1}`;
+		const newSectionId = uuidv4();
 		const newSectionNode: NodeItem = {
 			id: newSectionId,
 			label: `新區塊 ${prevNodes.length + 1}`,
@@ -179,22 +182,24 @@ export const AdminFormEditPage = () => {
 
 	const handleAddFalseCondition = (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionId = `condition_${prevNodes.length + 1}`;
+		const newConditionId = uuidv4();
+		const newTrueSectionId = uuidv4();
+		const newFalseSectionId = uuidv4();
 		const newConditionNode: NodeItem = {
 			id: newConditionId,
 			label: `新條件 ${prevNodes.length + 1}`,
 			type: "CONDITION",
-			nextTrue: `section_true_${prevNodes.length + 1}`,
-			nextFalse: `section_false_${prevNodes.length + 1}`
+			nextTrue: newTrueSectionId,
+			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: `section_true_${prevNodes.length + 1}`,
+			id: newTrueSectionId,
 			label: `條件區塊 真 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: prevNodes.find(node => node.id === id)?.nextFalse
 		};
 		const falseSectionNode: NodeItem = {
-			id: `section_false_${prevNodes.length + 1}`,
+			id: newFalseSectionId,
 			label: `條件區塊 假 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: prevNodes.find(node => node.id === id)?.nextFalse
@@ -212,22 +217,24 @@ export const AdminFormEditPage = () => {
 
 	const handleAddCondition = (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionId = `condition_${prevNodes.length + 1}`;
+		const newConditionId = uuidv4();
+		const newTrueSectionId = uuidv4();
+		const newFalseSectionId = uuidv4();
 		const newConditionNode: NodeItem = {
 			id: newConditionId,
 			label: `新條件 ${prevNodes.length + 1}`,
 			type: "CONDITION",
-			nextTrue: `section_true_${prevNodes.length + 1}`,
-			nextFalse: `section_false_${prevNodes.length + 1}`
+			nextTrue: newTrueSectionId,
+			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: `section_true_${prevNodes.length + 1}`,
+			id: newTrueSectionId,
 			label: `條件區塊 真 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextTrue
 		};
 		const falseSectionNode: NodeItem = {
-			id: `section_false_${prevNodes.length + 1}`,
+			id: newFalseSectionId,
 			label: `條件區塊 假 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextFalse
@@ -249,7 +256,7 @@ export const AdminFormEditPage = () => {
 		if (!nodeToUpdate) {
 			return;
 		}
-		const newMergeNodeId = `merge_${prevNodes.length + 1}`;
+		const newMergeNodeId = uuidv4();
 		const newMergeNode: NodeItem = {
 			id: newMergeNodeId,
 			label: `合併節點 ${prevNodes.length + 1}`,
@@ -287,22 +294,24 @@ export const AdminFormEditPage = () => {
 		if (!nodeToUpdate) {
 			return;
 		}
-		const newConditionId = `merge_condition_${prevNodes.length + 1}`;
+		const newConditionId = uuidv4();
+		const newTrueSectionId = uuidv4();
+		const newFalseSectionId = uuidv4();
 		const newConditionNode: NodeItem = {
 			id: newConditionId,
 			label: `新條件 ${prevNodes.length + 1}`,
 			type: "CONDITION",
-			nextTrue: `section_true_${prevNodes.length + 1}`,
-			nextFalse: `section_false_${prevNodes.length + 1}`
+			nextTrue: newTrueSectionId,
+			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: `section_true_${prevNodes.length + 1}`,
+			id: newTrueSectionId,
 			label: `條件區塊 真 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: nodeToUpdate?.mergeId || undefined
 		};
 		const falseSectionNode: NodeItem = {
-			id: `section_false_${prevNodes.length + 1}`,
+			id: newFalseSectionId,
 			label: `條件區塊 假 ${prevNodes.length + 1}`,
 			type: "SECTION",
 			next: nodeToUpdate?.mergeId || undefined
