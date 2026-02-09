@@ -126,75 +126,143 @@ const FlowNode = ({
 	return (
 		<Popover
 			side="right"
-			content={
-				<div className={styles.popoverContent}>
-					{node.type === "SECTION" && <Button variant="secondary">編輯</Button>}
-					{node.type !== "END" && node.type !== "CONDITION" && (
-						<Button variant="secondary" onClick={onAddSection}>
-							新增區域
-						</Button>
-					)}
-					{node.type !== "CONDITION" && node.type !== "END" && (
-						<Button variant="secondary" onClick={onAddCondition}>
-							新增條件
-						</Button>
-					)}
-					{node.type === "CONDITION" && (
-						<>
-							<Popover
-								side="bottom"
-								content={
-									<div className={styles.popoverContent}>
-										<Button variant="secondary" onClick={onAddMergeSection}>
-											區域
-										</Button>
-										<Button variant="secondary" onClick={onAddMergeCondition}>
-											條件
-										</Button>
-									</div>
-								}
+			content={close => {
+				return (
+					<div className={styles.popoverContent}>
+						{node.type === "SECTION" && <Button variant="secondary">編輯</Button>}
+						{node.type !== "END" && node.type !== "CONDITION" && (
+							<Button
+								variant="secondary"
+								onClick={() => {
+									onAddSection();
+									close();
+								}}
 							>
-								<Button variant="secondary">新增合併點</Button>
-							</Popover>
-							<Popover
-								side="bottom"
-								content={
-									<div className={styles.popoverContent}>
-										<Button variant="secondary" onClick={onAddTrueSection}>
-											區域
-										</Button>
-										<Button variant="secondary" onClick={onAddTrueCondition}>
-											條件
-										</Button>
-									</div>
-								}
+								新增區域
+							</Button>
+						)}
+						{node.type !== "CONDITION" && node.type !== "END" && (
+							<Button
+								variant="secondary"
+								onClick={() => {
+									onAddCondition();
+									close();
+								}}
 							>
-								<Button variant="secondary">新增成功</Button>
-							</Popover>
-							<Popover
-								side="bottom"
-								content={
-									<div className={styles.popoverContent}>
-										<Button variant="secondary" onClick={onAddFalseSection}>
-											區域
-										</Button>
-										<Button variant="secondary" onClick={onAddFalseCondition}>
-											條件
-										</Button>
-									</div>
-								}
+								新增條件
+							</Button>
+						)}
+						{node.type === "CONDITION" && (
+							<>
+								<Popover
+									side="bottom"
+									content={innerClose => {
+										return (
+											<div className={styles.popoverContent}>
+												<Button
+													variant="secondary"
+													onClick={() => {
+														onAddMergeSection();
+														innerClose();
+														close();
+													}}
+												>
+													區域
+												</Button>
+												<Button
+													variant="secondary"
+													onClick={() => {
+														onAddMergeCondition();
+														innerClose();
+														close();
+													}}
+												>
+													條件
+												</Button>
+											</div>
+										);
+									}}
+								>
+									<Button variant="secondary">新增合併點</Button>
+								</Popover>
+								<Popover
+									side="bottom"
+									content={innerClose => {
+										return (
+											<div className={styles.popoverContent}>
+												<Button
+													variant="secondary"
+													onClick={() => {
+														onAddTrueSection();
+														innerClose();
+														close();
+													}}
+												>
+													區域
+												</Button>
+												<Button
+													variant="secondary"
+													onClick={() => {
+														onAddTrueCondition();
+														innerClose();
+														close();
+													}}
+												>
+													條件
+												</Button>
+											</div>
+										);
+									}}
+								>
+									<Button variant="secondary">新增成功</Button>
+								</Popover>
+								<Popover
+									side="bottom"
+									content={innerClose => {
+										return (
+											<div className={styles.popoverContent}>
+												<Button
+													variant="secondary"
+													onClick={() => {
+														onAddFalseSection();
+														innerClose();
+														close();
+													}}
+												>
+													區域
+												</Button>
+												<Button
+													variant="secondary"
+													onClick={() => {
+														onAddFalseCondition();
+														innerClose();
+														close();
+													}}
+												>
+													條件
+												</Button>
+											</div>
+										);
+									}}
+								>
+									<Button variant="secondary">新增失敗</Button>
+								</Popover>
+							</>
+						)}
+						{node.type !== "START" && node.type !== "END" && (
+							<Button
+								variant="secondary"
+								onClick={() => {
+									onDeleteSection();
+									close();
+								}}
 							>
-								<Button variant="secondary">新增失敗</Button>
-							</Popover>
-						</>
-					)}
-					{node.type !== "START" && node.type !== "END" && (
-						<Button variant="secondary" onClick={onDeleteSection}>
-							刪除
-						</Button>
-					)}
-				</div>
-			}
+								刪除
+							</Button>
+						)}
+					</div>
+				);
+			}}
 		>
 			<div className={`${styles.node} ${styles[node.type.toLowerCase()]} ${styles[node.isMergeNode ? "mergeNode" : ""]}`}>
 				{node.type === "CONDITION" && (
