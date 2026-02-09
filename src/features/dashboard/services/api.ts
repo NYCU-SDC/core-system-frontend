@@ -1,5 +1,15 @@
-import type { FormsForm, FormsFormRequest, UnitOrgMemberRequest, UnitOrganization, UnitUpdateOrgRequest, UnitUserForm } from "@nycu-sdc/core-system-sdk";
-import { unitAddOrgMember, unitCreateOrgForm, unitGetOrgById, unitListFormsByOrg, unitListFormsOfCurrentUser, unitListOrgMembers, unitRemoveOrgMember, unitUpdateOrg } from "@nycu-sdc/core-system-sdk";
+import type { FormsForm, FormsFormRequest, ResponsesCreateResponse, UnitOrgMemberRequest, UnitOrganization, UnitUpdateOrgRequest, UnitUserForm } from "@nycu-sdc/core-system-sdk";
+import {
+	responsesCreateFormResponse,
+	unitAddOrgMember,
+	unitCreateOrgForm,
+	unitGetOrgById,
+	unitListFormsByOrg,
+	unitListFormsOfCurrentUser,
+	unitListOrgMembers,
+	unitRemoveOrgMember,
+	unitUpdateOrg
+} from "@nycu-sdc/core-system-sdk";
 
 const accessToken =
 	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6ImNjYThjZGJhLWYxZDAtNDVjYS1iYTQxLTAzM2M2MWU5Nzc4MyIsIlVzZXJuYW1lIjoiZXRoZWxoc2lhbzA2MTYiLCJOYW1lIjoiRXRoZWwgSHNpYW8iLCJBdmF0YXJVcmwiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NLc0dxSjFfcGo1Sy1zZVRwZ3FJdkdfcVJSbGE5WGo5bkFudUVkYnBRWDBoYzVEakVOMT1zOTYtYyIsIlJvbGUiOlsidXNlciJdLCJpc3MiOiJjb3JlLXN5c3RlbSIsInN1YiI6Ijc2ZmI1ZTVmLWYwMGItNGU1NC1iOGQ2LWI5YmQwM2IxNjYxOCIsImV4cCI6MTc3MDIyMzY0MSwibmJmIjoxNzcwMjIyNzQxLCJpYXQiOjE3NzAyMjI3NDEsImp0aSI6ImNjYThjZGJhLWYxZDAtNDVjYS1iYTQxLTAzM2M2MWU5Nzc4MyJ9.hlyyFsrCOHk1wC3dpZw9f8veJJEzXf2uukgnZ0IeD5k";
@@ -60,5 +70,11 @@ export const createOrgForm = async (slug: string, req: FormsFormRequest): Promis
 export const listMyForms = async (): Promise<UnitUserForm[]> => {
 	const res = await unitListFormsOfCurrentUser(defaultRequestOptions);
 	assertOk(res.status, "Failed to load my forms");
+	return res.data;
+};
+
+export const createFormResponse = async (formId: string): Promise<ResponsesCreateResponse> => {
+	const res = await responsesCreateFormResponse(formId, defaultRequestOptions);
+	assertOk(res.status, "Failed to start form");
 	return res.data;
 };

@@ -1,6 +1,6 @@
-import { useMyForms } from "@/features/form/hooks/useMyForms";
+import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
 import { UserLayout } from "@/layouts";
-import { Button } from "@/shared/components";
+import { Button, Toast } from "@/shared/components";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 import type { UnitUserForm } from "@nycu-sdc/core-system-sdk";
@@ -17,6 +17,7 @@ type FormRow = {
 	title: string;
 	deadline: string;
 	status: TabStatus;
+	apiStatus: string; // Original API status for logic
 	buttonLabel: string;
 };
 
@@ -39,6 +40,7 @@ const toFormRow = (form: UnitUserForm): FormRow => {
 		title: form.title,
 		deadline: formatDate(form.deadline),
 		status: mapped.tab,
+		apiStatus: form.status,
 		buttonLabel: mapped.button
 	};
 };
@@ -46,9 +48,12 @@ const toFormRow = (form: UnitUserForm): FormRow => {
 export const FormsListPage = () => {
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState<TabStatus>("pending");
+	const [toastOpen, setToastOpen] = useState(false);
+	const [toastMessage, setToastMessage] = useState("");
 
 	// Fetch forms from API
 	const formsQuery = useMyForms();
+	const createResponseMutation = useCreateFormResponse();
 
 	// Transform API data to UI model
 	const forms: FormRow[] = useMemo(() => {
@@ -61,8 +66,22 @@ export const FormsListPage = () => {
 		return forms.filter(form => form.status === activeTab);
 	}, [forms, activeTab]);
 
-	const handleFormClick = (formId: string) => {
-		navigate(`/forms/${formId}`);
+	const handleFormClick = (form: FormRow) => {
+		if (form.apiStatus === "NOT_STARTED") {
+			// Create form response first, then navigate
+			createResponseMutation.mutate(form.id, {
+				onSuccess: () => {
+					navigate(`/forms/${form.id}`);
+				},
+				onError: error => {
+					setToastMessage(error.message || "Failed to start form");
+					setToastOpen(true);
+				}
+			});
+		} else {
+			// Already started or completed, just navigate
+			navigate(`/forms/${form.id}`);
+		}
 	};
 
 	return (
@@ -89,12 +108,14 @@ export const FormsListPage = () => {
 						<LoadingSpinner />
 					) : filteredForms.length > 0 ? (
 						filteredForms.map(form => (
-							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form.id)}>
+							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form)}>
 								<div className={styles.cardInfo}>
 									<h3 className={styles.cardTitle}>{form.title}</h3>
 									<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
 								</div>
-								<Button className={styles.sharedBtn}>{form.buttonLabel}</Button>
+								<Button className={styles.sharedBtn} processing={createResponseMutation.isPending}>
+									{form.buttonLabel}
+								</Button>
 							</div>
 						))
 					) : (
@@ -105,6 +126,8 @@ export const FormsListPage = () => {
 						</p>
 					)}
 				</div>
+
+				<Toast open={toastOpen} onOpenChange={setToastOpen} title="Error" description={toastMessage} variant="error" />
 			</div>
 		</UserLayout>
 	);
