@@ -1,48 +1,65 @@
+import { useMyForms } from "@/features/form/hooks/useMyForms";
 import { UserLayout } from "@/layouts";
 import { Button } from "@/shared/components";
-import { useState } from "react";
+import { ErrorMessage } from "@/shared/components/ErrorMessage";
+import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
+import type { UnitUserForm } from "@nycu-sdc/core-system-sdk";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./FormsListPage.module.css";
 import { TabButtons } from "./TabButtons";
 
-// Mock data
-const mockForms = [
-	{
-		id: "1",
-		title: "三級標題 Heading 3",
-		description: "死線：2025/5/12",
-		option: "開始填寫"
-	},
-	{
-		id: "2",
-		title: "Feedback Form",
-		description: "Share your feedback with us",
-		option: "繼續填寫"
-	},
-	{
-		id: "3",
-		title: "Feedback Form",
-		description: "Share your feedback with us",
-		option: "編輯"
-	},
-	{
-		id: "4",
-		title: "Feedback Form",
-		description: "Share your feedback with us",
-		option: "編輯"
-	},
-	{
-		id: "5",
-		title: "Feedback Form",
-		description: "Share your feedback with us",
-		option: "編輯"
-	}
-];
-// const mockForms=[];
+/* ---------- API Data → UI Model ---------- */
+type TabStatus = "pending" | "inProgress" | "submitted";
+
+type FormRow = {
+	id: string;
+	title: string;
+	deadline: string;
+	status: TabStatus;
+	buttonLabel: string;
+};
+
+// Map API status to UI tab status and button label
+const statusMap: Record<string, { tab: TabStatus; button: string }> = {
+	NOT_STARTED: { tab: "pending", button: "開始填寫" },
+	IN_PROGRESS: { tab: "inProgress", button: "繼續填寫" },
+	COMPLETED: { tab: "submitted", button: "查看" }
+};
+
+const formatDate = (isoDate: string): string => {
+	const date = new Date(isoDate);
+	return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+};
+
+const toFormRow = (form: UnitUserForm): FormRow => {
+	const mapped = statusMap[form.status] ?? { tab: "pending", button: "開始填寫" };
+	return {
+		id: form.id,
+		title: form.title,
+		deadline: formatDate(form.deadline),
+		status: mapped.tab,
+		buttonLabel: mapped.button
+	};
+};
 
 export const FormsListPage = () => {
 	const navigate = useNavigate();
-	const [activeTab, setActiveTab] = useState("pending");
+	const [activeTab, setActiveTab] = useState<TabStatus>("pending");
+
+	// Fetch forms from API
+	const formsQuery = useMyForms();
+
+	// Transform API data to UI model
+	const forms: FormRow[] = useMemo(() => {
+		if (!formsQuery.data) return [];
+		return formsQuery.data.map(toFormRow);
+	}, [formsQuery.data]);
+
+	// Filter forms based on active tab
+	const filteredForms = useMemo(() => {
+		return forms.filter(form => form.status === activeTab);
+	}, [forms, activeTab]);
 
 	const handleFormClick = (formId: string) => {
 		navigate(`/forms/${formId}`);
@@ -52,44 +69,42 @@ export const FormsListPage = () => {
 		<UserLayout>
 			<div className={styles.container}>
 				<div className={styles.header}>
-					<h1 className={styles.title}>NYCU SDC 的表單</h1>
-					<p className={styles.subtitle}>不是 info@elvismao.com 嗎？（登出）</p>
+					<h1 className={styles.title}>我的表單</h1>
 				</div>
 
-				{mockForms.length > 0 ? (
-					<div className={styles.list}>
-						<TabButtons
-							tabs={[
-								{ value: "pending", label: "待填寫" },
-								{ value: "inProgress", label: "填寫中" },
-								{ value: "submitted", label: "已送出" }
-							]}
-							activeTab={activeTab}
-							onTabChange={setActiveTab}
-						/>
-						{mockForms.map(form => (
+				{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
+
+				<div className={styles.list}>
+					<TabButtons
+						tabs={[
+							{ value: "pending", label: "待填寫" },
+							{ value: "inProgress", label: "填寫中" },
+							{ value: "submitted", label: "已送出" }
+						]}
+						activeTab={activeTab}
+						onTabChange={setActiveTab}
+					/>
+
+					{formsQuery.isLoading ? (
+						<LoadingSpinner />
+					) : filteredForms.length > 0 ? (
+						filteredForms.map(form => (
 							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form.id)}>
 								<div className={styles.cardInfo}>
 									<h3 className={styles.cardTitle}>{form.title}</h3>
-									<p className={styles.cardDescription}>{form.description}</p>
+									<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
 								</div>
-								<Button className={styles.sharedBtn}>{form.option}</Button>
+								<Button className={styles.sharedBtn}>{form.buttonLabel}</Button>
 							</div>
-						))}
-					</div>
-				) : (
-					<div className={styles.list}>
-						<TabButtons
-							tabs={[
-								{ value: "inProgress", label: "填寫中" },
-								{ value: "submitted", label: "已送出" }
-							]}
-							activeTab={activeTab}
-							onTabChange={setActiveTab}
-						/>
-						<p className={styles.empty}>您沒有填寫中的表單。</p>
-					</div>
-				)}
+						))
+					) : (
+						<p className={styles.empty}>
+							{activeTab === "pending" && "您沒有待填寫的表單。"}
+							{activeTab === "inProgress" && "您沒有填寫中的表單。"}
+							{activeTab === "submitted" && "您沒有已送出的表單。"}
+						</p>
+					)}
+				</div>
 			</div>
 		</UserLayout>
 	);
