@@ -41,7 +41,7 @@ export const authService = {
 	},
 
 	async getCurrentUser<TUser = unknown>(): Promise<TUser | null> {
-		const response = await fetch("/api/auth/me", {
+		const response = await fetch("/api/users/me", {
 			credentials: "include"
 		});
 
