@@ -67,7 +67,7 @@ export const authService = {
 
 		return readJsonSafely<unknown>(response);
 	},
-  
+
 	async getCurrentUser<TUser extends AuthUser = AuthUser>(): Promise<TUser | null> {
 		const response = await fetch("/api/users/me", {
 			credentials: "include"
@@ -81,7 +81,7 @@ export const authService = {
 		}
 
 		return readJsonSafely<TUser>(response);
-  },
+	},
 
 	async updateOnboarding(payload: { username: string; name: string }) {
 		const response = await fetch("/api/users/onboarding", {

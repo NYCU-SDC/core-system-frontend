@@ -1,5 +1,5 @@
+import { authService, type AuthUser } from "@/features/auth/services/authService";
 import { useQuery } from "@tanstack/react-query";
-import { authService, type AuthUser } from "../services/authService";
 
 export const useAuth = () => {
 	const { data: user, isLoading } = useQuery<AuthUser | null>({
