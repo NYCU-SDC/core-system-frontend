@@ -12,14 +12,9 @@
 .options {
 	display: flex;
 	gap: 2rem;
-	align-items: center;
-}
-
-@media (max-width: 50.625rem) {
-	.options {
-		flex-direction: column;
-		align-items: flex-start;
-	}
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	align-items: flex-start;
 }
 
 .grid {
