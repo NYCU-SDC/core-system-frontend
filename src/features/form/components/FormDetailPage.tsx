@@ -2,6 +2,7 @@ import { UserLayout } from "@/layouts";
 import { Button, Checkbox, DetailedCheckbox, Input, Radio, TextArea } from "@/shared/components";
 import {
 	formsGetFormById,
+	formsGetFormCoverImage,
 	formsListQuestions,
 	responsesCreateFormResponse,
 	responsesGetFormResponse,
@@ -10,17 +11,17 @@ import {
 	responsesUpdateFormResponse,
 	type FormsForm,
 	type FormsQuestionResponse,
+	type FormsSection,
 	type ResponsesAnswersRequestUpdate,
+	type ResponsesPreviewSection,
+	type ResponsesResponseProgress,
 	type ResponsesResponseSections
 } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
-interface Section {
-	id: string;
-	title: string;
-	completed: boolean;
+interface Section extends FormsSection {
 	questions?: FormsQuestionResponse[];
 }
 
@@ -34,7 +35,10 @@ export const FormDetailPage = () => {
 	const [form, setForm] = useState<FormsForm | null>(null);
 	const [responseId, setResponseId] = useState<string | null>(null);
 	const [sections, setSections] = useState<Section[]>([]);
-	const [answers, setAnswers] = useState<Record<string, string>>({}); // questionId -> answer value
+	const [answers, setAnswers] = useState<Record<string, string>>({});
+	const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+	const [previewData, setPreviewData] = useState<ResponsesPreviewSection[] | null>(null);
+	const [responseProgress, setResponseProgress] = useState<ResponsesResponseProgress>("DRAFT");
 
 	const saveAnswers = async () => {
 		if (!responseId) return;
@@ -67,7 +71,7 @@ export const FormDetailPage = () => {
 		}, 1000); // 1 秒後儲存
 
 		return () => clearTimeout(timer);
-	}, [FormData, responseId]);
+	}, [answers, responseId]);
 
 	// 載入表單資料
 	useEffect(() => {
@@ -87,6 +91,18 @@ export const FormDetailPage = () => {
 				if (formResponse.status === 200) {
 					setForm(formResponse.data);
 
+					// 載入封面圖片
+					try {
+						const coverResponse = await formsGetFormCoverImage(formId, { credentials: "include" });
+						if (coverResponse.status === 200 && coverResponse.data) {
+							const blob = new Blob([coverResponse.data], { type: "image/webp" });
+							const imageUrl = URL.createObjectURL(blob);
+							setCoverImageUrl(imageUrl);
+						}
+					} catch (coverError) {
+						console.error("載入封面圖片失敗:", coverError);
+					}
+
 					// 建立或取得表單回覆
 					const responseCreation = await responsesCreateFormResponse(formId, { credentials: "include" });
 					if (responseCreation.status === 201) {
@@ -96,7 +112,20 @@ export const FormDetailPage = () => {
 						if (responseCreation.data.id) {
 							const existingResponse = await responsesGetFormResponse(formId, responseCreation.data.id, { credentials: "include" });
 							if (existingResponse.status === 200) {
-								// TODO: 根據 existingResponse.data 來填充 formData
+								// 儲存預覽資料和進度
+								setPreviewData(existingResponse.data.questionAnswerPairs);
+								setResponseProgress(existingResponse.data.progress);
+
+								// 載入已儲存的答案
+								const loadedAnswers: Record<string, string> = {};
+								existingResponse.data.questionAnswerPairs.forEach(section => {
+									section.questionAnswerPairs.forEach(pair => {
+										if (pair.question.id && pair.answer) {
+											loadedAnswers[pair.question.id] = pair.answer;
+										}
+									});
+								});
+								setAnswers(loadedAnswers);
 							}
 
 							// 載入 sections 和 questions
@@ -111,33 +140,32 @@ export const FormDetailPage = () => {
 
 											return {
 												id: section.id,
+												formId: formId,
 												title: section.title,
-												completed: false,
+												progress: "DRAFT" as const,
 												questions
 											};
 										} catch (err) {
 											console.error(`載入 section ${section.id} 的問題失敗:`, err);
 											return {
 												id: section.id,
+												formId: formId,
 												title: section.title,
-												completed: false,
+												progress: "DRAFT" as const,
 												questions: []
 											};
 										}
 									})
 								);
 
-								setSections(loadedSections);
-							}
-
-							if (existingResponse.status === 200 && existingResponse.data.questionAnswerPairs) {
-								const loadedAnswers: Record<string, string> = {};
-								existingResponse.data.questionAnswerPairs.forEach((pair: any) => {
-									if (pair.questionId && pair.answer) {
-										loadedAnswers[pair.questionId] = pair.answer;
-									}
+								loadedSections.push({
+									id: "preview",
+									formId: formId,
+									title: "填答結果預覽",
+									progress: "DRAFT" as const,
+									questions: []
 								});
-								setAnswers(loadedAnswers);
+								setSections(loadedSections);
 							}
 						}
 					}
@@ -165,28 +193,31 @@ export const FormDetailPage = () => {
 		loadForm();
 	}, [formId]);
 
-	const isSectionCompleted = (section: Section): boolean => {
-		if (!section.questions || section.questions.length === 0) {
-			return false;
-		}
-
-		return section.questions.every(question => {
-			if (!question.required) return true;
-			return answers[question.id] !== undefined && answers[question.id] !== "";
-		});
-	};
-
-	// 更新完成狀態
 	useEffect(() => {
-		if (sections.length > 0) {
-			setSections(prevSections =>
-				prevSections.map(section => ({
-					...section,
-					completed: isSectionCompleted(section)
-				}))
-			);
-		}
-	}, [answers]);
+		return () => {
+			if (coverImageUrl) {
+				URL.revokeObjectURL(coverImageUrl);
+			}
+		};
+	}, [coverImageUrl]);
+
+	useEffect(() => {
+		const loadPreviewData = async () => {
+			if (currentStep === sections.length - 1 && sections[currentStep]?.id === "preview" && formId && responseId) {
+				try {
+					const response = await responsesGetFormResponse(formId, responseId, { credentials: "include" });
+					if (response.status === 200) {
+						setPreviewData(response.data.questionAnswerPairs);
+						setResponseProgress(response.data.progress);
+					}
+				} catch (error) {
+					console.error("載入預覽資料失敗:", error);
+				}
+			}
+		};
+
+		loadPreviewData();
+	}, [currentStep, sections, formId, responseId]);
 
 	const isLastStep = currentStep === sections.length - 1;
 	const isFirstStep = currentStep === 0;
@@ -216,6 +247,7 @@ export const FormDetailPage = () => {
 
 	const renderQuestion = (question: FormsQuestionResponse) => {
 		const value = answers[question.id] || "";
+		console.log("Rendering question:", question, "with value:", value);
 
 		switch (question.type) {
 			case "SHORT_TEXT":
@@ -321,6 +353,34 @@ export const FormDetailPage = () => {
 		}
 	};
 
+	const renderPreviewSection = () => {
+		if (!previewData || previewData.length === 0) {
+			return <p style={{ color: "var(--color-caption)" }}>尚無填答資料</p>;
+		}
+
+		return (
+			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+				{previewData.map((section, sectionIndex) => (
+					<div key={sectionIndex} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+						<h3>{section.sectionTitle}</h3>
+						<ul style={{ listStyleType: "disc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+							{section.questionAnswerPairs.map((pair, questionIndex) => (
+								<li key={questionIndex}>
+									<span style={{ fontWeight: 500 }}>
+										{pair.question.title}
+										{pair.question.required && <span style={{ color: "red" }}> *</span>}
+									</span>
+									<span>：</span>
+									<span>{pair.answer || <span>未填寫</span>}</span>
+								</li>
+							))}
+						</ul>
+					</div>
+				))}
+			</div>
+		);
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (currentStep === sections.length - 1 && responseId) {
@@ -346,11 +406,7 @@ export const FormDetailPage = () => {
 				<div className={styles.successContainer}>
 					<div className={styles.successBox}>
 						<h1 className={styles.successTitle}>感謝您的填答！</h1>
-						<p className={styles.successMessage}>
-							結果將於 XX/XX 公布，屆時會將信件傳遞至您註冊的 Email 信箱
-							<br />
-							問卷副本已寄送至您的信箱，如有疑問請洽您的內心。
-						</p>
+						<p className={styles.successMessage}>{form?.messageAfterSubmission}</p>
 						<div className={styles.successActions}>
 							<Button type="button" onClick={() => {}} themeColor="var(--code-foreground)">
 								查看問卷副本
@@ -393,7 +449,7 @@ export const FormDetailPage = () => {
 
 	return (
 		<UserLayout>
-			<img src={formId ? `/api/forms/${formId}/cover` : ""} className={styles.cover} alt="Form Cover" />
+			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="Form Cover" />}
 			<div className={styles.container}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{form.title}</h1>
@@ -424,7 +480,7 @@ export const FormDetailPage = () => {
 							<button
 								key={section.id}
 								type="button"
-								className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""} ${section.completed ? styles.completed : ""}`}
+								className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""} ${section.progress === "SUBMITTED" ? styles.completed : ""}`}
 								onClick={() => handleSectionClick(index)}
 							>
 								{section.title}
@@ -437,9 +493,14 @@ export const FormDetailPage = () => {
 					{sections[currentStep] && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
-								{sections[currentStep].questions?.map(question => renderQuestion(question))}
-
-								{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此 section 目前沒有問題</p>}
+								{sections[currentStep].id === "preview" ? (
+									renderPreviewSection()
+								) : (
+									<>
+										{sections[currentStep].questions?.map(question => renderQuestion(question))}
+										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此 section 目前沒有問題</p>}
+									</>
+								)}
 							</div>
 						</div>
 					)}
@@ -449,7 +510,9 @@ export const FormDetailPage = () => {
 							上一頁
 						</Button>
 						{isLastStep ? (
-							<Button type="submit">送出</Button>
+							<Button type="submit" disabled={responseProgress === "DRAFT"}>
+								{responseProgress === "SUBMITTED" ? "已送出" : "送出"}
+							</Button>
 						) : (
 							<Button type="button" onClick={handleNext}>
 								下一頁
