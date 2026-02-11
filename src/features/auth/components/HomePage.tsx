@@ -16,7 +16,7 @@ export const HomePage = () => {
 		const origin = window.location.origin;
 		authService.redirectToOAuthLogin(AuthOAuthProviders.google, {
 			callbackUrl: new URL("/callback", origin).toString(),
-			redirectUrl: new URL("/forms", origin).toString()
+			redirectUrl: new URL("/callback", origin).toString()
 		});
 	};
 

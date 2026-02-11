@@ -5,12 +5,15 @@ import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import styles from "./CallbackPage.module.css";
 
+type CurrentUser = {
+	is_onboarded?: boolean;
+};
 function getSafeRedirectTarget(): string | null {
 	const params = new URLSearchParams(window.location.search);
 	const raw = params.get("r") ?? params.get("redirect") ?? params.get("redirectUrl");
+
 	if (!raw) return null;
 
-	// Accept either absolute same-origin URL or a leading-slash path.
 	if (raw.startsWith("/")) return raw;
 	try {
 		const url = new URL(raw);
@@ -28,13 +31,19 @@ export const CallbackPage = () => {
 	useEffect(() => {
 		const processCallback = async () => {
 			try {
-				const user = await authService.getCurrentUser();
+				const user = await authService.getCurrentUser<CurrentUser>();
 				queryClient.setQueryData(["auth", "user"], user);
 				const redirectTarget = getSafeRedirectTarget();
+
 				if (user) {
+					if (user.is_onboarded === false) {
+						navigate("/welcome", { replace: true });
+						return;
+					}
 					navigate(redirectTarget ?? "/forms", { replace: true });
 					return;
 				}
+
 				navigate("/", { replace: true });
 			} catch {
 				navigate("/", { replace: true });
