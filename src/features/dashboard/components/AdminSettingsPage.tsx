@@ -118,7 +118,13 @@ export const AdminSettingsPage = () => {
 						組織名稱
 					</Label>
 					<div className={styles.inputRow}>
-						<Input id="orgName" value={orgNameValue} onChange={e => setOrgNameDraft(e.target.value)} placeholder={orgQuery.isLoading ? "Loading…" : "Enter organization name"} />
+						<Input
+							id="orgName"
+							value={orgNameValue}
+							onChange={e => setOrgNameDraft(e.target.value)}
+							onKeyDown={e => e.key === "Enter" && handleSaveOrgName()}
+							placeholder={orgQuery.isLoading ? "Loading…" : "Enter organization name"}
+						/>
 						<Button onClick={handleSaveOrgName} processing={updateOrgMutation.isPending} disabled={orgQuery.isLoading || !orgQuery.data}>
 							Save Changes
 						</Button>
@@ -126,7 +132,7 @@ export const AdminSettingsPage = () => {
 				</section>
 				<h2>成員</h2>
 				<section className={styles.addMember}>
-					<Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="member@example.com" />
+					<Input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddMember()} placeholder="member@example.com" />
 					<Button onClick={handleAddMember} processing={addMemberMutation.isPending} disabled={!email.trim() || addMemberMutation.isPending}>
 						新增成員
 					</Button>
@@ -139,7 +145,7 @@ export const AdminSettingsPage = () => {
 					) : (
 						members.map(member => (
 							<div key={member.id} className={styles.memberCard}>
-								<img src={member.avatarUrl} alt="照片描述" className={styles.memberImg} />
+								<img src={member.avatarUrl} alt={member.name} referrerPolicy="no-referrer" className={styles.memberImg} />
 								<div className={styles.memberInfo}>
 									<div className={styles.memberName}>{member.name}</div>
 									<div className={styles.memberEmail}>{member.email}</div>
