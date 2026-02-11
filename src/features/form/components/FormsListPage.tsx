@@ -1,3 +1,4 @@
+import { useLogout, useMe } from "@/features/auth/hooks/useAuth";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
 import { UserLayout } from "@/layouts";
 import { Button, Toast } from "@/shared/components";
@@ -19,6 +20,7 @@ type FormRow = {
 	status: TabStatus;
 	apiStatus: string; // Original API status for logic
 	buttonLabel: string;
+	responseIds?: string[];
 };
 
 // Map API status to UI tab status and button label
@@ -41,7 +43,8 @@ const toFormRow = (form: UnitUserForm): FormRow => {
 		deadline: formatDate(form.deadline),
 		status: mapped.tab,
 		apiStatus: form.status,
-		buttonLabel: mapped.button
+		buttonLabel: mapped.button,
+		responseIds: form.responseIds
 	};
 };
 
@@ -51,9 +54,23 @@ export const FormsListPage = () => {
 	const [toastOpen, setToastOpen] = useState(false);
 	const [toastMessage, setToastMessage] = useState("");
 
+	// Fetch current user
+	const meQuery = useMe();
+	const logoutMutation = useLogout();
+
 	// Fetch forms from API
 	const formsQuery = useMyForms();
 	const createResponseMutation = useCreateFormResponse();
+
+	const handleLogout = () => {
+		logoutMutation.mutate(undefined, {
+			onSuccess: () => navigate("/"),
+			onError: error => {
+				setToastMessage(error.message || "Failed to logout");
+				setToastOpen(true);
+			}
+		});
+	};
 
 	// Transform API data to UI model
 	const forms: FormRow[] = useMemo(() => {
@@ -68,10 +85,10 @@ export const FormsListPage = () => {
 
 	const handleFormClick = (form: FormRow) => {
 		if (form.apiStatus === "NOT_STARTED") {
-			// Create form response first, then navigate
+			// Create form response first, then navigate with the new response id
 			createResponseMutation.mutate(form.id, {
-				onSuccess: () => {
-					navigate(`/forms/${form.id}`);
+				onSuccess: data => {
+					navigate(`/forms/${data.id}`);
 				},
 				onError: error => {
 					setToastMessage(error.message || "Failed to start form");
@@ -79,8 +96,11 @@ export const FormsListPage = () => {
 				}
 			});
 		} else {
-			// Already started or completed, just navigate
-			navigate(`/forms/${form.id}`);
+			// Already started or completed, navigate with the first response id
+			const responseId = form.responseIds?.[0];
+			if (responseId) {
+				navigate(`/forms/${responseId}`);
+			}
 		}
 	};
 
@@ -89,6 +109,12 @@ export const FormsListPage = () => {
 			<div className={styles.container}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>我的表單</h1>
+					<p className={styles.subtitle}>
+						不是 {meQuery.data?.name} 嗎？{" "}
+						<span onClick={handleLogout} className={styles.logoutLink}>
+							（<span className={styles.logoutText}>登出</span>）
+						</span>
+					</p>
 				</div>
 
 				{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
@@ -101,7 +127,7 @@ export const FormsListPage = () => {
 							{ value: "submitted", label: "已送出" }
 						]}
 						activeTab={activeTab}
-						onTabChange={setActiveTab}
+						onTabChange={value => setActiveTab(value as TabStatus)}
 					/>
 
 					{formsQuery.isLoading ? (

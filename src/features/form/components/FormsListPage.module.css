@@ -18,7 +18,16 @@
 }
 
 .subtitle {
-	color: var(--color-caption);
+	color: var(--color-body);
+	font-weight: 330;
+}
+
+.logoutLink {
+	cursor: pointer;
+}
+
+.logoutText {
+	text-decoration: underline;
 }
 
 .list {

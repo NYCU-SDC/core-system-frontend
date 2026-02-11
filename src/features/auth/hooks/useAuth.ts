@@ -1,18 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { authService } from "@/features/auth/services/authService";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-// Example hook for authentication
-export const useAuth = () => {
-	const { data: user, isLoading } = useQuery({
-		queryKey: ["auth", "user"],
-		queryFn: async () => {
-			// Replace with actual API call
-			return null;
-		}
+export const useMe = () =>
+	useQuery({
+		queryKey: ["user", "me"],
+		queryFn: () => authService.getCurrentUser()
 	});
 
-	return {
-		user,
-		isLoading,
-		isAuthenticated: !!user
-	};
-};
+export const useLogout = () =>
+	useMutation({
+		mutationFn: () => authService.logout()
+	});

@@ -21,12 +21,15 @@ type FormRow = {
 };
 
 const toStatusVariant = (apiStatus: FormsForm["status"], deadline?: string): StatusVariant => {
-	// If deadline has passed, show as "done" (regardless of DRAFT or PUBLISHED)
+	// Draft always shows as draft no matter if it's overdue
+	if (apiStatus.toUpperCase() === "DRAFT") {
+		return "draft";
+	}
+	// Published: check if deadline passed
 	if (deadline && new Date(deadline) < new Date()) {
 		return "done";
 	}
-	// Map API status to UI status
-	return apiStatus === "PUBLISHED" ? "published" : "draft";
+	return "published";
 };
 
 const formatDate = (isoDate: string): string => {
