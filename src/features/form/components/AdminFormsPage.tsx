@@ -26,8 +26,11 @@ const toStatusVariant = (apiStatus: FormsForm["status"], deadline?: string): Sta
 		return "draft";
 	}
 	// Published: check if deadline passed
-	if (deadline && new Date(deadline) < new Date()) {
-		return "done";
+	if (apiStatus.toUpperCase() === "PUBLISHED") {
+		if (deadline && new Date(deadline) < new Date()) {
+			return "done";
+		}
+		return "published";
 	}
 	return "published";
 };
