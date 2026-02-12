@@ -2,12 +2,9 @@ import { UserLayout } from "@/layouts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService, type AuthUser } from "../services/authService";
+import { authService, canAccessWelcome, type AuthUser } from "../services/authService";
 import styles from "./CallbackPage.module.css";
 
-type CurrentUser = AuthUser & {
-	is_onboarded?: boolean;
-};
 function getSafeRedirectTarget(): string | null {
 	const params = new URLSearchParams(window.location.search);
 	const raw = params.get("r") ?? params.get("redirect") ?? params.get("redirectUrl");
@@ -33,10 +30,10 @@ export const CallbackPage = () => {
 			const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 			try {
-				let user: CurrentUser | null = null;
+				let user: AuthUser | null = null;
 
 				for (let attempt = 0; attempt < 3; attempt += 1) {
-					user = await authService.getCurrentUser<CurrentUser>();
+					user = await authService.getCurrentUser<AuthUser>();
 					if (user) {
 						break;
 					}
@@ -47,7 +44,7 @@ export const CallbackPage = () => {
 				const redirectTarget = getSafeRedirectTarget();
 
 				if (user) {
-					if (user.is_onboarded === false) {
+					if (canAccessWelcome(user)) {
 						navigate("/welcome", { replace: true });
 						return;
 					}

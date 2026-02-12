@@ -1,15 +1,26 @@
-import { UserRole } from "@nycu-sdc/core-system-sdk";
-
 // TODO: Align with backend user response contract if fields change.
 export type AuthUser = {
 	id?: string;
 	username?: string;
 	name?: string;
 	avatarUrl?: string;
-	// NOTE: SDK currently only exposes USER; ADMIN may be added later.
-	role?: UserRole | "ADMIN";
 	emails?: string[];
+	roles?: Array<"USER">;
 	is_onboarded?: boolean;
+	allow_onboarding?: boolean;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+
+export const canAccessWelcome = (user: unknown): boolean => {
+	if (!isRecord(user)) return false;
+
+	const isFirstLogin = user.is_onboarded === false;
+	const hasAllowFlag = typeof user.allow_onboarding === "boolean";
+	const isOnboardingAllowed = user.allow_onboarding === true;
+
+	// TODO: Remove fallback once backend always returns allow_onboarding.
+	return hasAllowFlag ? isFirstLogin && isOnboardingAllowed : isFirstLogin;
 };
 
 export type OAuthProvider = "google" | "nycu";
