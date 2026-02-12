@@ -2,10 +2,10 @@ import { UserLayout } from "@/layouts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "../services/authService";
+import { authService, type AuthUser } from "../services/authService";
 import styles from "./CallbackPage.module.css";
 
-type CurrentUser = {
+type CurrentUser = AuthUser & {
 	is_onboarded?: boolean;
 };
 function getSafeRedirectTarget(): string | null {
@@ -30,8 +30,19 @@ export const CallbackPage = () => {
 
 	useEffect(() => {
 		const processCallback = async () => {
+			const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 			try {
-				const user = await authService.getCurrentUser<CurrentUser>();
+				let user: CurrentUser | null = null;
+
+				for (let attempt = 0; attempt < 3; attempt += 1) {
+					user = await authService.getCurrentUser<CurrentUser>();
+					if (user) {
+						break;
+					}
+					await wait(300);
+				}
+
 				queryClient.setQueryData(["auth", "user"], user);
 				const redirectTarget = getSafeRedirectTarget();
 

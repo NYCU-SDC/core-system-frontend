@@ -1,7 +1,6 @@
 import { UserLayout } from "@/layouts";
 import { Button } from "@/shared/components";
 import { SiGoogle } from "@icons-pack/react-simple-icons";
-import { AuthOAuthProviders } from "@nycu-sdc/core-system-sdk";
 import { School } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -14,7 +13,15 @@ export const HomePage = () => {
 
 	const handleGoogleLogin = () => {
 		const origin = window.location.origin;
-		authService.redirectToOAuthLogin(AuthOAuthProviders.google, {
+		authService.redirectToOAuthLogin("google", {
+			callbackUrl: new URL("/callback", origin).toString(),
+			redirectUrl: new URL("/callback", origin).toString()
+		});
+	};
+
+	const handleNycuLogin = () => {
+		const origin = window.location.origin;
+		authService.redirectToOAuthLogin("nycu", {
 			callbackUrl: new URL("/callback", origin).toString(),
 			redirectUrl: new URL("/callback", origin).toString()
 		});
@@ -44,13 +51,11 @@ export const HomePage = () => {
 				</>
 			) : (
 				<>
-					<Link to="/welcome">
-						<div className={styles.btn}>
-							<Button icon={School} themeColor="var(--color-caption)" disabled={isLoading}>
-								Login with NYCU Portal
-							</Button>
-						</div>
-					</Link>
+					<div className={styles.btn}>
+						<Button icon={School} themeColor="var(--color-caption)" disabled={isLoading} onClick={handleNycuLogin}>
+							Login with NYCU Portal
+						</Button>
+					</div>
 					<div className={styles.btn}>
 						<Button simpleIcon={SiGoogle} themeColor="var(--orange)" disabled={isLoading} onClick={handleGoogleLogin}>
 							Login with Google

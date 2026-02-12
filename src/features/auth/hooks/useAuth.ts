@@ -1,18 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
-import { authService } from "../services/authService";
+import { authService, type AuthUser } from "../services/authService";
+
+const isAdminUser = (user: AuthUser | null) => {
+	if (!user?.role) {
+		return false;
+	}
+	return user.role.toLowerCase() === "admin";
+};
 
 export const useAuth = () => {
-	const { data: user, isLoading } = useQuery({
+	const { data: user, isLoading } = useQuery<AuthUser | null>({
 		queryKey: ["auth", "user"],
-		queryFn: async () => {
-			return authService.getCurrentUser();
-		},
+		queryFn: authService.getCurrentUser,
 		staleTime: 30_000
 	});
 
 	return {
-		user,
+		user: user ?? null,
 		isLoading,
-		isAuthenticated: !!user
+		isAuthenticated: !!user,
+		isAdmin: isAdminUser(user ?? null)
 	};
 };
