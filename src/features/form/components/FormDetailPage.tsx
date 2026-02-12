@@ -11,6 +11,7 @@ import {
 	type FormsForm,
 	type FormsQuestionResponse,
 	type FormsSection,
+	type ResponsesAnswerJSON,
 	type ResponsesAnswersRequestUpdate,
 	type ResponsesPreviewSection,
 	type ResponsesResponseProgress
@@ -51,14 +52,14 @@ export const FormDetailPage = () => {
 			});
 
 			const answersArray = Object.entries(answers)
-				.filter(([_, value]) => value !== "")
+				.filter(([, value]) => value !== "")
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 					const valueArray = value.includes(",") ? value.split(",") : [value];
 
 					return {
 						questionId,
-						questionType: questionType as any,
+						questionType: questionType as ResponsesAnswerJSON["questionType"],
 						value: valueArray
 					};
 				});
