@@ -3,10 +3,9 @@ import { Button, Checkbox, DetailedCheckbox, Input, Radio, TextArea } from "@/sh
 import {
 	formsGetFormById,
 	formsGetFormCoverImage,
-	formsListQuestions,
+	formsListSections,
 	responsesCreateFormResponse,
 	responsesGetFormResponse,
-	responsesListResponseSections,
 	responsesSubmitFormResponse,
 	responsesUpdateFormResponse,
 	type FormsForm,
@@ -14,8 +13,7 @@ import {
 	type FormsSection,
 	type ResponsesAnswersRequestUpdate,
 	type ResponsesPreviewSection,
-	type ResponsesResponseProgress,
-	type ResponsesResponseSections
+	type ResponsesResponseProgress
 } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,6 +21,7 @@ import styles from "./FormDetailPage.module.css";
 
 interface Section extends FormsSection {
 	questions?: FormsQuestionResponse[];
+	progress?: "DRAFT" | "SUBMITTED";
 }
 
 export const FormDetailPage = () => {
@@ -44,12 +43,25 @@ export const FormDetailPage = () => {
 		if (!responseId) return;
 
 		try {
+			const questionTypeMap: Record<string, string> = {};
+			sections.forEach(section => {
+				section.questions?.forEach(question => {
+					questionTypeMap[question.id] = question.type;
+				});
+			});
+
 			const answersArray = Object.entries(answers)
 				.filter(([_, value]) => value !== "")
-				.map(([questionId, value]) => ({
-					questionId,
-					value
-				}));
+				.map(([questionId, value]) => {
+					const questionType = questionTypeMap[questionId];
+					const valueArray = value.includes(",") ? value.split(",") : [value];
+
+					return {
+						questionId,
+						questionType: questionType as any,
+						value: valueArray
+					};
+				});
 
 			if (answersArray.length === 0) return;
 
@@ -120,8 +132,8 @@ export const FormDetailPage = () => {
 								const loadedAnswers: Record<string, string> = {};
 								existingResponse.data.questionAnswerPairs.forEach(section => {
 									section.questionAnswerPairs.forEach(pair => {
-										if (pair.question.id && pair.answer) {
-											loadedAnswers[pair.question.id] = pair.answer;
+										if (pair.question.id && pair.displayValue) {
+											loadedAnswers[pair.question.id] = pair.displayValue;
 										}
 									});
 								});
@@ -129,34 +141,16 @@ export const FormDetailPage = () => {
 							}
 
 							// 載入 sections 和 questions
-							const sectionsResponse = await responsesListResponseSections(responseCreation.data.id, { credentials: "include" });
+							const sectionsResponse = await formsListSections(formId, { credentials: "include" });
 							if (sectionsResponse.status === 200) {
-								const loadedSections: Section[] = await Promise.all(
-									sectionsResponse.data.sections.map(async (section: ResponsesResponseSections) => {
-										try {
-											const questionsResponse = await formsListQuestions(section.id, { responseId: responseCreation.data.id }, { credentials: "include" });
-
-											const questions = questionsResponse.status === 200 ? questionsResponse.data : [];
-
-											return {
-												id: section.id,
-												formId: formId,
-												title: section.title,
-												progress: "DRAFT" as const,
-												questions
-											};
-										} catch (err) {
-											console.error(`載入 section ${section.id} 的問題失敗:`, err);
-											return {
-												id: section.id,
-												formId: formId,
-												title: section.title,
-												progress: "DRAFT" as const,
-												questions: []
-											};
-										}
-									})
-								);
+								const loadedSections: Section[] = sectionsResponse.data.map(item => ({
+									id: item.sections.id,
+									formId: item.sections.formId,
+									title: item.sections.title,
+									description: item.sections.description,
+									progress: "DRAFT" as const,
+									questions: item.questions
+								}));
 
 								loadedSections.push({
 									id: "preview",
@@ -371,7 +365,7 @@ export const FormDetailPage = () => {
 										{pair.question.required && <span style={{ color: "red" }}> *</span>}
 									</span>
 									<span>：</span>
-									<span>{pair.answer || <span>未填寫</span>}</span>
+									<span>{pair.displayValue || <span>未填寫</span>}</span>
 								</li>
 							))}
 						</ul>
@@ -386,7 +380,13 @@ export const FormDetailPage = () => {
 		if (currentStep === sections.length - 1 && responseId) {
 			try {
 				await saveAnswers();
-				const submitResponse = await responsesSubmitFormResponse(responseId, { credentials: "include" });
+				const submitResponse = await responsesSubmitFormResponse(
+					responseId,
+					{
+						answers: []
+					},
+					{ credentials: "include" }
+				);
 
 				if (submitResponse.status === 200) {
 					setIsSubmitted(true);
@@ -477,12 +477,7 @@ export const FormDetailPage = () => {
 					</div>
 					<div className={styles.workflow}>
 						{sections.map((section, index) => (
-							<button
-								key={section.id}
-								type="button"
-								className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""} ${section.progress === "SUBMITTED" ? styles.completed : ""}`}
-								onClick={() => handleSectionClick(index)}
-							>
+							<button key={section.id} type="button" className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""}`} onClick={() => handleSectionClick(index)}>
 								{section.title}
 							</button>
 						))}
