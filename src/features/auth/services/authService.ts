@@ -67,7 +67,7 @@ export const authService = {
 
 		return readJsonSafely<unknown>(response);
 	},
-
+  
 	async getCurrentUser<TUser extends AuthUser = AuthUser>(): Promise<TUser | null> {
 		const response = await fetch("/api/users/me", {
 			credentials: "include"
@@ -81,5 +81,27 @@ export const authService = {
 		}
 
 		return readJsonSafely<TUser>(response);
+  },
+
+	async updateOnboarding(payload: { username: string; name: string }) {
+		const response = await fetch("/api/users/onboarding", {
+			method: "PUT",
+			credentials: "include",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(payload)
+		});
+
+		if (!response.ok) {
+			throw new Error("Failed to update onboarding");
+		}
+
+		const contentType = response.headers.get("content-type") ?? "";
+		if (!contentType.includes("application/json")) {
+			return null;
+		}
+
+		return response.json();
 	}
 };
