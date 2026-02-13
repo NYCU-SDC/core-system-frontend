@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { authService, canAccessWelcome, type AuthUser } from "../services/authService";
 import styles from "./CallbackPage.module.css";
 
-function getSafeRedirectTarget(): string | null {
+const getSafeRedirectTarget = (): string | null => {
 	const params = new URLSearchParams(window.location.search);
 	const raw = params.get("r") ?? params.get("redirect") ?? params.get("redirectUrl");
 
@@ -19,7 +19,7 @@ function getSafeRedirectTarget(): string | null {
 	} catch {
 		return null;
 	}
-}
+};
 
 export const CallbackPage = () => {
 	const navigate = useNavigate();
