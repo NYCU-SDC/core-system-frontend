@@ -22,14 +22,42 @@ export const authService = {
 	async logout() {
 		// Replace with actual API call
 		const response = await fetch("/api/auth/logout", {
-			method: "POST"
+			method: "POST",
+			credentials: "include"
 		});
 		return response.json();
 	},
 
 	async getCurrentUser() {
-		// Replace with actual API call
-		const response = await fetch("/api/auth/me");
+		const response = await fetch("/api/users/me", {
+			credentials: "include"
+		});
+		if (!response.ok) {
+			throw new Error("Failed to get current user");
+		}
+
+		return response.json();
+	},
+
+	async updateOnboarding(payload: { username: string; name: string }) {
+		const response = await fetch("/api/users/onboarding", {
+			method: "PUT",
+			credentials: "include",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(payload)
+		});
+
+		if (!response.ok) {
+			throw new Error("Failed to update onboarding");
+		}
+
+		const contentType = response.headers.get("content-type") ?? "";
+		if (!contentType.includes("application/json")) {
+			return null;
+		}
+
 		return response.json();
 	}
 };

@@ -3,6 +3,7 @@
 	inset: -8vh -8vw;
 	overflow: hidden;
 	pointer-events: none;
+	z-index: -10;
 }
 
 .row {
