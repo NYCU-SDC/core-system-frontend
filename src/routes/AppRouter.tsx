@@ -8,7 +8,7 @@ import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
 import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage } from "@/features/form/components";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
-import RequireAdmin from "./RequireAdmin";
+import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
 
 export const AppRouter = () => {
 	return (
@@ -27,15 +27,15 @@ export const AppRouter = () => {
 				<Route path="/forms" element={<FormsListPage />} />
 				<Route path="/forms/:id" element={<FormDetailPage />} />
 
-				{/* Organization redirects (admin only) */}
-				<Route element={<RequireAdmin />}>
+				{/* Organization redirects (org member only) */}
+				<Route element={<RequireOrgAdminAccess />}>
 					<Route path="/orgs/:orgId/*" element={<OrgRewriteToSdc />} />
 					<Route path="/orgs" element={<Navigate to="/orgs/sdc/forms" replace />} />
 					<Route path="/orgs/sdc" element={<Navigate to="/orgs/sdc/forms" replace />} />
 				</Route>
 
 				{/* Admin routes */}
-				<Route element={<RequireAdmin />}>
+				<Route element={<RequireOrgAdminAccess />}>
 					<Route path="/orgs/sdc/forms" element={<AdminFormsPage />} />
 					<Route path="/orgs/sdc/forms/:formid/info" element={<AdminFormDetailPage />} />
 					<Route path="/orgs/sdc/forms/:formid/edit" element={<AdminFormDetailPage />} />

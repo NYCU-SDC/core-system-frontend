@@ -1,4 +1,4 @@
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { ClipboardList, FileText, LogOut, Menu, Settings, X } from "lucide-react";
 import { useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router-dom";
@@ -17,7 +17,11 @@ export const AdminNav = () => {
 	const isFormDetail = !!matchPath({ path: "/orgs/sdc/forms/:formid/*", end: false }, pathname);
 	const isSettings = pathname.startsWith("/orgs/sdc/settings");
 
-	const { user } = useAuth();
+	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
+
+	if (isLoading || !canAccessOrgAdmin) {
+		return null;
+	}
 
 	const displayName = user?.name || user?.username || user?.emails?.[0] || "ˊ_>ˋ";
 	const initials = user ? displayName.slice(0, 2).toUpperCase() : displayName;

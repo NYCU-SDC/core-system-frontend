@@ -1,19 +1,19 @@
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-const RequireAdmin = () => {
-	const { isAdmin, isLoading } = useAuth();
+const RequireOrgAdminAccess = () => {
+	const { canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
 	const location = useLocation();
 
 	if (isLoading) {
 		return null;
 	}
 
-	if (!isAdmin) {
+	if (!canAccessOrgAdmin) {
 		return <Navigate to="/forms" replace state={{ from: location.pathname }} />;
 	}
 
 	return <Outlet />;
 };
 
-export default RequireAdmin;
+export default RequireOrgAdminAccess;
