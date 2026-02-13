@@ -11,10 +11,11 @@ export const useOrg = (slug: string) =>
 		queryFn: () => api.getOrg(slug)
 	});
 
-export const useOrgMembers = (slug: string) =>
+export const useOrgMembers = (slug: string, enabled = true) =>
 	useQuery({
 		queryKey: orgKeys.members(slug),
-		queryFn: () => api.listOrgMembers(slug)
+		queryFn: () => api.listOrgMembers(slug),
+		enabled
 	});
 
 /* ---------- Mutations ---------- */
