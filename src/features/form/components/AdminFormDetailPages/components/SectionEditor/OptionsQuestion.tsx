@@ -1,7 +1,7 @@
 import { Select } from "@/shared/components/Select/Select";
 import { Switch } from "@/shared/components/Switch/Switch";
 import { X } from "lucide-react";
-import type { Option } from "../types/option";
+import type { Option } from "../../types/option";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./OptionsQuestion.module.css";
 

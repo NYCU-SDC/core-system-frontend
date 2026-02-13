@@ -3,7 +3,7 @@ import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
-import { QuestionCard } from "./components/QuestionCard";
+import { QuestionCard } from "./components/SectionEditor/QuestionCard";
 import type { Option, Question } from "./types/option";
 
 type NewQuestion = {

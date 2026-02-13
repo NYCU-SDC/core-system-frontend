@@ -43,6 +43,15 @@
 	color: var(--comment);
 }
 
+.text {
+	border-radius: 0.25rem;
+	padding: 0.25rem 0.5rem;
+}
+
+.text:focus-visible {
+	outline: none;
+}
+
 .icon {
 	display: flex;
 	align-items: center;
