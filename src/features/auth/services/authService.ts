@@ -8,6 +8,8 @@ export type AuthUser = {
 	roles?: Array<"USER">;
 	is_onboarded?: boolean;
 	allow_onboarding?: boolean;
+	isMember?: boolean;
+	isFirstLogin?: boolean;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
