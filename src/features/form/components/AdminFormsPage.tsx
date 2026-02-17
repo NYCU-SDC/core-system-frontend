@@ -77,8 +77,7 @@ const mockForms: { id: string; title: string; lastEdited: string; responses: num
 		status: "done",
 		deadline: "2025/12/31"
 	}
-	return "published";
-};
+];
 
 const formatDate = (isoDate: string): string => {
 	const date = new Date(isoDate);

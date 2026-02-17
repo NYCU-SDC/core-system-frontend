@@ -1,5 +1,5 @@
 import type { UserUser } from "@nycu-sdc/core-system-sdk";
-import { AuthOAuthProviders, authLogout, userGetMe } from "@nycu-sdc/core-system-sdk";
+import { authLogout, userGetMe } from "@nycu-sdc/core-system-sdk";
 
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"
