@@ -1,6 +1,6 @@
 import { useLogout, useMe } from "@/features/auth/hooks/useAuth";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
-import { Button, Toast } from "@/shared/components";
+import { Button, useToast } from "@/shared/components";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 import { UnitUserFormStatus, type UnitUserForm } from "@nycu-sdc/core-system-sdk";
@@ -44,9 +44,8 @@ const toFormRow = (form: UnitUserForm): FormRow => {
 
 export const FormsListPage = () => {
 	const navigate = useNavigate();
+	const { pushToast } = useToast();
 	const [activeTab, setActiveTab] = useState<(typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus]>(UnitUserFormStatus.NOT_STARTED);
-	const [toastOpen, setToastOpen] = useState(false);
-	const [toastMessage, setToastMessage] = useState("");
 
 	// Fetch current user
 	const meQuery = useMe();
@@ -60,8 +59,11 @@ export const FormsListPage = () => {
 		logoutMutation.mutate(undefined, {
 			onSuccess: () => navigate("/"),
 			onError: error => {
-				setToastMessage(error.message || "Failed to logout");
-				setToastOpen(true);
+				pushToast({
+					title: "Error",
+					description: error.message || "Failed to logout",
+					variant: "error"
+				});
 			}
 		});
 	};
@@ -85,8 +87,11 @@ export const FormsListPage = () => {
 					navigate(`/forms/${data.id}`);
 				},
 				onError: error => {
-					setToastMessage(error.message || "Failed to start form");
-					setToastOpen(true);
+					pushToast({
+						title: "Error",
+						description: error.message || "Failed to start form",
+						variant: "error"
+					});
 				}
 			});
 		} else {
@@ -145,8 +150,6 @@ export const FormsListPage = () => {
 					</p>
 				)}
 			</div>
-
-			<Toast open={toastOpen} onOpenChange={setToastOpen} title="Error" description={toastMessage} variant="error" />
 		</div>
 	);
 };

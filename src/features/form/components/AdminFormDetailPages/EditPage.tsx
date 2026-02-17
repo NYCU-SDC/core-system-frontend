@@ -1,4 +1,4 @@
-import { Toast } from "@/shared/components/Toast/Toast";
+import { useToast } from "@/shared/components";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
@@ -6,6 +6,8 @@ import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
 
 export const AdminFormEditPage = () => {
+	const { pushToast } = useToast();
+
 	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
 		const path: string[] = [];
 		let currentId: string | undefined = startId;
@@ -79,9 +81,6 @@ export const AdminFormEditPage = () => {
 		];
 		return postProcessNodes(nodeItems);
 	});
-	const [toastOpen, setToastOpen] = useState(false);
-	const [toastTitle, setToastTitle] = useState("");
-	const [toastDescription, setToastDescription] = useState("");
 
 	const handleAddSection = (id: string) => {
 		const prevNodes = [...nodeItems];
@@ -342,18 +341,22 @@ export const AdminFormEditPage = () => {
 	const handleDeleteSection = (id: string) => {
 		const prevNodes = [...nodeItems];
 		if (prevNodes.length <= 3) {
-			setToastOpen(true);
-			setToastTitle("無法刪除區塊");
-			setToastDescription("表單必須至少包含開始、結束及一個區塊。");
+			pushToast({
+				title: "無法刪除區塊",
+				description: "表單必須至少包含開始、結束及一個區塊。",
+				variant: "error"
+			});
 			return;
 		}
 		const nodeToDelete = prevNodes.find(node => node.id === id);
 		const nodeToMerge = prevNodes.find(node => node.nextFalse === id || node.nextTrue === id);
 		if (!nodeToDelete) return;
 		if ((nodeToMerge || nodeToDelete.isMergeNode) && nodeToDelete.type === "CONDITION" && nodeToDelete.nextTrue !== nodeToDelete.mergeId && nodeToDelete.nextFalse !== nodeToDelete.mergeId) {
-			setToastOpen(true);
-			setToastTitle("無法刪除條件節點");
-			setToastDescription("請確保只有一個可辨識的分支路徑後再嘗試刪除。");
+			pushToast({
+				title: "無法刪除條件節點",
+				description: "請確保只有一個可辨識的分支路徑後再嘗試刪除。",
+				variant: "error"
+			});
 			return;
 		}
 
@@ -394,7 +397,6 @@ export const AdminFormEditPage = () => {
 		<>
 			<h2>表單結構</h2>
 			<blockquote className={styles.description}>點擊區塊以新增或編輯條件與問題</blockquote>
-			<Toast open={toastOpen} onOpenChange={setToastOpen} title={toastTitle} description={toastDescription} variant="error" />
 			<div className={styles.flowContainer}>
 				<FlowRenderer
 					nodes={nodeItems}

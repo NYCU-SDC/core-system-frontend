@@ -1,6 +1,6 @@
 import { useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgMember, useUpdateOrg } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminLayout } from "@/layouts";
-import { Button, Input, Label } from "@/shared/components";
+import { Button, Input, Label, useToast } from "@/shared/components";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 import { LogOut } from "lucide-react";
@@ -44,6 +44,7 @@ const toMemberRow = (value: unknown): MemberRow | null => {
 
 export const AdminSettingsPage = () => {
 	const orgSlug = "sdc";
+	const { pushToast } = useToast();
 
 	const orgQuery = useOrg(orgSlug);
 	const membersQuery = useOrgMembers(orgSlug);
@@ -62,6 +63,10 @@ export const AdminSettingsPage = () => {
 		return raw.map(toMemberRow).filter((m): m is MemberRow => m !== null);
 	}, [membersQuery.data]);
 
+	const showSuccessToast = (title: string, description: string) => {
+		pushToast({ title, description, variant: "success" });
+	};
+
 	const handleSaveOrgName = () => {
 		if (!orgQuery.data) return;
 
@@ -73,7 +78,10 @@ export const AdminSettingsPage = () => {
 				slug: orgQuery.data.slug
 			},
 			{
-				onSuccess: () => setOrgNameDraft(null)
+				onSuccess: () => {
+					setOrgNameDraft(null);
+					showSuccessToast("編輯成功", "組織資訊已更新。");
+				}
 			}
 		);
 	};
@@ -85,7 +93,10 @@ export const AdminSettingsPage = () => {
 		addMemberMutation.mutate(
 			{ email: trimmed },
 			{
-				onSuccess: () => setEmail("")
+				onSuccess: () => {
+					setEmail("");
+					showSuccessToast("邀請成功", `已成功邀請 ${trimmed}。`);
+				}
 			}
 		);
 	};

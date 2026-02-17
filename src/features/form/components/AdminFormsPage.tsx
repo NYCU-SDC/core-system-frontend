@@ -1,6 +1,6 @@
 import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
-import { Button, Toast } from "@/shared/components";
+import { Button, useToast } from "@/shared/components";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
@@ -49,9 +49,8 @@ const toFormRow = (form: FormsForm): FormRow => ({
 
 export const AdminFormsPage = () => {
 	const navigate = useNavigate();
+	const { pushToast } = useToast();
 	const [activeTab, setActiveTab] = useState("all");
-	const [toastOpen, setToastOpen] = useState(false);
-	const [toastMessage, setToastMessage] = useState("");
 
 	// Fetch forms from API
 	const orgSlug = "sdc";
@@ -86,8 +85,11 @@ export const AdminFormsPage = () => {
 					navigate(`/orgs/sdc/forms/${newForm.id}/info`);
 				},
 				onError: error => {
-					setToastMessage(error.message || "Failed to create form");
-					setToastOpen(true);
+					pushToast({
+						title: "Error",
+						description: error.message || "Failed to create form",
+						variant: "error"
+					});
 				}
 			}
 		);
@@ -116,8 +118,6 @@ export const AdminFormsPage = () => {
 				</div>
 
 				{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
-
-				<Toast open={toastOpen} onOpenChange={setToastOpen} title="Error" description={toastMessage} variant="error" />
 
 				{formsQuery.isLoading ? (
 					<LoadingSpinner />
