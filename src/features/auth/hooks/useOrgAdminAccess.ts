@@ -2,7 +2,7 @@ import { useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
 import { useMemo } from "react";
 import { useAuth } from "./useAuth";
 
-const ORG_SLUG = "SDC";
+const ORG_SLUG = "sdc";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 const getString = (value: unknown): string | null => (typeof value === "string" ? value : null);

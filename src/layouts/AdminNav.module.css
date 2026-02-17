@@ -3,7 +3,7 @@
 	position: sticky;
 	top: 0;
 	width: 66px;
-	height: 100vh;
+	height: 100dvh;
 	background: var(--background-color-primary);
 	border-right: 1px solid var(--background-color-tertiary);
 	transition: transform 420ms ease-in-out;

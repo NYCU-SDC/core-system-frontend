@@ -51,13 +51,11 @@ export const AdminSectionEditPage = () => {
 	};
 
 	const handleAddQuestion = (setQuestion: () => Question) => {
-		console.log("Adding question:", setQuestion());
 		setQuestions([...questions, setQuestion()]);
 	};
 
 	const handleRemoveQuestion = (index: number) => {
 		const updatedQuestions = [...questions];
-		console.log("Removing question at index:", index);
 		updatedQuestions.splice(index, 1);
 		setQuestions(updatedQuestions);
 	};

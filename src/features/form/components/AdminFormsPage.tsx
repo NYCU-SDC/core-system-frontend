@@ -54,7 +54,7 @@ export const AdminFormsPage = () => {
 	const [toastMessage, setToastMessage] = useState("");
 
 	// Fetch forms from API
-	const orgSlug = "SDC";
+	const orgSlug = "sdc";
 	const formsQuery = useOrgForms(orgSlug);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 

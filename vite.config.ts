@@ -13,11 +13,11 @@ export default defineConfig({
 	server: {
 		proxy: {
 			"/api": {
-				target: "https://mock.core-system.sdc.nycu.club",
+				target: "http://localhost:4010",
 				changeOrigin: true,
-				secure: true, // HTTPS
+				secure: false, // HTTPS
 				cookieDomainRewrite: {
-					"dev.core-system.sdc.nycu.club": "localhost"
+					"localhost:4010": "localhost"
 				}
 			}
 		}

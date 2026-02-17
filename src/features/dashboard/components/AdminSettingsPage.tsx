@@ -43,14 +43,10 @@ const toMemberRow = (value: unknown): MemberRow | null => {
 };
 
 export const AdminSettingsPage = () => {
-	// NOTE: current routes are hard-coded to /orgs/sdc/*
-	const orgSlug = "SDC";
+	const orgSlug = "sdc";
 
 	const orgQuery = useOrg(orgSlug);
 	const membersQuery = useOrgMembers(orgSlug);
-
-	console.log("orgQuery", { status: orgQuery.status, data: orgQuery.data, error: orgQuery.error });
-	console.log("membersQuery", { status: membersQuery.status, data: membersQuery.data, error: membersQuery.error });
 
 	const updateOrgMutation = useUpdateOrg(orgSlug);
 	const addMemberMutation = useAddOrgMember(orgSlug);

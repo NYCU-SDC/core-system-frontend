@@ -1,5 +1,5 @@
-import type { UserUser } from "@nycu-sdc/core-system-sdk";
-import { authLogout, userGetMe } from "@nycu-sdc/core-system-sdk";
+import type { UserOnboardingRequest, UserUser } from "@nycu-sdc/core-system-sdk";
+import { authLogout, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
 
 export type OAuthProvider = "google" | "nycu";
 
@@ -61,15 +61,8 @@ export const authService = {
 		return res.data as T;
 	},
 
-	async updateOnboarding(data: { username: string; name: string }): Promise<void> {
-		const res = await fetch("/api/user/onboarding", {
-			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify(data),
-			...defaultRequestOptions
-		});
+	async updateOnboarding(data: UserOnboardingRequest): Promise<void> {
+		const res = await userUpdateUsername(data, defaultRequestOptions);
 		assertOk(res.status, "Failed to update onboarding");
 	}
 };

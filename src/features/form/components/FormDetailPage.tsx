@@ -12,10 +12,14 @@ import {
 	type FormsQuestionResponse,
 	type FormsSection,
 	type ResponsesAnswersRequestUpdate,
-	type ResponsesPreviewSection,
-	type ResponsesResponseProgress
+	type ResponsesDateAnswer,
+	type ResponsesResponseProgress,
+	type ResponsesResponseSections,
+	type ResponsesScaleAnswer,
+	type ResponsesStringAnswer,
+	type ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
@@ -35,10 +39,10 @@ export const FormDetailPage = () => {
 	const [sections, setSections] = useState<Section[]>([]);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-	const [previewData, setPreviewData] = useState<ResponsesPreviewSection[] | null>(null);
+	const [previewData, setPreviewData] = useState<ResponsesResponseSections[] | null>(null);
 	const [responseProgress, setResponseProgress] = useState<ResponsesResponseProgress>("DRAFT");
 
-	const saveAnswers = async () => {
+	const saveAnswers = useCallback(async () => {
 		if (!responseId) return;
 
 		try {
@@ -62,29 +66,29 @@ export const FormDetailPage = () => {
 						const valueArray = value.includes(",") ? value.split(",") : [value];
 						return {
 							questionId,
-							questionType: questionType as any,
+							questionType: questionType as ResponsesStringArrayAnswer["questionType"],
 							value: valueArray
-						};
+						} as ResponsesStringArrayAnswer;
 					} else {
 						return {
 							questionId,
-							questionType: questionType as any,
+							questionType: questionType as ResponsesStringAnswer["questionType"],
 							value: value
-						};
+						} as ResponsesStringAnswer;
 					}
 				});
 
 			if (answersArray.length === 0) return;
 
 			const answersUpdate: ResponsesAnswersRequestUpdate = {
-				answers: answersArray
+				answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[]
 			};
 
 			await responsesUpdateFormResponse(responseId, answersUpdate, { credentials: "include" });
 		} catch (error) {
 			console.error("儲存答案失敗:", error);
 		}
-	};
+	}, [responseId, answers, sections]);
 
 	useEffect(() => {
 		if (!responseId) return;
@@ -94,7 +98,7 @@ export const FormDetailPage = () => {
 		}, 1000); // 1 秒後儲存
 
 		return () => clearTimeout(timer);
-	}, [answers, responseId]);
+	}, [answers, responseId, saveAnswers]);
 
 	// 載入表單資料
 	useEffect(() => {
@@ -136,15 +140,15 @@ export const FormDetailPage = () => {
 							const existingResponse = await responsesGetFormResponse(formId, responseCreation.data.id, { credentials: "include" });
 							if (existingResponse.status === 200) {
 								// 儲存預覽資料和進度
-								setPreviewData(existingResponse.data.questionAnswerPairs);
+								setPreviewData(existingResponse.data.sections);
 								setResponseProgress(existingResponse.data.progress);
 
 								// 載入已儲存的答案
 								const loadedAnswers: Record<string, string> = {};
-								existingResponse.data.questionAnswerPairs.forEach(section => {
-									section.questionAnswerPairs.forEach(pair => {
-										if (pair.question.id && pair.displayValue) {
-											loadedAnswers[pair.question.id] = pair.displayValue;
+								existingResponse.data.sections.forEach(section => {
+									section.answerDetails.forEach(detail => {
+										if (detail.question.id && detail.payload.displayValue) {
+											loadedAnswers[detail.question.id] = detail.payload.displayValue;
 										}
 									});
 								});
@@ -214,7 +218,7 @@ export const FormDetailPage = () => {
 				try {
 					const response = await responsesGetFormResponse(formId, responseId, { credentials: "include" });
 					if (response.status === 200) {
-						setPreviewData(response.data.questionAnswerPairs);
+						setPreviewData(response.data.sections);
 						setResponseProgress(response.data.progress);
 					}
 				} catch (error) {
@@ -254,7 +258,6 @@ export const FormDetailPage = () => {
 
 	const renderQuestion = (question: FormsQuestionResponse) => {
 		const value = answers[question.id] || "";
-		console.log("Rendering question:", question, "with value:", value);
 
 		switch (question.type) {
 			case "SHORT_TEXT":
@@ -369,16 +372,16 @@ export const FormDetailPage = () => {
 			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
 				{previewData.map((section, sectionIndex) => (
 					<div key={sectionIndex} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-						<h3>{section.sectionTitle}</h3>
+						<h3>{section.title}</h3>
 						<ul style={{ listStyleType: "disc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-							{section.questionAnswerPairs.map((pair, questionIndex) => (
+							{section.answerDetails.map((detail, questionIndex) => (
 								<li key={questionIndex}>
 									<span style={{ fontWeight: 500 }}>
-										{pair.question.title}
-										{pair.question.required && <span style={{ color: "red" }}> *</span>}
+										{detail.question.title}
+										{detail.question.required && <span style={{ color: "red" }}> *</span>}
 									</span>
 									<span>：</span>
-									<span>{pair.displayValue || <span>未填寫</span>}</span>
+									<span>{detail.payload.displayValue || <span>未填寫</span>}</span>
 								</li>
 							))}
 						</ul>

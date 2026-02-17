@@ -64,8 +64,6 @@ export const AdminFormEditPage = () => {
 			}
 		});
 
-		console.log("Post-processed Nodes:", updatedNodes);
-
 		return updatedNodes;
 	};
 

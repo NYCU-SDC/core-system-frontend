@@ -1,13 +1,3 @@
-.container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	min-height: 100vh;
-	text-align: center;
-	gap: 2rem;
-}
-
 .message {
 	font-size: 1.5rem;
 	color: var(--color-heading);

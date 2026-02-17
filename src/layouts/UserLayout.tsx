@@ -8,11 +8,9 @@ interface UserLayoutProps {
 
 export const UserLayout = ({ children }: UserLayoutProps) => {
 	return (
-		<>
-			<div className={styles.container}>
-				<div className={styles.content}>{children}</div>
-			</div>
+		<main className={styles.main}>
+			<div className={styles.container}>{children}</div>
 			<Footer />
-		</>
+		</main>
 	);
 };
