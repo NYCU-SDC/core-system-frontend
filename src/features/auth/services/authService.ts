@@ -8,6 +8,8 @@ export type AuthUser = {
 	roles?: Array<"USER">;
 	is_onboarded?: boolean;
 	allow_onboarding?: boolean;
+	isMember?: boolean;
+	isFirstLogin?: boolean;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
@@ -67,7 +69,7 @@ export const authService = {
 
 		return readJsonSafely<unknown>(response);
 	},
-  
+
 	async getCurrentUser<TUser extends AuthUser = AuthUser>(): Promise<TUser | null> {
 		const response = await fetch("/api/users/me", {
 			credentials: "include"
@@ -81,7 +83,7 @@ export const authService = {
 		}
 
 		return readJsonSafely<TUser>(response);
-  },
+	},
 
 	async updateOnboarding(payload: { username: string; name: string }) {
 		const response = await fetch("/api/users/onboarding", {

@@ -8,6 +8,7 @@ import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
 import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage } from "@/features/form/components";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
+import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
 
 export const AppRouter = () => {
 	return (
@@ -26,19 +27,23 @@ export const AppRouter = () => {
 				<Route path="/forms" element={<FormsListPage />} />
 				<Route path="/forms/:id" element={<FormDetailPage />} />
 
-				{/* Organization redirects */}
-				<Route path="/orgs/:orgId/*" element={<OrgRewriteToSdc />} />
-				<Route path="/orgs" element={<Navigate to="/orgs/sdc/forms" replace />} />
-				<Route path="/orgs/sdc" element={<Navigate to="/orgs/sdc/forms" replace />} />
+				{/* Organization redirects (org member only) */}
+				<Route element={<RequireOrgAdminAccess />}>
+					<Route path="/orgs/:orgId/*" element={<OrgRewriteToSdc />} />
+					<Route path="/orgs" element={<Navigate to="/orgs/sdc/forms" replace />} />
+					<Route path="/orgs/sdc" element={<Navigate to="/orgs/sdc/forms" replace />} />
+				</Route>
 
 				{/* Admin routes */}
-				<Route path="/orgs/sdc/forms" element={<AdminFormsPage />} />
-				<Route path="/orgs/sdc/forms/:formid/info" element={<AdminFormDetailPage />} />
-				<Route path="/orgs/sdc/forms/:formid/edit" element={<AdminFormDetailPage />} />
-				<Route path="/orgs/sdc/forms/:formid/section/:sectionId/edit" element={<AdminFormDetailPage />} />
-				<Route path="/orgs/sdc/forms/:formid/reply" element={<AdminFormDetailPage />} />
-				<Route path="/orgs/sdc/forms/:formid/design" element={<AdminFormDetailPage />} />
-				<Route path="/orgs/sdc/settings" element={<AdminSettingsPage />} />
+				<Route element={<RequireOrgAdminAccess />}>
+					<Route path="/orgs/sdc/forms" element={<AdminFormsPage />} />
+					<Route path="/orgs/sdc/forms/:formid/info" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/sdc/forms/:formid/edit" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/sdc/forms/:formid/section/:sectionId/edit" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/sdc/forms/:formid/reply" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/sdc/forms/:formid/design" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/sdc/settings" element={<AdminSettingsPage />} />
+				</Route>
 
 				{/* 404 */}
 				<Route path="*" element={<NotFoundPage />} />

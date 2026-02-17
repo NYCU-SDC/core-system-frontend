@@ -1,5 +1,7 @@
+import { authService, type AuthUser } from "@/features/auth/services/authService";
 import { useQuery } from "@tanstack/react-query";
-import { authService, type AuthUser } from "../services/authService";
+
+const canAccessAdmin = (user: AuthUser | null) => !!user;
 
 export const useAuth = () => {
 	const { data: user, isLoading } = useQuery<AuthUser | null>({
@@ -12,6 +14,7 @@ export const useAuth = () => {
 		user: user ?? null,
 		isLoading,
 		isAuthenticated: !!user,
-		isOnboarded: user?.is_onboarded ?? false
+		isOnboarded: user?.is_onboarded ?? false,
+		isAdmin: canAccessAdmin(user ?? null)
 	};
 };
