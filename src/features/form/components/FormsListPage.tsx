@@ -4,30 +4,27 @@ import { UserLayout } from "@/layouts";
 import { Button, Toast } from "@/shared/components";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
-import type { UnitUserForm } from "@nycu-sdc/core-system-sdk";
+import { UnitUserFormStatus, type UnitUserForm } from "@nycu-sdc/core-system-sdk";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./FormsListPage.module.css";
 import { TabButtons } from "./TabButtons";
 
 /* ---------- API Data → UI Model ---------- */
-type TabStatus = "pending" | "inProgress" | "submitted";
-
 type FormRow = {
 	id: string;
 	title: string;
 	deadline: string;
-	status: TabStatus;
-	apiStatus: string; // Original API status for logic
+	status: (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus];
 	buttonLabel: string;
 	responseIds?: string[];
 };
 
-// Map API status to UI tab status and button label
-const statusMap: Record<string, { tab: TabStatus; button: string }> = {
-	NOT_STARTED: { tab: "pending", button: "開始填寫" },
-	IN_PROGRESS: { tab: "inProgress", button: "繼續填寫" },
-	COMPLETED: { tab: "submitted", button: "查看" }
+// Map API status to button label
+const statusMap: Record<(typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus], string> = {
+	[UnitUserFormStatus.NOT_STARTED]: "開始填寫",
+	[UnitUserFormStatus.IN_PROGRESS]: "繼續填寫",
+	[UnitUserFormStatus.COMPLETED]: "查看"
 };
 
 const formatDate = (isoDate: string): string => {
@@ -36,21 +33,19 @@ const formatDate = (isoDate: string): string => {
 };
 
 const toFormRow = (form: UnitUserForm): FormRow => {
-	const mapped = statusMap[form.status] ?? { tab: "pending", button: "開始填寫" };
 	return {
 		id: form.id,
 		title: form.title,
 		deadline: formatDate(form.deadline),
-		status: mapped.tab,
-		apiStatus: form.status,
-		buttonLabel: mapped.button,
+		status: form.status,
+		buttonLabel: statusMap[form.status],
 		responseIds: form.responseIds
 	};
 };
 
 export const FormsListPage = () => {
 	const navigate = useNavigate();
-	const [activeTab, setActiveTab] = useState<TabStatus>("pending");
+	const [activeTab, setActiveTab] = useState<(typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus]>(UnitUserFormStatus.NOT_STARTED);
 	const [toastOpen, setToastOpen] = useState(false);
 	const [toastMessage, setToastMessage] = useState("");
 
@@ -84,7 +79,7 @@ export const FormsListPage = () => {
 	}, [forms, activeTab]);
 
 	const handleFormClick = (form: FormRow) => {
-		if (form.apiStatus === "NOT_STARTED") {
+		if (form.status === UnitUserFormStatus.NOT_STARTED) {
 			// Create form response first, then navigate with the new response id
 			createResponseMutation.mutate(form.id, {
 				onSuccess: data => {
@@ -122,12 +117,12 @@ export const FormsListPage = () => {
 				<div className={styles.list}>
 					<TabButtons
 						tabs={[
-							{ value: "pending", label: "待填寫" },
-							{ value: "inProgress", label: "填寫中" },
-							{ value: "submitted", label: "已送出" }
+							{ value: UnitUserFormStatus.NOT_STARTED, label: "待填寫" },
+							{ value: UnitUserFormStatus.IN_PROGRESS, label: "填寫中" },
+							{ value: UnitUserFormStatus.COMPLETED, label: "已送出" }
 						]}
 						activeTab={activeTab}
-						onTabChange={value => setActiveTab(value as TabStatus)}
+						onTabChange={value => setActiveTab(value as (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus])}
 					/>
 
 					{formsQuery.isLoading ? (
@@ -146,9 +141,9 @@ export const FormsListPage = () => {
 						))
 					) : (
 						<p className={styles.empty}>
-							{activeTab === "pending" && "您沒有待填寫的表單。"}
-							{activeTab === "inProgress" && "您沒有填寫中的表單。"}
-							{activeTab === "submitted" && "您沒有已送出的表單。"}
+							{activeTab === UnitUserFormStatus.NOT_STARTED && "您沒有待填寫的表單。"}
+							{activeTab === UnitUserFormStatus.IN_PROGRESS && "您沒有填寫中的表單。"}
+							{activeTab === UnitUserFormStatus.COMPLETED && "您沒有已送出的表單。"}
 						</p>
 					)}
 				</div>
