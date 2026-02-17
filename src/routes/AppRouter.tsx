@@ -6,6 +6,7 @@ import { WelcomePage } from "@/features/auth/components/WelcomePage";
 import { AdminSettingsPage } from "@/features/dashboard/components/AdminSettingsPage";
 import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
 import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage } from "@/features/form/components";
+import { SmartLayout } from "@/layouts";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
 import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
@@ -23,9 +24,22 @@ export const AppRouter = () => {
 				{/* Demo route */}
 				<Route path="/demo" element={<ComponentsDemo />} />
 
-				{/* User routes */}
-				<Route path="/forms" element={<FormsListPage />} />
-				<Route path="/forms/:id" element={<FormDetailPage />} />
+				<Route
+					path="/forms"
+					element={
+						<SmartLayout>
+							<FormsListPage />
+						</SmartLayout>
+					}
+				/>
+				<Route
+					path="/forms/:id"
+					element={
+						<SmartLayout>
+							<FormDetailPage />
+						</SmartLayout>
+					}
+				/>
 
 				{/* Organization redirects (org member only) */}
 				<Route element={<RequireOrgAdminAccess />}>

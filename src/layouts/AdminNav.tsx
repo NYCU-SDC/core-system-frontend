@@ -1,20 +1,16 @@
 import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { ClipboardList, FileText, LogOut, Menu, Settings, X } from "lucide-react";
 import { useState } from "react";
-import { Link, matchPath, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styles from "./AdminNav.module.css";
 
 export const AdminNav = () => {
-	const { formid } = useParams();
 	const { pathname } = useLocation();
-
-	const DEMO_FORM_ID = ":formid";
-	const toInfo = `/orgs/sdc/forms/${formid ?? DEMO_FORM_ID}/info`;
 
 	const [isOpen, setIsOpen] = useState(false);
 
-	const isFormsDashboard = pathname === "/orgs/sdc/forms";
-	const isFormDetail = !!matchPath({ path: "/orgs/sdc/forms/:formid/*", end: false }, pathname);
+	const isUserForms = pathname === "/forms" || pathname.startsWith("/forms/");
+	const isFormsDashboard = pathname === "/orgs/sdc/forms" || pathname.startsWith("/orgs/sdc/forms/");
 	const isSettings = pathname.startsWith("/orgs/sdc/settings");
 
 	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
@@ -39,14 +35,14 @@ export const AdminNav = () => {
 				<nav className={styles.nav}>
 					{/* Upper */}
 					<div className={styles.upperNav}>
-						<Link to="/orgs/sdc/forms" className={styles.link}>
-							<div className={`${styles.navItem} ${isFormsDashboard ? styles.navItemActive : ""}`}>
+						<Link to="/forms" className={styles.link} title="我的表單">
+							<div className={`${styles.navItem} ${isUserForms ? styles.navItemActive : ""}`}>
 								<ClipboardList size={22} />
 							</div>
 						</Link>
 
-						<Link to={toInfo} className={styles.link}>
-							<div className={`${styles.navItem} ${isFormDetail ? styles.navItemActive : ""}`}>
+						<Link to="/orgs/sdc/forms" className={styles.link} title="表單管理">
+							<div className={`${styles.navItem} ${isFormsDashboard ? styles.navItemActive : ""}`}>
 								<FileText size={22} />
 							</div>
 						</Link>

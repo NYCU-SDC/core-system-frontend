@@ -1,6 +1,5 @@
 import { useLogout, useMe } from "@/features/auth/hooks/useAuth";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
-import { UserLayout } from "@/layouts";
 import { Button, Toast } from "@/shared/components";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
@@ -100,56 +99,54 @@ export const FormsListPage = () => {
 	};
 
 	return (
-		<UserLayout>
-			<div className={styles.container}>
-				<div className={styles.header}>
-					<h1 className={styles.title}>我的表單</h1>
-					<p className={styles.subtitle}>
-						不是 {meQuery.data?.name} 嗎？{" "}
-						<span onClick={handleLogout} className={styles.logoutLink}>
-							（<span className={styles.logoutText}>登出</span>）
-						</span>
-					</p>
-				</div>
-
-				{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
-
-				<div className={styles.list}>
-					<TabButtons
-						tabs={[
-							{ value: UnitUserFormStatus.NOT_STARTED, label: "待填寫" },
-							{ value: UnitUserFormStatus.IN_PROGRESS, label: "填寫中" },
-							{ value: UnitUserFormStatus.COMPLETED, label: "已送出" }
-						]}
-						activeTab={activeTab}
-						onTabChange={value => setActiveTab(value as (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus])}
-					/>
-
-					{formsQuery.isLoading ? (
-						<LoadingSpinner />
-					) : filteredForms.length > 0 ? (
-						filteredForms.map(form => (
-							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form)}>
-								<div className={styles.cardInfo}>
-									<h3 className={styles.cardTitle}>{form.title}</h3>
-									<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
-								</div>
-								<Button className={styles.sharedBtn} processing={createResponseMutation.isPending}>
-									{form.buttonLabel}
-								</Button>
-							</div>
-						))
-					) : (
-						<p className={styles.empty}>
-							{activeTab === UnitUserFormStatus.NOT_STARTED && "您沒有待填寫的表單。"}
-							{activeTab === UnitUserFormStatus.IN_PROGRESS && "您沒有填寫中的表單。"}
-							{activeTab === UnitUserFormStatus.COMPLETED && "您沒有已送出的表單。"}
-						</p>
-					)}
-				</div>
-
-				<Toast open={toastOpen} onOpenChange={setToastOpen} title="Error" description={toastMessage} variant="error" />
+		<div className={styles.container}>
+			<div className={styles.header}>
+				<h1 className={styles.title}>我的表單</h1>
+				<p className={styles.subtitle}>
+					不是 {meQuery.data?.name} 嗎？{" "}
+					<span onClick={handleLogout} className={styles.logoutLink}>
+						（<span className={styles.logoutText}>登出</span>）
+					</span>
+				</p>
 			</div>
-		</UserLayout>
+
+			{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
+
+			<div className={styles.list}>
+				<TabButtons
+					tabs={[
+						{ value: UnitUserFormStatus.NOT_STARTED, label: "待填寫" },
+						{ value: UnitUserFormStatus.IN_PROGRESS, label: "填寫中" },
+						{ value: UnitUserFormStatus.COMPLETED, label: "已送出" }
+					]}
+					activeTab={activeTab}
+					onTabChange={value => setActiveTab(value as (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus])}
+				/>
+
+				{formsQuery.isLoading ? (
+					<LoadingSpinner />
+				) : filteredForms.length > 0 ? (
+					filteredForms.map(form => (
+						<div key={form.id} className={styles.card} onClick={() => handleFormClick(form)}>
+							<div className={styles.cardInfo}>
+								<h3 className={styles.cardTitle}>{form.title}</h3>
+								<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
+							</div>
+							<Button className={styles.sharedBtn} processing={createResponseMutation.isPending}>
+								{form.buttonLabel}
+							</Button>
+						</div>
+					))
+				) : (
+					<p className={styles.empty}>
+						{activeTab === UnitUserFormStatus.NOT_STARTED && "您沒有待填寫的表單。"}
+						{activeTab === UnitUserFormStatus.IN_PROGRESS && "您沒有填寫中的表單。"}
+						{activeTab === UnitUserFormStatus.COMPLETED && "您沒有已送出的表單。"}
+					</p>
+				)}
+			</div>
+
+			<Toast open={toastOpen} onOpenChange={setToastOpen} title="Error" description={toastMessage} variant="error" />
+		</div>
 	);
 };

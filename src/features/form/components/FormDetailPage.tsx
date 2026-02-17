@@ -1,4 +1,3 @@
-import { UserLayout } from "@/layouts";
 import { Button, Checkbox, DetailedCheckbox, Input, Radio, TextArea } from "@/shared/components";
 import {
 	formsGetFormById,
@@ -418,53 +417,47 @@ export const FormDetailPage = () => {
 
 	if (isSubmitted) {
 		return (
-			<UserLayout>
-				<div className={styles.successContainer}>
-					<div className={styles.successBox}>
-						<h1 className={styles.successTitle}>感謝您的填答！</h1>
-						<p className={styles.successMessage}>{form?.messageAfterSubmission}</p>
-						<div className={styles.successActions}>
-							<Button type="button" onClick={() => {}} themeColor="var(--code-foreground)">
-								查看問卷副本
-							</Button>
-							<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--orange)">
-								返回主頁
-							</Button>
-						</div>
+			<div className={styles.successContainer}>
+				<div className={styles.successBox}>
+					<h1 className={styles.successTitle}>感謝您的填答！</h1>
+					<p className={styles.successMessage}>{form?.messageAfterSubmission}</p>
+					<div className={styles.successActions}>
+						<Button type="button" onClick={() => {}} themeColor="var(--code-foreground)">
+							查看問卷副本
+						</Button>
+						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--orange)">
+							返回主頁
+						</Button>
 					</div>
 				</div>
-			</UserLayout>
+			</div>
 		);
 	}
 
 	// 載入中
 	if (isLoading) {
 		return (
-			<UserLayout>
-				<div className={styles.container}>
-					<p>載入表單中...</p>
-				</div>
-			</UserLayout>
+			<div className={styles.container}>
+				<p>載入表單中...</p>
+			</div>
 		);
 	}
 
 	// 錯誤處理
 	if (error || !form) {
 		return (
-			<UserLayout>
-				<div className={styles.container}>
-					<h1 className={styles.title}>載入失敗</h1>
-					<pre style={{ whiteSpace: "pre-wrap", color: "red", marginBottom: "1rem" }}>{error || "找不到表單"}</pre>
-					<Button onClick={() => navigate("/forms")} themeColor="var(--orange)">
-						返回表單列表
-					</Button>
-				</div>
-			</UserLayout>
+			<div className={styles.container}>
+				<h1 className={styles.title}>載入失敗</h1>
+				<pre style={{ whiteSpace: "pre-wrap", color: "red", marginBottom: "1rem" }}>{error || "找不到表單"}</pre>
+				<Button onClick={() => navigate("/forms")} themeColor="var(--orange)">
+					返回表單列表
+				</Button>
+			</div>
 		);
 	}
 
 	return (
-		<UserLayout>
+		<>
 			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="Form Cover" />}
 			<div className={styles.container}>
 				<div className={styles.header}>
@@ -532,6 +525,6 @@ export const FormDetailPage = () => {
 					</div>
 				</form>
 			</div>
-		</UserLayout>
+		</>
 	);
 };
