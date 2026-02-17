@@ -11,7 +11,6 @@ import {
 	type FormsForm,
 	type FormsQuestionResponse,
 	type FormsSection,
-	type ResponsesAnswerJSON,
 	type ResponsesAnswersRequestUpdate,
 	type ResponsesPreviewSection,
 	type ResponsesResponseProgress
@@ -21,7 +20,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
 interface Section extends FormsSection {
-	questions?: FormsQuestionResponse[];
 	progress?: "DRAFT" | "SUBMITTED";
 }
 
@@ -55,13 +53,25 @@ export const FormDetailPage = () => {
 				.filter(([, value]) => value !== "")
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
-					const valueArray = value.includes(",") ? value.split(",") : [value];
 
-					return {
-						questionId,
-						questionType: questionType as ResponsesAnswerJSON["questionType"],
-						value: valueArray
-					};
+					// Determine if this is a string or string array answer type
+					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
+					const isArrayType = stringArrayTypes.includes(questionType);
+
+					if (isArrayType) {
+						const valueArray = value.includes(",") ? value.split(",") : [value];
+						return {
+							questionId,
+							questionType: questionType as any,
+							value: valueArray
+						};
+					} else {
+						return {
+							questionId,
+							questionType: questionType as any,
+							value: value
+						};
+					}
 				});
 
 			if (answersArray.length === 0) return;
@@ -144,14 +154,16 @@ export const FormDetailPage = () => {
 							// 載入 sections 和 questions
 							const sectionsResponse = await formsListSections(formId, { credentials: "include" });
 							if (sectionsResponse.status === 200) {
-								const loadedSections: Section[] = sectionsResponse.data.map(item => ({
-									id: item.sections.id,
-									formId: item.sections.formId,
-									title: item.sections.title,
-									description: item.sections.description,
-									progress: "DRAFT" as const,
-									questions: item.questions
-								}));
+								const loadedSections: Section[] = sectionsResponse.data.flatMap(item =>
+									item.sections.map(section => ({
+										id: section.id,
+										formId: section.formId,
+										title: section.title,
+										description: section.description,
+										progress: "DRAFT" as const,
+										questions: section.questions
+									}))
+								);
 
 								loadedSections.push({
 									id: "preview",

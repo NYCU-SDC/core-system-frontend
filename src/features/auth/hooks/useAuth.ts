@@ -11,3 +11,13 @@ export const useLogout = () =>
 	useMutation({
 		mutationFn: () => authService.logout()
 	});
+
+export const useAuth = () => {
+	const { data: user, isLoading } = useMe();
+
+	return {
+		user,
+		isAuthenticated: !!user,
+		isLoading
+	};
+};

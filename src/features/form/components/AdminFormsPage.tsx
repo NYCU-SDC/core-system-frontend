@@ -11,77 +11,32 @@ import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
 import { TabButtons } from "./TabButtons";
 // import {getInboxMessages} from "@nycu-sdc/core-system-sdk";
-// Mock data
-const mockForms: { id: string; title: string; lastEdited: string; responses: number; status: StatusVariant; deadline: string }[] = [
-	{
-		id: "form-1",
-		title: "114 fall Full-stack",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "published",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-2",
-		title: "114 fall Full-stack intro training advancedddddddddddd",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-3",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-4",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "done",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-5",
-		title: "114 fall Full-stack intro training advanced",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "published",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-6",
-		title: "114 fall Full-stack intro training advanced",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-7",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-8",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "done",
-		deadline: "2025/12/31"
-	}
-];
+
+interface FormRow {
+	id: string;
+	title: string;
+	lastEdited: string;
+	status: StatusVariant;
+	deadline: string;
+}
 
 const formatDate = (isoDate: string): string => {
 	const date = new Date(isoDate);
 	return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+};
+
+const toStatusVariant = (status: string, deadline: string | null | undefined): StatusVariant => {
+	if (deadline) {
+		const deadlineDate = new Date(deadline);
+		const now = new Date();
+		if (deadlineDate < now) {
+			return "done";
+		}
+	}
+	if (status === "PUBLISHED") {
+		return "published";
+	}
+	return "draft";
 };
 
 const toFormRow = (form: FormsForm): FormRow => ({

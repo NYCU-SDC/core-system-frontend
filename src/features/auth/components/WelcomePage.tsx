@@ -1,4 +1,4 @@
-﻿import { authService } from "@/features/auth/services/authService";
+﻿import { authService, type AuthUser } from "@/features/auth/services/authService";
 import { UserLayout } from "@/layouts";
 import { Button, Input } from "@/shared/components";
 import { ArrowRight } from "lucide-react";
@@ -22,7 +22,7 @@ export const WelcomePage = () => {
 
 		const loadUser = async () => {
 			try {
-				const user = await authService.getCurrentUser();
+				const user = await authService.getCurrentUser<AuthUser>();
 				if (!isMounted || !user) return;
 
 				const hasGuardFlags = typeof user.isMember === "boolean" && typeof user.isFirstLogin === "boolean";

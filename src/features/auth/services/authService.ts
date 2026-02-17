@@ -1,6 +1,13 @@
 import type { UserUser } from "@nycu-sdc/core-system-sdk";
 import { authLogout, userGetMe } from "@nycu-sdc/core-system-sdk";
 
+export type OAuthProvider = "google" | "nycu";
+
+export interface AuthUser extends UserUser {
+	isMember?: boolean;
+	isFirstLogin?: boolean;
+}
+
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"
 };
@@ -9,6 +16,18 @@ const assertOk = (status: number, message: string) => {
 	if (status < 200 || status >= 300) {
 		throw new Error(`${message} (status ${status})`);
 	}
+};
+
+const normalizeProvider = (provider: OAuthProvider): string => {
+	return provider.toLowerCase();
+};
+
+export const canAccessWelcome = (user: AuthUser): boolean => {
+	const hasGuardFlags = typeof user.isMember === "boolean" && typeof user.isFirstLogin === "boolean";
+	if (hasGuardFlags) {
+		return user.isMember === true && user.isFirstLogin === true;
+	}
+	return true; // If flags are not set, allow access
 };
 
 export const authService = {
@@ -36,9 +55,21 @@ export const authService = {
 		assertOk(res.status, "Failed to logout");
 	},
 
-	async getCurrentUser(): Promise<UserUser> {
+	async getCurrentUser<T extends UserUser = UserUser>(): Promise<T> {
 		const res = await userGetMe(defaultRequestOptions);
 		assertOk(res.status, "Failed to get current user");
-		return res.data as UserUser;
+		return res.data as T;
+	},
+
+	async updateOnboarding(data: { username: string; name: string }): Promise<void> {
+		const res = await fetch("/api/user/onboarding", {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(data),
+			...defaultRequestOptions
+		});
+		assertOk(res.status, "Failed to update onboarding");
 	}
 };
