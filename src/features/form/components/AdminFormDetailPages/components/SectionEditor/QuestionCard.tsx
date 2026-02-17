@@ -2,7 +2,7 @@ import { Button, Switch } from "@/shared/components";
 import { Input } from "@/shared/components/Input/Input";
 import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import type { Question } from "../types/option";
+import type { Question } from "../../types/option";
 import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
 import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";

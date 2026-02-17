@@ -1,0 +1,29 @@
+.info {
+	stroke: white;
+}
+
+.success {
+	stroke: var(--green);
+}
+
+.fail {
+	stroke: var(--pink);
+}
+
+.arrowContainer {
+	position: relative;
+	display: flex;
+	flex-grow: 1;
+}
+
+.arrow {
+	height: 100%;
+	width: 100%;
+	transform: rotate(180deg);
+}
+
+.icon {
+	position: absolute;
+	top: calc(50% - 6px);
+	left: 60%;
+}

@@ -60,3 +60,6 @@ export type { TooltipProps } from "./Tooltip/Tooltip";
 
 export { Toast, ToastProvider } from "./Toast/Toast";
 export type { ToastProps } from "./Toast/Toast";
+
+export { Popover } from "./Popover/Popover";
+export type { PopoverProps } from "./Popover/Popover";

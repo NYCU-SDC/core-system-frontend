@@ -10,27 +10,72 @@ import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
 import { TabButtons } from "./TabButtons";
-
-/* ---------- API Data → UI Model ---------- */
-type FormRow = {
-	id: string;
-	title: string;
-	lastEdited: string;
-	status: StatusVariant;
-	deadline: string;
-};
-
-const toStatusVariant = (apiStatus: FormsForm["status"], deadline?: string): StatusVariant => {
-	// Draft always shows as draft no matter if it's overdue
-	if (apiStatus.toUpperCase() === "DRAFT") {
-		return "draft";
-	}
-	// Published: check if deadline passed
-	if (apiStatus.toUpperCase() === "PUBLISHED") {
-		if (deadline && new Date(deadline) < new Date()) {
-			return "done";
-		}
-		return "published";
+// import {getInboxMessages} from "@nycu-sdc/core-system-sdk";
+// Mock data
+const mockForms: { id: string; title: string; lastEdited: string; responses: number; status: StatusVariant; deadline: string }[] = [
+	{
+		id: "form-1",
+		title: "114 fall Full-stack",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "published",
+		deadline: "2025/12/31"
+	},
+	{
+		id: "form-2",
+		title: "114 fall Full-stack intro training advancedddddddddddd",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "draft",
+		deadline: "2025/12/31"
+	},
+	{
+		id: "form-3",
+		title: "Full Stack Intro 11/5 課程回饋",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "draft",
+		deadline: "2025/12/31"
+	},
+	{
+		id: "form-4",
+		title: "Full Stack Intro 11/5 課程回饋",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "done",
+		deadline: "2025/12/31"
+	},
+	{
+		id: "form-5",
+		title: "114 fall Full-stack intro training advanced",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "published",
+		deadline: "2025/12/31"
+	},
+	{
+		id: "form-6",
+		title: "114 fall Full-stack intro training advanced",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "draft",
+		deadline: "2025/12/31"
+	},
+	{
+		id: "form-7",
+		title: "Full Stack Intro 11/5 課程回饋",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "draft",
+		deadline: "2025/12/31"
+	},
+	{
+		id: "form-8",
+		title: "Full Stack Intro 11/5 課程回饋",
+		lastEdited: "2025/12/25",
+		responses: 5,
+		status: "done",
+		deadline: "2025/12/31"
 	}
 	return "published";
 };
