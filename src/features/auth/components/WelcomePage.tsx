@@ -9,7 +9,6 @@ import styles from "./WelcomePage.module.css";
 
 export const WelcomePage = () => {
 	const navigate = useNavigate();
-	const isWelcomeGuardMuted = import.meta.env.VITE_MUTE_WELCOME_GUARD === "true"; // true = allow everyone in, false = protect this page.
 	const [nickname, setNickname] = useState("");
 	const [username, setUsername] = useState("");
 	const [isUsernameFocused, setIsUsernameFocused] = useState(false);
@@ -25,19 +24,10 @@ export const WelcomePage = () => {
 				const user = await authService.getCurrentUser<AuthUser>();
 				if (!isMounted || !user) return;
 
-				const hasGuardFlags = typeof user.isMember === "boolean" && typeof user.isFirstLogin === "boolean";
-				const isMember = user.isMember === true;
-				const isFirstLogin = user.isFirstLogin === true;
-				// TODO: Align with backend contract and switch to fail-close once isMember/isFirstLogin are guaranteed.
-				if (!isWelcomeGuardMuted && hasGuardFlags && (!isMember || !isFirstLogin)) {
-					navigate("/", { replace: true });
-					return;
-				}
-
 				setNickname(typeof user.name === "string" ? user.name : "");
 				setUsername(typeof user.username === "string" ? user.username : "");
 			} catch {
-				if (!isWelcomeGuardMuted && isMounted) {
+				if (isMounted) {
 					navigate("/", { replace: true });
 				}
 			} finally {
@@ -49,7 +39,7 @@ export const WelcomePage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, [isWelcomeGuardMuted, navigate]);
+	}, [navigate]);
 
 	const nicknameError = useMemo(() => {
 		if (!nickname) return "";
