@@ -1,90 +1,97 @@
+import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
-import { Button } from "@/shared/components";
+import { Button, Toast } from "@/shared/components";
+import { ErrorMessage } from "@/shared/components/ErrorMessage";
+import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
+import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
 import { TabButtons } from "./TabButtons";
 
-// Mock data
-const mockForms: { id: string; title: string; lastEdited: string; responses: number; status: StatusVariant; deadline: string }[] = [
-	{
-		id: "form-1",
-		title: "114 fall Full-stack",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "published",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-2",
-		title: "114 fall Full-stack intro training advancedddddddddddd",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-3",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-4",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "done",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-5",
-		title: "114 fall Full-stack intro training advanced",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "published",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-6",
-		title: "114 fall Full-stack intro training advanced",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-7",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "draft",
-		deadline: "2025/12/31"
-	},
-	{
-		id: "form-8",
-		title: "Full Stack Intro 11/5 課程回饋",
-		lastEdited: "2025/12/25",
-		responses: 5,
-		status: "done",
-		deadline: "2025/12/31"
+/* ---------- API Data → UI Model ---------- */
+type FormRow = {
+	id: string;
+	title: string;
+	lastEdited: string;
+	status: StatusVariant;
+	deadline: string;
+};
+
+const toStatusVariant = (apiStatus: FormsForm["status"], deadline?: string): StatusVariant => {
+	// Draft always shows as draft no matter if it's overdue
+	if (apiStatus.toUpperCase() === "DRAFT") {
+		return "draft";
 	}
-];
+	// Published: check if deadline passed
+	if (apiStatus.toUpperCase() === "PUBLISHED") {
+		if (deadline && new Date(deadline) < new Date()) {
+			return "done";
+		}
+		return "published";
+	}
+	return "published";
+};
+
+const formatDate = (isoDate: string): string => {
+	const date = new Date(isoDate);
+	return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+};
+
+const toFormRow = (form: FormsForm): FormRow => ({
+	id: form.id,
+	title: form.title,
+	lastEdited: formatDate(form.updatedAt),
+	status: toStatusVariant(form.status, form.deadline),
+	deadline: form.deadline ? formatDate(form.deadline) : "-"
+});
 
 export const AdminFormsPage = () => {
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState("all");
+	const [toastOpen, setToastOpen] = useState(false);
+	const [toastMessage, setToastMessage] = useState("");
+
+	// Fetch forms from API
+	const orgSlug = "SDC";
+	const formsQuery = useOrgForms(orgSlug);
+	const createFormMutation = useCreateOrgForm(orgSlug);
+
+	// Transform API data to UI model
+	const forms: FormRow[] = useMemo(() => {
+		if (!formsQuery.data) return [];
+		return formsQuery.data.map(toFormRow);
+	}, [formsQuery.data]);
+
+	// Filter forms based on active tab
+	const filteredForms = useMemo(() => {
+		if (activeTab === "all") return forms;
+		return forms.filter(form => form.status === activeTab);
+	}, [forms, activeTab]);
 
 	const handleFormClick = (formId: string) => {
 		navigate(`/orgs/sdc/forms/${formId}/info`);
 	};
 
 	const handleCreateForm = () => {
-		console.log("Create new form");
+		createFormMutation.mutate(
+			{
+				title: "未命名表單",
+				description: "",
+				messageAfterSubmission: "感謝您的填寫！"
+			},
+			{
+				onSuccess: newForm => {
+					navigate(`/orgs/sdc/forms/${newForm.id}/info`);
+				},
+				onError: error => {
+					setToastMessage(error.message || "Failed to create form");
+					setToastOpen(true);
+				}
+			}
+		);
 	};
 
 	return (
@@ -96,22 +103,28 @@ export const AdminFormsPage = () => {
 						<TabButtons
 							tabs={[
 								{ value: "all", label: "所有表單" },
-								{ value: "published", label: "草稿" },
-								{ value: "draft", label: "已發布" },
-								{ value: "ended", label: "已截止" }
+								{ value: "draft", label: "草稿" },
+								{ value: "published", label: "已發布" },
+								{ value: "done", label: "已截止" }
 							]}
 							activeTab={activeTab}
 							onTabChange={setActiveTab}
 						/>
-						<Button icon={Plus} onClick={handleCreateForm}>
+						<Button icon={Plus} onClick={handleCreateForm} processing={createFormMutation.isPending}>
 							建立表單
 						</Button>
 					</div>
 				</div>
 
-				{mockForms.length > 0 ? (
+				{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
+
+				<Toast open={toastOpen} onOpenChange={setToastOpen} title="Error" description={toastMessage} variant="error" />
+
+				{formsQuery.isLoading ? (
+					<LoadingSpinner />
+				) : filteredForms.length > 0 ? (
 					<div className={styles.grid}>
-						{mockForms.map(form => (
+						{filteredForms.map(form => (
 							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form.id)}>
 								<div className={styles.cardHeader}>
 									<h4 className={styles.cardTitle}>{form.title}</h4>
@@ -119,7 +132,6 @@ export const AdminFormsPage = () => {
 								</div>
 								<div className={styles.cardInfo}>
 									<span>Last edited: {form.lastEdited}</span>
-									<span>{form.responses} responses</span>
 									<span>Deadline: {form.deadline}</span>
 								</div>
 							</div>

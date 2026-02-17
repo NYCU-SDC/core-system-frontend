@@ -6,6 +6,8 @@
 	gap: 2rem;
 	background: var(--background-color-secondary);
 	padding: 4rem;
+	width: min(37.5rem, 92vw);
+	min-width: 320px;
 	clip-path: polygon(2rem 0, 100% 0, 100% calc(100% - 2rem), calc(100% - 2rem) 100%, 0 100%, 0 2rem);
 }
 
@@ -24,4 +26,14 @@
 .actions {
 	display: flex;
 	justify-content: center;
+}
+
+.inputField input {
+	background-color: var(--selection);
+}
+
+.inputField label::before {
+	content: "＊";
+	color: var(--red);
+	margin-right: 0.25rem;
 }

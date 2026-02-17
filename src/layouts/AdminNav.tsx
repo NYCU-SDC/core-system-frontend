@@ -1,3 +1,4 @@
+import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { ClipboardList, FileText, LogOut, Menu, Settings, X } from "lucide-react";
 import { useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router-dom";
@@ -16,15 +17,15 @@ export const AdminNav = () => {
 	const isFormDetail = !!matchPath({ path: "/orgs/sdc/forms/:formid/*", end: false }, pathname);
 	const isSettings = pathname.startsWith("/orgs/sdc/settings");
 
-	const user = {
-		name: "Alice King",
-		username: "alice",
-		avatarUrl: ""
-	};
+	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
 
-	const displayName = user.name || user.username || "??";
-	const initials = displayName.slice(0, 2).toUpperCase();
-	const hasAvatar = !!user.avatarUrl;
+	if (isLoading || !canAccessOrgAdmin) {
+		return null;
+	}
+
+	const displayName = user?.name || user?.username || user?.emails?.[0] || "ˊ_>ˋ";
+	const initials = user ? displayName.slice(0, 2).toUpperCase() : displayName;
+	const hasAvatar = !!user?.avatarUrl;
 
 	return (
 		<>
@@ -60,11 +61,11 @@ export const AdminNav = () => {
 						</Link>
 
 						{/* Avatar */}
-						<div className={styles.avatarContainer}>
-							{hasAvatar ? <img src={user.avatarUrl} alt={displayName} className={styles.avatarImg} /> : <div className={styles.avatarFallback}>{initials}</div>}
+						<div className={styles.avatarContainer} title={user?.username || displayName}>
+							{hasAvatar ? <img src={user?.avatarUrl} alt={displayName} className={styles.avatarImg} /> : <div className={styles.avatarFallback}>{initials}</div>}
 						</div>
 
-						<Link to="/" className={styles.link}>
+						<Link to="/logout" className={styles.link} aria-label="Logout" title="Logout">
 							<div className={`${styles.navItem} ${styles.logoutItem}`}>
 								<LogOut size={22} />
 							</div>
