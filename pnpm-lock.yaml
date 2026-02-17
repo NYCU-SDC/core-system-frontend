@@ -12,8 +12,8 @@ importers:
         specifier: ^13.11.2
         version: 13.11.2(react@19.2.4)
       '@nycu-sdc/core-system-sdk':
-        specifier: 0.1.4-snapshot-b165915
-        version: 0.1.4-snapshot-b165915
+        specifier: 0.1.4-snapshot-c753706
+        version: 0.1.4-snapshot-c753706
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -456,8 +456,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-b165915':
-    resolution: {integrity: sha512-WrRZWccEL/vN65ZTiii49Fhrd1uCaJmfz9nAW8CFBzmDm6YklaKi8iEk0hbXvFZ2f3AOp6kpuklSGfa+VSU7wQ==}
+  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-c753706':
+    resolution: {integrity: sha512-YSiVbigzxAqrzuiOkLmqHZm5WJZ/Azal3KIoOb5mofl5mYoRVW4JW3R0LYkKcNwO/WH+yX0eYQVd5f/3g3pGOw==}
 
   '@radix-ui/number@1.1.1':
     resolution: {integrity: sha512-MkKCwxlXTgz6CFoJx3pCwn07GKp36+aZyu/u2Ln2VrA5DcdyCZkASEDBTd8x5whTQQL5CiYf4prXKLcgQdv29g==}
@@ -2243,7 +2243,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-b165915': {}
+  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-c753706': {}
 
   '@radix-ui/number@1.1.1': {}
 
