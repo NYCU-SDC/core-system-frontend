@@ -1,41 +1,15 @@
-// TODO: Align with backend user response contract if fields change.
-export type AuthUser = {
-	id?: string;
-	username?: string;
-	name?: string;
-	avatarUrl?: string;
-	emails?: string[];
-	roles?: Array<"USER">;
-	is_onboarded?: boolean;
-	allow_onboarding?: boolean;
-	isMember?: boolean;
-	isFirstLogin?: boolean;
+import type { UserUser } from "@nycu-sdc/core-system-sdk";
+import { AuthOAuthProviders, authLogout, userGetMe } from "@nycu-sdc/core-system-sdk";
+
+const defaultRequestOptions: RequestInit = {
+	credentials: "include"
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
-
-export const canAccessWelcome = (user: unknown): boolean => {
-	if (!isRecord(user)) return false;
-
-	const isFirstLogin = user.is_onboarded === false;
-	const hasAllowFlag = typeof user.allow_onboarding === "boolean";
-	const isOnboardingAllowed = user.allow_onboarding === true;
-
-	// TODO: Remove fallback once backend always returns allow_onboarding.
-	return hasAllowFlag ? isFirstLogin && isOnboardingAllowed : isFirstLogin;
-};
-
-export type OAuthProvider = "google" | "nycu";
-
-const normalizeProvider = (provider: OAuthProvider) => String(provider).toLowerCase();
-
-async function readJsonSafely<T>(response: Response): Promise<T | null> {
-	const contentType = response.headers.get("content-type") || "";
-	if (!contentType.includes("application/json")) {
-		return null;
+const assertOk = (status: number, message: string) => {
+	if (status < 200 || status >= 300) {
+		throw new Error(`${message} (status ${status})`);
 	}
-	return (await response.json()) as T;
-}
+};
 
 export const authService = {
 	redirectToOAuthLogin(
@@ -57,53 +31,14 @@ export const authService = {
 		window.location.href = `/api/auth/login/oauth/${normalizedProvider}?${params.toString()}`;
 	},
 
-	async logout() {
-		const response = await fetch("/api/auth/logout", {
-			method: "POST",
-			credentials: "include"
-		});
-
-		if (!response.ok) {
-			throw new Error(`Logout failed (${response.status})`);
-		}
-
-		return readJsonSafely<unknown>(response);
+	async logout(): Promise<void> {
+		const res = await authLogout(defaultRequestOptions);
+		assertOk(res.status, "Failed to logout");
 	},
 
-	async getCurrentUser<TUser extends AuthUser = AuthUser>(): Promise<TUser | null> {
-		const response = await fetch("/api/users/me", {
-			credentials: "include"
-		});
-
-		if (response.status === 401 || response.status === 403) {
-			return null;
-		}
-		if (!response.ok) {
-			throw new Error(`Get current user failed (${response.status})`);
-		}
-
-		return readJsonSafely<TUser>(response);
-	},
-
-	async updateOnboarding(payload: { username: string; name: string }) {
-		const response = await fetch("/api/users/onboarding", {
-			method: "PUT",
-			credentials: "include",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify(payload)
-		});
-
-		if (!response.ok) {
-			throw new Error("Failed to update onboarding");
-		}
-
-		const contentType = response.headers.get("content-type") ?? "";
-		if (!contentType.includes("application/json")) {
-			return null;
-		}
-
-		return response.json();
+	async getCurrentUser(): Promise<UserUser> {
+		const res = await userGetMe(defaultRequestOptions);
+		assertOk(res.status, "Failed to get current user");
+		return res.data as UserUser;
 	}
 };
