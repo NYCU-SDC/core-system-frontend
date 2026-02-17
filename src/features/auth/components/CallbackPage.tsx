@@ -1,29 +1,65 @@
 import { UserLayout } from "@/layouts";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { authService, canAccessWelcome, type AuthUser } from "../services/authService";
 import styles from "./CallbackPage.module.css";
+
+function getSafeRedirectTarget(): string | null {
+	const params = new URLSearchParams(window.location.search);
+	const raw = params.get("r") ?? params.get("redirect") ?? params.get("redirectUrl");
+
+	if (!raw) return null;
+
+	if (raw.startsWith("/")) return raw;
+	try {
+		const url = new URL(raw);
+		if (url.origin !== window.location.origin) return null;
+		return `${url.pathname}${url.search}${url.hash}`;
+	} catch {
+		return null;
+	}
+}
 
 export const CallbackPage = () => {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 
 	useEffect(() => {
-		// Simulate OAuth callback processing
 		const processCallback = async () => {
-			// Process OAuth code/token
-			await new Promise(resolve => setTimeout(resolve, 2000));
+			const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-			// Check if first time user
-			const isFirstTime = true; // Replace with actual check
+			try {
+				let user: AuthUser | null = null;
 
-			if (isFirstTime) {
-				navigate("/welcome");
-			} else {
-				navigate("/forms");
+				for (let attempt = 0; attempt < 3; attempt += 1) {
+					user = await authService.getCurrentUser<AuthUser>();
+					if (user) {
+						break;
+					}
+					await wait(300);
+				}
+
+				queryClient.setQueryData(["auth", "user"], user);
+				const redirectTarget = getSafeRedirectTarget();
+
+				if (user) {
+					if (canAccessWelcome(user)) {
+						navigate("/welcome", { replace: true });
+						return;
+					}
+					navigate(redirectTarget ?? "/forms", { replace: true });
+					return;
+				}
+
+				navigate("/", { replace: true });
+			} catch {
+				navigate("/", { replace: true });
 			}
 		};
 
 		processCallback();
-	}, [navigate]);
+	}, [navigate, queryClient]);
 
 	return (
 		<UserLayout>

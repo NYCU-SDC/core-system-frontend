@@ -13,12 +13,13 @@ const assertOk = (status: number, message: string) => {
 
 export const authService = {
 	redirectToOAuthLogin(
-		provider: AuthOAuthProviders,
+		provider: OAuthProvider,
 		options: {
 			callbackUrl: string;
 			redirectUrl?: string;
 		}
 	) {
+		const normalizedProvider = normalizeProvider(provider);
 		const params = new URLSearchParams({
 			c: options.callbackUrl
 		});
@@ -27,7 +28,7 @@ export const authService = {
 			params.set("r", options.redirectUrl);
 		}
 
-		window.location.href = `/api/auth/login/oauth/${provider}?${params.toString()}`;
+		window.location.href = `/api/auth/login/oauth/${normalizedProvider}?${params.toString()}`;
 	},
 
 	async logout(): Promise<void> {
