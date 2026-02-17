@@ -1,4 +1,4 @@
-import { Button, Checkbox, DetailedCheckbox, Input, Radio, TextArea } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, Input, Radio, TextArea } from "@/shared/components";
 import {
 	formsGetFormById,
 	formsGetFormCoverImage,
@@ -57,11 +57,17 @@ export const FormDetailPage = () => {
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 
-					// Determine if this is a string or string array answer type
+					// Determine answer type based on question type
 					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
-					const isArrayType = stringArrayTypes.includes(questionType);
+					const dateTypes = ["DATE"];
 
-					if (isArrayType) {
+					if (dateTypes.includes(questionType)) {
+						return {
+							questionId,
+							questionType: "DATE" as const,
+							value: value
+						} as ResponsesDateAnswer;
+					} else if (stringArrayTypes.includes(questionType)) {
 						const valueArray = value.includes(",") ? value.split(",") : [value];
 						return {
 							questionId,
@@ -350,6 +356,20 @@ export const FormDetailPage = () => {
 							/>
 						))}
 					</div>
+				);
+
+			case "DATE":
+				return (
+					<DateInput
+						key={question.id}
+						id={question.id}
+						label={question.title}
+						description={question.description || undefined}
+						value={value}
+						options={question.date || { hasYear: true, hasMonth: true, hasDay: true }}
+						required={question.required}
+						onChange={newValue => updateAnswer(question.id, newValue)}
+					/>
 				);
 
 			default:
