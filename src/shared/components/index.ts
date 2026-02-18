@@ -74,3 +74,6 @@ export { InlineSvg } from "./InlineSvg/InlineSvg";
 export { ErrorMessage } from "./ErrorMessage/ErrorMessage";
 
 export { LoadingSpinner } from "./LoadingSpinner/LoadingSpinner";
+
+export { Markdown } from "./Markdown/Markdown";
+export type { MarkdownProps } from "./Markdown/Markdown";

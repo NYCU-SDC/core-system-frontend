@@ -1,4 +1,4 @@
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Radio, ScaleInput, TextArea } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Markdown, Radio, ScaleInput, TextArea } from "@/shared/components";
 import {
 	formsGetFormById,
 	formsGetFormCoverImage,
@@ -314,7 +314,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						{question.description && <Markdown content={question.description} />}
 						<Radio
 							options={
 								question.choices?.map(choice => ({
@@ -335,7 +335,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						{question.description && <Markdown content={question.description} />}
 						<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 							{question.choices?.map(choice => (
 								<Checkbox
@@ -410,7 +410,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						{question.description && <Markdown content={question.description} />}
 						<DragToOrder
 							items={
 								value
@@ -440,7 +440,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						{question.description && <Markdown content={question.description} />}
 						<FileUpload
 							id={question.id}
 							label=""
@@ -464,7 +464,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						{question.description && <Markdown content={question.description} />}
 						<Button
 							onClick={() => {
 								updateAnswer(question.id, "connected");

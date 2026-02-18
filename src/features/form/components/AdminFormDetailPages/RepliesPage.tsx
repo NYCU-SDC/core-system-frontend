@@ -1,5 +1,5 @@
 import { useUpdateForm } from "@/features/form/hooks/useOrgForms";
-import { Badge, Button, Input, Label, useToast } from "@/shared/components";
+import { Badge, Button, Input, Label, Markdown, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { formsGetGoogleSheetEmail, formsVerifyGoogleSheet } from "@nycu-sdc/core-system-sdk";
 import { Repeat2, SquareArrowOutUpRight } from "lucide-react";
@@ -118,9 +118,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				</Badge>
 			</div>
 			<p>請將以下服務帳號加入您的 Google Sheets 編輯權限：</p>
-			<div className={styles.emailBlock}>
-				<code>{isLoading ? "載入中..." : email}</code>
-			</div>
+			{isLoading ? <p>載入中...</p> : <Markdown content={`\`\`\`\n${email}\n\`\`\``} />}
 
 			<div className={styles.formGroup}>
 				<Label htmlFor="sheetUrl">Google Sheets 完整 URL</Label>

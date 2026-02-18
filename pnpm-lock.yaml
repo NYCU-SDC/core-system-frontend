@@ -12,8 +12,8 @@ importers:
         specifier: ^13.11.2
         version: 13.11.2(react@19.2.4)
       '@nycu-sdc/core-system-sdk':
-        specifier: 0.1.4-snapshot-5441e8a
-        version: 0.1.4-snapshot-5441e8a
+        specifier: 0.1.4-snapshot-87c0ca5
+        version: 0.1.4-snapshot-87c0ca5
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -65,6 +65,9 @@ importers:
       lucide-static:
         specifier: ^0.574.0
         version: 0.574.0
+      marked:
+        specifier: ^17.0.3
+        version: 17.0.3
       pnpm:
         specifier: ^10.30.0
         version: 10.30.0
@@ -465,8 +468,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-5441e8a':
-    resolution: {integrity: sha512-L9NT8yvzgCcL8a9DQIIIQ//BmYwdsRXVrz5Ho3uNfaQLQxu9WpXp67NSr0lFZtbNnXW7lPZDxXsZjswlNRtPIQ==}
+  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-87c0ca5':
+    resolution: {integrity: sha512-PPpcDDdBRC5kUXYfrBLT3GUGkftQ1Fi5uHQYwJAaH5wU++e92m7arfMnh3bZeXLqDVvns0wz32TGx2X/yGSkJw==}
 
   '@radix-ui/number@1.1.1':
     resolution: {integrity: sha512-MkKCwxlXTgz6CFoJx3pCwn07GKp36+aZyu/u2Ln2VrA5DcdyCZkASEDBTd8x5whTQQL5CiYf4prXKLcgQdv29g==}
@@ -1571,6 +1574,11 @@ packages:
   lucide-static@0.574.0:
     resolution: {integrity: sha512-UiT40+ciW+w3VSpujK+PoHGjbvWD+EqqiVRzPFFj/Uta61j30wug/sPB/mtdVTCicAm3ASklK0CzEZ+7IZ4Vvw==}
 
+  marked@17.0.3:
+    resolution: {integrity: sha512-jt1v2ObpyOKR8p4XaUJVk3YWRJ5n+i4+rjQopxvV32rSndTJXvIzuUdWWIy/1pFQMkQmvTXawzDNqOH/CUmx6A==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
   micromatch@4.0.8:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
@@ -2263,7 +2271,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-5441e8a': {}
+  '@nycu-sdc/core-system-sdk@0.1.4-snapshot-87c0ca5': {}
 
   '@radix-ui/number@1.1.1': {}
 
@@ -3341,6 +3349,8 @@ snapshots:
       react: 19.2.4
 
   lucide-static@0.574.0: {}
+
+  marked@17.0.3: {}
 
   micromatch@4.0.8:
     dependencies:

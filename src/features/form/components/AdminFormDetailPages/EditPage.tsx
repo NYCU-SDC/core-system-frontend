@@ -10,7 +10,7 @@ interface AdminFormEditPageProps {
 	formData: FormsForm;
 }
 
-export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
+export const AdminFormEditPage = ({ formData: _formData }: AdminFormEditPageProps) => {
 	const { pushToast } = useToast();
 
 	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {

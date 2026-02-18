@@ -14,6 +14,7 @@ import {
 	FileUpload,
 	Input,
 	Label,
+	Markdown,
 	Popover,
 	ProgressBar,
 	Radio,
@@ -344,6 +345,62 @@ export const ComponentsDemo = () => {
 							<Button>Open Popover</Button>
 						</Popover>
 					</div>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Markdown with Code Highlighting</h2>
+					<Markdown
+						content={`# Markdown 範例
+
+這是一個支援 **Markdown** 和語法高亮的元件！
+
+## 程式碼區塊
+
+### JavaScript
+\`\`\`javascript
+function greet(name) {
+  console.log(\`Hello, \${name}!\`);
+  return true;
+}
+
+const result = greet('World');
+\`\`\`
+
+### TypeScript
+\`\`\`typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+const user: User = {
+  id: '123',
+  name: 'John Doe',
+  email: 'john@example.com'
+};
+\`\`\`
+
+### Python
+\`\`\`python
+def calculate_sum(numbers):
+    """Calculate the sum of a list of numbers"""
+    return sum(numbers)
+
+result = calculate_sum([1, 2, 3, 4, 5])
+print(f"Sum: {result}")
+\`\`\`
+
+## 其他功能
+
+- 支援清單
+- **粗體** 和 *斜體*
+- [連結](https://example.com)
+- \`行內程式碼\`
+
+> 這是一個引用區塊
+> 可以有多行內容`}
+					/>
 				</section>
 			</div>
 		</UserLayout>
