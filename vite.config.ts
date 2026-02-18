@@ -1,12 +1,17 @@
 import react from "@vitejs/plugin-react";
 import fs from "fs";
 import { resolve } from "path";
+import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
 
 export default defineConfig({
 	build: {
 		chunkSizeWarningLimit: 1000,
 		rollupOptions: {
+			input: {
+				admin: resolve(__dirname, "admin.html"),
+				forms: resolve(__dirname, "forms.html")
+			},
 			onwarn(warning, warn) {
 				// Many modern React libraries ship `"use client"` to support
 				// React Server Components (Next.js App Router).
@@ -25,6 +30,8 @@ export default defineConfig({
 	},
 	plugins: [
 		react(),
+		visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true }),
+
 		{
 			name: "copy-lucide-static",
 			configResolved() {

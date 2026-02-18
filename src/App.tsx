@@ -1,11 +1,11 @@
+import { AppShell } from "./AppShell";
 import { AppRouter } from "./routes/AppRouter";
-import { ToastProvider } from "./shared/components";
 
 const App = () => {
 	return (
-		<ToastProvider>
+		<AppShell>
 			<AppRouter />
-		</ToastProvider>
+		</AppShell>
 	);
 };
 
