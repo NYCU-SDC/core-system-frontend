@@ -28,7 +28,7 @@ export const UsersPage = () => {
 							</tr>
 						</thead>
 						<tbody>
-							{members.map((user: Record<string, unknown>) => {
+							{(members as unknown as Record<string, unknown>[]).map(user => {
 								const id = String(user.id ?? "");
 								const name = String(user.name ?? "");
 								const emails = Array.isArray(user.emails) ? user.emails : [];

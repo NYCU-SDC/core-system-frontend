@@ -74,7 +74,9 @@ export const SettingsPage = () => {
 								<div className={styles.settingInfo}>
 									<div className={styles.settingLabel}>Email</div>
 									<div className={styles.settingDescription}>
-										{Array.isArray((meQuery.data as Record<string, unknown> | undefined)?.emails) ? (((meQuery.data as Record<string, unknown>).emails as string[])[0] ?? "—") : "—"}
+										{Array.isArray((meQuery.data as unknown as Record<string, unknown> | undefined)?.emails)
+											? (((meQuery.data as unknown as Record<string, unknown>).emails as string[])[0] ?? "—")
+											: "—"}
 									</div>
 								</div>
 							</div>

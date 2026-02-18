@@ -58,13 +58,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}
 		setIsSettingRequired(true);
 		const results = await Promise.allSettled(
-			allQuestions.map(({ sectionId, question: q }) =>
+			allQuestions.map(({ sectionId, question: q }, idx) =>
 				api.updateQuestion(sectionId, q.id, {
 					required: checked,
 					type: q.type,
 					title: q.title,
 					description: q.description ?? "",
-					order: q.order,
+					order: (q as unknown as { order?: number }).order ?? idx,
 					...(q.choices ? { choices: q.choices } : {}),
 					...(q.scale ? { scale: q.scale } : {}),
 					...(q.uploadFile ? { uploadFile: q.uploadFile } : {}),

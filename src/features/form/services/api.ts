@@ -106,7 +106,7 @@ export const deleteForm = async (formId: string): Promise<void> => {
 };
 
 export const uploadFormCoverImage = async (formId: string, file: File): Promise<FormsFormCoverUploadResponse> => {
-	const res = await formsUploadFormCoverImage(formId, { file }, defaultRequestOptions);
+	const res = await formsUploadFormCoverImage(formId, { coverImage: file }, defaultRequestOptions);
 	assertOk(res.status, "Failed to upload cover image");
 	return res.data;
 };
@@ -147,19 +147,19 @@ export const deleteQuestion = async (sectionId: string, questionId: string): Pro
 export const getWorkflow = async (formId: string): Promise<FormWorkflowGetWorkflowResponse> => {
 	const res = await formWorkflowGetWorkflow(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load workflow");
-	return res.data;
+	return res.data as FormWorkflowGetWorkflowResponse;
 };
 
 export const updateWorkflow = async (formId: string, nodes: FormWorkflowNodeRequest[]): Promise<FormWorkflowNodeResponse[]> => {
 	const res = await formWorkflowUpdateWorkflow(formId, nodes, defaultRequestOptions);
 	assertOk(res.status, "Failed to update workflow");
-	return res.data;
+	return res.data as FormWorkflowNodeResponse[];
 };
 
 export const createWorkflowNode = async (formId: string, req: FormWorkflowCreateNodeRequest): Promise<FormWorkflowNodeStructure> => {
 	const res = await formWorkflowCreateNode(formId, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to create workflow node");
-	return res.data;
+	return res.data as FormWorkflowNodeStructure;
 };
 
 export const deleteWorkflowNode = async (formId: string, nodeId: string): Promise<void> => {
@@ -186,13 +186,13 @@ export const createFormResponse = async (formId: string): Promise<ResponsesCreat
 export const listFormResponses = async (formId: string): Promise<ResponsesListResponse> => {
 	const res = await responsesListFormResponses(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load responses");
-	return res.data;
+	return res.data as ResponsesListResponse;
 };
 
 export const getFormResponse = async (formId: string, responseId: string): Promise<ResponsesGetFormResponse> => {
 	const res = await responsesGetFormResponse(formId, responseId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load response");
-	return res.data;
+	return res.data as ResponsesGetFormResponse;
 };
 
 export const deleteFormResponse = async (formId: string, responseId: string): Promise<void> => {
@@ -213,9 +213,9 @@ export const submitFormResponse = async (responseId: string, answers: import("@n
 export const uploadQuestionFiles = async (responseId: string, questionId: string, files: File[]): Promise<ResponsesQuestionFilesUploadResponse> => {
 	const formData = new FormData();
 	files.forEach(f => formData.append("files", f));
-	const res = await responsesUploadQuestionFiles(responseId, questionId, { files } as import("@nycu-sdc/core-system-sdk").ResponsesQuestionFilesUploadRequest, defaultRequestOptions);
+	const res = await responsesUploadQuestionFiles(responseId, questionId, { files } as unknown as import("@nycu-sdc/core-system-sdk").ResponsesQuestionFilesUploadRequest, defaultRequestOptions);
 	assertOk(res.status, "Failed to upload files");
-	return res.data;
+	return res.data as ResponsesQuestionFilesUploadResponse;
 };
 
 // ── Google Sheet ──────────────────────────────────────────────────────────
