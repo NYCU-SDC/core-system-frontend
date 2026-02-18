@@ -1,6 +1,6 @@
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { AlertCircle, CheckCircle, Info, X, XCircle } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import styles from "./Toast.module.css";
 import { ToastContext } from "./toastContext";
 
@@ -24,6 +24,7 @@ export interface ToastInput {
 
 type ToastItem = ToastInput & {
 	id: number;
+	open: boolean;
 };
 
 const icons = {
@@ -55,15 +56,30 @@ export const Toast = ({ open, onOpenChange, title, description, variant = "info"
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
 	const [toasts, setToasts] = useState<ToastItem[]>([]);
 	const nextToastId = useRef(0);
+	const removeTimerMap = useRef<Map<number, number>>(new Map());
 
 	const pushToast = (input: ToastInput) => {
 		nextToastId.current += 1;
-		setToasts(prev => [...prev, { id: nextToastId.current, ...input }]);
+		setToasts(prev => [...prev, { id: nextToastId.current, open: true, ...input }]);
 	};
 
 	const dismissToast = (toastId: number) => {
-		setToasts(prev => prev.filter(toast => toast.id !== toastId));
+		setToasts(prev => prev.map(toast => (toast.id === toastId ? { ...toast, open: false } : toast)));
+		if (removeTimerMap.current.has(toastId)) return;
+		const timerId = window.setTimeout(() => {
+			setToasts(prev => prev.filter(toast => toast.id !== toastId));
+			removeTimerMap.current.delete(toastId);
+		}, 260);
+		removeTimerMap.current.set(toastId, timerId);
 	};
+
+	useEffect(() => {
+		const timerMap = removeTimerMap.current;
+		return () => {
+			timerMap.forEach(timerId => window.clearTimeout(timerId));
+			timerMap.clear();
+		};
+	}, []);
 
 	return (
 		<ToastPrimitive.Provider>
@@ -72,7 +88,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 				{toasts.map(toast => (
 					<Toast
 						key={toast.id}
-						open
+						open={toast.open}
 						onOpenChange={open => {
 							if (!open) dismissToast(toast.id);
 						}}

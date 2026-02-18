@@ -26,28 +26,32 @@
 }
 
 .root[data-state="open"] {
-	animation: slideIn 0.15s ease;
+	animation: slideIn 0.2s ease-out;
 }
 
 .root[data-state="closed"] {
-	animation: slideOut 0.1s ease;
+	animation: slideOut 0.24s ease-in forwards;
 }
 
 @keyframes slideIn {
 	from {
+		opacity: 0;
 		transform: translateX(calc(100% + 1.5rem));
 	}
 	to {
+		opacity: 1;
 		transform: translateX(0);
 	}
 }
 
 @keyframes slideOut {
 	from {
+		opacity: 1;
 		transform: translateX(0);
 	}
 	to {
-		transform: translateX(calc(100% + 1.5rem));
+		opacity: 0;
+		transform: translateX(0.5rem);
 	}
 }
 
