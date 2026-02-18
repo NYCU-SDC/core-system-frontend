@@ -6,6 +6,8 @@ import {
 	Button,
 	Checkbox,
 	ColorPicker,
+	DateInput,
+	DetailedCheckbox,
 	Dialog,
 	DragToOrder,
 	DropdownMenu,
@@ -16,6 +18,7 @@ import {
 	ProgressBar,
 	Radio,
 	RadioCard,
+	ScaleInput,
 	SearchableSelect,
 	Select,
 	Switch,
@@ -33,6 +36,9 @@ export const ComponentsDemo = () => {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [progress, setProgress] = useState(45);
 	const [selectedColor, setSelectedColor] = useState("#ff5555");
+	const [dateValue, setDateValue] = useState("");
+	const [scaleValue, setScaleValue] = useState("");
+	const [ratingValue, setRatingValue] = useState("");
 	const [dragItems, setDragItems] = useState<DragItem[]>([
 		{ id: "1", content: "First item" },
 		{ id: "2", content: "Second item" },
@@ -86,6 +92,85 @@ export const ComponentsDemo = () => {
 							{ value: "2", label: "Option 2" },
 							{ value: "3", label: "Option 3" }
 						]}
+					/>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Detailed Checkbox</h2>
+					<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+						<DetailedCheckbox id="option1" title="Frontend Development" description="Build modern web interfaces with React and TypeScript" />
+						<DetailedCheckbox id="option2" title="Backend Development" description="Create robust APIs and server-side applications" />
+						<DetailedCheckbox id="option3" title="DevOps & Infrastructure" description="Manage cloud infrastructure and CI/CD pipelines" />
+					</div>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Date Input</h2>
+					<DateInput
+						id="date-demo"
+						label="Select a date"
+						description="Choose your preferred date"
+						value={dateValue}
+						onChange={setDateValue}
+						options={{ hasYear: true, hasMonth: true, hasDay: true }}
+					/>
+					<DateInput
+						id="month-year-demo"
+						label="Graduation Date"
+						description="Select month and year only"
+						value={dateValue}
+						onChange={setDateValue}
+						options={{ hasYear: true, hasMonth: true, hasDay: false }}
+					/>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Scale Input (Linear)</h2>
+					<ScaleInput
+						id="scale-demo"
+						label="Rate your experience"
+						description="How would you rate your experience with this product?"
+						value={scaleValue}
+						onChange={setScaleValue}
+						options={{
+							minVal: 0,
+							maxVal: 10,
+							minValueLabel: "Poor",
+							maxValueLabel: "Excellent"
+						}}
+					/>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Scale Input (Rating Stars)</h2>
+					<ScaleInput
+						id="rating-demo"
+						label="Overall Satisfaction"
+						description="Rate your overall satisfaction"
+						value={ratingValue}
+						onChange={setRatingValue}
+						options={{
+							minVal: 1,
+							maxVal: 5,
+							icon: "star",
+							minValueLabel: "Not satisfied",
+							maxValueLabel: "Very satisfied"
+						}}
+					/>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Scale Input (Rating Hearts)</h2>
+					<ScaleInput
+						id="hearts-demo"
+						label="How much do you love it?"
+						value={ratingValue}
+						onChange={setRatingValue}
+						options={{
+							minVal: 1,
+							maxVal: 5,
+							icon: "heart"
+						}}
 					/>
 				</section>
 

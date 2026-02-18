@@ -25,12 +25,12 @@ export const ScaleInput = ({ id, label, description, value, options, required, o
 	};
 
 	const renderIcon = (val: number) => {
-		const isActive = hoverValue !== null ? val <= hoverValue : currentValue !== null && val <= currentValue;
+		const isFilled = currentValue !== null && val <= currentValue;
 
 		if (icon === "star") {
-			return <Star size={24} fill={isActive ? "currentColor" : "none"} />;
+			return <Star size={24} fill={isFilled ? "currentColor" : "none"} />;
 		} else if (icon === "heart") {
-			return <Heart size={24} fill={isActive ? "currentColor" : "none"} />;
+			return <Heart size={24} fill={isFilled ? "currentColor" : "none"} />;
 		}
 		return <span className={styles.value}>{val}</span>;
 	};
