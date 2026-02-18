@@ -26,6 +26,11 @@ interface Section extends FormsSection {
 	progress?: "DRAFT" | "SUBMITTED";
 }
 
+interface FormResponseData {
+	sections: ResponsesResponseSections[];
+	progress: ResponsesResponseProgress;
+}
+
 export const FormDetailPage = () => {
 	const { id: formId } = useParams<{ id: string }>();
 	const navigate = useNavigate();
@@ -152,14 +157,14 @@ export const FormDetailPage = () => {
 							const existingResponse = await responsesGetFormResponse(formId, responseCreation.data.id, { credentials: "include" });
 							if (existingResponse.status === 200) {
 								// 儲存預覽資料和進度
-								const responseData = existingResponse.data as any;
+								const responseData = existingResponse.data as FormResponseData;
 								setPreviewData(responseData.sections);
 								setResponseProgress(responseData.progress);
 
 								// 載入已儲存的答案
 								const loadedAnswers: Record<string, string> = {};
-								responseData.sections?.forEach((section: any) => {
-									section.answerDetails?.forEach((detail: any) => {
+								responseData.sections?.forEach(section => {
+									section.answerDetails?.forEach(detail => {
 										if (detail.question.id && detail.payload.displayValue) {
 											loadedAnswers[detail.question.id] = detail.payload.displayValue;
 										}
@@ -231,7 +236,7 @@ export const FormDetailPage = () => {
 				try {
 					const response = await responsesGetFormResponse(formId, responseId, { credentials: "include" });
 					if (response.status === 200) {
-						const responseData = response.data as any;
+						const responseData = response.data as FormResponseData;
 						setPreviewData(responseData.sections);
 						setResponseProgress(responseData.progress);
 					}
@@ -502,11 +507,11 @@ export const FormDetailPage = () => {
 
 		return (
 			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-				{previewData.map((section: any, sectionIndex: number) => (
+				{previewData.map((section, sectionIndex: number) => (
 					<div key={sectionIndex} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 						<h3>{section.title}</h3>
 						<ul style={{ listStyleType: "disc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-							{section.answerDetails?.map((detail: any, questionIndex: number) => (
+							{section.answerDetails?.map((detail, questionIndex: number) => (
 								<li key={questionIndex}>
 									<span style={{ fontWeight: 500 }}>
 										{detail.question.title}

@@ -1,5 +1,4 @@
-import { Input, TextArea } from "@/shared/components";
-import { Checkbox } from "@/shared/components/Checkbox/Checkbox";
+import { Checkbox, Input, TextArea } from "@/shared/components";
 import type { DetailOption } from "../../types/option";
 import styles from "./DetailOptionsInput.module.css";
 

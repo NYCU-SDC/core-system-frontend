@@ -1,8 +1,6 @@
 import { useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgMember, useUpdateOrg } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminLayout } from "@/layouts";
-import { Button, Input, Label, useToast } from "@/shared/components";
-import { ErrorMessage } from "@/shared/components/ErrorMessage";
-import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
+import { Button, ErrorMessage, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
 import { LogOut } from "lucide-react";
 import { useMemo, useState } from "react";
 import styles from "./AdminSettingsPage.module.css";

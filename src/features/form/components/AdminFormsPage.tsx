@@ -1,8 +1,6 @@
 import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
-import { Button, useToast } from "@/shared/components";
-import { ErrorMessage } from "@/shared/components/ErrorMessage";
-import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
+import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";

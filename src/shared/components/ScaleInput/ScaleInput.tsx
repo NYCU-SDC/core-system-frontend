@@ -1,5 +1,5 @@
+import { InlineSvg } from "@/shared/components";
 import type { FormsScaleOption } from "@nycu-sdc/core-system-sdk";
-import { Heart, Star } from "lucide-react";
 import { useState } from "react";
 import styles from "./ScaleInput.module.css";
 
@@ -25,13 +25,12 @@ export const ScaleInput = ({ id, label, description, value, options, required, o
 	};
 
 	const renderIcon = (val: number) => {
-		const isFilled = currentValue !== null && val <= currentValue;
+		const isFilled = (hoverValue !== null && val <= hoverValue) || (currentValue !== null && val <= currentValue);
 
-		if (icon === "star") {
-			return <Star size={24} fill={isFilled ? "currentColor" : "none"} />;
-		} else if (icon === "heart") {
-			return <Heart size={24} fill={isFilled ? "currentColor" : "none"} />;
+		if (icon) {
+			return <InlineSvg name={icon} filled={isFilled} size={24} />;
 		}
+
 		return <span className={styles.value}>{val}</span>;
 	};
 

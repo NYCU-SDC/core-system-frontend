@@ -1,5 +1,4 @@
-import { Select } from "@/shared/components/Select/Select";
-import { Switch } from "@/shared/components/Switch/Switch";
+import { Select, Switch } from "@/shared/components";
 import { X } from "lucide-react";
 import type { Option } from "../../types/option";
 import { OptionsInput } from "./OptionsInput";

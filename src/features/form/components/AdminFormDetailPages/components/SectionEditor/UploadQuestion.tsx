@@ -1,4 +1,4 @@
-import { Select } from "@/shared/components/Select/Select";
+import { Select } from "@/shared/components";
 import styles from "./UploadQuestion.module.css";
 
 export const UploadQuestion = () => {

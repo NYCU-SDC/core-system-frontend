@@ -68,3 +68,9 @@ export { useToast } from "./Toast/useToast";
 
 export { Popover } from "./Popover/Popover";
 export type { PopoverProps } from "./Popover/Popover";
+
+export { InlineSvg } from "./InlineSvg/InlineSvg";
+
+export { ErrorMessage } from "./ErrorMessage/ErrorMessage";
+
+export { LoadingSpinner } from "./LoadingSpinner/LoadingSpinner";

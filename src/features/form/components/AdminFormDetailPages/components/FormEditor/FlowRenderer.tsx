@@ -1,5 +1,4 @@
-import { Button, Select } from "@/shared/components";
-import { Popover } from "@/shared/components/Popover/Popover";
+import { Button, Popover, Select } from "@/shared/components";
 import { useMemo } from "react";
 import type { NodeItem } from "../../types/workflow";
 import { Arrow } from "./Arrow";

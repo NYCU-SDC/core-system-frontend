@@ -1,5 +1,4 @@
-import { Button, Switch } from "@/shared/components";
-import { Input } from "@/shared/components/Input/Input";
+import { Button, Input, Switch } from "@/shared/components";
 import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { Question } from "../../types/option";
