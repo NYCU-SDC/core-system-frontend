@@ -1,24 +1,22 @@
+import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
+import { useFormById } from "@/features/form/hooks/useOrgForms";
+import { useSections } from "@/features/form/hooks/useSections";
 import * as formApi from "@/features/form/services/api";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Markdown, Radio, ScaleInput, TextArea } from "@/shared/components";
-import {
-	formsGetFormById,
-	formsGetFormCoverImage,
-	formsListSections,
-	responsesGetFormResponse,
-	responsesSubmitFormResponse,
-	responsesUpdateFormResponse,
-	type FormsForm,
-	type FormsQuestionResponse,
-	type FormsSection,
-	type ResponsesAnswersRequestUpdate,
-	type ResponsesDateAnswer,
-	type ResponsesResponseProgress,
-	type ResponsesResponseSections,
-	type ResponsesScaleAnswer,
-	type ResponsesStringAnswer,
-	type ResponsesStringArrayAnswer
+import type {
+	FormsQuestionResponse,
+	FormsSection,
+	ResponsesAnswersRequestUpdate,
+	ResponsesDateAnswer,
+	ResponsesResponseProgress,
+	ResponsesResponseSections,
+	ResponsesScaleAnswer,
+	ResponsesStringAnswer,
+	ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { useCallback, useEffect, useState } from "react";
+import { formsGetFormCoverImage } from "@nycu-sdc/core-system-sdk";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
@@ -36,18 +34,106 @@ export const FormDetailPage = () => {
 	const navigate = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [form, setForm] = useState<FormsForm | null>(null);
-	const [responseId, setResponseId] = useState<string | null>(urlResponseId ?? null);
-	const [sections, setSections] = useState<Section[]>([]);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
-	const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-	const [previewData, setPreviewData] = useState<ResponsesResponseSections[] | null>(null);
-	const [responseProgress, setResponseProgress] = useState<ResponsesResponseProgress>("DRAFT");
+	const answersInitialized = useRef(false);
 
+	// ── React Query ──────────────────────────────────────────────────────────
+	const formQuery = useFormById(formId);
+	const sectionsQuery = useSections(formId, !!urlResponseId);
+	const responseQuery = useFormResponse(formId, urlResponseId, !!urlResponseId);
+	const updateResponseMutation = useUpdateFormResponse(urlResponseId ?? "");
+	const submitResponseMutation = useSubmitFormResponse(formId ?? "");
+
+	// Cover image (binary blob — keep in a dedicated query)
+	const coverQuery = useQuery({
+		queryKey: ["form", formId, "cover"],
+		queryFn: async () => {
+			const res = await formsGetFormCoverImage(formId!, { credentials: "include" });
+			if (res.status === 200 && res.data) {
+				const blob = new Blob([res.data], { type: "image/webp" });
+				return URL.createObjectURL(blob);
+			}
+			return null;
+		},
+		enabled: !!formId,
+		staleTime: Infinity,
+		gcTime: 0
+	});
+
+	// Revoke blob URL when it changes or component unmounts
+	useEffect(() => {
+		const url = coverQuery.data;
+		return () => {
+			if (url) URL.revokeObjectURL(url);
+		};
+	}, [coverQuery.data]);
+
+	// ── Derived state ────────────────────────────────────────────────────────
+	const form = formQuery.data ?? null;
+
+	const responseProgress: ResponsesResponseProgress = useMemo(() => {
+		const data = responseQuery.data as unknown as FormResponseData | undefined;
+		return data?.progress ?? "DRAFT";
+	}, [responseQuery.data]);
+
+	const sections: Section[] = useMemo(() => {
+		if (!sectionsQuery.data) return [];
+		const loaded: Section[] = sectionsQuery.data.flatMap(item =>
+			item.sections.map(section => ({
+				id: section.id,
+				formId: section.formId,
+				title: section.title,
+				description: section.description,
+				progress: "DRAFT" as const,
+				questions: section.questions
+			}))
+		);
+		loaded.push({
+			id: "preview",
+			formId: formId!,
+			title: "填答結果預覽",
+			progress: "DRAFT" as const,
+			questions: []
+		});
+		return loaded;
+	}, [sectionsQuery.data, formId]);
+
+	// Sync pre-filled answers from the existing response (once on first load)
+	useEffect(() => {
+		if (answersInitialized.current) return;
+		const data = responseQuery.data as unknown as FormResponseData | undefined;
+		if (!data?.sections) return;
+		const loaded: Record<string, string> = {};
+		data.sections.forEach(section => {
+			section.answerDetails?.forEach(detail => {
+				if (detail.question.id && detail.payload.displayValue) {
+					loaded[detail.question.id] = detail.payload.displayValue;
+				}
+			});
+		});
+		setAnswers(loaded);
+		answersInitialized.current = true;
+	}, [responseQuery.data]);
+
+	// Refresh response data when navigating to the preview step
+	const isOnPreviewStep = sections.length > 0 && currentStep === sections.length - 1 && sections[currentStep]?.id === "preview";
+
+	useEffect(() => {
+		if (isOnPreviewStep && urlResponseId) {
+			responseQuery.refetch();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOnPreviewStep]);
+
+	const previewData: ResponsesResponseSections[] | null = useMemo(() => {
+		if (!isOnPreviewStep) return null;
+		const data = responseQuery.data as unknown as FormResponseData | undefined;
+		return data?.sections ?? null;
+	}, [isOnPreviewStep, responseQuery.data]);
+
+	// ── Auto-save (debounced 1 s) ────────────────────────────────────────────
 	const saveAnswers = useCallback(async () => {
-		if (!responseId) return;
+		if (!urlResponseId) return;
 
 		try {
 			const questionTypeMap: Record<string, string> = {};
@@ -101,147 +187,25 @@ export const FormDetailPage = () => {
 				answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[]
 			};
 
-			await responsesUpdateFormResponse(responseId, answersUpdate, { credentials: "include" });
+			await updateResponseMutation.mutateAsync(answersUpdate);
 		} catch (error) {
 			console.error("儲存答案失敗:", error);
 		}
-	}, [responseId, answers, sections]);
+	}, [urlResponseId, answers, sections, updateResponseMutation]);
 
 	useEffect(() => {
-		if (!responseId) return;
+		if (!urlResponseId) return;
 
 		const timer = setTimeout(() => {
 			saveAnswers();
 		}, 1000); // 1 秒後儲存
 
 		return () => clearTimeout(timer);
-	}, [answers, responseId, saveAnswers]);
+	}, [answers, urlResponseId, saveAnswers]);
 
-	// 載入表單資料
-	useEffect(() => {
-		const loadForm = async () => {
-			if (!formId) {
-				setError("表單 ID 不存在");
-				setIsLoading(false);
-				return;
-			}
-
-			try {
-				setIsLoading(true);
-				setError(null);
-
-				// 取得表單資訊
-				const formResponse = await formsGetFormById(formId, { credentials: "include" });
-				if (formResponse.status === 200) {
-					setForm(formResponse.data);
-
-					// 載入封面圖片
-					try {
-						const coverResponse = await formsGetFormCoverImage(formId, { credentials: "include" });
-						if (coverResponse.status === 200 && coverResponse.data) {
-							const blob = new Blob([coverResponse.data], { type: "image/webp" });
-							const imageUrl = URL.createObjectURL(blob);
-							setCoverImageUrl(imageUrl);
-						}
-					} catch (coverError) {
-						console.error("載入封面圖片失敗:", coverError);
-					}
-
-					// 取得已有的回覆資料（responseId 來自 URL）
-					if (urlResponseId) {
-						const existingResponse = await responsesGetFormResponse(formId, urlResponseId, { credentials: "include" });
-						if (existingResponse.status === 200) {
-							// 儲存預覽資料和進度
-							const responseData = existingResponse.data as FormResponseData;
-							setPreviewData(responseData.sections);
-							setResponseProgress(responseData.progress);
-
-							// 載入已儲存的答案
-							const loadedAnswers: Record<string, string> = {};
-							responseData.sections?.forEach(section => {
-								section.answerDetails?.forEach(detail => {
-									if (detail.question.id && detail.payload.displayValue) {
-										loadedAnswers[detail.question.id] = detail.payload.displayValue;
-									}
-								});
-							});
-							setAnswers(loadedAnswers);
-						}
-
-						// 載入 sections 和 questions
-						const sectionsResponse = await formsListSections(formId, { credentials: "include" });
-						if (sectionsResponse.status === 200) {
-							const loadedSections: Section[] = sectionsResponse.data.flatMap(item =>
-								item.sections.map(section => ({
-									id: section.id,
-									formId: section.formId,
-									title: section.title,
-									description: section.description,
-									progress: "DRAFT" as const,
-									questions: section.questions
-								}))
-							);
-
-							loadedSections.push({
-								id: "preview",
-								formId: formId,
-								title: "填答結果預覽",
-								progress: "DRAFT" as const,
-								questions: []
-							});
-							setSections(loadedSections);
-						}
-					}
-				} else {
-					throw new Error(`取得表單失敗: HTTP ${formResponse.status}`);
-				}
-
-				setIsLoading(false);
-			} catch (err) {
-				let errorMessage = "載入表單時發生錯誤";
-				if (err instanceof Error) {
-					errorMessage = err.message;
-
-					// JSON 解析錯誤
-					if (err.message.includes("JSON") || err.message.includes("<!doctype")) {
-						errorMessage = "API 連線錯誤：伺服器返回了非預期的回應。請確認：\n1. 開發伺服器是否正在運行\n2. API 端點是否正確\n3. 是否需要先登入";
-					}
-				}
-
-				setError(errorMessage);
-				setIsLoading(false);
-			}
-		};
-
-		loadForm();
-	}, [formId]);
-
-	useEffect(() => {
-		return () => {
-			if (coverImageUrl) {
-				URL.revokeObjectURL(coverImageUrl);
-			}
-		};
-	}, [coverImageUrl]);
-
-	useEffect(() => {
-		const loadPreviewData = async () => {
-			if (currentStep === sections.length - 1 && sections[currentStep]?.id === "preview" && formId && responseId) {
-				try {
-					const response = await responsesGetFormResponse(formId, responseId, { credentials: "include" });
-					if (response.status === 200) {
-						const responseData = response.data as FormResponseData;
-						setPreviewData(responseData.sections);
-						setResponseProgress(responseData.progress);
-					}
-				} catch (error) {
-					console.error("載入預覽資料失敗:", error);
-				}
-			}
-		};
-
-		loadPreviewData();
-	}, [currentStep, sections, formId, responseId]);
+	// ── Loading / Error ──────────────────────────────────────────────────────
+	const isLoading = formQuery.isLoading || sectionsQuery.isLoading;
+	const error: string | null = formQuery.error ? (formQuery.error as Error).message : sectionsQuery.error ? (sectionsQuery.error as Error).message : null;
 
 	const isLastStep = currentStep === sections.length - 1;
 	const isFirstStep = currentStep === 0;
@@ -440,9 +404,9 @@ export const FormDetailPage = () => {
 							label=""
 							accept={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
 							onChange={async file => {
-								if (file && responseId) {
+								if (file && urlResponseId) {
 									try {
-										await formApi.uploadQuestionFiles(responseId, question.id, [file]);
+										await formApi.uploadQuestionFiles(urlResponseId, question.id, [file]);
 										updateAnswer(question.id, file.name);
 									} catch (err) {
 										console.error("上傳失敗:", err);
@@ -467,9 +431,9 @@ export const FormDetailPage = () => {
 						{question.description && <Markdown content={question.description} />}
 						<Button
 							onClick={() => {
-								if (!responseId) return;
+								if (!urlResponseId) return;
 								const provider = question.oauthConnect;
-								const url = `/api/oauth/questions/${provider}?responseId=${responseId}&questionId=${question.id}`;
+								const url = `/api/oauth/questions/${provider}?responseId=${urlResponseId}&questionId=${question.id}`;
 								window.open(url, "_blank");
 								updateAnswer(question.id, "connected");
 							}}
@@ -534,28 +498,25 @@ export const FormDetailPage = () => {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!responseId) return;
+		if (!urlResponseId) return;
 
 		try {
 			// 先儲存最新答案
 			await saveAnswers();
 
 			// 提交表單
-			const submitResponse = await responsesSubmitFormResponse(
-				responseId,
+			submitResponseMutation.mutate(
+				{ responseId: urlResponseId, answers: { answers: [] } },
 				{
-					answers: []
-				},
-				{ credentials: "include" }
+					onSuccess: () => setIsSubmitted(true),
+					onError: err => {
+						console.error("提交表單失敗:", err);
+						alert("提交失敗，請稍後再試");
+					}
+				}
 			);
-
-			if (submitResponse.status === 200) {
-				setIsSubmitted(true);
-			} else {
-				throw new Error("提交失敗");
-			}
-		} catch (error) {
-			console.error("提交表單失敗:", error);
+		} catch (err) {
+			console.error("提交表單失敗:", err);
 			alert("提交失敗，請稍後再試");
 		}
 	};
@@ -567,7 +528,7 @@ export const FormDetailPage = () => {
 					<h1 className={styles.successTitle}>感謝您的填答！</h1>
 					<p className={styles.successMessage}>{form?.messageAfterSubmission}</p>
 					<div className={styles.successActions}>
-						<Button type="button" onClick={() => responseId && navigate(`/forms/${formId}?responseId=${responseId}`)} themeColor="var(--code-foreground)">
+						<Button type="button" onClick={() => urlResponseId && navigate(`/forms/${formId}?responseId=${urlResponseId}`)} themeColor="var(--code-foreground)">
 							查看問卷副本
 						</Button>
 						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--orange)">
@@ -603,7 +564,7 @@ export const FormDetailPage = () => {
 
 	return (
 		<>
-			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="Form Cover" />}
+			{coverQuery.data && <img src={coverQuery.data} className={styles.cover} alt="Form Cover" />}
 			<div className={styles.container}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{form.title}</h1>
@@ -659,7 +620,7 @@ export const FormDetailPage = () => {
 							上一頁
 						</Button>
 						{isLastStep ? (
-							<Button type="submit" disabled={responseProgress === "DRAFT"}>
+							<Button type="submit" disabled={responseProgress === "DRAFT"} processing={submitResponseMutation.isPending}>
 								{responseProgress === "SUBMITTED" ? "已送出" : "送出"}
 							</Button>
 						) : (

@@ -1,5 +1,4 @@
-import { useMe } from "@/features/auth/hooks/useAuth";
-import { authService } from "@/features/auth/services/authService";
+import { useMe, useUpdateOnboarding } from "@/features/auth/hooks/useAuth";
 import { Button, Input, Label, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
 import { useState } from "react";
 import styles from "./SettingsPage.module.css";
@@ -7,32 +6,31 @@ import styles from "./SettingsPage.module.css";
 export const SettingsPage = () => {
 	const meQuery = useMe();
 	const { pushToast } = useToast();
+	const updateOnboardingMutation = useUpdateOnboarding();
 	const [displayName, setDisplayName] = useState<string | null>(null);
 	const [username, setUsername] = useState<string | null>(null);
-	const [isSaving, setIsSaving] = useState(false);
 
 	const displayNameValue = displayName ?? meQuery.data?.name ?? "";
 	const usernameValue = username ?? meQuery.data?.username ?? "";
 
-	const handleSave = async () => {
+	const handleSave = () => {
 		const trimmedName = displayNameValue.trim();
 		const trimmedUsername = usernameValue.trim();
 		if (!trimmedName || !trimmedUsername) {
 			pushToast({ title: "請填寫所有必填欄位", variant: "warning" });
 			return;
 		}
-		setIsSaving(true);
-		try {
-			await authService.updateOnboarding({ name: trimmedName, username: trimmedUsername });
-			setDisplayName(null);
-			setUsername(null);
-			meQuery.refetch();
-			pushToast({ title: "儲存成功", description: "使用者資訊已更新。", variant: "success" });
-		} catch (e) {
-			pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" });
-		} finally {
-			setIsSaving(false);
-		}
+		updateOnboardingMutation.mutate(
+			{ name: trimmedName, username: trimmedUsername },
+			{
+				onSuccess: () => {
+					setDisplayName(null);
+					setUsername(null);
+					pushToast({ title: "儲存成功", description: "使用者資訊已更新。", variant: "success" });
+				},
+				onError: e => pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" })
+			}
+		);
 	};
 
 	return (
@@ -68,7 +66,7 @@ export const SettingsPage = () => {
 								</div>
 							</div>
 							<div style={{ marginTop: "0.75rem" }}>
-								<Button onClick={handleSave} processing={isSaving} disabled={meQuery.isLoading || !displayNameValue.trim() || !usernameValue.trim()}>
+								<Button onClick={handleSave} processing={updateOnboardingMutation.isPending} disabled={meQuery.isLoading || !displayNameValue.trim() || !usernameValue.trim()}>
 									儲存
 								</Button>
 							</div>

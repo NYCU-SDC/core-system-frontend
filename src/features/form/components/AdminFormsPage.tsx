@@ -171,7 +171,7 @@ export const AdminFormsPage = () => {
 											封存
 										</Button>
 									)}
-									<Button variant="danger" onClick={e => handleDelete(e, form.id)} disabled={deleteFormMutation.isPending}>
+									<Button themeColor="var(--red)" onClick={e => handleDelete(e, form.id)} disabled={deleteFormMutation.isPending}>
 										<Trash2 size={14} />
 										刪除
 									</Button>

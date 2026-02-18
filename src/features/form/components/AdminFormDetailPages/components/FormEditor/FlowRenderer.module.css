@@ -73,3 +73,64 @@
 .text {
 	margin: 0rem 0.5rem;
 }
+
+/* ── Node content (label + optional section title) ── */
+.nodeContent {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.125rem;
+}
+
+.nodeLabel {
+	margin: 0;
+	font-weight: 600;
+}
+
+.nodeTitle {
+	margin: 0;
+	font-size: 0.75rem;
+	font-weight: 400;
+	color: var(--color-caption, #888);
+}
+
+/* ── Inline edit form inside a SECTION node ── */
+.editForm {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+	padding: 0.25rem 0;
+	min-width: 14rem;
+}
+
+.editInput {
+	padding: 0.25rem 0.5rem;
+	border: 1px solid var(--border-color, #ccc);
+	border-radius: 4px;
+	background: var(--background-color-primary, #fff);
+	color: var(--color-primary, #000);
+	font-size: 0.8125rem;
+	font-family: inherit;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.editInput:focus {
+	outline: none;
+	border-color: var(--accent-color, #7c3aed);
+}
+
+.editActions {
+	display: flex;
+	gap: 0.375rem;
+	margin-top: 0.125rem;
+}
+
+/* ── Condition rule editor inside a CONDITION node ── */
+.conditionEditor {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+}

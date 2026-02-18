@@ -1,3 +1,4 @@
+import { useSections } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
@@ -15,7 +16,9 @@ const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
 	nodes.map(n => ({
 		id: n.id,
 		label: n.label,
-		type: n.type,
+		...(n.title !== undefined && { title: n.title }),
+		...(n.description !== undefined && { description: n.description }),
+		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 		...(n.next !== undefined && { next: n.next }),
 		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
 		...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
@@ -88,6 +91,11 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	};
 
 	const [nodeItems, setNodeItems] = useState<NodeItem[]>([]);
+	const sectionsQuery = useSections(formData.id);
+
+	const handleNodeChange = (id: string, updates: Partial<NodeItem>) => {
+		setNodeItems(prev => prev.map(n => (n.id === id ? { ...n, ...updates } : n)));
+	};
 
 	useEffect(() => {
 		if (workflowQuery.data && workflowQuery.data.length > 0) {
@@ -95,6 +103,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				id: n.id ?? uuidv4(),
 				label: n.label ?? "",
 				type: (n.type as NodeItem["type"]) ?? "SECTION",
+				...(n.title !== undefined && { title: n.title }),
+				...(n.description !== undefined && { description: n.description }),
+				...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 				...(n.next !== undefined && { next: n.next }),
 				...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
 				...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
@@ -445,6 +456,8 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			<div className={styles.flowContainer}>
 				<FlowRenderer
 					nodes={nodeItems}
+					sections={sectionsQuery.data}
+					onNodeChange={handleNodeChange}
 					onAddSection={handleAddSection}
 					onDeleteSection={handleDeleteSection}
 					onAddCondition={handleAddCondition}

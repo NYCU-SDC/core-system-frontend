@@ -1,11 +1,20 @@
 import { Button, Popover, Select } from "@/shared/components";
-import { useMemo } from "react";
+import type { FormWorkflowConditionRule, FormsListSectionsResponse } from "@nycu-sdc/core-system-sdk";
+import { FormWorkflowConditionSource } from "@nycu-sdc/core-system-sdk";
+import { useEffect, useMemo, useState } from "react";
 import type { NodeItem } from "../../types/workflow";
 import { Arrow } from "./Arrow";
 import styles from "./FlowRenderer.module.css";
 
+/** Question types whose answers are choice IDs (use CHOICE source in conditionRule) */
+const CHOICE_QUESTION_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"]);
+
 export interface FlowRendererProps {
 	nodes: NodeItem[];
+	/** Sections data (from useSections) — used to populate condition rule dropdowns */
+	sections?: FormsListSectionsResponse[];
+	/** Called when a node's data changes (label / title / description / conditionRule) */
+	onNodeChange: (id: string, updates: Partial<NodeItem>) => void;
 	onAddSection: (id: string) => void;
 	onDeleteSection: (id: string) => void;
 	onAddCondition: (id: string) => void;
@@ -19,6 +28,8 @@ export interface FlowRendererProps {
 
 export const FlowRenderer = ({
 	nodes,
+	sections,
+	onNodeChange,
 	onAddSection,
 	onDeleteSection,
 	onAddCondition,
@@ -55,6 +66,8 @@ export const FlowRenderer = ({
 				<FlowNode
 					key={node.id}
 					node={node}
+					sections={sections}
+					onNodeChange={onNodeChange}
 					onAddSection={() => onAddSection(node.id)}
 					onDeleteSection={() => onDeleteSection(node.id)}
 					onAddCondition={() => onAddCondition(node.id)}
@@ -99,6 +112,8 @@ export const FlowRenderer = ({
 
 interface FlowNodeProps {
 	node: NodeItem;
+	sections?: FormsListSectionsResponse[];
+	onNodeChange: (id: string, updates: Partial<NodeItem>) => void;
 	onAddSection: () => void;
 	onDeleteSection: () => void;
 	onAddCondition: () => void;
@@ -112,6 +127,8 @@ interface FlowNodeProps {
 
 const FlowNode = ({
 	node,
+	sections,
+	onNodeChange,
 	onAddSection,
 	onDeleteSection,
 	onAddCondition,
@@ -122,13 +139,94 @@ const FlowNode = ({
 	onAddMergeSection,
 	onAddMergeCondition
 }: FlowNodeProps) => {
+	// ── SECTION editing state ─────────────────────────────────────────────────
+	const [isEditing, setIsEditing] = useState(false);
+	const [draftLabel, setDraftLabel] = useState(node.label);
+	const [draftTitle, setDraftTitle] = useState(node.title ?? "");
+	const [draftDesc, setDraftDesc] = useState(node.description ?? "");
+
+	// Sync drafts when parent updates the node (e.g., after workflow save + refetch)
+	useEffect(() => {
+		setDraftLabel(node.label);
+		setDraftTitle(node.title ?? "");
+		setDraftDesc(node.description ?? "");
+	}, [node.label, node.title, node.description]);
+
+	const handleSaveEdit = () => {
+		onNodeChange(node.id, {
+			label: draftLabel.trim() || node.label,
+			title: draftTitle.trim() || undefined,
+			description: draftDesc.trim() || undefined
+		});
+		setIsEditing(false);
+	};
+
+	const handleCancelEdit = () => {
+		setDraftLabel(node.label);
+		setDraftTitle(node.title ?? "");
+		setDraftDesc(node.description ?? "");
+		setIsEditing(false);
+	};
+
+	// ── Condition rule data ───────────────────────────────────────────────────
+	const allQuestions = useMemo(() => {
+		if (!sections) return [];
+		return sections.flatMap(sr => sr.sections.flatMap(s => s.questions.map(q => ({ ...q, sectionTitle: s.title }))));
+	}, [sections]);
+
+	const selectedQuestion = useMemo(() => allQuestions.find(q => q.id === node.conditionRule?.question), [allQuestions, node.conditionRule?.question]);
+
+	const isChoiceQuestion = selectedQuestion ? CHOICE_QUESTION_TYPES.has(selectedQuestion.type) : false;
+
+	// Extract choiceId from a "^{uuid}$" pattern
+	const selectedChoiceId = useMemo(() => {
+		const p = node.conditionRule?.pattern ?? "";
+		const m = p.match(/^\^([0-9a-f-]+)\$$/i);
+		return m ? m[1] : "";
+	}, [node.conditionRule?.pattern]);
+
+	const handleQuestionChange = (questionId: string) => {
+		const q = allQuestions.find(q => q.id === questionId);
+		const isChoice = q ? CHOICE_QUESTION_TYPES.has(q.type) : false;
+		onNodeChange(node.id, {
+			conditionRule: {
+				source: isChoice ? FormWorkflowConditionSource.CHOICE : FormWorkflowConditionSource.NON_CHOICE,
+				question: questionId,
+				pattern: ""
+			} as FormWorkflowConditionRule
+		});
+	};
+
+	const handleChoiceChange = (choiceId: string) => {
+		if (!node.conditionRule) return;
+		onNodeChange(node.id, {
+			conditionRule: { ...node.conditionRule, source: FormWorkflowConditionSource.CHOICE, pattern: `^${choiceId}$` }
+		});
+	};
+
+	const handlePatternChange = (pattern: string) => {
+		if (!node.conditionRule) return;
+		onNodeChange(node.id, { conditionRule: { ...node.conditionRule, pattern } });
+	};
+
+	// ── Render ────────────────────────────────────────────────────────────────
 	return (
 		<Popover
 			side="right"
 			content={close => {
 				return (
 					<div className={styles.popoverContent}>
-						{node.type === "SECTION" && <Button variant="secondary">編輯</Button>}
+						{node.type === "SECTION" && (
+							<Button
+								variant="secondary"
+								onClick={() => {
+									setIsEditing(true);
+									close();
+								}}
+							>
+								編輯
+							</Button>
+						)}
 						{node.type !== "END" && node.type !== "CONDITION" && (
 							<Button
 								variant="secondary"
@@ -263,17 +361,60 @@ const FlowNode = ({
 				);
 			}}
 		>
-			<div className={`${styles.node} ${styles[node.type.toLowerCase()]} ${styles[node.isMergeNode ? "mergeNode" : ""]}`}>
-				{node.type === "CONDITION" && (
-					<>
-						<p className={styles.text}>如果</p>
-						<Select options={[{ value: "section1", label: "區塊 1" }]} placeholder="選擇區塊" variant="text" />
-						<Select options={[{ value: "question1", label: "問題 1" }]} placeholder="選擇問題" variant="text" />
-						<p className={styles.text}>選擇</p>
-						<Select options={[{ value: "answer1", label: "答案 1" }]} placeholder="選擇答案" variant="text" />
-					</>
+			<div className={`${styles.node} ${styles[node.type.toLowerCase()]} ${node.isMergeNode ? styles.mergeNode : ""}`}>
+				{/* ── START / END / SECTION: label display or inline edit form ── */}
+				{node.type !== "CONDITION" && !isEditing && (
+					<div className={styles.nodeContent}>
+						<p className={styles.nodeLabel}>{node.label}</p>
+						{node.type === "SECTION" && node.title && <p className={styles.nodeTitle}>{node.title}</p>}
+					</div>
 				)}
-				{node.type !== "CONDITION" && <p>{node.label}</p>}
+
+				{node.type !== "CONDITION" && isEditing && (
+					<div className={styles.editForm} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+						<input className={styles.editInput} value={draftLabel} onChange={e => setDraftLabel(e.target.value)} placeholder="節點標籤（內部使用）" autoFocus />
+						<input className={styles.editInput} value={draftTitle} onChange={e => setDraftTitle(e.target.value)} placeholder="Section 標題（受訪者可見）" />
+						<input className={styles.editInput} value={draftDesc} onChange={e => setDraftDesc(e.target.value)} placeholder="Section 說明（受訪者可見）" />
+						<div className={styles.editActions}>
+							<Button onClick={handleSaveEdit}>儲存</Button>
+							<Button variant="secondary" onClick={handleCancelEdit}>
+								取消
+							</Button>
+						</div>
+					</div>
+				)}
+
+				{/* ── CONDITION: real condition rule editor ── */}
+				{node.type === "CONDITION" && (
+					<div className={styles.conditionEditor} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+						<p className={styles.text}>如果</p>
+						<Select
+							options={allQuestions.map(q => ({ value: q.id, label: `${q.sectionTitle} › ${q.title}` }))}
+							value={node.conditionRule?.question ?? ""}
+							onValueChange={handleQuestionChange}
+							placeholder="選擇問題"
+							variant="text"
+						/>
+						{node.conditionRule?.question && isChoiceQuestion && (
+							<>
+								<p className={styles.text}>選擇</p>
+								<Select
+									options={(selectedQuestion?.choices ?? []).map(c => ({ value: c.id, label: c.name }))}
+									value={selectedChoiceId}
+									onValueChange={handleChoiceChange}
+									placeholder="選擇答案"
+									variant="text"
+								/>
+							</>
+						)}
+						{node.conditionRule?.question && !isChoiceQuestion && (
+							<>
+								<p className={styles.text}>符合</p>
+								<input className={styles.editInput} value={node.conditionRule?.pattern ?? ""} onChange={e => handlePatternChange(e.target.value)} placeholder="Regex 模式（如 ^.+$）" />
+							</>
+						)}
+					</div>
+				)}
 			</div>
 		</Popover>
 	);

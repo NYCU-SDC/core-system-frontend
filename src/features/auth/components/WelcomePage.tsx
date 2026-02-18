@@ -1,4 +1,5 @@
-﻿import { authService, type AuthUser } from "@/features/auth/services/authService";
+﻿import { useMe } from "@/features/auth/hooks/useAuth";
+import { authService } from "@/features/auth/services/authService";
 import { UserLayout } from "@/layouts";
 import { Button, Input } from "@/shared/components";
 import { ArrowRight } from "lucide-react";
@@ -9,37 +10,24 @@ import styles from "./WelcomePage.module.css";
 
 export const WelcomePage = () => {
 	const navigate = useNavigate();
+	const meQuery = useMe();
 	const [nickname, setNickname] = useState("");
 	const [username, setUsername] = useState("");
 	const [isUsernameFocused, setIsUsernameFocused] = useState(false);
-	const [isLoading, setIsLoading] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState("");
 
+	const isLoading = meQuery.isLoading;
+
 	useEffect(() => {
-		let isMounted = true;
-
-		const loadUser = async () => {
-			try {
-				const user = await authService.getCurrentUser<AuthUser>();
-				if (!isMounted || !user) return;
-
-				setNickname(typeof user.name === "string" ? user.name : "");
-				setUsername(typeof user.username === "string" ? user.username : "");
-			} catch {
-				if (isMounted) {
-					navigate("/", { replace: true });
-				}
-			} finally {
-				if (isMounted) setIsLoading(false);
-			}
-		};
-
-		loadUser();
-		return () => {
-			isMounted = false;
-		};
-	}, [navigate]);
+		if (meQuery.isError) {
+			navigate("/", { replace: true });
+			return;
+		}
+		if (!meQuery.data) return;
+		setNickname(typeof meQuery.data.name === "string" ? meQuery.data.name : "");
+		setUsername(typeof meQuery.data.username === "string" ? meQuery.data.username : "");
+	}, [meQuery.data, meQuery.isError, navigate]);
 
 	const nicknameError = useMemo(() => {
 		if (!nickname) return "";

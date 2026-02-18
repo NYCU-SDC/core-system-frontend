@@ -40,7 +40,7 @@ export const CallbackPage = () => {
 					await wait(300);
 				}
 
-				queryClient.setQueryData(["auth", "user"], user);
+				queryClient.setQueryData(["user", "me"], user);
 				const redirectTarget = getSafeRedirectTarget();
 
 				if (user) {

@@ -1,12 +1,15 @@
 import * as api from "@/features/form/services/api";
 import { formKeys, orgKeys } from "@/shared/queryKeys/org";
-import type { FormWorkflowCreateNodeRequest, FormWorkflowGetWorkflowResponse, FormWorkflowNodeRequest, FormWorkflowNodeResponse, FormWorkflowNodeStructure } from "@nycu-sdc/core-system-sdk";
+import type { FormWorkflowCreateNodeRequest, FormWorkflowNodeRequest, FormWorkflowNodeResponse, FormWorkflowNodeStructure } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useWorkflow = (formId: string | undefined, enabled = true) =>
-	useQuery<FormWorkflowGetWorkflowResponse>({
+	useQuery<FormWorkflowNodeResponse[]>({
 		queryKey: formKeys.workflow(formId ?? ""),
-		queryFn: () => api.getWorkflow(formId!),
+		queryFn: async () => {
+			const res = await api.getWorkflow(formId!);
+			return res.workflow;
+		},
 		enabled: enabled && !!formId
 	});
 

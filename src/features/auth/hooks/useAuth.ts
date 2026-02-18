@@ -1,5 +1,6 @@
 import { authService } from "@/features/auth/services/authService";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import type { UserOnboardingRequest } from "@nycu-sdc/core-system-sdk";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useMe = () =>
 	useQuery({
@@ -11,6 +12,14 @@ export const useLogout = () =>
 	useMutation({
 		mutationFn: () => authService.logout()
 	});
+
+export const useUpdateOnboarding = () => {
+	const qc = useQueryClient();
+	return useMutation<void, Error, UserOnboardingRequest>({
+		mutationFn: data => authService.updateOnboarding(data),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["user", "me"] })
+	});
+};
 
 export const useAuth = () => {
 	const { data: user, isLoading } = useMe();
