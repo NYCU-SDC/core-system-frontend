@@ -65,10 +65,10 @@ export const FormsListPage = () => {
 
 	const handleFormClick = (form: FormRow) => {
 		if (form.status === UnitUserFormStatus.NOT_STARTED) {
-			// Create form response first, then navigate with the new response id
+			// Create form response first, then navigate with formId + responseId
 			createResponseMutation.mutate(form.id, {
 				onSuccess: data => {
-					navigate(`/forms/${data.id}`);
+					navigate(`/forms/${form.id}/${data.id}`);
 				},
 				onError: error => {
 					pushToast({
@@ -79,10 +79,10 @@ export const FormsListPage = () => {
 				}
 			});
 		} else {
-			// Already started or completed, navigate with the first response id
+			// Already started or completed, navigate with formId + first responseId
 			const responseId = form.responseIds?.[0];
 			if (responseId) {
-				navigate(`/forms/${responseId}`);
+				navigate(`/forms/${form.id}/${responseId}`);
 			}
 		}
 	};

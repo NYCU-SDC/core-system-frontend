@@ -1,5 +1,5 @@
 import { useFormFonts, useUpdateForm, useUploadFormCoverImage } from "@/features/form/hooks/useOrgForms";
-import { Button, ColorPicker, FileUpload, Input, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ColorPicker, FileUpload, LoadingSpinner, SearchableSelect, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { useState } from "react";
 import styles from "./DesignPage.module.css";
@@ -51,14 +51,27 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 					<LoadingSpinner />
 				) : (
 					<>
-						<Input label="頁首字體" type="text" placeholder="請輸入字體 ID，例如 jfOpenHuninn" value={headerFont} onChange={e => setHeaderFont(e.target.value)} list="font-list" />
-						<Input label="問題字體" type="text" placeholder="請輸入字體 ID" value={questionFont} onChange={e => setQuestionFont(e.target.value)} list="font-list" />
-						<Input label="文字字體" type="text" placeholder="請輸入字體 ID" value={textFont} onChange={e => setTextFont(e.target.value)} list="font-list" />
-						<datalist id="font-list">
-							{(fontsQuery.data ?? []).map(f => (
-								<option key={f.id} value={f.id} label={f.name} />
-							))}
-						</datalist>
+						<SearchableSelect
+							label="頁首字體"
+							placeholder="搜尋字體名稱或 ID..."
+							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name} (${f.id})` }))}
+							value={headerFont || undefined}
+							onValueChange={v => setHeaderFont(v)}
+						/>
+						<SearchableSelect
+							label="問題字體"
+							placeholder="搜尋字體名稱或 ID..."
+							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name} (${f.id})` }))}
+							value={questionFont || undefined}
+							onValueChange={v => setQuestionFont(v)}
+						/>
+						<SearchableSelect
+							label="文字字體"
+							placeholder="搜尋字體名稱或 ID..."
+							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name} (${f.id})` }))}
+							value={textFont || undefined}
+							onValueChange={v => setTextFont(v)}
+						/>
 					</>
 				)}
 				<blockquote className={styles.blockquote}>

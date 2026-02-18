@@ -4,7 +4,6 @@ import {
 	formsGetFormById,
 	formsGetFormCoverImage,
 	formsListSections,
-	responsesCreateFormResponse,
 	responsesGetFormResponse,
 	responsesSubmitFormResponse,
 	responsesUpdateFormResponse,
@@ -33,14 +32,14 @@ interface FormResponseData {
 }
 
 export const FormDetailPage = () => {
-	const { id: formId } = useParams<{ id: string }>();
+	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
 	const navigate = useNavigate();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [form, setForm] = useState<FormsForm | null>(null);
-	const [responseId, setResponseId] = useState<string | null>(null);
+	const [responseId, setResponseId] = useState<string | null>(urlResponseId ?? null);
 	const [sections, setSections] = useState<Section[]>([]);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
@@ -148,55 +147,49 @@ export const FormDetailPage = () => {
 						console.error("載入封面圖片失敗:", coverError);
 					}
 
-					// 建立或取得表單回覆
-					const responseCreation = await responsesCreateFormResponse(formId, { credentials: "include" });
-					if (responseCreation.status === 201) {
-						setResponseId(responseCreation.data.id);
+					// 取得已有的回覆資料（responseId 來自 URL）
+					if (urlResponseId) {
+						const existingResponse = await responsesGetFormResponse(formId, urlResponseId, { credentials: "include" });
+						if (existingResponse.status === 200) {
+							// 儲存預覽資料和進度
+							const responseData = existingResponse.data as FormResponseData;
+							setPreviewData(responseData.sections);
+							setResponseProgress(responseData.progress);
 
-						// 已有回覆資料
-						if (responseCreation.data.id) {
-							const existingResponse = await responsesGetFormResponse(formId, responseCreation.data.id, { credentials: "include" });
-							if (existingResponse.status === 200) {
-								// 儲存預覽資料和進度
-								const responseData = existingResponse.data as FormResponseData;
-								setPreviewData(responseData.sections);
-								setResponseProgress(responseData.progress);
-
-								// 載入已儲存的答案
-								const loadedAnswers: Record<string, string> = {};
-								responseData.sections?.forEach(section => {
-									section.answerDetails?.forEach(detail => {
-										if (detail.question.id && detail.payload.displayValue) {
-											loadedAnswers[detail.question.id] = detail.payload.displayValue;
-										}
-									});
+							// 載入已儲存的答案
+							const loadedAnswers: Record<string, string> = {};
+							responseData.sections?.forEach(section => {
+								section.answerDetails?.forEach(detail => {
+									if (detail.question.id && detail.payload.displayValue) {
+										loadedAnswers[detail.question.id] = detail.payload.displayValue;
+									}
 								});
-								setAnswers(loadedAnswers);
-							}
+							});
+							setAnswers(loadedAnswers);
+						}
 
-							// 載入 sections 和 questions
-							const sectionsResponse = await formsListSections(formId, { credentials: "include" });
-							if (sectionsResponse.status === 200) {
-								const loadedSections: Section[] = sectionsResponse.data.flatMap(item =>
-									item.sections.map(section => ({
-										id: section.id,
-										formId: section.formId,
-										title: section.title,
-										description: section.description,
-										progress: "DRAFT" as const,
-										questions: section.questions
-									}))
-								);
-
-								loadedSections.push({
-									id: "preview",
-									formId: formId,
-									title: "填答結果預覽",
+						// 載入 sections 和 questions
+						const sectionsResponse = await formsListSections(formId, { credentials: "include" });
+						if (sectionsResponse.status === 200) {
+							const loadedSections: Section[] = sectionsResponse.data.flatMap(item =>
+								item.sections.map(section => ({
+									id: section.id,
+									formId: section.formId,
+									title: section.title,
+									description: section.description,
 									progress: "DRAFT" as const,
-									questions: []
-								});
-								setSections(loadedSections);
-							}
+									questions: section.questions
+								}))
+							);
+
+							loadedSections.push({
+								id: "preview",
+								formId: formId,
+								title: "填答結果預覽",
+								progress: "DRAFT" as const,
+								questions: []
+							});
+							setSections(loadedSections);
 						}
 					}
 				} else {

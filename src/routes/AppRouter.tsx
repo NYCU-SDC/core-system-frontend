@@ -33,7 +33,7 @@ export const AppRouter = () => {
 					}
 				/>
 				<Route
-					path="/forms/:id"
+					path="/forms/:formId/:responseId"
 					element={
 						<SmartLayout>
 							<FormDetailPage />

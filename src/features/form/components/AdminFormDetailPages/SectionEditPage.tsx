@@ -39,9 +39,10 @@ export const AdminSectionEditPage = () => {
 				title: q.title,
 				description: q.description ?? "",
 				isFromAnswer: !!q.sourceId,
-				options: q.choices?.map(c => ({ label: c.label ?? "" })),
-				start: q.scale?.start,
-				end: q.scale?.end,
+				options: q.choices?.map(c => ({ label: c.name ?? "" })),
+				detailOptions: q.choices?.map(c => ({ label: c.name ?? "", description: c.description ?? "" })),
+				start: q.scale?.minVal,
+				end: q.scale?.maxVal,
 				icon: q.scale?.icon as Question["icon"]
 			}));
 			setQuestions(mapped);
@@ -56,8 +57,21 @@ export const AdminSectionEditPage = () => {
 		description: q.description,
 		required: false,
 		order,
-		...(q.options && { choices: q.options.map(o => ({ label: o.label, isOther: o.isOther ?? false })) }),
-		...(q.start !== undefined && { scale: { start: q.start, end: q.end ?? 5, icon: q.icon as FormsQuestionRequest["scale"] extends object ? FormsQuestionRequest["scale"]["icon"] : never } })
+		...(q.options &&
+			q.type !== "DETAILED_MULTIPLE_CHOICE" && {
+				choices: q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }))
+			}),
+		...(q.type === "DETAILED_MULTIPLE_CHOICE" &&
+			q.detailOptions && {
+				choices: q.detailOptions.map(o => ({ name: o.label, description: o.description }))
+			}),
+		...(q.start !== undefined && {
+			scale: {
+				minVal: q.start,
+				maxVal: q.end ?? 5,
+				icon: q.icon as FormsQuestionRequest["scale"] extends object ? FormsQuestionRequest["scale"]["icon"] : never
+			}
+		})
 	});
 
 	const handleSaveQuestion = async (index: number) => {
@@ -237,8 +251,8 @@ export const AdminSectionEditPage = () => {
 					{sectionsQuery.isError && <ErrorMessage message="無法載入區塊資料" />}
 					<div className={styles.container}>
 						<section className={styles.card}>
-							<Input placeholder="Section 標題" variant="flushed" themeColor="--comment" textSize="h2" value={section?.title ?? ""} readOnly />
-							<Input placeholder="這裡可以寫一段描述" variant="flushed" themeColor="--comment" value={section?.description ?? ""} readOnly />
+							<Input placeholder="Section 標題" variant="flushed" themeColor="--comment" textSize="h2" value={section?.title ?? ""} readOnly title="Section 標題需透過左側流程編輯器的節點標籤修改" />
+							<Input placeholder="（透過流程編輯器的節點標籤編輯 Section 標題）" variant="flushed" themeColor="--comment" value={section?.description ?? ""} readOnly />
 						</section>
 						{questions.map((question, index) => (
 							<>

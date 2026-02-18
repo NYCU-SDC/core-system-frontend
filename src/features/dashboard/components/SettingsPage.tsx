@@ -1,26 +1,33 @@
 import { useMe } from "@/features/auth/hooks/useAuth";
 import { authService } from "@/features/auth/services/authService";
-import { Button, Input, Label, LoadingSpinner, Switch, useToast } from "@/shared/components";
+import { Button, Input, Label, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
 import { useState } from "react";
 import styles from "./SettingsPage.module.css";
 
 export const SettingsPage = () => {
 	const meQuery = useMe();
 	const { pushToast } = useToast();
+	const [displayName, setDisplayName] = useState<string | null>(null);
 	const [username, setUsername] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 
-	const usernameValue = username ?? meQuery.data?.name ?? "";
+	const displayNameValue = displayName ?? meQuery.data?.name ?? "";
+	const usernameValue = username ?? meQuery.data?.username ?? "";
 
-	const handleSaveUsername = async () => {
-		const trimmed = usernameValue.trim();
-		if (!trimmed) return;
+	const handleSave = async () => {
+		const trimmedName = displayNameValue.trim();
+		const trimmedUsername = usernameValue.trim();
+		if (!trimmedName || !trimmedUsername) {
+			pushToast({ title: "請填寫所有必填欄位", variant: "warning" });
+			return;
+		}
 		setIsSaving(true);
 		try {
-			await authService.updateOnboarding({ name: trimmed });
+			await authService.updateOnboarding({ name: trimmedName, username: trimmedUsername });
+			setDisplayName(null);
 			setUsername(null);
 			meQuery.refetch();
-			pushToast({ title: "儲存成功", description: "使用者名稱已更新。", variant: "success" });
+			pushToast({ title: "儲存成功", description: "使用者資訊已更新。", variant: "success" });
 		} catch (e) {
 			pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" });
 		} finally {
@@ -41,19 +48,29 @@ export const SettingsPage = () => {
 					) : (
 						<div className={styles.settings}>
 							<div className={styles.settingItem}>
-								<Label htmlFor="username">使用者名稱</Label>
+								<Label htmlFor="displayName">暱稱（name）</Label>
+								<p style={{ fontSize: "0.75rem", color: "var(--color-caption)", margin: "0.1rem 0 0.25rem" }}>4–15 字元，僅限英數字與底線</p>
+								<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+									<Input id="displayName" value={displayNameValue} onChange={e => setDisplayName(e.target.value)} placeholder={meQuery.isLoading ? "Loading…" : "Enter display name"} />
+								</div>
+							</div>
+							<div className={styles.settingItem} style={{ marginTop: "0.75rem" }}>
+								<Label htmlFor="username">使用者名稱（username）</Label>
+								<p style={{ fontSize: "0.75rem", color: "var(--color-caption)", margin: "0.1rem 0 0.25rem" }}>唯一識別名稱，4–15 字元，僅限英數字與底線</p>
 								<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
 									<Input
 										id="username"
 										value={usernameValue}
 										onChange={e => setUsername(e.target.value)}
-										onKeyDown={e => e.key === "Enter" && handleSaveUsername()}
+										onKeyDown={e => e.key === "Enter" && handleSave()}
 										placeholder={meQuery.isLoading ? "Loading…" : "Enter username"}
 									/>
-									<Button onClick={handleSaveUsername} processing={isSaving} disabled={meQuery.isLoading || !usernameValue.trim()}>
-										儲存
-									</Button>
 								</div>
+							</div>
+							<div style={{ marginTop: "0.75rem" }}>
+								<Button onClick={handleSave} processing={isSaving} disabled={meQuery.isLoading || !displayNameValue.trim() || !usernameValue.trim()}>
+									儲存
+								</Button>
 							</div>
 							<div className={styles.settingItem} style={{ marginTop: "0.75rem" }}>
 								<div className={styles.settingInfo}>
@@ -75,7 +92,9 @@ export const SettingsPage = () => {
 								<div className={styles.settingLabel}>Email Notifications</div>
 								<div className={styles.settingDescription}>Receive email updates about your account</div>
 							</div>
-							<Switch defaultChecked />
+							<Tooltip content="此功能尚未支援，API 待開放">
+								<Switch disabled />
+							</Tooltip>
 						</div>
 
 						<div className={styles.settingItem}>
@@ -83,7 +102,9 @@ export const SettingsPage = () => {
 								<div className={styles.settingLabel}>Auto-save</div>
 								<div className={styles.settingDescription}>Automatically save your changes</div>
 							</div>
-							<Switch defaultChecked />
+							<Tooltip content="此功能尚未支援，API 待開放">
+								<Switch disabled />
+							</Tooltip>
 						</div>
 					</div>
 				</div>

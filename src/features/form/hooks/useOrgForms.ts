@@ -1,6 +1,15 @@
 import * as api from "@/features/form/services/api";
 import { formKeys, orgKeys } from "@/shared/queryKeys/org";
-import type { FormsFont, FormsForm, FormsFormCoverUploadResponse, FormsFormRequest, FormsFormRequestUpdate } from "@nycu-sdc/core-system-sdk";
+import type {
+	FormsFont,
+	FormsForm,
+	FormsFormCoverUploadResponse,
+	FormsFormRequest,
+	FormsFormRequestUpdate,
+	FormsGoogleSheetEmailResponse,
+	FormsGoogleSheetVerifyRequest,
+	FormsGoogleSheetVerifyResponse
+} from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useOrgForms = (slug: string) =>
@@ -85,3 +94,18 @@ export const useFormFonts = () =>
 		queryFn: () => api.getFormFonts(),
 		staleTime: 1000 * 60 * 10
 	});
+
+export const useGoogleSheetEmail = () =>
+	useQuery<FormsGoogleSheetEmailResponse>({
+		queryKey: ["forms", "google-sheet-email"],
+		queryFn: () => api.getGoogleSheetEmail(),
+		staleTime: 1000 * 60 * 60 // email rarely changes
+	});
+
+export const useVerifyGoogleSheet = (formId: string) => {
+	const qc = useQueryClient();
+	return useMutation<FormsGoogleSheetVerifyResponse, Error, FormsGoogleSheetVerifyRequest>({
+		mutationFn: req => api.verifyGoogleSheet(req),
+		onSuccess: () => qc.invalidateQueries({ queryKey: orgKeys.form(formId) })
+	});
+};

@@ -9,6 +9,9 @@ import type {
 	FormsFormCoverUploadResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
+	FormsGoogleSheetEmailResponse,
+	FormsGoogleSheetVerifyRequest,
+	FormsGoogleSheetVerifyResponse,
 	FormsListSectionsResponse,
 	FormsQuestionRequest,
 	FormsQuestionResponse,
@@ -29,11 +32,13 @@ import {
 	formsDeleteQuestion,
 	formsGetFormById,
 	formsGetFormFonts,
+	formsGetGoogleSheetEmail,
 	formsListSections,
 	formsPublishForm,
 	formsUpdateForm,
 	formsUpdateQuestion,
 	formsUploadFormCoverImage,
+	formsVerifyGoogleSheet,
 	responsesCreateFormResponse,
 	responsesDeleteFormResponse,
 	responsesGetFormResponse,
@@ -210,5 +215,19 @@ export const uploadQuestionFiles = async (responseId: string, questionId: string
 	files.forEach(f => formData.append("files", f));
 	const res = await responsesUploadQuestionFiles(responseId, questionId, { files } as import("@nycu-sdc/core-system-sdk").ResponsesQuestionFilesUploadRequest, defaultRequestOptions);
 	assertOk(res.status, "Failed to upload files");
+	return res.data;
+};
+
+// ── Google Sheet ──────────────────────────────────────────────────────────
+
+export const getGoogleSheetEmail = async (): Promise<FormsGoogleSheetEmailResponse> => {
+	const res = await formsGetGoogleSheetEmail(defaultRequestOptions);
+	assertOk(res.status, "Failed to load Google Sheet email");
+	return res.data;
+};
+
+export const verifyGoogleSheet = async (req: FormsGoogleSheetVerifyRequest): Promise<FormsGoogleSheetVerifyResponse> => {
+	const res = await formsVerifyGoogleSheet(req, defaultRequestOptions);
+	assertOk(res.status, "Failed to verify Google Sheet");
 	return res.data;
 };
