@@ -1,13 +1,15 @@
 import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { ClipboardList, FileText, LogOut, Menu, Settings, X } from "lucide-react";
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./AdminNav.module.css";
 
-export const AdminNav = () => {
-	const { pathname } = useLocation();
+interface AdminNavProps {
+	isOpen: boolean;
+	setIsOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
+}
 
-	const [isOpen, setIsOpen] = useState(false);
+export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
+	const { pathname } = useLocation();
 
 	const isUserForms = pathname === "/forms" || pathname.startsWith("/forms/");
 	const isFormsDashboard = pathname === "/orgs/sdc/forms" || pathname.startsWith("/orgs/sdc/forms/");

@@ -107,7 +107,7 @@ export const AdminSettingsPage = () => {
 	return (
 		<AdminLayout>
 			<div className={styles.container}>
-				<h1 className={styles.title}>組織管理</h1>
+				<h1>組織管理</h1>
 				{(orgQuery.isError || membersQuery.isError || updateOrgMutation.isError || addMemberMutation.isError || removeMemberMutation.isError) && (
 					<ErrorMessage
 						message={
@@ -120,7 +120,7 @@ export const AdminSettingsPage = () => {
 						}
 					/>
 				)}
-				<h2>組織資訊</h2>
+				<h2 className={styles.heading}>組織資訊</h2>
 				<section className={styles.section}>
 					<Label required htmlFor="orgName">
 						組織名稱
@@ -138,8 +138,8 @@ export const AdminSettingsPage = () => {
 						</Button>
 					</div>
 				</section>
-				<h2>成員</h2>
-				<section className={styles.addMember}>
+				<h2 className={styles.heading}>成員</h2>
+				<section className={styles.inputRow}>
 					<Input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddMember()} placeholder="member@example.com" />
 					<Button onClick={handleAddMember} processing={addMemberMutation.isPending} disabled={!email.trim() || addMemberMutation.isPending}>
 						新增成員

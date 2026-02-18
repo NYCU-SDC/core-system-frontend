@@ -1,4 +1,4 @@
-import { useLogout, useMe } from "@/features/auth/hooks/useAuth";
+import { useMe } from "@/features/auth/hooks/useAuth";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { UnitUserFormStatus, type UnitUserForm } from "@nycu-sdc/core-system-sdk";
@@ -47,24 +47,10 @@ export const FormsListPage = () => {
 
 	// Fetch current user
 	const meQuery = useMe();
-	const logoutMutation = useLogout();
 
 	// Fetch forms from API
 	const formsQuery = useMyForms();
 	const createResponseMutation = useCreateFormResponse();
-
-	const handleLogout = () => {
-		logoutMutation.mutate(undefined, {
-			onSuccess: () => navigate("/"),
-			onError: error => {
-				pushToast({
-					title: "Error",
-					description: error.message || "Failed to logout",
-					variant: "error"
-				});
-			}
-		});
-	};
 
 	// Transform API data to UI model
 	const forms: FormRow[] = useMemo(() => {
@@ -103,15 +89,13 @@ export const FormsListPage = () => {
 
 	return (
 		<div className={styles.container}>
-			<div className={styles.header}>
-				<h1 className={styles.title}>我的表單</h1>
-				<p className={styles.subtitle}>
-					不是 {meQuery.data?.name} 嗎？{" "}
-					<span onClick={handleLogout} className={styles.logoutLink}>
-						（<span className={styles.logoutText}>登出</span>）
-					</span>
-				</p>
-			</div>
+			<h1 className={styles.title}>我的表單</h1>
+			<p>
+				不是 {meQuery.data?.name} 嗎？
+				<a href="/logout" className="link">
+					（登出）
+				</a>
+			</p>
 
 			{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
 

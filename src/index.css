@@ -65,16 +65,19 @@ h1 {
 h2 {
 	font-size: 2rem;
 	font-weight: 700;
+	margin-bottom: 1rem;
 }
 
 h3 {
 	font-size: 1.618rem;
 	font-weight: 600;
+	margin-bottom: 1rem;
 }
 
 h4 {
 	font-size: 1.27188rem;
 	font-weight: 600;
+	margin-bottom: 0.5rem;
 }
 
 h5 {
@@ -94,10 +97,13 @@ p {
 a {
 	color: var(--cyan);
 	text-decoration: none;
+}
+
+a.link {
 	position: relative;
 }
 
-a::after {
+a.link::after {
 	content: "";
 	position: absolute;
 	left: 0;
@@ -110,7 +116,7 @@ a::after {
 	transform-origin: right;
 }
 
-a:hover::after {
+a.link:hover::after {
 	transform: scaleX(1);
 	transform-origin: left;
 }

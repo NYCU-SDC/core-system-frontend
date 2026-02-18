@@ -35,16 +35,16 @@ export const AdminFormDetailPage = () => {
 
 				<div className={styles.tabs}>
 					<button className={`${styles.tab} ${activeTab === "info" ? styles.active : ""}`} onClick={() => handleTabChange("info")}>
-						Info
+						資訊
 					</button>
 					<button className={`${styles.tab} ${activeTab === "edit" ? styles.active : ""}`} onClick={() => handleTabChange("edit")}>
-						Edit
+						編輯
 					</button>
 					<button className={`${styles.tab} ${activeTab === "reply" ? styles.active : ""}`} onClick={() => handleTabChange("reply")}>
-						Replies
+						回覆
 					</button>
 					<button className={`${styles.tab} ${activeTab === "design" ? styles.active : ""}`} onClick={() => handleTabChange("design")}>
-						Design
+						設計
 					</button>
 				</div>
 
