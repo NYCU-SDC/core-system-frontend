@@ -16,8 +16,3 @@
 	margin: 0 auto;
 	padding: 2rem 1rem;
 }
-@media (max-width: 30rem) {
-	.container {
-		display: block; /* Nav overlay */
-	}
-}

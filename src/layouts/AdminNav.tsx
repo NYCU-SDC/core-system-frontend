@@ -15,9 +15,7 @@ export const AdminNav = () => {
 
 	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
 
-	if (isLoading || !canAccessOrgAdmin) {
-		return null;
-	}
+	if (isLoading || !canAccessOrgAdmin) return null;
 
 	const displayName = user?.name || user?.username || user?.emails?.[0] || "ˊ_>ˋ";
 	const initials = user ? displayName.slice(0, 2).toUpperCase() : displayName;

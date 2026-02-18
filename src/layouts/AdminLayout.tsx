@@ -8,14 +8,12 @@ interface AdminLayoutProps {
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
 	return (
-		<>
-			<div className={styles.container}>
-				<AdminNav />
-				<main className={styles.main}>
-					<div className={styles.content}>{children}</div>
-					<Footer />
-				</main>
-			</div>
-		</>
+		<div className={styles.container}>
+			<AdminNav />
+			<main className={styles.main}>
+				<div className={styles.content}>{children}</div>
+				<Footer />
+			</main>
+		</div>
 	);
 };
