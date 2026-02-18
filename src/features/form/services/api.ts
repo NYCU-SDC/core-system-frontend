@@ -1,5 +1,5 @@
-import type { FormsForm, FormsFormRequest, ResponsesCreateResponse, UnitUserForm } from "@nycu-sdc/core-system-sdk";
-import { responsesCreateFormResponse, unitCreateOrgForm, unitListFormsByOrg, unitListFormsOfCurrentUser } from "@nycu-sdc/core-system-sdk";
+import type { FormsForm, FormsFormRequest, FormsFormRequestUpdate, ResponsesCreateResponse, UnitUserForm } from "@nycu-sdc/core-system-sdk";
+import { formsGetFormById, formsUpdateForm, responsesCreateFormResponse, unitCreateOrgForm, unitListFormsByOrg, unitListFormsOfCurrentUser } from "@nycu-sdc/core-system-sdk";
 
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"
@@ -20,6 +20,18 @@ export const listOrgForms = async (slug: string): Promise<FormsForm[]> => {
 export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsForm> => {
 	const res = await unitCreateOrgForm(slug, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to create form");
+	return res.data;
+};
+
+export const getFormById = async (formId: string): Promise<FormsForm> => {
+	const res = await formsGetFormById(formId, defaultRequestOptions);
+	assertOk(res.status, "Failed to load form");
+	return res.data;
+};
+
+export const updateForm = async (formId: string, req: FormsFormRequestUpdate): Promise<FormsForm> => {
+	const res = await formsUpdateForm(formId, req, defaultRequestOptions);
+	assertOk(res.status, "Failed to update form");
 	return res.data;
 };
 

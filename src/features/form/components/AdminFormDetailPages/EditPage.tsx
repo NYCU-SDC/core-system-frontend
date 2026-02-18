@@ -1,11 +1,16 @@
 import { useToast } from "@/shared/components";
+import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
 import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
 
-export const AdminFormEditPage = () => {
+interface AdminFormEditPageProps {
+	formData: FormsForm;
+}
+
+export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const { pushToast } = useToast();
 
 	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {

@@ -1,4 +1,6 @@
+import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
+import { LoadingSpinner } from "@/shared/components";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./AdminFormDetailPage.module.css";
@@ -21,16 +23,39 @@ export const AdminFormDetailPage = () => {
 
 	const [activeTab, setActiveTab] = useState<TabType>(currentTab || "info");
 
+	// Fetch form data
+	const formQuery = useFormById(formid);
+
 	const handleTabChange = (tab: TabType) => {
 		setActiveTab(tab);
 		navigate(`/orgs/sdc/forms/${formid}/${tab}`);
 	};
 
+	if (formQuery.isLoading) {
+		return (
+			<AdminLayout>
+				<div className={styles.container}>
+					<LoadingSpinner />
+				</div>
+			</AdminLayout>
+		);
+	}
+
+	if (formQuery.isError || !formQuery.data) {
+		return (
+			<AdminLayout>
+				<div className={styles.container}>
+					<p>無法載入表單資料</p>
+				</div>
+			</AdminLayout>
+		);
+	}
+
 	return (
 		<AdminLayout>
 			<div className={styles.container}>
 				<div className={styles.header}>
-					<h1 className={styles.title}>Form: {formid}</h1>
+					<h1 className={styles.title}>{formQuery.data.title}</h1>
 				</div>
 
 				<div className={styles.tabs}>
@@ -51,12 +76,12 @@ export const AdminFormDetailPage = () => {
 				<div className={styles.content}>
 					{activeTab === "info" && (
 						<div className={styles.info}>
-							<AdminFormInfoPage />
+							<AdminFormInfoPage formData={formQuery.data} />
 						</div>
 					)}
 					{activeTab === "edit" && !sectionId && (
 						<div className={styles.edit}>
-							<AdminFormEditPage />
+							<AdminFormEditPage formData={formQuery.data} />
 						</div>
 					)}
 					{activeTab === "edit" && sectionId && (
@@ -66,12 +91,12 @@ export const AdminFormDetailPage = () => {
 					)}
 					{activeTab === "reply" && (
 						<div className={styles.replies}>
-							<AdminFormRepliesPage />
+							<AdminFormRepliesPage formData={formQuery.data} />
 						</div>
 					)}
 					{activeTab === "design" && (
 						<div className={styles.design}>
-							<AdminFormDesignPage />
+							<AdminFormDesignPage formData={formQuery.data} />
 						</div>
 					)}
 				</div>

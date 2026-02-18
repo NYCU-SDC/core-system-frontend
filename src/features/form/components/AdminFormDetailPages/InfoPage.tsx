@@ -1,7 +1,12 @@
 import { Input, Switch } from "@/shared/components";
+import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import styles from "./InfoPage.module.css";
 
-export const AdminFormInfoPage = () => {
+interface AdminFormInfoPageProps {
+	formData: FormsForm;
+}
+
+export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	return (
 		<>
 			<div className={styles.container}>
@@ -19,7 +24,7 @@ export const AdminFormInfoPage = () => {
 					</div>
 				</section>
 				<h3>表單設定</h3>
-				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" />
+				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" defaultValue={formData.messageAfterSubmission || ""} />
 				<div className={`${styles.switch}`}>
 					<p className={`${styles.label}`}>需登入（收集電子郵件）</p>
 					<Switch />

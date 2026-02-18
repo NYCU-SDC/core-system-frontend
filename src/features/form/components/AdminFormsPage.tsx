@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
 import { TabButtons } from "./TabButtons";
-// import {getInboxMessages} from "@nycu-sdc/core-system-sdk";
 
 interface FormRow {
 	id: string;
