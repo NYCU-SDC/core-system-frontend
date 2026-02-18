@@ -1,4 +1,4 @@
-import { InlineSvg } from "@/shared/components";
+import { InlineSvg } from "@/shared/components/InlineSvg/InlineSvg";
 import type { FormsScaleOption } from "@nycu-sdc/core-system-sdk";
 import { useState } from "react";
 import styles from "./ScaleInput.module.css";
