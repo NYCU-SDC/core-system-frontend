@@ -1,7 +1,7 @@
 import { Button, Popover, Select } from "@/shared/components";
 import type { FormWorkflowConditionRule, FormsListSectionsResponse } from "@nycu-sdc/core-system-sdk";
 import { FormWorkflowConditionSource } from "@nycu-sdc/core-system-sdk";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { NodeItem } from "../../types/workflow";
 import { Arrow } from "./Arrow";
 import styles from "./FlowRenderer.module.css";
@@ -146,11 +146,22 @@ const FlowNode = ({
 	const [draftDesc, setDraftDesc] = useState(node.description ?? "");
 
 	// Sync drafts when parent updates the node (e.g., after workflow save + refetch)
-	useEffect(() => {
+	// Using derived state pattern to avoid cascading renders from useEffect setState
+	const [prevNodeLabel, setPrevNodeLabel] = useState(node.label);
+	const [prevNodeTitle, setPrevNodeTitle] = useState(node.title);
+	const [prevNodeDesc, setPrevNodeDesc] = useState(node.description);
+	if (node.label !== prevNodeLabel) {
 		setDraftLabel(node.label);
+		setPrevNodeLabel(node.label);
+	}
+	if (node.title !== prevNodeTitle) {
 		setDraftTitle(node.title ?? "");
+		setPrevNodeTitle(node.title);
+	}
+	if (node.description !== prevNodeDesc) {
 		setDraftDesc(node.description ?? "");
-	}, [node.label, node.title, node.description]);
+		setPrevNodeDesc(node.description);
+	}
 
 	const handleSaveEdit = () => {
 		onNodeChange(node.id, {

@@ -3,7 +3,7 @@ import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/feat
 import { Badge, Button, ErrorMessage, Input, Label, LoadingSpinner, Markdown, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Repeat2, SquareArrowOutUpRight, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./RepliesPage.module.css";
 
 interface AdminFormRepliesPageProps {
@@ -21,11 +21,13 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const responsesQuery = useFormResponses(formData.id);
 	const deleteResponseMutation = useDeleteFormResponse(formData.id);
 
-	// 同步表單資料中的 googleSheetUrl
-	useEffect(() => {
+	// 同步表單資料中的 googleSheetUrl（derived state pattern，避免 useEffect setState 的 cascading render）
+	const [prevGoogleSheetUrl, setPrevGoogleSheetUrl] = useState(formData.googleSheetUrl);
+	if (formData.googleSheetUrl !== prevGoogleSheetUrl) {
 		setSheetUrl(formData.googleSheetUrl || "");
 		setIsVerified(!!formData.googleSheetUrl);
-	}, [formData.googleSheetUrl]);
+		setPrevGoogleSheetUrl(formData.googleSheetUrl);
+	}
 
 	const handleVerifySheet = () => {
 		if (!sheetUrl.trim()) {
