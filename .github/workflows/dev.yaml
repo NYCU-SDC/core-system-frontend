@@ -51,7 +51,6 @@ jobs:
   Build:
     name: Build Vite production
     runs-on: ubuntu-latest
-    needs: [Lint, Format]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,7 +72,7 @@ jobs:
   Push-Image:
     name: Build Docker image
     runs-on: ubuntu-latest
-    needs: Build
+    needs: [Lint, Format, Build]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
