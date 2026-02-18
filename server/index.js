@@ -61,32 +61,74 @@ function injectIntoHead(html, headTags) {
 	return html;
 }
 
-async function readHtml(name) {
-	return await fs.readFile(path.join(DIST_DIR, name), "utf8");
+const TEMPLATES = {
+	forms: await fs.readFile(path.join(DIST_DIR, "forms.html"), "utf8"),
+	admin: await fs.readFile(path.join(DIST_DIR, "admin.html"), "utf8")
+};
+
+class LruTtlCache {
+	#map = new Map();
+	#max;
+	#ttlMs;
+
+	constructor({ max = 100, ttlMs = 30_000 } = {}) {
+		this.#max = max;
+		this.#ttlMs = ttlMs;
+	}
+
+	get(key) {
+		const entry = this.#map.get(key);
+		if (!entry) return undefined;
+		if (Date.now() > entry.expiresAt) {
+			this.#map.delete(key);
+			return undefined;
+		}
+		// LRU：重新插入到末尾
+		this.#map.delete(key);
+		this.#map.set(key, entry);
+		return entry.value;
+	}
+
+	set(key, value) {
+		if (this.#map.has(key)) this.#map.delete(key);
+		else if (this.#map.size >= this.#max) {
+			this.#map.delete(this.#map.keys().next().value);
+		}
+		this.#map.set(key, { value, expiresAt: Date.now() + this.#ttlMs });
+	}
 }
+
+const formMetaCache = new LruTtlCache({ max: 500, ttlMs: 30_000 });
 
 // 3) forms 頁：動態 meta（這是 SEO 核心）
 // 同時處理 /forms/:formId 和 /forms/:formId/:responseId
 async function handleFormSeoRoute(req, reply) {
 	const { formId } = req.params;
 
-	const template = await readHtml("forms.html");
+	const template = TEMPLATES.forms;
 
-	// 透過 SDK 向後端拿 meta 資料
+	// 透過 SDK 向後端拿 meta 資料（LRU + 30s TTL 快取）
 	let title = "Form";
 	let description = "";
 
-	try {
-		const res = await formsGetFormById(formId, {
-			headers: BACKEND_HOST_HEADER ? { host: BACKEND_HOST_HEADER } : undefined
-		});
+	const cached = formMetaCache.get(formId);
+	if (cached) {
+		title = cached.title;
+		description = cached.description;
+	} else {
+		try {
+			const res = await formsGetFormById(formId, {
+				headers: BACKEND_HOST_HEADER ? { host: BACKEND_HOST_HEADER } : undefined
+			});
 
-		if (res.status >= 200 && res.status < 300) {
-			title = res.data.title || title;
-			description = res.data.description || description;
+			if (res.status >= 200 && res.status < 300) {
+				title = res.data.title || title;
+				description = res.data.description || description;
+				formMetaCache.set(formId, { title, description });
+			}
+		} catch (e) {
+			req.log.warn({ err: e }, "failed to fetch form meta");
 		}
-	} catch (e) {
-		req.log.warn({ err: e }, "failed to fetch form meta");
 	}
 
 	const canonical = `${req.protocol}://${req.headers.host}${req.url}`;
@@ -120,24 +162,21 @@ app.get("/forms/:formId/:responseId", handleFormSeoRoute);
 // 4) forms 其他頁（list / public routes）回 forms.html（不做動態 meta 也行）
 const FORMS_HTML_ROUTES = ["/", "/callback", "/welcome", "/logout", "/forms", "/forms/*"];
 for (const r of FORMS_HTML_ROUTES) {
-	app.get(r, async (_req, reply) => {
-		const html = await readHtml("forms.html");
-		reply.header("content-type", "text/html; charset=utf-8").send(html);
+	app.get(r, (_req, reply) => {
+		reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES.forms);
 	});
 }
 
 // 5) admin app：/orgs/*、/demo 都回 admin.html
 for (const r of ["/orgs/*", "/demo"]) {
-	app.get(r, async (_req, reply) => {
-		const html = await readHtml("admin.html");
-		reply.header("content-type", "text/html; charset=utf-8").send(html);
+	app.get(r, (_req, reply) => {
+		reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES.admin);
 	});
 }
 
 // 6) 其他全部回 forms.html（或你想回 404）
-app.get("/*", async (_req, reply) => {
-	const html = await readHtml("forms.html");
-	reply.header("content-type", "text/html; charset=utf-8").send(html);
+app.get("/*", (_req, reply) => {
+	reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES.forms);
 });
 
 const port = Number(process.env.PORT || 80);
