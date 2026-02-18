@@ -1,6 +1,8 @@
-import { Button, Input } from "@/shared/components";
+import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion } from "@/features/form/hooks/useSections";
+import { Button, ErrorMessage, Input, LoadingSpinner, useToast } from "@/shared/components";
+import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/SectionEditor/QuestionCard";
@@ -14,10 +16,81 @@ type NewQuestion = {
 };
 
 export const AdminSectionEditPage = () => {
-	const { formid } = useParams();
+	const { formid, sectionId } = useParams<{ formid: string; sectionId: string }>();
 	const navigate = useNavigate();
+	const { pushToast } = useToast();
+
+	const sectionsQuery = useSections(formid);
+	const section = sectionsQuery.data?.flatMap(r => r.sections).find(s => s.id === sectionId);
+	const apiQuestions = section?.questions ?? [];
+
+	const createQuestion = useCreateQuestion(formid!, sectionId!);
+	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
+	const deleteQuestion = useDeleteQuestion(formid!, sectionId!);
 
 	const [questions, setQuestions] = useState<Question[]>([]);
+	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
+
+	// Sync from API on first load
+	useEffect(() => {
+		if (apiQuestions.length > 0 && questions.length === 0) {
+			const mapped: Question[] = apiQuestions.map(q => ({
+				type: q.type as Question["type"],
+				title: q.title,
+				description: q.description ?? "",
+				isFromAnswer: !!q.sourceId,
+				options: q.choices?.map(c => ({ label: c.label ?? "" })),
+				start: q.scale?.start,
+				end: q.scale?.end,
+				icon: q.scale?.icon as Question["icon"]
+			}));
+			setQuestions(mapped);
+			setQuestionIds(apiQuestions.map(q => q.id));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [apiQuestions.length]);
+
+	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => ({
+		type: q.type as FormsQuestionRequest["type"],
+		title: q.title,
+		description: q.description,
+		required: false,
+		order,
+		...(q.options && { choices: q.options.map(o => ({ label: o.label, isOther: o.isOther ?? false })) }),
+		...(q.start !== undefined && { scale: { start: q.start, end: q.end ?? 5, icon: q.icon as FormsQuestionRequest["scale"] extends object ? FormsQuestionRequest["scale"]["icon"] : never } })
+	});
+
+	const handleSaveQuestion = async (index: number) => {
+		if (!formid || !sectionId) return;
+		const req = toApiRequest(questions[index], index);
+		const existingId = questionIds[index];
+		try {
+			if (existingId) {
+				await updateQuestion.mutateAsync({ questionId: existingId, req });
+			} else {
+				const res = await createQuestion.mutateAsync(req);
+				const newIds = [...questionIds];
+				newIds[index] = res.id;
+				setQuestionIds(newIds);
+			}
+			pushToast({ title: "已儲存", description: "問題已更新。", variant: "success" });
+		} catch {
+			pushToast({ title: "儲存失敗", description: "請稍後再試。", variant: "error" });
+		}
+	};
+
+	const handleDeleteQuestionWithApi = async (index: number) => {
+		const existingId = questionIds[index];
+		if (existingId) {
+			try {
+				await deleteQuestion.mutateAsync(existingId);
+			} catch {
+				pushToast({ title: "刪除失敗", description: "請稍後再試。", variant: "error" });
+				return;
+			}
+		}
+		handleRemoveQuestion(index);
+	};
 
 	const newQuestionOptions: NewQuestion[] = [
 		{
@@ -160,35 +233,42 @@ export const AdminSectionEditPage = () => {
 			<div className={styles.layout}>
 				<div className={styles.content}>
 					<Button onClick={handleBack}>Back</Button>
+					{sectionsQuery.isLoading && <LoadingSpinner />}
+					{sectionsQuery.isError && <ErrorMessage message="無法載入區塊資料" />}
 					<div className={styles.container}>
 						<section className={styles.card}>
-							<Input placeholder="Section 標題" variant="flushed" themeColor="--comment" textSize="h2" />
-							<Input placeholder="這裡可以寫一段描述" variant="flushed" themeColor="--comment" />
+							<Input placeholder="Section 標題" variant="flushed" themeColor="--comment" textSize="h2" value={section?.title ?? ""} readOnly />
+							<Input placeholder="這裡可以寫一段描述" variant="flushed" themeColor="--comment" value={section?.description ?? ""} readOnly />
 						</section>
 						{questions.map((question, index) => (
-							<QuestionCard
-								key={index}
-								question={question}
-								duplicateQuestion={() => handleDuplicateQuestion(index)}
-								removeQuestion={() => handleRemoveQuestion(index)}
-								onTitleChange={newTitle => handleTitleChange(index, newTitle)}
-								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
-								onAddOption={() => handleAddOption(index, { label: "New Option" })}
-								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
-								onAddDetailOption={() => handleAddDetailOption(index, { label: "New Option", description: "Option Description" })}
-								onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
-								onRemoveOtherOption={() =>
-									handleRemoveOption(
-										index,
-										question.options!.findIndex(option => option.isOther)
-									)
-								}
-								onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
-								onStartChange={newStart => handleStartChange(index, newStart)}
-								onEndChange={newEnd => handleEndChange(index, newEnd)}
-								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
-								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
-							/>
+							<>
+								<QuestionCard
+									key={questionIds[index] ?? index}
+									question={question}
+									duplicateQuestion={() => handleDuplicateQuestion(index)}
+									removeQuestion={() => handleDeleteQuestionWithApi(index)}
+									onTitleChange={newTitle => handleTitleChange(index, newTitle)}
+									onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
+									onAddOption={() => handleAddOption(index, { label: "New Option" })}
+									onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+									onAddDetailOption={() => handleAddDetailOption(index, { label: "New Option", description: "Option Description" })}
+									onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
+									onRemoveOtherOption={() =>
+										handleRemoveOption(
+											index,
+											question.options!.findIndex(option => option.isOther)
+										)
+									}
+									onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
+									onStartChange={newStart => handleStartChange(index, newStart)}
+									onEndChange={newEnd => handleEndChange(index, newEnd)}
+									onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
+									onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+								/>
+								<Button key={`save-${index}`} onClick={() => handleSaveQuestion(index)}>
+									儲存此問題
+								</Button>
+							</>
 						))}
 					</div>
 				</div>

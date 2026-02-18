@@ -1,6 +1,6 @@
 import * as api from "@/features/form/services/api";
-import { orgKeys } from "@/shared/queryKeys/org";
-import type { FormsForm, FormsFormRequest, FormsFormRequestUpdate } from "@nycu-sdc/core-system-sdk";
+import { formKeys, orgKeys } from "@/shared/queryKeys/org";
+import type { FormsFont, FormsForm, FormsFormCoverUploadResponse, FormsFormRequest, FormsFormRequestUpdate } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useOrgForms = (slug: string) =>
@@ -31,10 +31,57 @@ export const useUpdateForm = (formId: string) => {
 	return useMutation<FormsForm, Error, FormsFormRequestUpdate>({
 		mutationFn: req => api.updateForm(formId, req),
 		onSuccess: updatedForm => {
-			// 更新單一表單的快取
 			qc.setQueryData(orgKeys.form(formId), updatedForm);
-			// 也 invalidate 表單列表的快取
 			qc.invalidateQueries({ queryKey: orgKeys.forms("sdc") });
 		}
 	});
 };
+
+export const usePublishForm = (slug: string) => {
+	const qc = useQueryClient();
+
+	return useMutation<FormsForm, Error, string>({
+		mutationFn: formId => api.publishForm(formId),
+		onSuccess: (updatedForm, formId) => {
+			qc.setQueryData(orgKeys.form(formId), updatedForm);
+			qc.invalidateQueries({ queryKey: orgKeys.forms(slug) });
+		}
+	});
+};
+
+export const useArchiveForm = (slug: string) => {
+	const qc = useQueryClient();
+
+	return useMutation<FormsForm, Error, string>({
+		mutationFn: formId => api.archiveForm(formId),
+		onSuccess: (updatedForm, formId) => {
+			qc.setQueryData(orgKeys.form(formId), updatedForm);
+			qc.invalidateQueries({ queryKey: orgKeys.forms(slug) });
+		}
+	});
+};
+
+export const useDeleteForm = (slug: string) => {
+	const qc = useQueryClient();
+
+	return useMutation<void, Error, string>({
+		mutationFn: formId => api.deleteForm(formId),
+		onSuccess: () => qc.invalidateQueries({ queryKey: orgKeys.forms(slug) })
+	});
+};
+
+export const useUploadFormCoverImage = (formId: string) => {
+	const qc = useQueryClient();
+
+	return useMutation<FormsFormCoverUploadResponse, Error, File>({
+		mutationFn: file => api.uploadFormCoverImage(formId, file),
+		onSuccess: () => qc.invalidateQueries({ queryKey: orgKeys.form(formId) })
+	});
+};
+
+export const useFormFonts = () =>
+	useQuery<FormsFont[]>({
+		queryKey: formKeys.fonts,
+		queryFn: () => api.getFormFonts(),
+		staleTime: 1000 * 60 * 10
+	});

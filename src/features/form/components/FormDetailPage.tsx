@@ -1,3 +1,4 @@
+import * as formApi from "@/features/form/services/api";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Markdown, Radio, ScaleInput, TextArea } from "@/shared/components";
 import {
 	formsGetFormById,
@@ -445,15 +446,21 @@ export const FormDetailPage = () => {
 							id={question.id}
 							label=""
 							accept={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
-							onChange={file => {
-								if (file) {
-									updateAnswer(question.id, "uploaded");
+							onChange={async file => {
+								if (file && responseId) {
+									try {
+										await formApi.uploadQuestionFiles(responseId, question.id, [file]);
+										updateAnswer(question.id, file.name);
+									} catch (err) {
+										console.error("上傳失敗:", err);
+									}
 								}
 							}}
 						/>
 						<p style={{ fontSize: "0.875rem", color: "var(--color-caption)", marginTop: "0.5rem" }}>
 							最多 {question.uploadFile?.maxFileAmount || 1} 個檔案，每個檔案最大 {((question.uploadFile?.maxFileSizeLimit || 10485760) / 1024 / 1024).toFixed(0)} MB
 						</p>
+						{value && <p style={{ fontSize: "0.875rem", color: "var(--green)", marginTop: "0.25rem" }}>✓ 已上傳：{value}</p>}
 					</div>
 				);
 
@@ -467,8 +474,11 @@ export const FormDetailPage = () => {
 						{question.description && <Markdown content={question.description} />}
 						<Button
 							onClick={() => {
+								if (!responseId) return;
+								const provider = question.oauthConnect;
+								const url = `/api/oauth/questions/${provider}?responseId=${responseId}&questionId=${question.id}`;
+								window.open(url, "_blank");
 								updateAnswer(question.id, "connected");
-								window.open(`/api/oauth/connect/${question.oauthConnect}`, "_blank");
 							}}
 							themeColor="var(--orange)"
 						>
@@ -564,7 +574,7 @@ export const FormDetailPage = () => {
 					<h1 className={styles.successTitle}>感謝您的填答！</h1>
 					<p className={styles.successMessage}>{form?.messageAfterSubmission}</p>
 					<div className={styles.successActions}>
-						<Button type="button" onClick={() => {}} themeColor="var(--code-foreground)">
+						<Button type="button" onClick={() => responseId && navigate(`/forms/${formId}?responseId=${responseId}`)} themeColor="var(--code-foreground)">
 							查看問卷副本
 						</Button>
 						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--orange)">

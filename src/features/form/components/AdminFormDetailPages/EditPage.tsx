@@ -1,6 +1,7 @@
-import { useToast } from "@/shared/components";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
-import { useState } from "react";
+import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
+import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
 import styles from "./EditPage.module.css";
@@ -10,8 +11,20 @@ interface AdminFormEditPageProps {
 	formData: FormsForm;
 }
 
-export const AdminFormEditPage = ({ formData: _formData }: AdminFormEditPageProps) => {
+const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
+	nodes.map(n => ({
+		id: n.id,
+		label: n.label,
+		type: n.type,
+		...(n.next !== undefined && { next: n.next }),
+		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+		...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+	}));
+
+export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const { pushToast } = useToast();
+	const workflowQuery = useWorkflow(formData.id);
+	const updateWorkflowMutation = useUpdateWorkflow(formData.id);
 
 	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
 		const path: string[] = [];
@@ -74,18 +87,30 @@ export const AdminFormEditPage = ({ formData: _formData }: AdminFormEditPageProp
 		return updatedNodes;
 	};
 
-	const [nodeItems, setNodeItems] = useState<NodeItem[]>(() => {
-		const nodeItems: NodeItem[] = [
-			{ id: "start", label: "開始表單", type: "START", next: "groupSelection" },
-			{ id: "groupSelection", label: "選擇組別", type: "SECTION", next: "condition" },
-			{ id: "condition", label: "條件判斷", type: "CONDITION", nextTrue: "sectionA", nextFalse: "sectionB" },
-			{ id: "sectionA", label: "條件區塊 A", type: "SECTION", next: "mergeNode" },
-			{ id: "sectionB", label: "條件區塊 B", type: "SECTION", next: "mergeNode" },
-			{ id: "mergeNode", label: "合併節點", type: "SECTION", next: "end" },
-			{ id: "end", label: "確認 / 送出", type: "END" }
-		];
-		return postProcessNodes(nodeItems);
-	});
+	const [nodeItems, setNodeItems] = useState<NodeItem[]>([]);
+
+	useEffect(() => {
+		if (workflowQuery.data && workflowQuery.data.length > 0) {
+			const loaded: NodeItem[] = workflowQuery.data.map(n => ({
+				id: n.id ?? uuidv4(),
+				label: n.label ?? "",
+				type: (n.type as NodeItem["type"]) ?? "SECTION",
+				...(n.next !== undefined && { next: n.next }),
+				...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+				...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+			}));
+			setNodeItems(postProcessNodes(loaded));
+		} else if (!workflowQuery.isLoading && workflowQuery.data) {
+			// API returned empty workflow — seed with minimal default
+			const defaultNodes: NodeItem[] = [
+				{ id: uuidv4(), label: "開始表單", type: "START", next: "__section__" },
+				{ id: "__section__", label: "第一區塊", type: "SECTION", next: "__end__" },
+				{ id: "__end__", label: "確認 / 送出", type: "END" }
+			];
+			setNodeItems(postProcessNodes(defaultNodes));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [workflowQuery.data, workflowQuery.isLoading]);
 
 	const handleAddSection = (id: string) => {
 		const prevNodes = [...nodeItems];
@@ -398,9 +423,24 @@ export const AdminFormEditPage = ({ formData: _formData }: AdminFormEditPageProp
 		setNodeItems(processedNodes);
 	};
 
+	const handleSave = () => {
+		updateWorkflowMutation.mutate(toApiNodes(nodeItems), {
+			onSuccess: () => pushToast({ title: "儲存成功", description: "表單結構已更新。", variant: "success" }),
+			onError: () => pushToast({ title: "儲存失敗", description: "請稍後再試。", variant: "error" })
+		});
+	};
+
+	if (workflowQuery.isLoading) return <LoadingSpinner />;
+	if (workflowQuery.isError) return <ErrorMessage message="無法載入表單結構" />;
+
 	return (
 		<>
-			<h2>表單結構</h2>
+			<div className={styles.header}>
+				<h2>表單結構</h2>
+				<Button onClick={handleSave} disabled={updateWorkflowMutation.isPending}>
+					{updateWorkflowMutation.isPending ? "儲存中…" : "儲存 Workflow"}
+				</Button>
+			</div>
 			<blockquote className={styles.description}>點擊區塊以新增或編輯條件與問題</blockquote>
 			<div className={styles.flowContainer}>
 				<FlowRenderer

@@ -1,8 +1,8 @@
-import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms";
+import { useArchiveForm, useCreateOrgForm, useDeleteForm, useOrgForms, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
-import { Plus } from "lucide-react";
+import { Archive, Plus, Send, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
@@ -53,6 +53,34 @@ export const AdminFormsPage = () => {
 	const orgSlug = "sdc";
 	const formsQuery = useOrgForms(orgSlug);
 	const createFormMutation = useCreateOrgForm(orgSlug);
+	const publishFormMutation = usePublishForm(orgSlug);
+	const archiveFormMutation = useArchiveForm(orgSlug);
+	const deleteFormMutation = useDeleteForm(orgSlug);
+
+	const handlePublish = (e: React.MouseEvent, formId: string) => {
+		e.stopPropagation();
+		publishFormMutation.mutate(formId, {
+			onSuccess: () => pushToast({ title: "已發布", variant: "success" }),
+			onError: () => pushToast({ title: "發布失敗", variant: "error" })
+		});
+	};
+
+	const handleArchive = (e: React.MouseEvent, formId: string) => {
+		e.stopPropagation();
+		archiveFormMutation.mutate(formId, {
+			onSuccess: () => pushToast({ title: "已封存", variant: "success" }),
+			onError: () => pushToast({ title: "封存失敗", variant: "error" })
+		});
+	};
+
+	const handleDelete = (e: React.MouseEvent, formId: string) => {
+		e.stopPropagation();
+		if (!confirm("確定要刪除此表單？此操作無法復原。")) return;
+		deleteFormMutation.mutate(formId, {
+			onSuccess: () => pushToast({ title: "已刪除", variant: "success" }),
+			onError: () => pushToast({ title: "刪除失敗", variant: "error" })
+		});
+	};
 
 	// Transform API data to UI model
 	const forms: FormRow[] = useMemo(() => {
@@ -129,6 +157,24 @@ export const AdminFormsPage = () => {
 								<div className={styles.cardInfo}>
 									<span>Last edited: {form.lastEdited}</span>
 									<span>Deadline: {form.deadline}</span>
+								</div>
+								<div className={styles.cardActions} onClick={e => e.stopPropagation()}>
+									{form.status === "draft" && (
+										<Button variant="primary" onClick={e => handlePublish(e, form.id)} disabled={publishFormMutation.isPending}>
+											<Send size={14} />
+											發布
+										</Button>
+									)}
+									{form.status !== "done" && (
+										<Button onClick={e => handleArchive(e, form.id)} disabled={archiveFormMutation.isPending}>
+											<Archive size={14} />
+											封存
+										</Button>
+									)}
+									<Button variant="danger" onClick={e => handleDelete(e, form.id)} disabled={deleteFormMutation.isPending}>
+										<Trash2 size={14} />
+										刪除
+									</Button>
 								</div>
 							</div>
 						))}
