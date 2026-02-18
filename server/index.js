@@ -1,6 +1,6 @@
 import fastifyHttpProxy from "@fastify/http-proxy";
 import fastifyStatic from "@fastify/static";
-import { formsGetFormById } from "@nycu-sdc/core-system-sdk";
+import { formsGetFormById } from "@nycu-sdc/core-system-sdk/dist/generated/index.js";
 import Fastify from "fastify";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -29,12 +29,14 @@ globalThis.fetch = (input, init) => {
 	return _originalFetch(input, init);
 };
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
 // 1) 靜態資源：讓 /assets/*、/forms.html、/admin.html 都能被取到
+// wildcard: false 避免 @fastify/static 自己註冊 /* 與後面的 catch-all 衝突
 app.register(fastifyStatic, {
 	root: DIST_DIR,
-	prefix: "/"
+	prefix: "/",
+	wildcard: false
 });
 
 // 2) /api 反向代理到 Go 後端
@@ -64,8 +66,8 @@ async function readHtml(name) {
 }
 
 // 3) forms 頁：動態 meta（這是 SEO 核心）
-// 你目前的表單 detail route：/forms/:formId/:responseId
-app.get("/forms/:formId/:responseId", async (req, reply) => {
+// 同時處理 /forms/:formId 和 /forms/:formId/:responseId
+async function handleFormSeoRoute(req, reply) {
 	const { formId } = req.params;
 
 	const template = await readHtml("forms.html");
@@ -108,8 +110,12 @@ app.get("/forms/:formId/:responseId", async (req, reply) => {
 		.header("content-type", "text/html; charset=utf-8")
 		// 個人化/動態內容通常不要被 CDN 亂 cache
 		.header("cache-control", "no-store")
+		.header("awesome-club", "NYCU SDC")
 		.send(injectIntoHead(template, head));
-});
+}
+
+app.get("/forms/:formId", handleFormSeoRoute);
+app.get("/forms/:formId/:responseId", handleFormSeoRoute);
 
 // 4) forms 其他頁（list / public routes）回 forms.html（不做動態 meta 也行）
 const FORMS_HTML_ROUTES = ["/", "/callback", "/welcome", "/logout", "/forms", "/forms/*"];
@@ -121,10 +127,12 @@ for (const r of FORMS_HTML_ROUTES) {
 }
 
 // 5) admin app：/orgs/*、/demo 都回 admin.html
-app.get(["/orgs/*", "/demo"], async (_req, reply) => {
-	const html = await readHtml("admin.html");
-	reply.header("content-type", "text/html; charset=utf-8").send(html);
-});
+for (const r of ["/orgs/*", "/demo"]) {
+	app.get(r, async (_req, reply) => {
+		const html = await readHtml("admin.html");
+		reply.header("content-type", "text/html; charset=utf-8").send(html);
+	});
+}
 
 // 6) 其他全部回 forms.html（或你想回 404）
 app.get("/*", async (_req, reply) => {
