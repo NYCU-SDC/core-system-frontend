@@ -6,6 +6,8 @@ export type { InputProps } from "./Input/Input";
 
 export { DateInput } from "./DateInput/DateInput";
 
+export { ScaleInput } from "./ScaleInput/ScaleInput";
+
 export { TextArea } from "./TextArea/TextArea";
 export type { TextAreaProps } from "./TextArea/TextArea";
 
@@ -61,7 +63,8 @@ export { Tooltip } from "./Tooltip/Tooltip";
 export type { TooltipProps } from "./Tooltip/Tooltip";
 
 export { Toast, ToastProvider } from "./Toast/Toast";
-export type { ToastProps } from "./Toast/Toast";
+export type { ToastInput, ToastProps, ToastVariant } from "./Toast/Toast";
+export { useToast } from "./Toast/useToast";
 
 export { Popover } from "./Popover/Popover";
 export type { PopoverProps } from "./Popover/Popover";

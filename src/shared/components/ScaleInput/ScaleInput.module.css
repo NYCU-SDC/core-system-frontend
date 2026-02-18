@@ -1,0 +1,115 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin-bottom: 1.5rem;
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.label {
+	display: block;
+	font-weight: 500;
+	font-size: 0.9375rem;
+	color: var(--foreground);
+}
+
+.required {
+	color: var(--red);
+}
+
+.description {
+	margin: 0;
+	font-size: 0.875rem;
+	color: var(--color-caption);
+}
+
+.scaleWrapper {
+	display: flex;
+	align-items: flex-start;
+	gap: 1rem;
+	padding: 1rem 0;
+	width: 100%;
+	max-width: 100%;
+}
+
+.minLabel,
+.maxLabel {
+	font-size: 0.875rem;
+	color: var(--color-caption);
+	white-space: nowrap;
+	max-width: 150px;
+	flex-shrink: 0;
+}
+
+.scaleGroup {
+	display: flex;
+	gap: 0.5rem;
+	flex: 1;
+	flex-wrap: wrap;
+	min-width: 0;
+	justify-content: center;
+}
+
+.scaleButton {
+	width: 3rem;
+	height: 3rem;
+	border: 2px solid var(--border);
+	border-radius: 0.5rem;
+	background: var(--background);
+	color: var(--foreground);
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1rem;
+	font-weight: 500;
+}
+
+.scaleButton:hover {
+	border-color: var(--orange);
+	background: rgba(255, 131, 43, 0.1);
+}
+
+.scaleButton.hover {
+	border-color: var(--orange);
+	background: rgba(255, 131, 43, 0.05);
+}
+
+.scaleButton.selected {
+	border-color: var(--orange);
+	background: var(--orange);
+	color: white;
+}
+
+/* 當按鈕包含 SVG（星星、愛心等圖標）時，移除背景和邊框 */
+.scaleButton:has(svg) {
+	border: none;
+	background: transparent;
+	color: var(--color-caption);
+}
+
+.scaleButton:has(svg):hover {
+	background: transparent;
+	color: var(--orange);
+}
+
+.scaleButton:has(svg).hover {
+	background: transparent;
+	color: var(--orange);
+}
+
+.scaleButton:has(svg).selected {
+	background: transparent;
+	color: var(--orange);
+}
+
+.scaleButton svg {
+	display: block;
+}
+
+.value {
+	font-size: 1.125rem;
+}

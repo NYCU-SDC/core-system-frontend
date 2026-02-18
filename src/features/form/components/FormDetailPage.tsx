@@ -1,4 +1,4 @@
-import { Button, Checkbox, DateInput, DetailedCheckbox, Input, Radio, TextArea } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Radio, ScaleInput, TextArea } from "@/shared/components";
 import {
 	formsGetFormById,
 	formsGetFormCoverImage,
@@ -60,6 +60,7 @@ export const FormDetailPage = () => {
 					// Determine answer type based on question type
 					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
 					const dateTypes = ["DATE"];
+					const scaleTypes = ["LINEAR_SCALE", "RATING"];
 
 					if (dateTypes.includes(questionType)) {
 						return {
@@ -67,6 +68,12 @@ export const FormDetailPage = () => {
 							questionType: "DATE" as const,
 							value: value
 						} as ResponsesDateAnswer;
+					} else if (scaleTypes.includes(questionType)) {
+						return {
+							questionId,
+							questionType: questionType as ResponsesScaleAnswer["questionType"],
+							value: parseInt(value, 10)
+						} as ResponsesScaleAnswer;
 					} else if (stringArrayTypes.includes(questionType)) {
 						const valueArray = value.includes(",") ? value.split(",") : [value];
 						return {
@@ -145,13 +152,14 @@ export const FormDetailPage = () => {
 							const existingResponse = await responsesGetFormResponse(formId, responseCreation.data.id, { credentials: "include" });
 							if (existingResponse.status === 200) {
 								// 儲存預覽資料和進度
-								setPreviewData(existingResponse.data.sections);
-								setResponseProgress(existingResponse.data.progress);
+								const responseData = existingResponse.data as any;
+								setPreviewData(responseData.sections);
+								setResponseProgress(responseData.progress);
 
 								// 載入已儲存的答案
 								const loadedAnswers: Record<string, string> = {};
-								existingResponse.data.sections.forEach(section => {
-									section.answerDetails.forEach(detail => {
+								responseData.sections?.forEach((section: any) => {
+									section.answerDetails?.forEach((detail: any) => {
 										if (detail.question.id && detail.payload.displayValue) {
 											loadedAnswers[detail.question.id] = detail.payload.displayValue;
 										}
@@ -223,8 +231,9 @@ export const FormDetailPage = () => {
 				try {
 					const response = await responsesGetFormResponse(formId, responseId, { credentials: "include" });
 					if (response.status === 200) {
-						setPreviewData(response.data.sections);
-						setResponseProgress(response.data.progress);
+						const responseData = response.data as any;
+						setPreviewData(responseData.sections);
+						setResponseProgress(responseData.progress);
 					}
 				} catch (error) {
 					console.error("載入預覽資料失敗:", error);
@@ -322,19 +331,21 @@ export const FormDetailPage = () => {
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
 						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
-						{question.choices?.map(choice => (
-							<Checkbox
-								key={choice.id}
-								id={`${question.id}-${choice.id}`}
-								label={choice.name}
-								checked={value.includes(choice.id)}
-								onCheckedChange={checked => {
-									const currentValues = value ? value.split(",") : [];
-									const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
-									updateAnswer(question.id, newValues.join(","));
-								}}
-							/>
-						))}
+						<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+							{question.choices?.map(choice => (
+								<Checkbox
+									key={choice.id}
+									id={`${question.id}-${choice.id}`}
+									label={choice.name}
+									checked={value.includes(choice.id)}
+									onCheckedChange={checked => {
+										const currentValues = value ? value.split(",") : [];
+										const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
+										updateAnswer(question.id, newValues.join(","));
+									}}
+								/>
+							))}
+						</div>
 					</div>
 				);
 
@@ -372,6 +383,108 @@ export const FormDetailPage = () => {
 					/>
 				);
 
+			case "LINEAR_SCALE":
+			case "RATING":
+				return (
+					<ScaleInput
+						key={question.id}
+						id={question.id}
+						label={question.title}
+						description={question.description || undefined}
+						value={value}
+						options={question.scale || { minVal: 1, maxVal: 5 }}
+						required={question.required}
+						onChange={newValue => updateAnswer(question.id, newValue)}
+					/>
+				);
+
+			case "RANKING":
+				return (
+					<div key={question.id}>
+						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						<DragToOrder
+							items={
+								value
+									? value.split(",").map(choiceId => {
+											const choice = question.choices?.find(c => c.id === choiceId);
+											return {
+												id: choiceId,
+												content: choice?.name || choiceId
+											};
+										})
+									: question.choices?.map(choice => ({
+											id: choice.id,
+											content: choice.name
+										})) || []
+							}
+							onReorder={items => {
+								updateAnswer(question.id, items.map(item => item.id).join(","));
+							}}
+						/>
+					</div>
+				);
+
+			case "UPLOAD_FILE":
+				return (
+					<div key={question.id}>
+						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						<FileUpload
+							id={question.id}
+							label=""
+							accept={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
+							onChange={file => {
+								if (file) {
+									updateAnswer(question.id, "uploaded");
+								}
+							}}
+						/>
+						<p style={{ fontSize: "0.875rem", color: "var(--color-caption)", marginTop: "0.5rem" }}>
+							最多 {question.uploadFile?.maxFileAmount || 1} 個檔案，每個檔案最大 {((question.uploadFile?.maxFileSizeLimit || 10485760) / 1024 / 1024).toFixed(0)} MB
+						</p>
+					</div>
+				);
+
+			case "OAUTH_CONNECT":
+				return (
+					<div key={question.id}>
+						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <p style={{ marginBottom: "1rem", color: "var(--color-caption)" }}>{question.description}</p>}
+						<Button
+							onClick={() => {
+								updateAnswer(question.id, "connected");
+								window.open(`/api/oauth/connect/${question.oauthConnect}`, "_blank");
+							}}
+							themeColor="var(--orange)"
+						>
+							連接 {question.oauthConnect} 帳號
+						</Button>
+						{value && <p style={{ fontSize: "0.875rem", color: "var(--green)", marginTop: "0.5rem" }}>✓ 已連接</p>}
+					</div>
+				);
+
+			case "HYPERLINK":
+				return (
+					<div key={question.id}>
+						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>{question.title}</label>
+						{question.description && (
+							<a href={question.description} target="_blank" rel="noopener noreferrer" style={{ color: "var(--orange)", textDecoration: "underline" }}>
+								{question.description}
+							</a>
+						)}
+					</div>
+				);
+
 			default:
 				return (
 					<div key={question.id}>
@@ -389,11 +502,11 @@ export const FormDetailPage = () => {
 
 		return (
 			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-				{previewData.map((section, sectionIndex) => (
+				{previewData.map((section: any, sectionIndex: number) => (
 					<div key={sectionIndex} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 						<h3>{section.title}</h3>
 						<ul style={{ listStyleType: "disc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-							{section.answerDetails.map((detail, questionIndex) => (
+							{section.answerDetails?.map((detail: any, questionIndex: number) => (
 								<li key={questionIndex}>
 									<span style={{ fontWeight: 500 }}>
 										{detail.question.title}
@@ -402,7 +515,7 @@ export const FormDetailPage = () => {
 									<span>：</span>
 									<span>{detail.payload.displayValue || <span>未填寫</span>}</span>
 								</li>
-							))}
+							)) || []}
 						</ul>
 					</div>
 				))}
@@ -412,26 +525,30 @@ export const FormDetailPage = () => {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (currentStep === sections.length - 1 && responseId) {
-			try {
-				await saveAnswers();
-				const submitResponse = await responsesSubmitFormResponse(
-					responseId,
-					{
-						answers: []
-					},
-					{ credentials: "include" }
-				);
 
-				if (submitResponse.status === 200) {
-					setIsSubmitted(true);
-				} else {
-					throw new Error("提交失敗");
-				}
-			} catch (error) {
-				console.error("提交表單失敗:", error);
-				alert("提交失敗，請稍後再試");
+		if (!responseId) return;
+
+		try {
+			// 先儲存最新答案
+			await saveAnswers();
+
+			// 提交表單
+			const submitResponse = await responsesSubmitFormResponse(
+				responseId,
+				{
+					answers: []
+				},
+				{ credentials: "include" }
+			);
+
+			if (submitResponse.status === 200) {
+				setIsSubmitted(true);
+			} else {
+				throw new Error("提交失敗");
 			}
+		} catch (error) {
+			console.error("提交表單失敗:", error);
+			alert("提交失敗，請稍後再試");
 		}
 	};
 
