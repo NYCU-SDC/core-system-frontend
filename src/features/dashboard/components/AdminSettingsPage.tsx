@@ -1,8 +1,8 @@
 import { useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgMember, useUpdateOrg } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminLayout } from "@/layouts";
-import { Button, ErrorMessage, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
 import { LogOut } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./AdminSettingsPage.module.css";
 
 type MemberRow = {
@@ -56,6 +56,14 @@ export const AdminSettingsPage = () => {
 
 	const orgNameValue = orgNameDraft ?? orgQuery.data?.name ?? "";
 
+	useEffect(() => {
+		if (orgQuery.error) pushToast({ title: "無法載入組織資訊", description: (orgQuery.error as Error).message, variant: "error" });
+	}, [orgQuery.error]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	useEffect(() => {
+		if (membersQuery.error) pushToast({ title: "無法載入成員列表", description: (membersQuery.error as Error).message, variant: "error" });
+	}, [membersQuery.error]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	const members: MemberRow[] = useMemo(() => {
 		const raw = membersQuery.data ?? [];
 		return raw.map(toMemberRow).filter((m): m is MemberRow => m !== null);
@@ -79,7 +87,8 @@ export const AdminSettingsPage = () => {
 				onSuccess: () => {
 					setOrgNameDraft(null);
 					showSuccessToast("編輯成功", "組織資訊已更新。");
-				}
+				},
+				onError: e => pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" })
 			}
 		);
 	};
@@ -94,32 +103,24 @@ export const AdminSettingsPage = () => {
 				onSuccess: () => {
 					setEmail("");
 					showSuccessToast("邀請成功", `已成功邀請 ${trimmed}。`);
-				}
+				},
+				onError: e => pushToast({ title: "邀請失敗", description: (e as Error).message, variant: "error" })
 			}
 		);
 	};
 
 	const handleKickMember = (memberId: string) => {
 		if (confirm("Are you sure you want to remove this member?")) {
-			removeMemberMutation.mutate(memberId);
+			removeMemberMutation.mutate(memberId, {
+				onSuccess: () => pushToast({ title: "已移除成員", variant: "success" }),
+				onError: e => pushToast({ title: "移除失敗", description: (e as Error).message, variant: "error" })
+			});
 		}
 	};
 	return (
 		<AdminLayout>
 			<div className={styles.container}>
 				<h1>組織管理</h1>
-				{(orgQuery.isError || membersQuery.isError || updateOrgMutation.isError || addMemberMutation.isError || removeMemberMutation.isError) && (
-					<ErrorMessage
-						message={
-							(orgQuery.error as Error)?.message ||
-							(membersQuery.error as Error)?.message ||
-							(updateOrgMutation.error as Error)?.message ||
-							(addMemberMutation.error as Error)?.message ||
-							(removeMemberMutation.error as Error)?.message ||
-							"Something went wrong."
-						}
-					/>
-				)}
 				<h2 className={styles.heading}>組織資訊</h2>
 				<section className={styles.section}>
 					<Label required htmlFor="orgName">

@@ -6,7 +6,7 @@
 	align-self: center;
 	gap: 0.125rem;
 	border-radius: 0.5rem;
-	padding: 0.125rem;
+	padding: 0.2rem;
 	clip-path: polygon(0.625rem 0, 100% 0, 100% calc(100% - 0.625rem), calc(100% - 0.625rem) 100%, 0 100%, 0 0.625rem);
 }
 

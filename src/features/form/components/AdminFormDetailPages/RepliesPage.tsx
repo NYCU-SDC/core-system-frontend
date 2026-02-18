@@ -78,7 +78,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const handleDeleteResponse = (responseId: string) => {
 		deleteResponseMutation.mutate(responseId, {
 			onSuccess: () => pushToast({ title: "已刪除回覆", variant: "success" }),
-			onError: () => pushToast({ title: "刪除失敗", variant: "error" })
+			onError: error => pushToast({ title: "刪除失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
@@ -95,7 +95,13 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 					</Badge>
 				</div>
 				<p>請將以下服務帳號加入您的 Google Sheets 編輯權限：</p>
-				{emailQuery.isLoading ? <LoadingSpinner /> : emailQuery.isError ? <ErrorMessage message="無法載入服務帳號 Email" /> : <Markdown content={`\`\`\`\n${emailQuery.data?.email ?? ""}\n\`\`\``} />}
+				{emailQuery.isLoading ? (
+					<LoadingSpinner />
+				) : emailQuery.isError ? (
+					<ErrorMessage message={(emailQuery.error as Error)?.message ?? "無法載入服務帳號 Email"} />
+				) : (
+					<Markdown content={`\`\`\`\n${emailQuery.data?.email ?? ""}\n\`\`\``} />
+				)}
 
 				<div className={styles.formGroup}>
 					<Label htmlFor="sheetUrl">Google Sheets 完整 URL</Label>
@@ -117,7 +123,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			<div className={styles.container}>
 				<h2>收到的回覆</h2>
 				{responsesQuery.isLoading && <LoadingSpinner />}
-				{responsesQuery.isError && <ErrorMessage message="無法載入回覆列表" />}
+				{responsesQuery.isError && <ErrorMessage message={(responsesQuery.error as Error)?.message ?? "無法載入回覆列表"} />}
 				{!responsesQuery.isLoading && responses.length === 0 && <p>尚無回覆。</p>}
 				{responses.length > 0 && (
 					<table className={styles.table}>

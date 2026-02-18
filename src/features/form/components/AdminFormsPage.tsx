@@ -1,9 +1,9 @@
 import { useArchiveForm, useCreateOrgForm, useDeleteForm, useOrgForms, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
-import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Archive, Plus, Send, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
@@ -57,11 +57,15 @@ export const AdminFormsPage = () => {
 	const archiveFormMutation = useArchiveForm(orgSlug);
 	const deleteFormMutation = useDeleteForm(orgSlug);
 
+	useEffect(() => {
+		if (formsQuery.error) pushToast({ title: "無法載入表單列表", description: (formsQuery.error as Error).message, variant: "error" });
+	}, [formsQuery.error]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	const handlePublish = (e: React.MouseEvent, formId: string) => {
 		e.stopPropagation();
 		publishFormMutation.mutate(formId, {
 			onSuccess: () => pushToast({ title: "已發布", variant: "success" }),
-			onError: () => pushToast({ title: "發布失敗", variant: "error" })
+			onError: error => pushToast({ title: "發布失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
@@ -69,7 +73,7 @@ export const AdminFormsPage = () => {
 		e.stopPropagation();
 		archiveFormMutation.mutate(formId, {
 			onSuccess: () => pushToast({ title: "已封存", variant: "success" }),
-			onError: () => pushToast({ title: "封存失敗", variant: "error" })
+			onError: error => pushToast({ title: "封存失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
@@ -78,7 +82,7 @@ export const AdminFormsPage = () => {
 		if (!confirm("確定要刪除此表單？此操作無法復原。")) return;
 		deleteFormMutation.mutate(formId, {
 			onSuccess: () => pushToast({ title: "已刪除", variant: "success" }),
-			onError: () => pushToast({ title: "刪除失敗", variant: "error" })
+			onError: error => pushToast({ title: "刪除失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
@@ -141,8 +145,6 @@ export const AdminFormsPage = () => {
 						</Button>
 					</div>
 				</div>
-
-				{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
 
 				{formsQuery.isLoading ? (
 					<LoadingSpinner />

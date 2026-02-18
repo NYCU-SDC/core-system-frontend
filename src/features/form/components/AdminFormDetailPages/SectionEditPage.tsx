@@ -88,8 +88,8 @@ export const AdminSectionEditPage = () => {
 				setQuestionIds(newIds);
 			}
 			pushToast({ title: "已儲存", description: "問題已更新。", variant: "success" });
-		} catch {
-			pushToast({ title: "儲存失敗", description: "請稍後再試。", variant: "error" });
+		} catch (err) {
+			pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
 		}
 	};
 
@@ -98,8 +98,8 @@ export const AdminSectionEditPage = () => {
 		if (existingId) {
 			try {
 				await deleteQuestion.mutateAsync(existingId);
-			} catch {
-				pushToast({ title: "刪除失敗", description: "請稍後再試。", variant: "error" });
+			} catch (err) {
+				pushToast({ title: "刪除失敗", description: (err as Error).message, variant: "error" });
 				return;
 			}
 		}
@@ -248,7 +248,7 @@ export const AdminSectionEditPage = () => {
 				<div className={styles.content}>
 					<Button onClick={handleBack}>Back</Button>
 					{sectionsQuery.isLoading && <LoadingSpinner />}
-					{sectionsQuery.isError && <ErrorMessage message="無法載入區塊資料" />}
+					{sectionsQuery.isError && <ErrorMessage message={(sectionsQuery.error as Error)?.message ?? "無法載入區塊資料"} />}
 					<div className={styles.container}>
 						<section className={styles.card}>
 							<Input placeholder="Section 標題" variant="flushed" themeColor="--comment" textSize="h2" value={section?.title ?? ""} readOnly title="Section 標題需透過左側流程編輯器的節點標籤修改" />

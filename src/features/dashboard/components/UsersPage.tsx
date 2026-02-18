@@ -1,10 +1,16 @@
 import { useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
-import { ErrorMessage, LoadingSpinner } from "@/shared/components";
+import { LoadingSpinner, useToast } from "@/shared/components";
+import { useEffect } from "react";
 import styles from "./UsersPage.module.css";
 
 export const UsersPage = () => {
 	const orgSlug = "sdc";
+	const { pushToast } = useToast();
 	const membersQuery = useOrgMembers(orgSlug);
+
+	useEffect(() => {
+		if (membersQuery.error) pushToast({ title: "無法載入成員列表", description: (membersQuery.error as Error).message, variant: "error" });
+	}, [membersQuery.error]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const members = membersQuery.data ?? [];
 
@@ -12,8 +18,6 @@ export const UsersPage = () => {
 		<div className={styles.container}>
 			<h1 className={styles.title}>Users</h1>
 			<p className={styles.subtitle}>Manage your application users.</p>
-
-			{membersQuery.isError && <ErrorMessage message={(membersQuery.error as Error)?.message || "Failed to load users"} />}
 
 			<div className={styles.card}>
 				{membersQuery.isLoading ? (

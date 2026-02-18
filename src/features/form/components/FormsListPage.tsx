@@ -1,8 +1,8 @@
 import { useMe } from "@/features/auth/hooks/useAuth";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
-import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import { UnitUserFormStatus, type UnitUserForm } from "@nycu-sdc/core-system-sdk";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./FormsListPage.module.css";
 import { TabButtons } from "./TabButtons";
@@ -52,6 +52,10 @@ export const FormsListPage = () => {
 	const formsQuery = useMyForms();
 	const createResponseMutation = useCreateFormResponse();
 
+	useEffect(() => {
+		if (formsQuery.error) pushToast({ title: "無法載入表單", description: (formsQuery.error as Error).message, variant: "error" });
+	}, [formsQuery.error]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	// Transform API data to UI model
 	const forms: FormRow[] = useMemo(() => {
 		if (!formsQuery.data) return [];
@@ -96,8 +100,6 @@ export const FormsListPage = () => {
 					（登出）
 				</a>
 			</p>
-
-			{formsQuery.isError && <ErrorMessage message={(formsQuery.error as Error)?.message || "Failed to load forms"} />}
 
 			<div className={styles.list}>
 				<TabButtons

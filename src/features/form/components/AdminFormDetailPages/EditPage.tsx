@@ -437,12 +437,12 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const handleSave = () => {
 		updateWorkflowMutation.mutate(toApiNodes(nodeItems), {
 			onSuccess: () => pushToast({ title: "儲存成功", description: "表單結構已更新。", variant: "success" }),
-			onError: () => pushToast({ title: "儲存失敗", description: "請稍後再試。", variant: "error" })
+			onError: error => pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
 	if (workflowQuery.isLoading) return <LoadingSpinner />;
-	if (workflowQuery.isError) return <ErrorMessage message="無法載入表單結構" />;
+	if (workflowQuery.isError) return <ErrorMessage message={(workflowQuery.error as Error)?.message ?? "無法載入表單結構"} />;
 
 	return (
 		<>

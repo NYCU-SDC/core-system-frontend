@@ -2,7 +2,7 @@ import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as formApi from "@/features/form/services/api";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Markdown, Radio, ScaleInput, TextArea } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
 	FormsSection,
@@ -32,6 +32,7 @@ interface FormResponseData {
 export const FormDetailPage = () => {
 	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
 	const navigate = useNavigate();
+	const { pushToast } = useToast();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -189,7 +190,7 @@ export const FormDetailPage = () => {
 
 			await updateResponseMutation.mutateAsync(answersUpdate);
 		} catch (error) {
-			console.error("儲存答案失敗:", error);
+			pushToast({ title: "自動儲存失敗", description: (error as Error).message, variant: "error" });
 		}
 	}, [urlResponseId, answers, sections, updateResponseMutation]);
 
@@ -409,7 +410,7 @@ export const FormDetailPage = () => {
 										await formApi.uploadQuestionFiles(urlResponseId, question.id, [file]);
 										updateAnswer(question.id, file.name);
 									} catch (err) {
-										console.error("上傳失敗:", err);
+										pushToast({ title: "上傳失敗", description: (err as Error).message, variant: "error" });
 									}
 								}
 							}}
@@ -510,14 +511,12 @@ export const FormDetailPage = () => {
 				{
 					onSuccess: () => setIsSubmitted(true),
 					onError: err => {
-						console.error("提交表單失敗:", err);
-						alert("提交失敗，請稍後再試");
+						pushToast({ title: "提交失敗", description: (err as Error).message, variant: "error" });
 					}
 				}
 			);
 		} catch (err) {
-			console.error("提交表單失敗:", err);
-			alert("提交失敗，請稍後再試");
+			pushToast({ title: "提交失敗", description: (err as Error).message, variant: "error" });
 		}
 	};
 

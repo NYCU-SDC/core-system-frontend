@@ -1,7 +1,7 @@
 ﻿import { useMe } from "@/features/auth/hooks/useAuth";
 import { authService } from "@/features/auth/services/authService";
 import { UserLayout } from "@/layouts";
-import { Button, Input } from "@/shared/components";
+import { Button, Input, useToast } from "@/shared/components";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ export const WelcomePage = () => {
 	const [username, setUsername] = useState("");
 	const [isUsernameFocused, setIsUsernameFocused] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [submitError, setSubmitError] = useState("");
+	const { pushToast } = useToast();
 
 	const isLoading = meQuery.isLoading;
 
@@ -51,7 +51,6 @@ export const WelcomePage = () => {
 		if (!canSubmit) return;
 
 		try {
-			setSubmitError("");
 			setIsSubmitting(true);
 
 			await authService.updateOnboarding({
@@ -60,8 +59,8 @@ export const WelcomePage = () => {
 			});
 
 			navigate("/forms");
-		} catch {
-			setSubmitError("儲存失敗，請稍後再試");
+		} catch (err) {
+			pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -107,7 +106,6 @@ export const WelcomePage = () => {
 							繼續
 						</Button>
 					</div>
-					{submitError && <p>{submitError}</p>}
 				</form>
 			</div>
 		</UserLayout>
