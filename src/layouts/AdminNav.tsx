@@ -28,7 +28,7 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 	return (
 		<>
 			{/* Hamburger — 永遠獨立 */}
-			<button type="button" className={styles.burgerBtn} aria-expanded={isOpen} onClick={() => setIsOpen(v => !v)}>
+			<button type="button" className={styles.burgerBtn} data-admin-nav-toggle aria-expanded={isOpen} onClick={() => setIsOpen(v => !v)}>
 				{isOpen ? <X size={22} /> : <Menu size={22} />}
 			</button>
 

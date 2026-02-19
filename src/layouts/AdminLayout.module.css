@@ -3,7 +3,7 @@
 	min-height: 100vh;
 }
 
-.container:has(button[aria-expanded="true"]) {
+.container:has(button[data-admin-nav-toggle][aria-expanded="true"]) {
 	overflow-x: hidden;
 }
 
