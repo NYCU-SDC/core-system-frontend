@@ -14,6 +14,8 @@ export interface RangeQuestionProps {
 	onStartChange?: (newStart: number) => void;
 	onEndChange?: (newEnd: number) => void;
 	onChangeIcon?: (newIcon: Question["icon"]) => void;
+	onStartLabelChange?: (label: string) => void;
+	onEndLabelChange?: (label: string) => void;
 }
 
 export const RangeQuestion = (props: RangeQuestionProps) => {
@@ -60,8 +62,24 @@ export const RangeQuestion = (props: RangeQuestionProps) => {
 					placeholder="value"
 				></Select>
 			</div>
-			<OptionsInput type="list" placeholder="標籤（選填）" variant="flushed" listLabel={`${props.start}`} themeColor="--comment" />
-			<OptionsInput type="list" placeholder="標籤（選填）" variant="flushed" listLabel={`${props.end}`} themeColor="--comment" />
+			<OptionsInput
+				type="list"
+				placeholder="標籤（選填）"
+				variant="flushed"
+				listLabel={`${props.start}`}
+				themeColor="--comment"
+				value={props.startLabel ?? ""}
+				onChange={e => props.onStartLabelChange?.(e.target.value)}
+			/>
+			<OptionsInput
+				type="list"
+				placeholder="標籤（選填）"
+				variant="flushed"
+				listLabel={`${props.end}`}
+				themeColor="--comment"
+				value={props.endLabel ?? ""}
+				onChange={e => props.onEndLabelChange?.(e.target.value)}
+			/>
 		</>
 	);
 };

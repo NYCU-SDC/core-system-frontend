@@ -3,6 +3,7 @@ import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflo
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
 import styles from "./EditPage.module.css";
@@ -26,6 +27,7 @@ const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
 
 export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const { pushToast } = useToast();
+	const navigate = useNavigate();
 	const workflowQuery = useWorkflow(formData.id);
 	const updateWorkflowMutation = useUpdateWorkflow(formData.id);
 
@@ -441,6 +443,10 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 	};
 
+	const handleEditSection = (nodeId: string) => {
+		navigate(`/orgs/sdc/forms/${formData.id}/section/${nodeId}/edit`);
+	};
+
 	if (workflowQuery.isLoading) return <LoadingSpinner />;
 	if (workflowQuery.isError) return <ErrorMessage message={(workflowQuery.error as Error)?.message ?? "無法載入表單結構"} />;
 
@@ -467,6 +473,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 					onAddFalseCondition={handleAddFalseCondition}
 					onAddMergeSection={handleAddMergeSection}
 					onAddMergeCondition={handleAddMergeCondition}
+					onEditSection={handleEditSection}
 				/>
 			</div>
 		</>

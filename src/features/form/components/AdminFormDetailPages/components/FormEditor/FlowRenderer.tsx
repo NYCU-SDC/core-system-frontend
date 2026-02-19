@@ -24,6 +24,7 @@ export interface FlowRendererProps {
 	onAddFalseCondition: (id: string) => void;
 	onAddMergeSection: (id: string) => void;
 	onAddMergeCondition: (id: string) => void;
+	onEditSection: (nodeId: string) => void;
 }
 
 export const FlowRenderer = ({
@@ -38,7 +39,8 @@ export const FlowRenderer = ({
 	onAddTrueCondition,
 	onAddFalseCondition,
 	onAddMergeSection,
-	onAddMergeCondition
+	onAddMergeCondition,
+	onEditSection
 }: FlowRendererProps) => {
 	const nodeMap = useMemo(() => {
 		return nodes.reduce(
@@ -77,6 +79,7 @@ export const FlowRenderer = ({
 					onAddFalseCondition={() => onAddFalseCondition(node.id)}
 					onAddMergeSection={() => onAddMergeSection(node.id)}
 					onAddMergeCondition={() => onAddMergeCondition(node.id)}
+					onEditSection={() => onEditSection(node.id)}
 				/>
 				{!node.next && node.nextFalse && node.nextTrue && (
 					<>
@@ -123,6 +126,7 @@ interface FlowNodeProps {
 	onAddFalseCondition: () => void;
 	onAddMergeSection: () => void;
 	onAddMergeCondition: () => void;
+	onEditSection: () => void;
 }
 
 const FlowNode = ({
@@ -137,7 +141,8 @@ const FlowNode = ({
 	onAddTrueCondition,
 	onAddFalseCondition,
 	onAddMergeSection,
-	onAddMergeCondition
+	onAddMergeCondition,
+	onEditSection
 }: FlowNodeProps) => {
 	// ── SECTION editing state ─────────────────────────────────────────────────
 	const [isEditing, setIsEditing] = useState(false);
@@ -236,6 +241,17 @@ const FlowNode = ({
 								}}
 							>
 								編輯
+							</Button>
+						)}
+						{node.type === "SECTION" && (
+							<Button
+								variant="secondary"
+								onClick={() => {
+									onEditSection();
+									close();
+								}}
+							>
+								編輯問題
 							</Button>
 						)}
 						{node.type !== "END" && node.type !== "CONDITION" && (

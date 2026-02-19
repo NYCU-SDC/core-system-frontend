@@ -38,12 +38,19 @@ export const AdminSectionEditPage = () => {
 				type: q.type as Question["type"],
 				title: q.title,
 				description: q.description ?? "",
+				required: q.required ?? false,
 				isFromAnswer: !!q.sourceId,
 				options: q.choices?.map(c => ({ label: c.name ?? "" })),
 				detailOptions: q.choices?.map(c => ({ label: c.name ?? "", description: c.description ?? "" })),
 				start: q.scale?.minVal,
 				end: q.scale?.maxVal,
-				icon: q.scale?.icon as Question["icon"]
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				startLabel: (q.scale as any)?.minLabel ?? "",
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				endLabel: (q.scale as any)?.maxLabel ?? "",
+				icon: q.scale?.icon as Question["icon"],
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				url: (q as any).url ?? ""
 			}));
 			setQuestions(mapped);
 			setQuestionIds(apiQuestions.map(q => q.id));
@@ -51,28 +58,36 @@ export const AdminSectionEditPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [apiQuestions.length]);
 
-	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => ({
-		type: q.type as FormsQuestionRequest["type"],
-		title: q.title,
-		description: q.description,
-		required: false,
-		order,
-		...(q.options &&
-			q.type !== "DETAILED_MULTIPLE_CHOICE" && {
-				choices: q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }))
-			}),
-		...(q.type === "DETAILED_MULTIPLE_CHOICE" &&
-			q.detailOptions && {
-				choices: q.detailOptions.map(o => ({ name: o.label, description: o.description }))
-			}),
-		...(q.start !== undefined && {
-			scale: {
+	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
+		const base: FormsQuestionRequest = {
+			type: q.type as FormsQuestionRequest["type"],
+			title: q.title,
+			description: q.description,
+			required: q.required ?? false,
+			order
+		};
+		if (q.options && q.type !== "DETAILED_MULTIPLE_CHOICE") {
+			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
+		}
+		if (q.type === "DETAILED_MULTIPLE_CHOICE" && q.detailOptions) {
+			base.choices = q.detailOptions.map(o => ({ name: o.label, description: o.description }));
+		}
+		if (q.start !== undefined) {
+			base.scale = {
 				minVal: q.start,
 				maxVal: q.end ?? 5,
 				icon: q.icon as FormsQuestionRequest["scale"] extends object ? FormsQuestionRequest["scale"]["icon"] : never
-			}
-		})
-	});
+			};
+			// Extend with labels (backend extension)
+			if (q.startLabel !== undefined) (base.scale as unknown as Record<string, unknown>).minLabel = q.startLabel;
+			if (q.endLabel !== undefined) (base.scale as unknown as Record<string, unknown>).maxLabel = q.endLabel;
+		}
+		// HYPERLINK url field
+		if (q.type === "HYPERLINK" && q.url !== undefined) {
+			(base as unknown as Record<string, unknown>).url = q.url;
+		}
+		return base;
+	};
 
 	const handleSaveQuestion = async (index: number) => {
 		if (!formid || !sectionId) return;
@@ -112,25 +127,40 @@ export const AdminSectionEditPage = () => {
 			text: "文字簡答",
 			type: "SHORT_TEXT",
 			setDefaultQuestion: () => {
-				return { type: "SHORT_TEXT", title: "", description: "", isFromAnswer: false };
+				return { type: "SHORT_TEXT", title: "", description: "", required: false, isFromAnswer: false };
 			}
 		},
-		{ icon: <TextAlignStart />, text: "文字詳答", type: "LONG_TEXT", setDefaultQuestion: () => ({ type: "LONG_TEXT", title: "", description: "", isFromAnswer: false }) },
-		{ icon: <List />, text: "單選選擇題", type: "SINGLE_CHOICE", setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false }) },
-		{ icon: <SquareCheckBig />, text: "核取方塊", type: "MULTIPLE_CHOICE", setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false }) },
-		{ icon: <Rows3 />, text: "下拉選單", type: "DROPDOWN", setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", options: [], isFromAnswer: false }) },
+		{ icon: <TextAlignStart />, text: "文字詳答", type: "LONG_TEXT", setDefaultQuestion: () => ({ type: "LONG_TEXT", title: "", description: "", required: false, isFromAnswer: false }) },
+		{ icon: <List />, text: "單選選擇題", type: "SINGLE_CHOICE", setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
+		{
+			icon: <SquareCheckBig />,
+			text: "核取方塊",
+			type: "MULTIPLE_CHOICE",
+			setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", required: false, options: [], isFromAnswer: false })
+		},
+		{ icon: <Rows3 />, text: "下拉選單", type: "DROPDOWN", setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
 		{
 			icon: <LayoutList />,
 			text: "詳細核取方塊",
 			type: "DETAILED_MULTIPLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "DETAILED_MULTIPLE_CHOICE", title: "", description: "", options: [], isFromAnswer: false, detailOptions: [] })
+			setDefaultQuestion: () => ({ type: "DETAILED_MULTIPLE_CHOICE", title: "", description: "", required: false, options: [], isFromAnswer: false, detailOptions: [] })
 		},
-		{ icon: <CloudUpload />, text: "檔案上傳", type: "UPLOAD_FILE", setDefaultQuestion: () => ({ type: "UPLOAD_FILE", title: "", description: "", isFromAnswer: false }) },
-		{ icon: <Ellipsis />, text: "線性刻度", type: "LINEAR_SCALE", setDefaultQuestion: () => ({ type: "LINEAR_SCALE", title: "", description: "", isFromAnswer: false, start: 1, end: 5 }) },
-		{ icon: <Star />, text: "評分", type: "RATING", setDefaultQuestion: () => ({ type: "RATING", title: "", description: "", isFromAnswer: false, start: 1, end: 5, icon: "STAR" }) },
-		{ icon: <ListOrdered />, text: "排序", type: "RANKING", setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", options: [], isFromAnswer: false }) },
-		{ icon: <Calendar />, text: "日期選擇", type: "DATE", setDefaultQuestion: () => ({ type: "DATE", title: "", description: "", isFromAnswer: false }) },
-		{ icon: <Link2 />, text: "超連結", type: "HYPERLINK", setDefaultQuestion: () => ({ type: "HYPERLINK", title: "", description: "", url: "", isFromAnswer: false }) }
+		{ icon: <CloudUpload />, text: "檔案上傳", type: "UPLOAD_FILE", setDefaultQuestion: () => ({ type: "UPLOAD_FILE", title: "", description: "", required: false, isFromAnswer: false }) },
+		{
+			icon: <Ellipsis />,
+			text: "線性刻度",
+			type: "LINEAR_SCALE",
+			setDefaultQuestion: () => ({ type: "LINEAR_SCALE", title: "", description: "", required: false, isFromAnswer: false, start: 1, end: 5, startLabel: "", endLabel: "" })
+		},
+		{
+			icon: <Star />,
+			text: "評分",
+			type: "RATING",
+			setDefaultQuestion: () => ({ type: "RATING", title: "", description: "", required: false, isFromAnswer: false, start: 1, end: 5, startLabel: "", endLabel: "", icon: "STAR" })
+		},
+		{ icon: <ListOrdered />, text: "排序", type: "RANKING", setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
+		{ icon: <Calendar />, text: "日期選擇", type: "DATE", setDefaultQuestion: () => ({ type: "DATE", title: "", description: "", required: false, isFromAnswer: false }) },
+		{ icon: <Link2 />, text: "超連結", type: "HYPERLINK", setDefaultQuestion: () => ({ type: "HYPERLINK", title: "", description: "", required: false, url: "", isFromAnswer: false }) }
 	];
 
 	const handleBack = () => {
@@ -242,6 +272,47 @@ export const AdminSectionEditPage = () => {
 		setQuestions(updatedQuestions);
 	};
 
+	const handleRequiredChange = (questionIndex: number, required: boolean) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].required = required;
+		setQuestions(updatedQuestions);
+	};
+
+	const handleUrlChange = (questionIndex: number, url: string) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].url = url;
+		setQuestions(updatedQuestions);
+	};
+
+	const handleStartLabelChange = (questionIndex: number, label: string) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].startLabel = label;
+		setQuestions(updatedQuestions);
+	};
+
+	const handleEndLabelChange = (questionIndex: number, label: string) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].endLabel = label;
+		setQuestions(updatedQuestions);
+	};
+
+	const handleDetailOptionChange = (questionIndex: number, optionIndex: number, field: "label" | "description", value: string) => {
+		const updatedQuestions = [...questions];
+		if (!updatedQuestions[questionIndex].detailOptions) return;
+		updatedQuestions[questionIndex].detailOptions![optionIndex] = {
+			...updatedQuestions[questionIndex].detailOptions![optionIndex],
+			[field]: value
+		};
+		setQuestions(updatedQuestions);
+	};
+
+	const handleRemoveDetailOption = (questionIndex: number, optionIndex: number) => {
+		const updatedQuestions = [...questions];
+		if (!updatedQuestions[questionIndex].detailOptions) return;
+		updatedQuestions[questionIndex].detailOptions!.splice(optionIndex, 1);
+		setQuestions(updatedQuestions);
+	};
+
 	return (
 		<>
 			<div className={styles.layout}>
@@ -266,6 +337,8 @@ export const AdminSectionEditPage = () => {
 									onAddOption={() => handleAddOption(index, { label: "New Option" })}
 									onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
 									onAddDetailOption={() => handleAddDetailOption(index, { label: "New Option", description: "Option Description" })}
+									onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
+									onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
 									onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
 									onRemoveOtherOption={() =>
 										handleRemoveOption(
@@ -276,8 +349,12 @@ export const AdminSectionEditPage = () => {
 									onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
 									onStartChange={newStart => handleStartChange(index, newStart)}
 									onEndChange={newEnd => handleEndChange(index, newEnd)}
+									onStartLabelChange={label => handleStartLabelChange(index, label)}
+									onEndLabelChange={label => handleEndLabelChange(index, label)}
 									onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
 									onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+									onRequiredChange={required => handleRequiredChange(index, required)}
+									onUrlChange={url => handleUrlChange(index, url)}
 								/>
 								<Button key={`save-${index}`} onClick={() => handleSaveQuestion(index)}>
 									儲存此問題

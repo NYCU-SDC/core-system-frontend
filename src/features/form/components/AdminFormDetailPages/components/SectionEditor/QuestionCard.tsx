@@ -6,7 +6,6 @@ import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
 import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";
 import { RangeQuestion } from "./RangeQuestion";
-import { UploadQuestion } from "./UploadQuestion";
 
 export interface QuestionCardProps {
 	question: Question;
@@ -19,11 +18,17 @@ export interface QuestionCardProps {
 	onRemoveOption?: (optionIndex: number) => void;
 	onRemoveOtherOption?: () => void;
 	onAddDetailOption?: () => void;
+	onDetailOptionChange?: (optionIndex: number, field: "label" | "description", value: string) => void;
+	onRemoveDetailOption?: (optionIndex: number) => void;
 	onChangeOption?: (optionIndex: number, newLabel: string) => void;
 	onStartChange?: (newStart: number) => void;
 	onEndChange?: (newEnd: number) => void;
+	onStartLabelChange?: (label: string) => void;
+	onEndLabelChange?: (label: string) => void;
 	onChangeIcon?: (newIcon: Question["icon"]) => void;
 	onToggleIsFromAnswer?: () => void;
+	onRequiredChange?: (required: boolean) => void;
+	onUrlChange?: (url: string) => void;
 }
 
 type typeInfo = {
@@ -176,7 +181,17 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					)}
 					{question.type === "LINEAR_SCALE" && (
 						<div className={styles.linearScale}>
-							<RangeQuestion start={question.start || 1} end={question.end || 5} hasIcon={false} onStartChange={props.onStartChange} onEndChange={props.onEndChange} />
+							<RangeQuestion
+								start={question.start || 1}
+								end={question.end || 5}
+								startLabel={question.startLabel}
+								endLabel={question.endLabel}
+								hasIcon={false}
+								onStartChange={props.onStartChange}
+								onEndChange={props.onEndChange}
+								onStartLabelChange={props.onStartLabelChange}
+								onEndLabelChange={props.onEndLabelChange}
+							/>
 						</div>
 					)}
 
@@ -185,24 +200,31 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							<RangeQuestion
 								start={question.start || 1}
 								end={question.end || 5}
+								startLabel={question.startLabel}
+								endLabel={question.endLabel}
 								hasIcon={true}
 								icon={question.icon}
 								onStartChange={props.onStartChange}
 								onEndChange={props.onEndChange}
+								onStartLabelChange={props.onStartLabelChange}
+								onEndLabelChange={props.onEndLabelChange}
 								onChangeIcon={props.onChangeIcon}
 							/>
 						</div>
 					)}
 
-					{question.type === "DETAILED_MULTIPLE_CHOICE" && <DetailOptionsQuestion options={question.detailOptions || []} onAdd={props.onAddDetailOption || (() => {})} />}
-					{question.type === "UPLOAD_FILE" && <UploadQuestion />}
-
+					{question.type === "DETAILED_MULTIPLE_CHOICE" && (
+						<DetailOptionsQuestion options={question.detailOptions || []} onAdd={props.onAddDetailOption || (() => {})} onEdit={props.onDetailOptionChange} onRemove={props.onRemoveDetailOption} />
+					)}
+					{question.type === "HYPERLINK" && (
+						<Input value={question.url ?? ""} placeholder="輸入超連結 URL" variant="flushed" themeColor="--comment" onChange={e => props.onUrlChange?.(e.target.value)} />
+					)}
 					<div className={styles.actions}>
 						<Copy onClick={duplicateQuestion} />
 						<Trash2 onClick={removeQuestion} />
 						<div className={`${styles.switch}`}>
 							<p className={`${styles.label}`}>必填</p>
-							<Switch />
+							<Switch checked={question.required ?? false} onClick={() => props.onRequiredChange?.(!(question.required ?? false))} />
 						</div>
 					</div>
 				</div>
