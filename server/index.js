@@ -247,8 +247,12 @@ async function handleFormSeoRoute(req, reply) {
 app.get("/forms/:formId", handleFormSeoRoute);
 app.get("/forms/:formId/:responseId", handleFormSeoRoute);
 
-app.get("/*", (_req, reply) => {
-	reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES.forms);
+const isAdminPath = pathname => pathname === "/demo" || pathname.startsWith("/orgs/") || pathname === "/orgs";
+
+app.get("/*", (req, reply) => {
+	const pathname = req.url.split("?")[0];
+	const template = isAdminPath(pathname) ? "admin" : "forms";
+	reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES[template]);
 });
 
 const port = Number(process.env.PORT || 80);

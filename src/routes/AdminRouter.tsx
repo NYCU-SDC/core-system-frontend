@@ -4,6 +4,7 @@ import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
 import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminFormDetailPage, AdminFormsPage } from "@/features/form/components";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { CrossEntryCurrentRedirect } from "./CrossEntryRedirect";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
 import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
 
@@ -39,6 +40,14 @@ export const AdminRouter = () => {
 					<Route path="/orgs/:orgSlug/forms/:formid/design" element={<AdminFormDetailPage />} />
 					<Route path="/orgs/:orgSlug/settings" element={<AdminSettingsPage />} />
 				</Route>
+
+				{/* Cross-entry: force a hard navigation so the server can serve forms.html */}
+				<Route path="/" element={<CrossEntryCurrentRedirect />} />
+				<Route path="/callback" element={<CrossEntryCurrentRedirect />} />
+				<Route path="/welcome" element={<CrossEntryCurrentRedirect />} />
+				<Route path="/logout" element={<CrossEntryCurrentRedirect />} />
+				<Route path="/forms" element={<CrossEntryCurrentRedirect />} />
+				<Route path="/forms/*" element={<CrossEntryCurrentRedirect />} />
 
 				{/* 404 */}
 				<Route path="*" element={<NotFoundPage />} />

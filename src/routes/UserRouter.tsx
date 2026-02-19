@@ -7,6 +7,7 @@ import { FormDetailPage, FormsListPage } from "@/features/form/components";
 // ⚠️ 這裡先沿用你現有的 import；下一步我會教你怎麼避免 barrel 拉到 admin
 import { UserLayout } from "@/layouts";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { CrossEntryCurrentRedirect } from "./CrossEntryRedirect";
 import RequireLogin from "./RequireLogin";
 
 export const UserRouter = () => {
@@ -38,6 +39,11 @@ export const UserRouter = () => {
 						}
 					/>
 				</Route>
+
+				{/* Cross-entry: force a hard navigation so the server can serve admin.html */}
+				<Route path="/demo" element={<CrossEntryCurrentRedirect />} />
+				<Route path="/orgs" element={<CrossEntryCurrentRedirect />} />
+				<Route path="/orgs/*" element={<CrossEntryCurrentRedirect />} />
 
 				{/* 404 */}
 				<Route path="*" element={<NotFoundPage />} />
