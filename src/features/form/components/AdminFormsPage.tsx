@@ -1,11 +1,11 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
-import { useCreateOrgForm, useOrgForms, usePublishForm } from "@/features/form/hooks/useOrgForms";
+import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
-import { Plus, Send } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
@@ -57,19 +57,10 @@ export const AdminFormsPage = () => {
 	const orgSlug = useActiveOrgSlug();
 	const formsQuery = useOrgForms(orgSlug);
 	const createFormMutation = useCreateOrgForm(orgSlug);
-	const publishFormMutation = usePublishForm(orgSlug);
 
 	useEffect(() => {
 		if (formsQuery.error) pushToast({ title: "無法載入表單列表", description: (formsQuery.error as Error).message, variant: "error" });
 	}, [formsQuery.error]); // eslint-disable-line react-hooks/exhaustive-deps
-
-	const handlePublish = (e: React.MouseEvent, formId: string) => {
-		e.stopPropagation();
-		publishFormMutation.mutate(formId, {
-			onSuccess: () => pushToast({ title: "已發布", variant: "success" }),
-			onError: error => pushToast({ title: "發布失敗", description: (error as Error).message, variant: "error" })
-		});
-	};
 
 	// Transform API data to UI model
 	const forms: FormRow[] = useMemo(() => {
@@ -146,14 +137,6 @@ export const AdminFormsPage = () => {
 								<div className={styles.cardInfo}>
 									<span>最後編輯：{form.lastEdited}</span>
 									<span>截止日期：{form.deadline}</span>
-								</div>
-								<div className={styles.cardActions} onClick={e => e.stopPropagation()}>
-									{form.status === "draft" && (
-										<Button variant="primary" onClick={e => handlePublish(e, form.id)} disabled={publishFormMutation.isPending}>
-											<Send size={14} />
-											發布
-										</Button>
-									)}
 								</div>
 							</div>
 						))}

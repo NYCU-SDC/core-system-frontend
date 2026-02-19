@@ -1,5 +1,5 @@
 import { useFormFonts, useUpdateForm, useUploadFormCoverImage } from "@/features/form/hooks/useOrgForms";
-import { Button, ColorPicker, FileUpload, LoadingSpinner, SearchableSelect, useToast } from "@/shared/components";
+import { ColorPicker, FileUpload, LoadingSpinner, SearchableSelect, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { formsGetFormCoverImage } from "@nycu-sdc/core-system-sdk";
 import { useQuery } from "@tanstack/react-query";
@@ -43,23 +43,31 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 	const [headerFont, setHeaderFont] = useState(formData.dressing?.headerFont ?? "");
 	const [questionFont, setQuestionFont] = useState(formData.dressing?.questionFont ?? "");
 	const [textFont, setTextFont] = useState(formData.dressing?.textFont ?? "");
-	const initialColor = formData.dressing?.color ?? "#ff5555";
-	const initialHeaderFont = formData.dressing?.headerFont ?? "";
-	const initialQuestionFont = formData.dressing?.questionFont ?? "";
-	const initialTextFont = formData.dressing?.textFont ?? "";
-	const hasDressingChanges = color !== initialColor || headerFont !== initialHeaderFont || questionFont !== initialQuestionFont || textFont !== initialTextFont;
+	const [savedDressing, setSavedDressing] = useState({
+		color: formData.dressing?.color ?? "#ff5555",
+		headerFont: formData.dressing?.headerFont ?? "",
+		questionFont: formData.dressing?.questionFont ?? "",
+		textFont: formData.dressing?.textFont ?? ""
+	});
 
-	const handleSaveDressing = () => {
+	const hasDressingChanges = color !== savedDressing.color || headerFont !== savedDressing.headerFont || questionFont !== savedDressing.questionFont || textFont !== savedDressing.textFont;
+
+	useEffect(() => {
 		if (!hasDressingChanges) return;
 
-		updateFormMutation.mutate(
-			{ dressing: { color, headerFont, questionFont, textFont } },
-			{
-				onSuccess: () => pushToast({ title: "外觀已儲存", variant: "success" }),
-				onError: e => pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" })
-			}
-		);
-	};
+		const nextDressing = { color, headerFont, questionFont, textFont };
+		const timerId = window.setTimeout(() => {
+			updateFormMutation.mutate(
+				{ dressing: nextDressing },
+				{
+					onSuccess: () => setSavedDressing(nextDressing),
+					onError: e => pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" })
+				}
+			);
+		}, 500);
+
+		return () => window.clearTimeout(timerId);
+	}, [color, headerFont, questionFont, textFont, hasDressingChanges, updateFormMutation, pushToast]);
 
 	const handleCoverUpload = (file: File | null) => {
 		if (!file) return;
@@ -121,9 +129,6 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 						尋找適合的字體。
 					</p>
 				</blockquote>
-				<Button onClick={handleSaveDressing} processing={updateFormMutation.isPending} disabled={!hasDressingChanges || updateFormMutation.isPending}>
-					儲存外觀設定
-				</Button>
 			</section>
 		</>
 	);
