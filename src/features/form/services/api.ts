@@ -15,6 +15,8 @@ import type {
 	FormsListSectionsResponse,
 	FormsQuestionRequest,
 	FormsQuestionResponse,
+	FormsSection,
+	FormsSectionRequest,
 	ResponsesCreateResponse,
 	ResponsesGetFormResponse,
 	ResponsesGetQuestionResponse,
@@ -38,6 +40,7 @@ import {
 	formsPublishForm,
 	formsUpdateForm,
 	formsUpdateQuestion,
+	formsUpdateSection,
 	formsUploadFormCoverImage,
 	formsVerifyGoogleSheet,
 	responsesCreateFormResponse,
@@ -124,6 +127,12 @@ export const getFormFonts = async (): Promise<FormsFont[]> => {
 export const listSections = async (formId: string): Promise<FormsListSectionsResponse[]> => {
 	const res = await formsListSections(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load sections");
+	return res.data;
+};
+
+export const updateSection = async (formId: string, sectionId: string, req: FormsSectionRequest): Promise<FormsSection> => {
+	const res = await formsUpdateSection(formId, sectionId, req, defaultRequestOptions);
+	assertOk(res.status, "Failed to update section");
 	return res.data;
 };
 

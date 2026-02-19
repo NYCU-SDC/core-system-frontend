@@ -1,6 +1,6 @@
 import * as api from "@/features/form/services/api";
 import { formKeys } from "@/shared/queryKeys/org";
-import type { FormsFont, FormsListSectionsResponse, FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
+import type { FormsFont, FormsListSectionsResponse, FormsQuestionRequest, FormsQuestionResponse, FormsSection, FormsSectionRequest } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useSections = (formId: string | undefined, enabled = true) =>
@@ -37,6 +37,14 @@ export const useDeleteQuestion = (formId: string, sectionId: string) => {
 	const qc = useQueryClient();
 	return useMutation<void, Error, string>({
 		mutationFn: questionId => api.deleteQuestion(sectionId, questionId),
+		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.sections(formId) })
+	});
+};
+
+export const useUpdateSection = (formId: string, sectionId: string) => {
+	const qc = useQueryClient();
+	return useMutation<FormsSection, Error, FormsSectionRequest>({
+		mutationFn: req => api.updateSection(formId, sectionId, req),
 		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.sections(formId) })
 	});
 };

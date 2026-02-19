@@ -1,6 +1,5 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
-import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion } from "@/features/form/hooks/useSections";
-import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { Button, ErrorMessage, Input, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
@@ -24,14 +23,13 @@ export const AdminSectionEditPage = () => {
 	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
-	const workflowQuery = useWorkflow(formid);
-	const updateWorkflowMutation = useUpdateWorkflow(formid!);
 	const section = sectionsQuery.data?.flatMap(response => (Array.isArray(response.sections) ? response.sections : [])).find(foundSection => foundSection.id === sectionId);
 	const apiQuestions = section?.questions ?? [];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
 	const deleteQuestion = useDeleteQuestion(formid!, sectionId!);
+	const updateSectionMutation = useUpdateSection(formid!, sectionId!);
 
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
@@ -73,30 +71,10 @@ export const AdminSectionEditPage = () => {
 	}, [section?.id, section?.title, section?.description]);
 
 	const handleSaveSectionInfo = async () => {
-		if (!sectionId || !workflowQuery.data?.length) return;
-
-		const nextNodes = workflowQuery.data.map(node => {
-			if (node.id !== sectionId) return node;
-			return {
-				...node,
-				title: sectionTitle,
-				description: sectionDescription
-			};
-		});
+		if (!sectionId) return;
 
 		try {
-			await updateWorkflowMutation.mutateAsync(
-				nextNodes.map(node => ({
-					id: node.id,
-					label: node.label,
-					...(node.title !== undefined && { title: node.title }),
-					...(node.description !== undefined && { description: node.description }),
-					...(node.conditionRule !== undefined && { conditionRule: node.conditionRule }),
-					...(node.next !== undefined && { next: node.next }),
-					...(node.nextTrue !== undefined && { nextTrue: node.nextTrue }),
-					...(node.nextFalse !== undefined && { nextFalse: node.nextFalse })
-				}))
-			);
+			await updateSectionMutation.mutateAsync({ title: sectionTitle, description: sectionDescription });
 			pushToast({ title: "已儲存", description: "區段資訊已更新。", variant: "success" });
 			sectionsQuery.refetch();
 		} catch (err) {
@@ -436,8 +414,8 @@ export const AdminSectionEditPage = () => {
 						<section className={styles.card}>
 							<Input placeholder="區段標題" variant="flushed" themeColor="--comment" textSize="h2" value={sectionTitle} onChange={event => setSectionTitle(event.target.value)} />
 							<Input placeholder="區段描述" variant="flushed" themeColor="--comment" value={sectionDescription} onChange={event => setSectionDescription(event.target.value)} />
-							<Button onClick={handleSaveSectionInfo} disabled={updateWorkflowMutation.isPending || workflowQuery.isLoading}>
-								{updateWorkflowMutation.isPending ? "儲存中…" : "儲存區段資訊"}
+							<Button onClick={handleSaveSectionInfo} disabled={updateSectionMutation.isPending}>
+								{updateSectionMutation.isPending ? "儲存中…" : "儲存區段資訊"}
 							</Button>
 						</section>
 						{questions.map((question, index) => (

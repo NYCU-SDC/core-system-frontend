@@ -200,7 +200,7 @@ const FlowNode = ({
 									close();
 								}}
 							>
-								編輯問題
+								編輯
 							</Button>
 						)}
 						{node.type !== "END" && node.type !== "CONDITION" && (
