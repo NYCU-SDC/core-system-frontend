@@ -118,17 +118,20 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	useEffect(() => {
 		if (workflowQuery.data && workflowQuery.data.length > 0) {
-			const loaded: NodeItem[] = workflowQuery.data.map(n => ({
-				id: n.id ?? uuidv4(),
-				label: n.label ?? "",
-				type: (n.type as NodeItem["type"]) ?? "SECTION",
-				...(n.title !== undefined && { title: n.title }),
-				...(n.description !== undefined && { description: n.description }),
-				...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
-				...(n.next !== undefined && { next: n.next }),
-				...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
-				...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
-			}));
+			const loaded: NodeItem[] = workflowQuery.data.map(n => {
+				const node = n as typeof n & { title?: string; description?: string };
+				return {
+					id: n.id ?? uuidv4(),
+					label: n.label ?? "",
+					type: (n.type as NodeItem["type"]) ?? "SECTION",
+					...(node.title !== undefined && { title: node.title }),
+					...(node.description !== undefined && { description: node.description }),
+					...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
+					...(n.next !== undefined && { next: n.next }),
+					...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+					...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+				};
+			});
 			setNodeItems(postProcessNodes(loaded));
 		} else if (!workflowQuery.isLoading && workflowQuery.data) {
 			// API returned empty workflow — seed with minimal default

@@ -71,11 +71,11 @@ export const listMyOrgs = async (): Promise<UnitOrganization[]> => {
 export const getSlugStatus = async (slug: string): Promise<SlugStatus> => {
 	const res = await slugGetSlugStatus(slug, defaultRequestOptions);
 	assertOk(res.status, "Failed to get slug status", res.data);
-	return res.data;
+	return res.data as SlugStatus;
 };
 
 export const getSlugHistory = async (slug: string): Promise<SlugGetSlugHistory200> => {
 	const res = await slugGetSlugHistory(slug, defaultRequestOptions);
 	assertOk(res.status, "Failed to get slug history", res.data);
-	return res.data;
+	return res.data as SlugGetSlugHistory200;
 };
