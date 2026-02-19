@@ -1,4 +1,6 @@
 import { useMe } from "@/features/auth/hooks/useAuth";
+import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
+import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -54,6 +56,9 @@ export const FormsListPage = () => {
 	// Fetch forms from API
 	const formsQuery = useMyForms();
 	const createResponseMutation = useCreateFormResponse();
+	const { canAccessOrgAdmin } = useOrgAdminAccess();
+	const myOrgsQuery = useMyOrgs();
+	const adminOrgSlug = myOrgsQuery.data?.[0]?.slug ?? "SDC";
 
 	useEffect(() => {
 		if (formsQuery.error) pushToast({ title: "無法載入表單", description: (formsQuery.error as Error).message, variant: "error" });
@@ -105,7 +110,13 @@ export const FormsListPage = () => {
 						（登出）
 					</a>
 				</p>
-
+				{canAccessOrgAdmin && (
+					<div>
+						<Button variant="secondary" onClick={() => navigate(`/orgs/${adminOrgSlug}/forms`)}>
+							前往組織後台
+						</Button>
+					</div>
+				)}
 				<div className={styles.list}>
 					<TabButtons
 						tabs={[
