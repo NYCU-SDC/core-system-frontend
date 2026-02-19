@@ -1,5 +1,5 @@
 import type { UserOnboardingRequest, UserUser } from "@nycu-sdc/core-system-sdk";
-import { authLogout, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
+import { authLogout, authRefreshToken, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
 
 export type OAuthProvider = "google" | "nycu";
 
@@ -11,6 +11,8 @@ export interface AuthUser extends UserUser {
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"
 };
+
+const REFRESH_TOKEN_STORAGE_KEY = "core-system.refresh-token";
 
 const assertOk = (status: number, message: string) => {
 	if (status < 200 || status >= 300) {
@@ -31,6 +33,39 @@ export const canAccessWelcome = (user: AuthUser): boolean => {
 };
 
 export const authService = {
+	getStoredRefreshToken(): string | null {
+		if (typeof window === "undefined") return null;
+		return window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+	},
+
+	setStoredRefreshToken(refreshToken: string) {
+		if (typeof window === "undefined") return;
+		window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+	},
+
+	clearStoredRefreshToken() {
+		if (typeof window === "undefined") return;
+		window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+	},
+
+	async refreshAccessToken(): Promise<boolean> {
+		const refreshToken = this.getStoredRefreshToken();
+		if (!refreshToken) return false;
+
+		const res = await authRefreshToken(refreshToken, defaultRequestOptions);
+		if (res.status === 404) {
+			this.clearStoredRefreshToken();
+			throw new Error("Refresh token expired");
+		}
+
+		assertOk(res.status, "Failed to refresh access token");
+		if (res.data?.refreshToken) {
+			this.setStoredRefreshToken(res.data.refreshToken);
+		}
+
+		return true;
+	},
+
 	redirectToOAuthLogin(
 		provider: OAuthProvider,
 		options: {
@@ -53,6 +88,7 @@ export const authService = {
 	async logout(): Promise<void> {
 		const res = await authLogout(defaultRequestOptions);
 		assertOk(res.status, "Failed to logout");
+		this.clearStoredRefreshToken();
 	},
 
 	async getCurrentUser<T extends UserUser = UserUser>(): Promise<T> {

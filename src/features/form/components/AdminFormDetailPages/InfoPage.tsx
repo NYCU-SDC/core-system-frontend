@@ -41,22 +41,34 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [isSettingRequired, setIsSettingRequired] = useState(false);
 
 	// local draft state for settings
+	const [title, setTitle] = useState(formData.title ?? "");
+	const [description, setDescription] = useState(formData.description ?? "");
 	const [confirmMsg, setConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
 	const isArchived = formData.status === "ARCHIVED";
+	const initialTitle = formData.title ?? "";
+	const initialDescription = formData.description ?? "";
 	const initialConfirmMsg = formData.messageAfterSubmission ?? "";
 	const initialDeadline = formData.deadline ? formData.deadline.split("T")[0] : "";
 	const initialPublishTime = formData.publishTime ? formData.publishTime.split("T")[0] : "";
 	const initialIsPublic = formData.visibility === "PUBLIC";
-	const hasSettingChanges = confirmMsg !== initialConfirmMsg || deadline !== initialDeadline || publishTime !== initialPublishTime || isPublic !== initialIsPublic;
+	const hasSettingChanges =
+		title !== initialTitle ||
+		description !== initialDescription ||
+		confirmMsg !== initialConfirmMsg ||
+		deadline !== initialDeadline ||
+		publishTime !== initialPublishTime ||
+		isPublic !== initialIsPublic;
 
 	const handleSave = () => {
 		if (!hasSettingChanges) return;
 
 		updateFormMutation.mutate(
 			{
+				title,
+				description,
 				messageAfterSubmission: confirmMsg,
 				deadline: deadline ? new Date(deadline).toISOString() : undefined,
 				publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
@@ -137,6 +149,8 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					</div>
 				</section>
 				<h3>表單設定</h3>
+				<Input label="表單標題" placeholder="輸入表單標題" value={title} onChange={e => setTitle(e.target.value)} />
+				<Input label="表單描述" placeholder="輸入表單描述" value={description} onChange={e => setDescription(e.target.value)} />
 				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" value={confirmMsg} onChange={e => setConfirmMsg(e.target.value)} />
 				<Input label="開始日期" type="date" value={publishTime} onChange={e => setPublishTime(e.target.value)} />
 				<Input label="結束日期" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
