@@ -1,6 +1,6 @@
 import { Button, Input, Switch } from "@/shared/components";
 import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Question } from "../../types/option";
 import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
 import { OptionsQuestion } from "./OptionsQuestion";
@@ -30,6 +30,8 @@ export interface QuestionCardProps {
 	onRequiredChange?: (required: boolean) => void;
 	onUrlChange?: (url: string) => void;
 	onOauthProviderChange?: (provider: "GOOGLE" | "GITHUB") => void;
+	onFold?: () => void;
+	onTypeChange?: (nextType: Question["type"]) => void;
 }
 
 type typeInfo = {
@@ -97,18 +99,33 @@ const typeMap: Record<Question["type"], typeInfo> = {
 	}
 };
 
+const questionTypes = Object.keys(typeMap) as Question["type"][];
+
 export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const { question, removeQuestion, duplicateQuestion } = props;
 
-	const [isToggled, setIsToggled] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(false);
+	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
+	const cardRef = useRef<HTMLElement | null>(null);
 
-	const handleToggle = () => {
-		setIsToggled(!isToggled);
-	};
+	useEffect(() => {
+		if (!isExpanded) return;
+
+		const handleOutsideClick = (event: MouseEvent) => {
+			if (!cardRef.current?.contains(event.target as Node)) {
+				props.onFold?.();
+				setIsExpanded(false);
+				setIsTypeMenuOpen(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleOutsideClick);
+		return () => document.removeEventListener("mousedown", handleOutsideClick);
+	}, [isExpanded, props]);
 
 	return (
-		<section className={styles.card} onClick={handleToggle}>
-			{isToggled ? (
+		<section ref={cardRef} className={styles.card} onClick={() => !isExpanded && setIsExpanded(true)}>
+			{isExpanded ? (
 				<div
 					onClick={e => {
 						e.stopPropagation();
@@ -141,10 +158,28 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								themeColor="--comment"
 							/>
 						</div>
-						<div>
-							<Button variant="secondary" className={styles.typeButton}>
+						<div className={styles.typeWrapper}>
+							<Button variant="secondary" className={styles.typeButton} onClick={() => setIsTypeMenuOpen(prev => !prev)}>
 								{typeMap[question.type].icon} {typeMap[question.type].label}
 							</Button>
+							{isTypeMenuOpen && (
+								<div className={styles.typeMenu}>
+									{questionTypes.map(type => (
+										<button
+											key={type}
+											type="button"
+											className={styles.typeMenuItem}
+											onClick={() => {
+												props.onTypeChange?.(type);
+												setIsTypeMenuOpen(false);
+											}}
+										>
+											{typeMap[type].icon}
+											<span>{typeMap[type].label}</span>
+										</button>
+									))}
+								</div>
+							)}
 						</div>
 					</div>
 					{["SINGLE_CHOICE", "MULTIPLE_CHOICE", "RANKING", "DROPDOWN"].some(type => type === question.type) && (

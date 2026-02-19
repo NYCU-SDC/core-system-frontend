@@ -158,6 +158,56 @@ export const AdminSectionEditPage = () => {
 		}
 	};
 
+	const handleQuestionTypeChange = (index: number, nextType: Question["type"]) => {
+		const updatedQuestions = [...questions];
+		const prev = updatedQuestions[index];
+		if (!prev || prev.type === nextType) return;
+
+		const template = newQuestionOptions.find(option => option.type === nextType)?.setDefaultQuestion();
+		if (!template) return;
+
+		const nextQuestion: Question = {
+			...template,
+			title: prev.title,
+			description: prev.description,
+			required: prev.required,
+			isFromAnswer: prev.isFromAnswer
+		};
+
+		const choicesTypeSet: Question["type"][] = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "RANKING"];
+		const scaleTypeSet: Question["type"][] = ["LINEAR_SCALE", "RATING"];
+
+		if (choicesTypeSet.includes(nextType)) {
+			nextQuestion.options = prev.options ? [...prev.options] : nextQuestion.options;
+		}
+
+		if (nextType === "DETAILED_MULTIPLE_CHOICE") {
+			nextQuestion.detailOptions = prev.detailOptions ? [...prev.detailOptions] : (prev.options ?? []).map(option => ({ label: option.label, description: "" }));
+		}
+
+		if (scaleTypeSet.includes(nextType)) {
+			nextQuestion.start = prev.start ?? nextQuestion.start;
+			nextQuestion.end = prev.end ?? nextQuestion.end;
+			nextQuestion.startLabel = prev.startLabel ?? nextQuestion.startLabel;
+			nextQuestion.endLabel = prev.endLabel ?? nextQuestion.endLabel;
+		}
+
+		if (nextType === "RATING") {
+			nextQuestion.icon = prev.icon ?? nextQuestion.icon ?? "STAR";
+		}
+
+		if (nextType === "HYPERLINK") {
+			nextQuestion.url = prev.url ?? nextQuestion.url ?? "";
+		}
+
+		if (nextType === "OAUTH_CONNECT") {
+			nextQuestion.oauthProvider = prev.oauthProvider ?? nextQuestion.oauthProvider ?? "GITHUB";
+		}
+
+		updatedQuestions[index] = nextQuestion;
+		setQuestions(updatedQuestions);
+	};
+
 	const handleDeleteQuestionWithApi = async (index: number) => {
 		const existingId = questionIds[index];
 		if (existingId) {
@@ -391,41 +441,40 @@ export const AdminSectionEditPage = () => {
 							</Button>
 						</section>
 						{questions.map((question, index) => (
-							<>
-								<QuestionCard
-									key={questionIds[index] ?? index}
-									question={question}
-									duplicateQuestion={() => handleDuplicateQuestion(index)}
-									removeQuestion={() => handleDeleteQuestionWithApi(index)}
-									onTitleChange={newTitle => handleTitleChange(index, newTitle)}
-									onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
-									onAddOption={() => handleAddOption(index, { label: "新選項" })}
-									onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
-									onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
-									onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
-									onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
-									onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
-									onRemoveOtherOption={() =>
-										handleRemoveOption(
-											index,
-											question.options!.findIndex(option => option.isOther)
-										)
-									}
-									onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
-									onStartChange={newStart => handleStartChange(index, newStart)}
-									onEndChange={newEnd => handleEndChange(index, newEnd)}
-									onStartLabelChange={label => handleStartLabelChange(index, label)}
-									onEndLabelChange={label => handleEndLabelChange(index, label)}
-									onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
-									onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
-									onRequiredChange={required => handleRequiredChange(index, required)}
-									onUrlChange={url => handleUrlChange(index, url)}
-									onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
-								/>
-								<Button key={`save-${index}`} onClick={() => handleSaveQuestion(index)}>
-									儲存此問題
-								</Button>
-							</>
+							<QuestionCard
+								key={questionIds[index] ?? index}
+								question={question}
+								duplicateQuestion={() => handleDuplicateQuestion(index)}
+								removeQuestion={() => handleDeleteQuestionWithApi(index)}
+								onTitleChange={newTitle => handleTitleChange(index, newTitle)}
+								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
+								onAddOption={() => handleAddOption(index, { label: "新選項" })}
+								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+								onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
+								onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
+								onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
+								onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
+								onRemoveOtherOption={() =>
+									handleRemoveOption(
+										index,
+										question.options!.findIndex(option => option.isOther)
+									)
+								}
+								onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
+								onStartChange={newStart => handleStartChange(index, newStart)}
+								onEndChange={newEnd => handleEndChange(index, newEnd)}
+								onStartLabelChange={label => handleStartLabelChange(index, label)}
+								onEndLabelChange={label => handleEndLabelChange(index, label)}
+								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
+								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+								onRequiredChange={required => handleRequiredChange(index, required)}
+								onUrlChange={url => handleUrlChange(index, url)}
+								onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
+								onFold={() => {
+									void handleSaveQuestion(index);
+								}}
+								onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
+							/>
 						))}
 					</div>
 				</div>
