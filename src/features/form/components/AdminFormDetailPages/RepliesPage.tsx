@@ -3,7 +3,7 @@ import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/feat
 import { Badge, Button, ErrorMessage, Input, Label, LoadingSpinner, Markdown, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { ChevronDown, ChevronUp, Repeat2, SquareArrowOutUpRight, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import styles from "./RepliesPage.module.css";
 
 interface ResponseDetailRowProps {
@@ -194,8 +194,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						</thead>
 						<tbody>
 							{responses.map(r => (
-								<>
-									<tr key={r.id}>
+								<Fragment key={r.id}>
+									<tr>
 										<td>{r.submittedBy}</td>
 										<td>{new Date(r.createdAt).toLocaleString("zh-TW")}</td>
 										<td style={{ display: "flex", gap: "0.5rem" }}>
@@ -207,8 +207,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 											</Button>
 										</td>
 									</tr>
-									{expandedId === r.id && <ResponseDetailRow key={`detail-${r.id}`} formId={formData.id} responseId={r.id} />}
-								</>
+									{expandedId === r.id && <ResponseDetailRow formId={formData.id} responseId={r.id} />}
+								</Fragment>
 							))}
 						</tbody>
 					</table>

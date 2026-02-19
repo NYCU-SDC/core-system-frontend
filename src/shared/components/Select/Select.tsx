@@ -30,7 +30,7 @@ export const Select = ({ label, placeholder, options, error, themeColor, variant
 					{label}
 				</Label.Root>
 			)}
-			<RadixSelect.Root {...props}>
+			<RadixSelect.Root modal={false} {...props}>
 				<RadixSelect.Trigger
 					className={`${styles.trigger} ${error ? styles.error : ""} ${variant === "text" ? styles.text : ""}`}
 					id={triggerId}
