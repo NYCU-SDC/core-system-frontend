@@ -86,16 +86,17 @@ export const FormDetailPage = () => {
 
 	const sections: Section[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
-		const loaded: Section[] = sectionsQuery.data.flatMap(item =>
-			item.sections.map(section => ({
+		const loaded: Section[] = sectionsQuery.data.flatMap(item => {
+			const sections = Array.isArray(item.sections) ? item.sections : [];
+			return sections.map(section => ({
 				id: section.id,
 				formId: section.formId,
 				title: section.title,
 				description: section.description,
 				progress: "DRAFT" as const,
 				questions: section.questions
-			}))
-		);
+			}));
+		});
 		loaded.push({
 			id: "preview",
 			formId: formId!,
@@ -199,7 +200,7 @@ export const FormDetailPage = () => {
 		} catch (error) {
 			pushToast({ title: "自動儲存失敗", description: (error as Error).message, variant: "error" });
 		}
-	}, [urlResponseId, answers, sections, updateResponseMutation]);
+	}, [urlResponseId, answers, sections, updateResponseMutation, pushToast]);
 
 	useEffect(() => {
 		if (!urlResponseId) return;
@@ -450,7 +451,6 @@ export const FormDetailPage = () => {
 								updateAnswer(question.id, displayVal);
 							}
 						}
-						// eslint-disable-next-line react-hooks/exhaustive-deps
 					}, [oauthAnswerQuery.data]);
 
 					const isConnected = !!value && value !== "";

@@ -92,7 +92,8 @@ export const AdminFormsPage = () => {
 			{
 				title: "未命名表單",
 				description: "",
-				messageAfterSubmission: "感謝您的填寫！"
+				messageAfterSubmission: "感謝您的填寫！",
+				visibility: "PUBLIC"
 			},
 			{
 				onSuccess: newForm => {

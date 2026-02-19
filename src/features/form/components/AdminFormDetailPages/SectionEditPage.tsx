@@ -23,7 +23,7 @@ export const AdminSectionEditPage = () => {
 	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
-	const section = sectionsQuery.data?.flatMap(r => r.sections).find(s => s.id === sectionId);
+	const section = sectionsQuery.data?.flatMap(response => (Array.isArray(response.sections) ? response.sections : [])).find(foundSection => foundSection.id === sectionId);
 	const apiQuestions = section?.questions ?? [];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);

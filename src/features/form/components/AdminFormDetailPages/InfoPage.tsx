@@ -31,7 +31,10 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	// derive all questions across all sections
 	const allQuestions = useMemo(() => {
 		if (!sectionsQuery.data) return [];
-		return sectionsQuery.data.flatMap(item => item.sections.flatMap(s => (s.questions ?? []).map(q => ({ sectionId: s.id, question: q }))));
+		return sectionsQuery.data.flatMap(item => {
+			const sections = Array.isArray(item.sections) ? item.sections : [];
+			return sections.flatMap(section => (section.questions ?? []).map(question => ({ sectionId: section.id, question })));
+		});
 	}, [sectionsQuery.data]);
 
 	const allRequired = allQuestions.length > 0 && allQuestions.every(({ question: q }) => q.required);
