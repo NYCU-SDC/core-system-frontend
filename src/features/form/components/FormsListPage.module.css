@@ -9,6 +9,7 @@
 	margin: auto;
 	padding-top: 2rem;
 	flex-grow: 1;
+	height: 0;
 }
 
 .list {
@@ -23,6 +24,7 @@
 	border-radius: 1rem;
 	scrollbar-width: none;
 	-ms-overflow-style: none;
+	overflow-y: auto;
 }
 
 .list::-webkit-scrollbar {
@@ -47,6 +49,10 @@
 .card:hover {
 	border-color: var(--orange);
 	transform: translateY(-0.125rem);
+}
+
+.cardInfo {
+	flex: 1;
 }
 
 .cardTitle {

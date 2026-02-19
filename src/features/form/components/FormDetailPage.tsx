@@ -115,7 +115,7 @@ export const FormDetailPage = () => {
 		const loaded: Record<string, string> = {};
 		data.sections.forEach(section => {
 			section.answerDetails?.forEach(detail => {
-				if (detail.question.id && detail.payload.displayValue) {
+				if (detail.question.id && detail.payload?.displayValue) {
 					loaded[detail.question.id] = detail.payload.displayValue;
 				}
 			});
@@ -526,7 +526,7 @@ export const FormDetailPage = () => {
 						</div>
 						<ul style={{ listStyleType: "disc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 							{section.answerDetails?.map((detail, questionIndex: number) => {
-								const isEmpty = !detail.payload.displayValue;
+								const isEmpty = !detail.payload?.displayValue;
 								const isRequiredAndEmpty = isEmpty && detail.question.required;
 								return (
 									<li key={questionIndex}>
@@ -535,7 +535,7 @@ export const FormDetailPage = () => {
 											{detail.question.required && <span style={{ color: "red" }}> *</span>}
 										</span>
 										<span>：</span>
-										<span style={{ color: isRequiredAndEmpty ? "red" : undefined }}>{detail.payload.displayValue || "未填寫"}</span>
+										<span style={{ color: isRequiredAndEmpty ? "red" : undefined }}>{detail.payload?.displayValue || "未填寫"}</span>
 									</li>
 								);
 							}) || []}
