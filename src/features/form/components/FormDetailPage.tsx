@@ -2,7 +2,7 @@ import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as formApi from "@/features/form/services/api";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
 	FormsSection,
@@ -477,18 +477,31 @@ export const FormDetailPage = () => {
 			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
 				{previewData.map((section, sectionIndex: number) => (
 					<div key={sectionIndex} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-						<h3>{section.title}</h3>
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+							<h3 style={{ margin: 0 }}>{section.title}</h3>
+							<button
+								type="button"
+								onClick={() => handleSectionClick(sectionIndex)}
+								style={{ fontSize: "0.875rem", color: "var(--orange)", background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
+							>
+								修改
+							</button>
+						</div>
 						<ul style={{ listStyleType: "disc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-							{section.answerDetails?.map((detail, questionIndex: number) => (
-								<li key={questionIndex}>
-									<span style={{ fontWeight: 500 }}>
-										{detail.question.title}
-										{detail.question.required && <span style={{ color: "red" }}> *</span>}
-									</span>
-									<span>：</span>
-									<span>{detail.payload.displayValue || <span>未填寫</span>}</span>
-								</li>
-							)) || []}
+							{section.answerDetails?.map((detail, questionIndex: number) => {
+								const isEmpty = !detail.payload.displayValue;
+								const isRequiredAndEmpty = isEmpty && detail.question.required;
+								return (
+									<li key={questionIndex}>
+										<span style={{ fontWeight: 500 }}>
+											{detail.question.title}
+											{detail.question.required && <span style={{ color: "red" }}> *</span>}
+										</span>
+										<span>：</span>
+										<span style={{ color: isRequiredAndEmpty ? "red" : undefined }}>{detail.payload.displayValue || "未填寫"}</span>
+									</li>
+								);
+							}) || []}
 						</ul>
 					</div>
 				))}
@@ -603,7 +616,13 @@ export const FormDetailPage = () => {
 						<div className={styles.section}>
 							<div className={styles.fields}>
 								{sections[currentStep].id === "preview" ? (
-									renderPreviewSection()
+									responseQuery.isFetching ? (
+										<div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
+											<LoadingSpinner />
+										</div>
+									) : (
+										renderPreviewSection()
+									)
 								) : (
 									<>
 										{sections[currentStep].questions?.map(question => renderQuestion(question))}
@@ -619,7 +638,7 @@ export const FormDetailPage = () => {
 							上一頁
 						</Button>
 						{isLastStep ? (
-							<Button type="submit" disabled={responseProgress === "DRAFT"} processing={submitResponseMutation.isPending}>
+							<Button type="submit" disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending}>
 								{responseProgress === "SUBMITTED" ? "已送出" : "送出"}
 							</Button>
 						) : (
