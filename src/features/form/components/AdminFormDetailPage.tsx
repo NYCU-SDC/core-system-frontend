@@ -4,7 +4,7 @@ import { useFormById, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./AdminFormDetailPage.module.css";
@@ -77,7 +77,7 @@ export const AdminFormDetailPage = () => {
 			<AdminLayout>
 				{meta}
 				<div className={styles.container}>
-					<p>無法載入表單資料</p>
+					<ErrorMessage message={(formQuery.error as Error)?.message ?? "找不到表單"} />
 				</div>
 			</AdminLayout>
 		);

@@ -1,5 +1,5 @@
 import { useActiveOrgSlug, useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
-import { LoadingSpinner, useToast } from "@/shared/components";
+import { ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { useEffect } from "react";
 import styles from "./UsersPage.module.css";
 
@@ -22,6 +22,8 @@ export const UsersPage = () => {
 			<div className={styles.card}>
 				{membersQuery.isLoading ? (
 					<LoadingSpinner />
+				) : membersQuery.isError ? (
+					<ErrorMessage message={(membersQuery.error as Error).message ?? "無法載入成員列表"} />
 				) : (
 					<table className={styles.table}>
 						<thead>

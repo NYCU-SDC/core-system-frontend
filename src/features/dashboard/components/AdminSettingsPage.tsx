@@ -2,7 +2,7 @@ import { useActiveOrgSlug, useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgM
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
 import { LogOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./AdminSettingsPage.module.css";
@@ -153,6 +153,8 @@ export const AdminSettingsPage = () => {
 				<div className={styles.membersList}>
 					{membersQuery.isLoading ? (
 						<LoadingSpinner />
+					) : membersQuery.isError ? (
+						<ErrorMessage message={(membersQuery.error as Error).message ?? "無法載入成員列表"} />
 					) : members.length === 0 ? (
 						<div className={styles.memberEmail}>No members found.</div>
 					) : (

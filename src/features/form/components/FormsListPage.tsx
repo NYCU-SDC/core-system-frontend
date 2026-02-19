@@ -4,7 +4,7 @@ import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { UnitUserFormStatus, type UnitUserForm } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -130,6 +130,8 @@ export const FormsListPage = () => {
 
 					{formsQuery.isLoading ? (
 						<LoadingSpinner />
+					) : formsQuery.isError ? (
+						<ErrorMessage message={(formsQuery.error as Error).message ?? "無法載入表單"} />
 					) : filteredForms.length > 0 ? (
 						filteredForms.map(form => (
 							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form)}>

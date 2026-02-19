@@ -3,7 +3,7 @@ import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -126,6 +126,8 @@ export const AdminFormsPage = () => {
 
 				{formsQuery.isLoading ? (
 					<LoadingSpinner />
+				) : formsQuery.isError ? (
+					<ErrorMessage message={(formsQuery.error as Error).message ?? "無法載入表單列表"} />
 				) : filteredForms.length > 0 ? (
 					<div className={styles.grid}>
 						{filteredForms.map(form => (

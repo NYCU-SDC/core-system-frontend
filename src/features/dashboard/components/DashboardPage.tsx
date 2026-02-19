@@ -1,7 +1,7 @@
 import { useMe } from "@/features/auth/hooks/useAuth";
 import { useActiveOrgSlug, useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
 import { useOrgForms } from "@/features/form/hooks/useOrgForms";
-import { LoadingSpinner } from "@/shared/components";
+import { ErrorMessage, LoadingSpinner } from "@/shared/components";
 import { BarChart3, FileText, Users } from "lucide-react";
 import styles from "./DashboardPage.module.css";
 
@@ -45,6 +45,8 @@ export const DashboardPage = () => {
 				<h2 className={styles.cardTitle}>最近表單</h2>
 				{formsQuery.isLoading ? (
 					<LoadingSpinner />
+				) : formsQuery.isError ? (
+					<ErrorMessage message={(formsQuery.error as Error).message ?? "無法載入表單"} />
 				) : (formsQuery.data?.slice(0, 5) ?? []).length === 0 ? (
 					<p className={styles.cardContent}>尚無表單。</p>
 				) : (
