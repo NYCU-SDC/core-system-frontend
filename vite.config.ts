@@ -68,9 +68,9 @@ export default defineConfig({
 			"/api": {
 				target: "https://dev.core-system.sdc.nycu.club/",
 				changeOrigin: true,
-				secure: false, // HTTPS
+				secure: true, // HTTPS
 				cookieDomainRewrite: {
-					"dev.core-system.sdc.nycu.club": "localhost"
+					"dev.core-system.sdc.nycu.club": "10.8.0.10"
 				}
 			}
 		}

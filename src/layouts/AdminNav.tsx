@@ -35,7 +35,7 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 				<nav className={styles.nav}>
 					{/* Upper */}
 					<div className={styles.upperNav}>
-						<Link to="/forms" className={styles.link} title="我的表單">
+						<Link to="/forms" reloadDocument className={styles.link} title="我的表單">
 							<div className={`${styles.navItem} ${isUserForms ? styles.navItemActive : ""}`}>
 								<ClipboardList size={22} />
 							</div>

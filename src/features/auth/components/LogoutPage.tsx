@@ -27,8 +27,8 @@ export const LogoutPage = () => {
 	return (
 		<UserLayout>
 			<div className={styles.container}>
-				<h1 className={styles.message}>Logging out...</h1>
-				<p className={styles.submessage}>You will be redirected shortly</p>
+				<h1 className={styles.message}>正在登出...</h1>
+				<p className={styles.submessage}>您將會在短時間內被重新導向</p>
 			</div>
 		</UserLayout>
 	);
