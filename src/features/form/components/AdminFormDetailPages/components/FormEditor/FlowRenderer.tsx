@@ -1,7 +1,7 @@
 import { Button, Popover, Select } from "@/shared/components";
 import type { FormWorkflowConditionRule, FormsListSectionsResponse } from "@nycu-sdc/core-system-sdk";
 import { FormWorkflowConditionSource } from "@nycu-sdc/core-system-sdk";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { NodeItem } from "../../types/workflow";
 import { Arrow } from "./Arrow";
 import styles from "./FlowRenderer.module.css";
@@ -144,46 +144,6 @@ const FlowNode = ({
 	onAddMergeCondition,
 	onEditSection
 }: FlowNodeProps) => {
-	// ── SECTION editing state ─────────────────────────────────────────────────
-	const [isEditing, setIsEditing] = useState(false);
-	const [draftLabel, setDraftLabel] = useState(node.label);
-	const [draftTitle, setDraftTitle] = useState(node.title ?? "");
-	const [draftDesc, setDraftDesc] = useState(node.description ?? "");
-
-	// Sync drafts when parent updates the node (e.g., after workflow save + refetch)
-	// Using derived state pattern to avoid cascading renders from useEffect setState
-	const [prevNodeLabel, setPrevNodeLabel] = useState(node.label);
-	const [prevNodeTitle, setPrevNodeTitle] = useState(node.title);
-	const [prevNodeDesc, setPrevNodeDesc] = useState(node.description);
-	if (node.label !== prevNodeLabel) {
-		setDraftLabel(node.label);
-		setPrevNodeLabel(node.label);
-	}
-	if (node.title !== prevNodeTitle) {
-		setDraftTitle(node.title ?? "");
-		setPrevNodeTitle(node.title);
-	}
-	if (node.description !== prevNodeDesc) {
-		setDraftDesc(node.description ?? "");
-		setPrevNodeDesc(node.description);
-	}
-
-	const handleSaveEdit = () => {
-		onNodeChange(node.id, {
-			label: draftLabel.trim() || node.label,
-			title: draftTitle.trim() || undefined,
-			description: draftDesc.trim() || undefined
-		});
-		setIsEditing(false);
-	};
-
-	const handleCancelEdit = () => {
-		setDraftLabel(node.label);
-		setDraftTitle(node.title ?? "");
-		setDraftDesc(node.description ?? "");
-		setIsEditing(false);
-	};
-
 	// ── Condition rule data ───────────────────────────────────────────────────
 	const allQuestions = useMemo(() => {
 		if (!sections) return [];
@@ -232,17 +192,6 @@ const FlowNode = ({
 			content={close => {
 				return (
 					<div className={styles.popoverContent}>
-						{node.type === "SECTION" && (
-							<Button
-								variant="secondary"
-								onClick={() => {
-									setIsEditing(true);
-									close();
-								}}
-							>
-								編輯
-							</Button>
-						)}
 						{node.type === "SECTION" && (
 							<Button
 								variant="secondary"
@@ -389,25 +338,11 @@ const FlowNode = ({
 			}}
 		>
 			<div className={`${styles.node} ${styles[node.type.toLowerCase()]} ${node.isMergeNode ? styles.mergeNode : ""}`}>
-				{/* ── START / END / SECTION: label display or inline edit form ── */}
-				{node.type !== "CONDITION" && !isEditing && (
+				{/* ── START / END / SECTION: label display ── */}
+				{node.type !== "CONDITION" && (
 					<div className={styles.nodeContent}>
 						<p className={styles.nodeLabel}>{node.label}</p>
 						{node.type === "SECTION" && node.title && <p className={styles.nodeTitle}>{node.title}</p>}
-					</div>
-				)}
-
-				{node.type !== "CONDITION" && isEditing && (
-					<div className={styles.editForm} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
-						<input className={styles.editInput} value={draftLabel} onChange={e => setDraftLabel(e.target.value)} placeholder="節點標籤（內部使用）" autoFocus />
-						<input className={styles.editInput} value={draftTitle} onChange={e => setDraftTitle(e.target.value)} placeholder="區段標題（受訪者可見）" />
-						<input className={styles.editInput} value={draftDesc} onChange={e => setDraftDesc(e.target.value)} placeholder="區段說明（受訪者可見）" />
-						<div className={styles.editActions}>
-							<Button onClick={handleSaveEdit}>儲存</Button>
-							<Button variant="secondary" onClick={handleCancelEdit}>
-								取消
-							</Button>
-						</div>
 					</div>
 				)}
 

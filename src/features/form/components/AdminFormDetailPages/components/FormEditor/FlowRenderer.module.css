@@ -94,15 +94,6 @@
 	color: var(--color-caption, #888);
 }
 
-/* ── Inline edit form inside a SECTION node ── */
-.editForm {
-	display: flex;
-	flex-direction: column;
-	gap: 0.375rem;
-	padding: 0.25rem 0;
-	min-width: 14rem;
-}
-
 .editInput {
 	padding: 0.25rem 0.5rem;
 	border: 1px solid var(--border-color, #ccc);
@@ -118,12 +109,6 @@
 .editInput:focus {
 	outline: none;
 	border-color: var(--accent-color, #7c3aed);
-}
-
-.editActions {
-	display: flex;
-	gap: 0.375rem;
-	margin-top: 0.125rem;
 }
 
 /* ── Condition rule editor inside a CONDITION node ── */
