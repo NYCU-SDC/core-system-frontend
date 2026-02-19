@@ -1,5 +1,14 @@
-import type { UnitOrgMemberRequest, UnitOrganization, UnitUpdateOrgRequest } from "@nycu-sdc/core-system-sdk";
-import { unitAddOrgMember, unitGetOrgById, unitListOrgMembers, unitRemoveOrgMember, unitUpdateOrg } from "@nycu-sdc/core-system-sdk";
+import type { SlugGetSlugHistory200, SlugStatus, UnitOrgMemberRequest, UnitOrganization, UnitUpdateOrgRequest } from "@nycu-sdc/core-system-sdk";
+import {
+	slugGetSlugHistory,
+	slugGetSlugStatus,
+	unitAddOrgMember,
+	unitGetOrgById,
+	unitListOrgMembers,
+	unitListOrganizationsOfCurrentUser,
+	unitRemoveOrgMember,
+	unitUpdateOrg
+} from "@nycu-sdc/core-system-sdk";
 
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"
@@ -38,4 +47,22 @@ export const addOrgMember = async (slug: string, req: UnitOrgMemberRequest) => {
 export const removeOrgMember = async (slug: string, memberId: string): Promise<void> => {
 	const res = await unitRemoveOrgMember(slug, memberId, defaultRequestOptions);
 	assertOk(res.status, "Failed to remove member");
+};
+
+export const listMyOrgs = async (): Promise<UnitOrganization[]> => {
+	const res = await unitListOrganizationsOfCurrentUser(defaultRequestOptions);
+	assertOk(res.status, "Failed to load my organizations");
+	return res.data;
+};
+
+export const getSlugStatus = async (slug: string): Promise<SlugStatus> => {
+	const res = await slugGetSlugStatus(slug, defaultRequestOptions);
+	assertOk(res.status, "Failed to get slug status");
+	return res.data;
+};
+
+export const getSlugHistory = async (slug: string): Promise<SlugGetSlugHistory200> => {
+	const res = await slugGetSlugHistory(slug, defaultRequestOptions);
+	assertOk(res.status, "Failed to get slug history");
+	return res.data;
 };

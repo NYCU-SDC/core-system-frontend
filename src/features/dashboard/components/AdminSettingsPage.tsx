@@ -1,5 +1,7 @@
-import { useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgMember, useUpdateOrg } from "@/features/dashboard/hooks/useOrgSettings";
+import { useActiveOrgSlug, useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgMember, useUpdateOrg } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminLayout } from "@/layouts";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { Button, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
 import { LogOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -41,8 +43,9 @@ const toMemberRow = (value: unknown): MemberRow | null => {
 };
 
 export const AdminSettingsPage = () => {
-	const orgSlug = "sdc";
+	const orgSlug = useActiveOrgSlug();
 	const { pushToast } = useToast();
+	const meta = useSeo({ rule: SEO_CONFIG.adminPage });
 
 	const orgQuery = useOrg(orgSlug);
 	const membersQuery = useOrgMembers(orgSlug);
@@ -119,6 +122,7 @@ export const AdminSettingsPage = () => {
 	};
 	return (
 		<AdminLayout>
+			{meta}
 			<div className={styles.container}>
 				<h1>組織管理</h1>
 				<h2 className={styles.heading}>組織資訊</h2>

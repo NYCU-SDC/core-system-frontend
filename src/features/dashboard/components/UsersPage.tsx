@@ -1,10 +1,10 @@
-import { useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
+import { useActiveOrgSlug, useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
 import { LoadingSpinner, useToast } from "@/shared/components";
 import { useEffect } from "react";
 import styles from "./UsersPage.module.css";
 
 export const UsersPage = () => {
-	const orgSlug = "sdc";
+	const orgSlug = useActiveOrgSlug();
 	const { pushToast } = useToast();
 	const membersQuery = useOrgMembers(orgSlug);
 

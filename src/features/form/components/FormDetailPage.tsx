@@ -1,7 +1,9 @@
-import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
-import { useFormById } from "@/features/form/hooks/useOrgForms";
+import { useFormResponse, useGetQuestionResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
+import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as formApi from "@/features/form/services/api";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
@@ -39,7 +41,12 @@ export const FormDetailPage = () => {
 	const answersInitialized = useRef(false);
 
 	// ── React Query ──────────────────────────────────────────────────────────
-	const formQuery = useFormById(formId);
+	const formQuery = useFormQuery(formId);
+	const meta = useSeo({
+		rule: SEO_CONFIG.formDetail,
+		params: { formId: formId ?? "" },
+		data: formQuery.data
+	});
 	const sectionsQuery = useSections(formId, !!urlResponseId);
 	const responseQuery = useFormResponse(formId, urlResponseId, !!urlResponseId);
 	const updateResponseMutation = useUpdateFormResponse(urlResponseId ?? "");
@@ -422,29 +429,59 @@ export const FormDetailPage = () => {
 					</div>
 				);
 
-			case "OAUTH_CONNECT":
-				return (
-					<div key={question.id}>
-						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
-						</label>
-						{question.description && <Markdown content={question.description} />}
-						<Button
-							onClick={() => {
-								if (!urlResponseId) return;
-								const provider = question.oauthConnect;
-								const url = `/api/oauth/questions/${provider}?responseId=${urlResponseId}&questionId=${question.id}`;
-								window.open(url, "_blank");
-								updateAnswer(question.id, "connected");
-							}}
-							themeColor="var(--orange)"
-						>
-							連接 {question.oauthConnect} 帳號
-						</Button>
-						{value && <p style={{ fontSize: "0.875rem", color: "var(--green)", marginTop: "0.5rem" }}>✓ 已連接</p>}
-					</div>
-				);
+			case "OAUTH_CONNECT": {
+				// Track per-question whether a popup for this question is open
+				const OAuthConnectQuestion = () => {
+					const oauthAnswerQuery = useGetQuestionResponse(urlResponseId, question.id, !!value || false);
+
+					// When window regains focus, refetch to see if OAuth completed
+					useEffect(() => {
+						const onFocus = () => oauthAnswerQuery.refetch();
+						window.addEventListener("focus", onFocus);
+						return () => window.removeEventListener("focus", onFocus);
+					}, [oauthAnswerQuery]);
+
+					// Sync server answer back into local state
+					useEffect(() => {
+						if (oauthAnswerQuery.data) {
+							const payload = oauthAnswerQuery.data as unknown as Record<string, unknown>;
+							const displayVal = String(payload.displayValue ?? payload.username ?? "connected");
+							if (displayVal && displayVal !== value) {
+								updateAnswer(question.id, displayVal);
+							}
+						}
+						// eslint-disable-next-line react-hooks/exhaustive-deps
+					}, [oauthAnswerQuery.data]);
+
+					const isConnected = !!value && value !== "";
+
+					return (
+						<div key={question.id}>
+							<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+								{question.title}
+								{question.required && <span style={{ color: "red" }}> *</span>}
+							</label>
+							{question.description && <Markdown content={question.description} />}
+							<Button
+								onClick={() => {
+									if (!urlResponseId) return;
+									const provider = question.oauthConnect;
+									const url = `/api/oauth/questions/${provider}?responseId=${urlResponseId}&questionId=${question.id}&r=${encodeURIComponent(window.location.href)}`;
+									window.open(url, "_blank");
+									// Mark as pending so the focus listener can pick it up
+									updateAnswer(question.id, "__pending__");
+								}}
+								themeColor={isConnected && value !== "__pending__" ? "var(--color-caption)" : "var(--orange)"}
+							>
+								{isConnected && value !== "__pending__" ? `已連接 ${question.oauthConnect} 帳號` : `連接 ${question.oauthConnect} 帳號`}
+							</Button>
+							{isConnected && value !== "__pending__" && <p style={{ fontSize: "0.875rem", color: "var(--green)", marginTop: "0.5rem" }}>✓ 已連接：{value}</p>}
+							{value === "__pending__" && <p style={{ fontSize: "0.875rem", color: "var(--color-caption)", marginTop: "0.5rem" }}>等待驗證中…</p>}
+						</div>
+					);
+				};
+				return <OAuthConnectQuestion key={question.id} />;
+			}
 
 			case "HYPERLINK":
 				return (
@@ -515,12 +552,39 @@ export const FormDetailPage = () => {
 		if (!urlResponseId) return;
 
 		try {
-			// 先儲存最新答案
-			await saveAnswers();
+			// Build answers payload (same logic as saveAnswers)
+			const questionTypeMap: Record<string, string> = {};
+			sections.forEach(section => {
+				section.questions?.forEach(question => {
+					questionTypeMap[question.id] = question.type;
+				});
+			});
 
-			// 提交表單
+			const answersArray = Object.entries(answers)
+				.filter(([, value]) => value !== "")
+				.map(([questionId, value]) => {
+					const questionType = questionTypeMap[questionId];
+					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
+					const dateTypes = ["DATE"];
+					const scaleTypes = ["LINEAR_SCALE", "RATING"];
+
+					if (dateTypes.includes(questionType)) {
+						return { questionId, questionType: "DATE" as const, value } as ResponsesDateAnswer;
+					} else if (scaleTypes.includes(questionType)) {
+						return { questionId, questionType: questionType as ResponsesScaleAnswer["questionType"], value: parseInt(value, 10) } as ResponsesScaleAnswer;
+					} else if (stringArrayTypes.includes(questionType)) {
+						const valueArray = value.includes(",") ? value.split(",") : [value];
+						return { questionId, questionType: questionType as ResponsesStringArrayAnswer["questionType"], value: valueArray } as ResponsesStringArrayAnswer;
+					} else {
+						return { questionId, questionType: questionType as ResponsesStringAnswer["questionType"], value } as ResponsesStringAnswer;
+					}
+				});
+
 			submitResponseMutation.mutate(
-				{ responseId: urlResponseId, answers: { answers: [] } },
+				{
+					responseId: urlResponseId,
+					answers: { answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[] }
+				},
 				{
 					onSuccess: () => setIsSubmitted(true),
 					onError: err => {
@@ -535,47 +599,57 @@ export const FormDetailPage = () => {
 
 	if (isSubmitted) {
 		return (
-			<div className={styles.successContainer}>
-				<div className={styles.successBox}>
-					<h1 className={styles.successTitle}>感謝您的填答！</h1>
-					<p className={styles.successMessage}>{form?.messageAfterSubmission}</p>
-					<div className={styles.successActions}>
-						<Button type="button" onClick={() => urlResponseId && navigate(`/forms/${formId}?responseId=${urlResponseId}`)} themeColor="var(--code-foreground)">
-							查看問卷副本
-						</Button>
-						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--orange)">
-							返回主頁
-						</Button>
+			<>
+				{meta}
+				<div className={styles.successContainer}>
+					<div className={styles.successBox}>
+						<h1 className={styles.successTitle}>感謝您的填答！</h1>
+						<p className={styles.successMessage}>{form?.messageAfterSubmission}</p>
+						<div className={styles.successActions}>
+							<Button type="button" onClick={() => urlResponseId && navigate(`/forms/${formId}?responseId=${urlResponseId}`)} themeColor="var(--code-foreground)">
+								查看問卷副本
+							</Button>
+							<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--orange)">
+								返回主頁
+							</Button>
+						</div>
 					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 
 	// 載入中
 	if (isLoading) {
 		return (
-			<div className={styles.container}>
-				<p>載入表單中...</p>
-			</div>
+			<>
+				{meta}
+				<div className={styles.container}>
+					<p>載入表單中...</p>
+				</div>
+			</>
 		);
 	}
 
 	// 錯誤處理
 	if (error || !form) {
 		return (
-			<div className={styles.container}>
-				<h1 className={styles.title}>載入失敗</h1>
-				<pre style={{ whiteSpace: "pre-wrap", color: "red", marginBottom: "1rem" }}>{error || "找不到表單"}</pre>
-				<Button onClick={() => navigate("/forms")} themeColor="var(--orange)">
-					返回表單列表
-				</Button>
-			</div>
+			<>
+				{meta}
+				<div className={styles.container}>
+					<h1 className={styles.title}>載入失敗</h1>
+					<pre style={{ whiteSpace: "pre-wrap", color: "red", marginBottom: "1rem" }}>{error || "找不到表單"}</pre>
+					<Button onClick={() => navigate("/forms")} themeColor="var(--orange)">
+						返回表單列表
+					</Button>
+				</div>
+			</>
 		);
 	}
 
 	return (
 		<>
+			{meta}
 			{coverQuery.data && <img src={coverQuery.data} className={styles.cover} alt="Form Cover" />}
 			<div className={styles.container}>
 				<div className={styles.header}>

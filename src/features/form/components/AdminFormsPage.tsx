@@ -1,5 +1,8 @@
+import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useArchiveForm, useCreateOrgForm, useDeleteForm, useOrgForms, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Archive, Plus, Send, Trash2 } from "lucide-react";
@@ -48,9 +51,10 @@ export const AdminFormsPage = () => {
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
 	const [activeTab, setActiveTab] = useState("all");
+	const meta = useSeo({ rule: SEO_CONFIG.adminForms });
 
 	// Fetch forms from API
-	const orgSlug = "sdc";
+	const orgSlug = useActiveOrgSlug();
 	const formsQuery = useOrgForms(orgSlug);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 	const publishFormMutation = usePublishForm(orgSlug);
@@ -99,7 +103,7 @@ export const AdminFormsPage = () => {
 	}, [forms, activeTab]);
 
 	const handleFormClick = (formId: string) => {
-		navigate(`/orgs/sdc/forms/${formId}/info`);
+		navigate(`/orgs/${orgSlug}/forms/${formId}/info`);
 	};
 
 	const handleCreateForm = () => {
@@ -111,7 +115,7 @@ export const AdminFormsPage = () => {
 			},
 			{
 				onSuccess: newForm => {
-					navigate(`/orgs/sdc/forms/${newForm.id}/info`);
+					navigate(`/orgs/${orgSlug}/forms/${newForm.id}/info`);
 				},
 				onError: error => {
 					pushToast({
@@ -126,6 +130,7 @@ export const AdminFormsPage = () => {
 
 	return (
 		<AdminLayout>
+			{meta}
 			<div className={styles.container}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>表單</h1>

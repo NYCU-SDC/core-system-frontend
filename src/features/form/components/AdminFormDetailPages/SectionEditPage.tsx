@@ -1,7 +1,8 @@
+import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion } from "@/features/form/hooks/useSections";
 import { Button, ErrorMessage, Input, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
-import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
+import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
@@ -19,6 +20,7 @@ export const AdminSectionEditPage = () => {
 	const { formid, sectionId } = useParams<{ formid: string; sectionId: string }>();
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
+	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
 	const section = sectionsQuery.data?.flatMap(r => r.sections).find(s => s.id === sectionId);
@@ -50,7 +52,9 @@ export const AdminSectionEditPage = () => {
 				endLabel: (q.scale as any)?.maxLabel ?? "",
 				icon: q.scale?.icon as Question["icon"],
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				url: (q as any).url ?? ""
+				url: (q as any).url ?? "",
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				oauthProvider: (q as any).oauthConnect as Question["oauthProvider"] | undefined
 			}));
 			setQuestions(mapped);
 			setQuestionIds(apiQuestions.map(q => q.id));
@@ -85,6 +89,10 @@ export const AdminSectionEditPage = () => {
 		// HYPERLINK url field
 		if (q.type === "HYPERLINK" && q.url !== undefined) {
 			(base as unknown as Record<string, unknown>).url = q.url;
+		}
+		// OAUTH_CONNECT provider field
+		if (q.type === "OAUTH_CONNECT") {
+			base.oauthConnect = (q.oauthProvider ?? "GITHUB") as FormsQuestionRequest["oauthConnect"];
 		}
 		return base;
 	};
@@ -160,11 +168,17 @@ export const AdminSectionEditPage = () => {
 		},
 		{ icon: <ListOrdered />, text: "排序", type: "RANKING", setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
 		{ icon: <Calendar />, text: "日期選擇", type: "DATE", setDefaultQuestion: () => ({ type: "DATE", title: "", description: "", required: false, isFromAnswer: false }) },
-		{ icon: <Link2 />, text: "超連結", type: "HYPERLINK", setDefaultQuestion: () => ({ type: "HYPERLINK", title: "", description: "", required: false, url: "", isFromAnswer: false }) }
+		{ icon: <Link2 />, text: "超連結", type: "HYPERLINK", setDefaultQuestion: () => ({ type: "HYPERLINK", title: "", description: "", required: false, url: "", isFromAnswer: false }) },
+		{
+			icon: <ShieldCheck />,
+			text: "OAuth 驗證",
+			type: "OAUTH_CONNECT",
+			setDefaultQuestion: () => ({ type: "OAUTH_CONNECT", title: "", description: "", required: false, isFromAnswer: false, oauthProvider: "GITHUB" as const })
+		}
 	];
 
 	const handleBack = () => {
-		navigate(`/orgs/sdc/forms/${formid}/edit`);
+		navigate(`/orgs/${orgSlug}/forms/${formid}/edit`);
 	};
 
 	const handleAddQuestion = (setQuestion: () => Question) => {
@@ -284,6 +298,12 @@ export const AdminSectionEditPage = () => {
 		setQuestions(updatedQuestions);
 	};
 
+	const handleOauthProviderChange = (questionIndex: number, provider: "GOOGLE" | "GITHUB") => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].oauthProvider = provider;
+		setQuestions(updatedQuestions);
+	};
+
 	const handleStartLabelChange = (questionIndex: number, label: string) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].startLabel = label;
@@ -355,6 +375,7 @@ export const AdminSectionEditPage = () => {
 									onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
 									onRequiredChange={required => handleRequiredChange(index, required)}
 									onUrlChange={url => handleUrlChange(index, url)}
+									onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
 								/>
 								<Button key={`save-${index}`} onClick={() => handleSaveQuestion(index)}>
 									儲存此問題

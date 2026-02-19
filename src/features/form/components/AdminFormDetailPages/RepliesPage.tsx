@@ -1,10 +1,67 @@
-import { useDeleteFormResponse, useFormResponses } from "@/features/form/hooks/useFormResponses";
+import { useDeleteFormResponse, useFormResponse, useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { Badge, Button, ErrorMessage, Input, Label, LoadingSpinner, Markdown, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
-import { Repeat2, SquareArrowOutUpRight, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Repeat2, SquareArrowOutUpRight, Trash2 } from "lucide-react";
 import { useState } from "react";
 import styles from "./RepliesPage.module.css";
+
+interface ResponseDetailRowProps {
+	formId: string;
+	responseId: string;
+}
+
+const ResponseDetailRow = ({ formId, responseId }: ResponseDetailRowProps) => {
+	const detailQuery = useFormResponse(formId, responseId);
+
+	if (detailQuery.isLoading) {
+		return (
+			<tr>
+				<td colSpan={3} style={{ padding: "0.75rem 1rem" }}>
+					<LoadingSpinner />
+				</td>
+			</tr>
+		);
+	}
+	if (detailQuery.isError) {
+		return (
+			<tr>
+				<td colSpan={3} style={{ padding: "0.75rem 1rem" }}>
+					<ErrorMessage message={(detailQuery.error as Error)?.message ?? "無法載入回覆詳情"} />
+				</td>
+			</tr>
+		);
+	}
+
+	const answers = detailQuery.data?.sections.flatMap(s => s.answerDetails) ?? [];
+
+	return (
+		<tr>
+			<td colSpan={3} style={{ padding: "0.75rem 1rem", background: "var(--surface-2, #f8f8f8)" }}>
+				{answers.length === 0 ? (
+					<p style={{ margin: 0 }}>此回覆沒有作答記錄。</p>
+				) : (
+					<table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+						<thead>
+							<tr>
+								<th style={{ textAlign: "left", paddingBottom: "0.25rem" }}>問題</th>
+								<th style={{ textAlign: "left", paddingBottom: "0.25rem" }}>答案</th>
+							</tr>
+						</thead>
+						<tbody>
+							{answers.map((a, i) => (
+								<tr key={i}>
+									<td style={{ paddingRight: "1rem", verticalAlign: "top" }}>{a.question.title}</td>
+									<td>{a.payload?.displayValue ?? "—"}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				)}
+			</td>
+		</tr>
+	);
+};
 
 interface AdminFormRepliesPageProps {
 	formData: FormsForm;
@@ -14,6 +71,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const { pushToast } = useToast();
 	const [sheetUrl, setSheetUrl] = useState<string>(formData.googleSheetUrl || "");
 	const [isVerified, setIsVerified] = useState(!!formData.googleSheetUrl);
+	const [expandedId, setExpandedId] = useState<string | null>(null);
 
 	const emailQuery = useGoogleSheetEmail();
 	const updateFormMutation = useUpdateForm(formData.id);
@@ -136,15 +194,21 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						</thead>
 						<tbody>
 							{responses.map(r => (
-								<tr key={r.id}>
-									<td>{r.submittedBy}</td>
-									<td>{new Date(r.createdAt).toLocaleString("zh-TW")}</td>
-									<td>
-										<Button themeColor="var(--red)" onClick={() => handleDeleteResponse(r.id)} disabled={deleteResponseMutation.isPending}>
-											<Trash2 size={16} />
-										</Button>
-									</td>
-								</tr>
+								<>
+									<tr key={r.id}>
+										<td>{r.submittedBy}</td>
+										<td>{new Date(r.createdAt).toLocaleString("zh-TW")}</td>
+										<td style={{ display: "flex", gap: "0.5rem" }}>
+											<Button variant="secondary" onClick={() => setExpandedId(prev => (prev === r.id ? null : r.id))} title={expandedId === r.id ? "收起" : "查看回覆"}>
+												{expandedId === r.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+											</Button>
+											<Button themeColor="var(--red)" onClick={() => handleDeleteResponse(r.id)} disabled={deleteResponseMutation.isPending}>
+												<Trash2 size={16} />
+											</Button>
+										</td>
+									</tr>
+									{expandedId === r.id && <ResponseDetailRow key={`detail-${r.id}`} formId={formData.id} responseId={r.id} />}
+								</>
 							))}
 						</tbody>
 					</table>

@@ -1,17 +1,16 @@
 import { useMe } from "@/features/auth/hooks/useAuth";
-import { useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
+import { useActiveOrgSlug, useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
 import { useOrgForms } from "@/features/form/hooks/useOrgForms";
 import { LoadingSpinner } from "@/shared/components";
 import { BarChart3, FileText, Users } from "lucide-react";
 import styles from "./DashboardPage.module.css";
 
-const ORG_SLUG = "sdc";
-
 export const DashboardPage = () => {
 	const meQuery = useMe();
-	const membersQuery = useOrgMembers(ORG_SLUG);
-	const formsQuery = useOrgForms(ORG_SLUG);
+	const orgSlug = useActiveOrgSlug();
 
+	const membersQuery = useOrgMembers(orgSlug);
+	const formsQuery = useOrgForms(orgSlug);
 	const totalMembers = membersQuery.data?.length ?? 0;
 	const totalForms = formsQuery.data?.length ?? 0;
 	const publishedForms = formsQuery.data?.filter(f => f.status === "PUBLISHED").length ?? 0;

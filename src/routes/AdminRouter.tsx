@@ -1,11 +1,19 @@
 import { NotFoundPage } from "@/features/auth/components/NotFoundPage";
 import { AdminSettingsPage } from "@/features/dashboard/components/AdminSettingsPage";
 import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
+import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminFormDetailPage, AdminFormsPage } from "@/features/form/components";
 import { AdminLayout } from "@/layouts";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
 import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
+
+const DefaultOrgRedirect = () => {
+	const myOrgsQuery = useMyOrgs();
+	if (myOrgsQuery.isLoading) return null;
+	const slug = myOrgsQuery.data?.[0]?.slug ?? "sdc";
+	return <Navigate to={`/orgs/${slug}/forms`} replace />;
+};
 
 export const AdminRouter = () => {
 	return (
@@ -17,14 +25,14 @@ export const AdminRouter = () => {
 				{/* Organization redirects (org member only) */}
 				<Route element={<RequireOrgAdminAccess />}>
 					<Route path="/orgs/:orgId/*" element={<OrgRewriteToSdc />} />
-					<Route path="/orgs" element={<Navigate to="/orgs/sdc/forms" replace />} />
-					<Route path="/orgs/sdc" element={<Navigate to="/orgs/sdc/forms" replace />} />
+					<Route path="/orgs" element={<DefaultOrgRedirect />} />
+					<Route path="/orgs/:orgSlug" element={<DefaultOrgRedirect />} />
 				</Route>
 
 				{/* Admin routes (org admin only) */}
 				<Route element={<RequireOrgAdminAccess />}>
 					<Route
-						path="/orgs/sdc/forms"
+						path="/orgs/:orgSlug/forms"
 						element={
 							<AdminLayout>
 								<AdminFormsPage />
@@ -32,7 +40,7 @@ export const AdminRouter = () => {
 						}
 					/>
 					<Route
-						path="/orgs/sdc/forms/:formid/info"
+						path="/orgs/:orgSlug/forms/:formid/info"
 						element={
 							<AdminLayout>
 								<AdminFormDetailPage />
@@ -40,7 +48,7 @@ export const AdminRouter = () => {
 						}
 					/>
 					<Route
-						path="/orgs/sdc/forms/:formid/edit"
+						path="/orgs/:orgSlug/forms/:formid/edit"
 						element={
 							<AdminLayout>
 								<AdminFormDetailPage />
@@ -48,7 +56,7 @@ export const AdminRouter = () => {
 						}
 					/>
 					<Route
-						path="/orgs/sdc/forms/:formid/section/:sectionId/edit"
+						path="/orgs/:orgSlug/forms/:formid/section/:sectionId/edit"
 						element={
 							<AdminLayout>
 								<AdminFormDetailPage />
@@ -56,7 +64,7 @@ export const AdminRouter = () => {
 						}
 					/>
 					<Route
-						path="/orgs/sdc/forms/:formid/reply"
+						path="/orgs/:orgSlug/forms/:formid/reply"
 						element={
 							<AdminLayout>
 								<AdminFormDetailPage />
@@ -64,7 +72,7 @@ export const AdminRouter = () => {
 						}
 					/>
 					<Route
-						path="/orgs/sdc/forms/:formid/design"
+						path="/orgs/:orgSlug/forms/:formid/design"
 						element={
 							<AdminLayout>
 								<AdminFormDetailPage />
@@ -72,7 +80,7 @@ export const AdminRouter = () => {
 						}
 					/>
 					<Route
-						path="/orgs/sdc/settings"
+						path="/orgs/:orgSlug/settings"
 						element={
 							<AdminLayout>
 								<AdminSettingsPage />

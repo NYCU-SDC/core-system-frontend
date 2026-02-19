@@ -1,5 +1,8 @@
+import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { LoadingSpinner } from "@/shared/components";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -14,6 +17,7 @@ type TabType = "info" | "edit" | "reply" | "design";
 
 export const AdminFormDetailPage = () => {
 	const { formid, sectionId } = useParams();
+	const orgSlug = useActiveOrgSlug();
 	const location = useLocation();
 	const navigate = useNavigate();
 
@@ -25,15 +29,17 @@ export const AdminFormDetailPage = () => {
 
 	// Fetch form data
 	const formQuery = useFormById(formid);
+	const meta = useSeo({ rule: SEO_CONFIG.adminForms });
 
 	const handleTabChange = (tab: TabType) => {
 		setActiveTab(tab);
-		navigate(`/orgs/sdc/forms/${formid}/${tab}`);
+		navigate(`/orgs/${orgSlug}/forms/${formid}/${tab}`);
 	};
 
 	if (formQuery.isLoading) {
 		return (
 			<AdminLayout>
+				{meta}
 				<div className={styles.container}>
 					<LoadingSpinner />
 				</div>
@@ -44,6 +50,7 @@ export const AdminFormDetailPage = () => {
 	if (formQuery.isError || !formQuery.data) {
 		return (
 			<AdminLayout>
+				{meta}
 				<div className={styles.container}>
 					<p>無法載入表單資料</p>
 				</div>
@@ -53,6 +60,7 @@ export const AdminFormDetailPage = () => {
 
 	return (
 		<AdminLayout>
+			{meta}
 			<div className={styles.container}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{formQuery.data.title}</h1>

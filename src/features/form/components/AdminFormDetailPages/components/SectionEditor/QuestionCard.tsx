@@ -1,5 +1,5 @@
 import { Button, Input, Switch } from "@/shared/components";
-import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
+import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { Question } from "../../types/option";
 import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
@@ -29,6 +29,7 @@ export interface QuestionCardProps {
 	onToggleIsFromAnswer?: () => void;
 	onRequiredChange?: (required: boolean) => void;
 	onUrlChange?: (url: string) => void;
+	onOauthProviderChange?: (provider: "GOOGLE" | "GITHUB") => void;
 }
 
 type typeInfo = {
@@ -89,6 +90,10 @@ const typeMap: Record<Question["type"], typeInfo> = {
 	HYPERLINK: {
 		icon: <Link2 />,
 		label: "超連結"
+	},
+	OAUTH_CONNECT: {
+		icon: <ShieldCheck />,
+		label: "OAuth 驗證"
 	}
 };
 
@@ -218,6 +223,25 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					)}
 					{question.type === "HYPERLINK" && (
 						<Input value={question.url ?? ""} placeholder="輸入超連結 URL" variant="flushed" themeColor="--comment" onChange={e => props.onUrlChange?.(e.target.value)} />
+					)}
+					{question.type === "OAUTH_CONNECT" && (
+						<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.25rem 0" }}>
+							<span style={{ fontSize: "0.875rem" }}>OAuth 提供商</span>
+							<label style={{ display: "flex", alignItems: "center", gap: "0.25rem", cursor: "pointer" }}>
+								<input
+									type="radio"
+									name={`oauth-provider-${question.title}`}
+									value="GITHUB"
+									checked={(question.oauthProvider ?? "GITHUB") === "GITHUB"}
+									onChange={() => props.onOauthProviderChange?.("GITHUB")}
+								/>
+								GitHub
+							</label>
+							<label style={{ display: "flex", alignItems: "center", gap: "0.25rem", cursor: "pointer" }}>
+								<input type="radio" name={`oauth-provider-${question.title}`} value="GOOGLE" checked={question.oauthProvider === "GOOGLE"} onChange={() => props.onOauthProviderChange?.("GOOGLE")} />
+								Google
+							</label>
+						</div>
 					)}
 					<div className={styles.actions}>
 						<Copy onClick={duplicateQuestion} />

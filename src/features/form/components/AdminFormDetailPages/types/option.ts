@@ -1,5 +1,18 @@
 export type Question = {
-	type: "SHORT_TEXT" | "LONG_TEXT" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "DROPDOWN" | "DETAILED_MULTIPLE_CHOICE" | "DATE" | "UPLOAD_FILE" | "LINEAR_SCALE" | "RANKING" | "HYPERLINK" | "RATING";
+	type:
+		| "SHORT_TEXT"
+		| "LONG_TEXT"
+		| "SINGLE_CHOICE"
+		| "MULTIPLE_CHOICE"
+		| "DROPDOWN"
+		| "DETAILED_MULTIPLE_CHOICE"
+		| "DATE"
+		| "UPLOAD_FILE"
+		| "LINEAR_SCALE"
+		| "RANKING"
+		| "HYPERLINK"
+		| "RATING"
+		| "OAUTH_CONNECT";
 	title: string;
 	description: string;
 	required: boolean;
@@ -12,6 +25,7 @@ export type Question = {
 	endLabel?: string;
 	icon?: "STAR" | "HEART" | "GOOD";
 	url?: string;
+	oauthProvider?: "GOOGLE" | "GITHUB";
 };
 
 export type Option = {

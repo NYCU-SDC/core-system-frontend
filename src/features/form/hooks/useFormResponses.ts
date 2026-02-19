@@ -3,8 +3,8 @@ import { formKeys } from "@/shared/queryKeys/org";
 import type {
 	ResponsesAnswersRequest,
 	ResponsesAnswersRequestUpdate,
-	ResponsesCreateResponse,
 	ResponsesGetFormResponse,
+	ResponsesGetQuestionResponse,
 	ResponsesListResponse,
 	ResponsesQuestionFilesUploadResponse
 } from "@nycu-sdc/core-system-sdk";
@@ -32,13 +32,12 @@ export const useDeleteFormResponse = (formId: string) => {
 	});
 };
 
-export const useCreateFormResponse = () => {
-	const qc = useQueryClient();
-	return useMutation<ResponsesCreateResponse, Error, string>({
-		mutationFn: formId => api.createFormResponse(formId),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["forms", "me"] })
+export const useGetQuestionResponse = (responseId: string | undefined, questionId: string | undefined, enabled = true) =>
+	useQuery<ResponsesGetQuestionResponse>({
+		queryKey: ["response", responseId ?? "", "question", questionId ?? ""],
+		queryFn: () => api.getQuestionResponse(responseId!, questionId!),
+		enabled: enabled && !!responseId && !!questionId
 	});
-};
 
 export const useUpdateFormResponse = (responseId: string) =>
 	useMutation<void, Error, ResponsesAnswersRequestUpdate>({

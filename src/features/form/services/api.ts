@@ -17,6 +17,7 @@ import type {
 	FormsQuestionResponse,
 	ResponsesCreateResponse,
 	ResponsesGetFormResponse,
+	ResponsesGetQuestionResponse,
 	ResponsesListResponse,
 	ResponsesQuestionFilesUploadResponse,
 	UnitUserForm
@@ -42,6 +43,7 @@ import {
 	responsesCreateFormResponse,
 	responsesDeleteFormResponse,
 	responsesGetFormResponse,
+	responsesGetQuestionResponse,
 	responsesListFormResponses,
 	responsesSubmitFormResponse,
 	responsesUpdateFormResponse,
@@ -216,6 +218,12 @@ export const uploadQuestionFiles = async (responseId: string, questionId: string
 	const res = await responsesUploadQuestionFiles(responseId, questionId, { files } as unknown as import("@nycu-sdc/core-system-sdk").ResponsesQuestionFilesUploadRequest, defaultRequestOptions);
 	assertOk(res.status, "Failed to upload files");
 	return res.data as ResponsesQuestionFilesUploadResponse;
+};
+
+export const getQuestionResponse = async (responseId: string, questionId: string): Promise<ResponsesGetQuestionResponse> => {
+	const res = await responsesGetQuestionResponse(responseId, questionId, defaultRequestOptions);
+	assertOk(res.status, "Failed to get question response");
+	return res.data as ResponsesGetQuestionResponse;
 };
 
 // ── Google Sheet ──────────────────────────────────────────────────────────

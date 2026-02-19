@@ -1,3 +1,4 @@
+import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
@@ -28,6 +29,7 @@ const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
 export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const { pushToast } = useToast();
 	const navigate = useNavigate();
+	const orgSlug = useActiveOrgSlug();
 	const workflowQuery = useWorkflow(formData.id);
 	const updateWorkflowMutation = useUpdateWorkflow(formData.id);
 
@@ -444,7 +446,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	};
 
 	const handleEditSection = (nodeId: string) => {
-		navigate(`/orgs/sdc/forms/${formData.id}/section/${nodeId}/edit`);
+		navigate(`/orgs/${orgSlug}/forms/${formData.id}/section/${nodeId}/edit`);
 	};
 
 	if (workflowQuery.isLoading) return <LoadingSpinner />;

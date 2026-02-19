@@ -1,14 +1,43 @@
 import * as api from "@/features/dashboard/services/api";
 import { orgKeys } from "@/shared/queryKeys/org";
-import type { UnitOrganization, UnitOrgMemberRequest, UnitOrgMemberResponse, UnitUpdateOrgRequest } from "@nycu-sdc/core-system-sdk";
+import type { SlugGetSlugHistory200, SlugStatus, UnitOrganization, UnitOrgMemberRequest, UnitOrgMemberResponse, UnitUpdateOrgRequest } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
 
 /* ---------- Queries ---------- */
+
+export const useMyOrgs = () =>
+	useQuery<UnitOrganization[]>({
+		queryKey: ["orgs", "me"],
+		queryFn: () => api.listMyOrgs(),
+		staleTime: 1000 * 60 * 5
+	});
+
+/** Returns the active org slug: prefers `:orgSlug` URL param, then first org from API, then "sdc" as fallback. */
+export const useActiveOrgSlug = () => {
+	const params = useParams<{ orgSlug?: string }>();
+	const myOrgsQuery = useMyOrgs();
+	return params.orgSlug ?? myOrgsQuery.data?.[0]?.slug ?? "sdc";
+};
 
 export const useOrg = (slug: string) =>
 	useQuery({
 		queryKey: orgKeys.bySlug(slug),
 		queryFn: () => api.getOrg(slug)
+	});
+
+export const useSlugStatus = (slug: string, enabled = true) =>
+	useQuery<SlugStatus>({
+		queryKey: ["slug", slug, "status"],
+		queryFn: () => api.getSlugStatus(slug),
+		enabled: enabled && !!slug
+	});
+
+export const useSlugHistory = (slug: string, enabled = true) =>
+	useQuery<SlugGetSlugHistory200>({
+		queryKey: ["slug", slug, "history"],
+		queryFn: () => api.getSlugHistory(slug),
+		enabled: enabled && !!slug
 	});
 
 export const useOrgMembers = (slug: string, enabled = true) =>
