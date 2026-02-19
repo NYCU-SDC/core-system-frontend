@@ -92,6 +92,9 @@ importers:
       react-router-dom:
         specifier: ^7.13.0
         version: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      undici:
+        specifier: ^7.22.0
+        version: 7.22.0
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
