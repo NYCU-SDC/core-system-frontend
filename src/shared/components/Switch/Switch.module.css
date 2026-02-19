@@ -6,6 +6,7 @@
 	position: relative;
 	cursor: pointer;
 	transition: background-color 0.2s ease;
+	border: none;
 }
 
 .switch:hover {

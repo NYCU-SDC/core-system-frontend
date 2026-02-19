@@ -1,6 +1,6 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useSections } from "@/features/form/hooks/useSections";
-import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { useCreateWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useState } from "react";
@@ -32,6 +32,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const orgSlug = useActiveOrgSlug();
 	const workflowQuery = useWorkflow(formData.id);
 	const updateWorkflowMutation = useUpdateWorkflow(formData.id);
+	const createWorkflowNodeMutation = useCreateWorkflowNode(formData.id);
 
 	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
 		const path: string[] = [];
@@ -97,6 +98,20 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const [nodeItems, setNodeItems] = useState<NodeItem[]>([]);
 	const sectionsQuery = useSections(formData.id);
 
+	const createNodeViaSdk = async (type: "SECTION" | "CONDITION", fallbackLabel: string): Promise<NodeItem | null> => {
+		try {
+			const created = await createWorkflowNodeMutation.mutateAsync({ type });
+			return {
+				id: created.id,
+				label: created.label || fallbackLabel,
+				type
+			};
+		} catch (error) {
+			pushToast({ title: "新增節點失敗", description: (error as Error).message, variant: "error" });
+			return null;
+		}
+	};
+
 	const handleNodeChange = (id: string, updates: Partial<NodeItem>) => {
 		setNodeItems(prev => prev.map(n => (n.id === id ? { ...n, ...updates } : n)));
 	};
@@ -127,13 +142,13 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [workflowQuery.data, workflowQuery.isLoading]);
 
-	const handleAddSection = (id: string) => {
+	const handleAddSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionId = uuidv4();
+		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`);
+		if (!newSectionNodeBase) return;
+		const newSectionId = newSectionNodeBase.id;
 		const newSectionNode: NodeItem = {
-			id: newSectionId,
-			label: `新區塊 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...newSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.next
 		};
 		const updatedNodes = prevNodes.map(node => {
@@ -147,13 +162,13 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(processedNodes);
 	};
 
-	const handleAddTrueSection = (id: string) => {
+	const handleAddTrueSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionId = uuidv4();
+		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`);
+		if (!newSectionNodeBase) return;
+		const newSectionId = newSectionNodeBase.id;
 		const newSectionNode: NodeItem = {
-			id: newSectionId,
-			label: `新區塊 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...newSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.nextTrue
 		};
 		const updatedNodes = prevNodes.map(node => {
@@ -167,28 +182,26 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(processedNodes);
 	};
 
-	const handleAddTrueCondition = (id: string) => {
+	const handleAddTrueCondition = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionId = uuidv4();
-		const newTrueSectionId = uuidv4();
-		const newFalseSectionId = uuidv4();
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
+		const newConditionId = newConditionNodeBase.id;
+		const newTrueSectionId = trueSectionNodeBase.id;
+		const newFalseSectionId = falseSectionNodeBase.id;
 		const newConditionNode: NodeItem = {
-			id: newConditionId,
-			label: `新條件 ${prevNodes.length + 1}`,
-			type: "CONDITION",
+			...newConditionNodeBase,
 			nextTrue: newTrueSectionId,
 			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: newTrueSectionId,
-			label: `條件區塊 真 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...trueSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.nextTrue
 		};
 		const falseSectionNode: NodeItem = {
-			id: newFalseSectionId,
-			label: `條件區塊 假 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...falseSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.nextTrue
 		};
 		const updatedNodes = prevNodes.map(node => {
@@ -202,13 +215,13 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(processedNodes);
 	};
 
-	const handleAddFalseSection = (id: string) => {
+	const handleAddFalseSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionId = uuidv4();
+		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`);
+		if (!newSectionNodeBase) return;
+		const newSectionId = newSectionNodeBase.id;
 		const newSectionNode: NodeItem = {
-			id: newSectionId,
-			label: `新區塊 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...newSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.nextFalse
 		};
 		const updatedNodes = prevNodes.map(node => {
@@ -222,28 +235,26 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(processedNodes);
 	};
 
-	const handleAddFalseCondition = (id: string) => {
+	const handleAddFalseCondition = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionId = uuidv4();
-		const newTrueSectionId = uuidv4();
-		const newFalseSectionId = uuidv4();
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
+		const newConditionId = newConditionNodeBase.id;
+		const newTrueSectionId = trueSectionNodeBase.id;
+		const newFalseSectionId = falseSectionNodeBase.id;
 		const newConditionNode: NodeItem = {
-			id: newConditionId,
-			label: `新條件 ${prevNodes.length + 1}`,
-			type: "CONDITION",
+			...newConditionNodeBase,
 			nextTrue: newTrueSectionId,
 			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: newTrueSectionId,
-			label: `條件區塊 真 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...trueSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.nextFalse
 		};
 		const falseSectionNode: NodeItem = {
-			id: newFalseSectionId,
-			label: `條件區塊 假 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...falseSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.nextFalse
 		};
 		const updatedNodes = prevNodes.map(node => {
@@ -257,28 +268,26 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(processedNodes);
 	};
 
-	const handleAddCondition = (id: string) => {
+	const handleAddCondition = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionId = uuidv4();
-		const newTrueSectionId = uuidv4();
-		const newFalseSectionId = uuidv4();
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
+		const newConditionId = newConditionNodeBase.id;
+		const newTrueSectionId = trueSectionNodeBase.id;
+		const newFalseSectionId = falseSectionNodeBase.id;
 		const newConditionNode: NodeItem = {
-			id: newConditionId,
-			label: `新條件 ${prevNodes.length + 1}`,
-			type: "CONDITION",
+			...newConditionNodeBase,
 			nextTrue: newTrueSectionId,
 			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: newTrueSectionId,
-			label: `條件區塊 真 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...trueSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextTrue
 		};
 		const falseSectionNode: NodeItem = {
-			id: newFalseSectionId,
-			label: `條件區塊 假 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...falseSectionNodeBase,
 			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextFalse
 		};
 		const updatedNodes = prevNodes.map(node => {
@@ -292,17 +301,17 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(processedNodes);
 	};
 
-	const handleAddMergeSection = (id: string) => {
+	const handleAddMergeSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
 		const nodeToUpdate = prevNodes.find(node => node.id === id);
 		if (!nodeToUpdate) {
 			return;
 		}
-		const newMergeNodeId = uuidv4();
+		const newMergeNodeBase = await createNodeViaSdk("SECTION", `合併節點 ${prevNodes.length + 1}`);
+		if (!newMergeNodeBase) return;
+		const newMergeNodeId = newMergeNodeBase.id;
 		const newMergeNode: NodeItem = {
-			id: newMergeNodeId,
-			label: `合併節點 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...newMergeNodeBase,
 			next: nodeToUpdate?.mergeId || undefined
 		};
 
@@ -330,32 +339,30 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(processedNodes);
 	};
 
-	const handleAddMergeCondition = (id: string) => {
+	const handleAddMergeCondition = async (id: string) => {
 		const prevNodes = [...nodeItems];
 		const nodeToUpdate = prevNodes.find(node => node.id === id);
 		if (!nodeToUpdate) {
 			return;
 		}
-		const newConditionId = uuidv4();
-		const newTrueSectionId = uuidv4();
-		const newFalseSectionId = uuidv4();
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
+		const newConditionId = newConditionNodeBase.id;
+		const newTrueSectionId = trueSectionNodeBase.id;
+		const newFalseSectionId = falseSectionNodeBase.id;
 		const newConditionNode: NodeItem = {
-			id: newConditionId,
-			label: `新條件 ${prevNodes.length + 1}`,
-			type: "CONDITION",
+			...newConditionNodeBase,
 			nextTrue: newTrueSectionId,
 			nextFalse: newFalseSectionId
 		};
 		const trueSectionNode: NodeItem = {
-			id: newTrueSectionId,
-			label: `條件區塊 真 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...trueSectionNodeBase,
 			next: nodeToUpdate?.mergeId || undefined
 		};
 		const falseSectionNode: NodeItem = {
-			id: newFalseSectionId,
-			label: `條件區塊 假 ${prevNodes.length + 1}`,
-			type: "SECTION",
+			...falseSectionNodeBase,
 			next: nodeToUpdate?.mergeId || undefined
 		};
 

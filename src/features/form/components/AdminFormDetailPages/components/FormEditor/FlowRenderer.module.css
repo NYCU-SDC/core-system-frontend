@@ -41,6 +41,7 @@
 	align-items: center;
 	justify-content: center;
 	line-height: 1.5rem;
+	cursor: pointer;
 }
 
 .node:focus {
