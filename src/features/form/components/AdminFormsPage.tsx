@@ -1,11 +1,11 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
-import { useArchiveForm, useCreateOrgForm, useDeleteForm, useOrgForms, usePublishForm } from "@/features/form/hooks/useOrgForms";
+import { useCreateOrgForm, useOrgForms, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
-import { Archive, Plus, Send, Trash2 } from "lucide-react";
+import { Plus, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./AdminFormsPage.module.css";
@@ -58,8 +58,6 @@ export const AdminFormsPage = () => {
 	const formsQuery = useOrgForms(orgSlug);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 	const publishFormMutation = usePublishForm(orgSlug);
-	const archiveFormMutation = useArchiveForm(orgSlug);
-	const deleteFormMutation = useDeleteForm(orgSlug);
 
 	useEffect(() => {
 		if (formsQuery.error) pushToast({ title: "無法載入表單列表", description: (formsQuery.error as Error).message, variant: "error" });
@@ -70,23 +68,6 @@ export const AdminFormsPage = () => {
 		publishFormMutation.mutate(formId, {
 			onSuccess: () => pushToast({ title: "已發布", variant: "success" }),
 			onError: error => pushToast({ title: "發布失敗", description: (error as Error).message, variant: "error" })
-		});
-	};
-
-	const handleArchive = (e: React.MouseEvent, formId: string) => {
-		e.stopPropagation();
-		archiveFormMutation.mutate(formId, {
-			onSuccess: () => pushToast({ title: "已封存", variant: "success" }),
-			onError: error => pushToast({ title: "封存失敗", description: (error as Error).message, variant: "error" })
-		});
-	};
-
-	const handleDelete = (e: React.MouseEvent, formId: string) => {
-		e.stopPropagation();
-		if (!confirm("確定要刪除此表單？此操作無法復原。")) return;
-		deleteFormMutation.mutate(formId, {
-			onSuccess: () => pushToast({ title: "已刪除", variant: "success" }),
-			onError: error => pushToast({ title: "刪除失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
@@ -172,16 +153,6 @@ export const AdminFormsPage = () => {
 											發布
 										</Button>
 									)}
-									{form.status !== "done" && (
-										<Button onClick={e => handleArchive(e, form.id)} disabled={archiveFormMutation.isPending}>
-											<Archive size={14} />
-											封存
-										</Button>
-									)}
-									<Button themeColor="var(--red)" onClick={e => handleDelete(e, form.id)} disabled={deleteFormMutation.isPending}>
-										<Trash2 size={14} />
-										刪除
-									</Button>
 								</div>
 							</div>
 						))}

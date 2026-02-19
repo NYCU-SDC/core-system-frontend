@@ -1,10 +1,13 @@
+import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useFormResponses } from "@/features/form/hooks/useFormResponses";
-import { useUpdateForm } from "@/features/form/hooks/useOrgForms";
+import { useArchiveForm, useDeleteForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import { Archive, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./InfoPage.module.css";
 
 interface AdminFormInfoPageProps {
@@ -13,8 +16,12 @@ interface AdminFormInfoPageProps {
 
 export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const { pushToast } = useToast();
+	const navigate = useNavigate();
+	const orgSlug = useActiveOrgSlug();
 	const responsesQuery = useFormResponses(formData.id);
 	const updateFormMutation = useUpdateForm(formData.id);
+	const archiveFormMutation = useArchiveForm(orgSlug);
+	const deleteFormMutation = useDeleteForm(orgSlug);
 	const sectionsQuery = useSections(formData.id);
 
 	// derive counts
@@ -35,6 +42,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
+	const isArchived = formData.status === "ARCHIVED";
 
 	const handleSave = () => {
 		updateFormMutation.mutate(
@@ -83,6 +91,29 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}
 	};
 
+	const handleArchive = () => {
+		archiveFormMutation.mutate(formData.id, {
+			onSuccess: () => pushToast({ title: "已封存", variant: "success" }),
+			onError: error => pushToast({ title: "封存失敗", description: (error as Error).message, variant: "error" })
+		});
+	};
+
+	const handleDelete = () => {
+		const typedName = prompt(`請輸入表單名稱「${formData.title}」以確認刪除：`);
+		if (typedName === null) return;
+		if (typedName !== formData.title) {
+			pushToast({ title: "刪除失敗", description: "輸入的表單名稱不正確", variant: "error" });
+			return;
+		}
+		deleteFormMutation.mutate(formData.id, {
+			onSuccess: () => {
+				pushToast({ title: "已刪除", variant: "success" });
+				navigate(`/orgs/${orgSlug}/forms`);
+			},
+			onError: error => pushToast({ title: "刪除失敗", description: (error as Error).message, variant: "error" })
+		});
+	};
+
 	return (
 		<>
 			<div className={styles.container}>
@@ -122,6 +153,16 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				<div style={{ marginTop: "1rem" }}>
 					<Button onClick={handleSave} processing={updateFormMutation.isPending}>
 						儲存設定
+					</Button>
+				</div>
+				<div className={styles.dangerActions}>
+					<Button onClick={handleArchive} disabled={archiveFormMutation.isPending || isArchived}>
+						<Archive size={14} />
+						{isArchived ? "已封存" : "封存"}
+					</Button>
+					<Button themeColor="var(--red)" onClick={handleDelete} disabled={deleteFormMutation.isPending}>
+						<Trash2 size={14} />
+						刪除
 					</Button>
 				</div>
 			</div>
