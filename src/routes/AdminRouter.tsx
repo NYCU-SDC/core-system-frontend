@@ -2,7 +2,7 @@ import { NotFoundPage } from "@/features/auth/components/NotFoundPage";
 import { AdminSettingsPage } from "@/features/dashboard/components/AdminSettingsPage";
 import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
 import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
-import { AdminFormDetailPage, AdminFormsPage } from "@/features/form/components";
+import { AdminFormDetailPage, AdminFormPreviewPage, AdminFormsPage } from "@/features/form/components";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { CrossEntryCurrentRedirect } from "./CrossEntryRedirect";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
@@ -38,6 +38,7 @@ export const AdminRouter = () => {
 					<Route path="/orgs/:orgSlug/forms/:formid/section/:sectionId/edit" element={<AdminFormDetailPage />} />
 					<Route path="/orgs/:orgSlug/forms/:formid/reply" element={<AdminFormDetailPage />} />
 					<Route path="/orgs/:orgSlug/forms/:formid/design" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/:orgSlug/forms/:formid/preview" element={<AdminFormPreviewPage />} />
 					<Route path="/orgs/:orgSlug/settings" element={<AdminSettingsPage />} />
 				</Route>
 

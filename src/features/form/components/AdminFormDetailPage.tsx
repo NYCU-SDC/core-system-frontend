@@ -4,7 +4,7 @@ import { useFormById, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, Tooltip, useToast } from "@/shared/components";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./AdminFormDetailPage.module.css";
@@ -93,9 +93,14 @@ export const AdminFormDetailPage = () => {
 						<Button onClick={handlePublish} disabled={publishFormMutation.isPending || formQuery.data.status !== "DRAFT"}>
 							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
 						</Button>
-						<Button variant="secondary" onClick={handleViewForm} disabled={createResponseMutation.isPending}>
-							檢視表單
+						<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
+							預覽表單
 						</Button>
+						<Tooltip content="請先發佈表單才能檢視" side="bottom">
+							<Button variant="secondary" onClick={formQuery.data.status !== "DRAFT" ? handleViewForm : undefined} disabled={formQuery.data.status === "DRAFT" || createResponseMutation.isPending}>
+								檢視表單
+							</Button>
+						</Tooltip>
 					</div>
 				</div>
 

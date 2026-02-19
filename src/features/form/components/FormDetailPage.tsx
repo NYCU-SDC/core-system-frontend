@@ -216,8 +216,15 @@ export const FormDetailPage = () => {
 	const isLoading = formQuery.isLoading || sectionsQuery.isLoading;
 	const error: string | null = formQuery.error ? (formQuery.error as Error).message : sectionsQuery.error ? (sectionsQuery.error as Error).message : null;
 
-	const isLastStep = currentStep === sections.length - 1;
+	const isLastStep = sections.length === 0 || currentStep === sections.length - 1;
 	const isFirstStep = currentStep === 0;
+
+	// Clamp currentStep to the valid range whenever sections data changes
+	useEffect(() => {
+		if (sections.length > 0 && currentStep >= sections.length) {
+			setCurrentStep(sections.length - 1);
+		}
+	}, [sections.length, currentStep]);
 
 	const handleNext = () => {
 		if (!isLastStep) {
@@ -654,7 +661,7 @@ export const FormDetailPage = () => {
 			<div className={styles.container}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{form.title}</h1>
-					{currentStep === 0 ? <p className={styles.description}>{form.description}</p> : <h2 className={styles.sectionHeader}>{sections[currentStep].title}</h2>}
+					{currentStep === 0 ? <p className={styles.description}>{form.description}</p> : <h2 className={styles.sectionHeader}>{sections[currentStep]?.title}</h2>}
 				</div>
 
 				<div className={styles.structure}>
