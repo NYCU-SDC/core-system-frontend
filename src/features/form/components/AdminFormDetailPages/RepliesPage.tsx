@@ -37,21 +37,21 @@ const ResponseDetailRow = ({ formId, responseId }: ResponseDetailRowProps) => {
 
 	return (
 		<tr>
-			<td colSpan={3} style={{ padding: "0.75rem 1rem", background: "var(--surface-2, #f8f8f8)" }}>
+			<td colSpan={3} className={styles.detailCell}>
 				{answers.length === 0 ? (
 					<p style={{ margin: 0 }}>此回覆沒有作答記錄。</p>
 				) : (
-					<table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+					<table className={styles.detailInnerTable}>
 						<thead>
 							<tr>
-								<th style={{ textAlign: "left", paddingBottom: "0.25rem" }}>問題</th>
-								<th style={{ textAlign: "left", paddingBottom: "0.25rem" }}>答案</th>
+								<th>問題</th>
+								<th>答案</th>
 							</tr>
 						</thead>
 						<tbody>
 							{answers.map((a, i) => (
 								<tr key={i}>
-									<td style={{ paddingRight: "1rem", verticalAlign: "top" }}>{a.question.title}</td>
+									<td>{a.question.title}</td>
 									<td>{a.payload?.displayValue ?? "—"}</td>
 								</tr>
 							))}

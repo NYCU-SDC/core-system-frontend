@@ -26,7 +26,7 @@
 }
 
 .checkButton {
-	background-color: white;
+	background-color: var(--background-color-tertiary);
 }
 
 .formGroup {
@@ -51,4 +51,37 @@
 .table th {
 	font-weight: 600;
 	color: var(--color-caption);
+	background-color: var(--background-color-secondary);
+}
+
+.table td {
+	background-color: var(--background-color-secondary);
+}
+
+.detailCell {
+	background-color: var(--background-color-primary) !important;
+	padding: 0.75rem 1rem;
+}
+
+.detailInnerTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.875rem;
+}
+
+.detailInnerTable th {
+	text-align: left;
+	padding-bottom: 0.25rem;
+	color: var(--color-caption);
+	background: none;
+}
+
+.detailInnerTable td {
+	background: none;
+	padding: 0.25rem 0;
+	vertical-align: top;
+}
+
+.detailInnerTable td:first-child {
+	padding-right: 1rem;
 }
