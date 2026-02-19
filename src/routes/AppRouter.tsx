@@ -9,6 +9,7 @@ import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage } fr
 import { SmartLayout } from "@/layouts";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
+import RequireLogin from "./RequireLogin";
 import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
 
 export const AppRouter = () => {
@@ -24,22 +25,24 @@ export const AppRouter = () => {
 				{/* Demo route */}
 				<Route path="/demo" element={<ComponentsDemo />} />
 
-				<Route
-					path="/forms"
-					element={
-						<SmartLayout>
-							<FormsListPage />
-						</SmartLayout>
-					}
-				/>
-				<Route
-					path="/forms/:formId/:responseId"
-					element={
-						<SmartLayout>
-							<FormDetailPage />
-						</SmartLayout>
-					}
-				/>
+				<Route element={<RequireLogin />}>
+					<Route
+						path="/forms"
+						element={
+							<SmartLayout>
+								<FormsListPage />
+							</SmartLayout>
+						}
+					/>
+					<Route
+						path="/forms/:formId/:responseId"
+						element={
+							<SmartLayout>
+								<FormDetailPage />
+							</SmartLayout>
+						}
+					/>
+				</Route>
 
 				{/* Organization redirects (org member only) */}
 				<Route element={<RequireOrgAdminAccess />}>

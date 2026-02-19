@@ -3,10 +3,14 @@ import { Outlet } from "react-router-dom";
 import CrossEntryRedirect from "./CrossEntryRedirect";
 
 const RequireOrgAdminAccess = () => {
-	const { canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
+	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
 
 	if (isLoading) {
 		return null;
+	}
+
+	if (!user) {
+		return <CrossEntryRedirect to="/" />;
 	}
 
 	if (!canAccessOrgAdmin) {
