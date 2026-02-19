@@ -1,5 +1,7 @@
 import { useMe } from "@/features/auth/hooks/useAuth";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import { UnitUserFormStatus, type UnitUserForm } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState } from "react";
@@ -44,6 +46,7 @@ export const FormsListPage = () => {
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
 	const [activeTab, setActiveTab] = useState<(typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus]>(UnitUserFormStatus.NOT_STARTED);
+	const meta = useSeo({ rule: SEO_CONFIG.formsList });
 
 	// Fetch current user
 	const meQuery = useMe();
@@ -92,48 +95,51 @@ export const FormsListPage = () => {
 	};
 
 	return (
-		<div className={styles.container}>
-			<h1 className={styles.title}>我的表單</h1>
-			<p>
-				不是 {meQuery.data?.name} 嗎？
-				<a href="/logout" className="link">
-					（登出）
-				</a>
-			</p>
+		<>
+			{meta}
+			<div className={styles.container}>
+				<h1 className={styles.title}>我的表單</h1>
+				<p>
+					不是 {meQuery.data?.name} 嗎？
+					<a href="/logout" className="link">
+						（登出）
+					</a>
+				</p>
 
-			<div className={styles.list}>
-				<TabButtons
-					tabs={[
-						{ value: UnitUserFormStatus.NOT_STARTED, label: "待填寫" },
-						{ value: UnitUserFormStatus.IN_PROGRESS, label: "填寫中" },
-						{ value: UnitUserFormStatus.COMPLETED, label: "已送出" }
-					]}
-					activeTab={activeTab}
-					onTabChange={value => setActiveTab(value as (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus])}
-				/>
+				<div className={styles.list}>
+					<TabButtons
+						tabs={[
+							{ value: UnitUserFormStatus.NOT_STARTED, label: "待填寫" },
+							{ value: UnitUserFormStatus.IN_PROGRESS, label: "填寫中" },
+							{ value: UnitUserFormStatus.COMPLETED, label: "已送出" }
+						]}
+						activeTab={activeTab}
+						onTabChange={value => setActiveTab(value as (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus])}
+					/>
 
-				{formsQuery.isLoading ? (
-					<LoadingSpinner />
-				) : filteredForms.length > 0 ? (
-					filteredForms.map(form => (
-						<div key={form.id} className={styles.card} onClick={() => handleFormClick(form)}>
-							<div className={styles.cardInfo}>
-								<h3 className={styles.cardTitle}>{form.title}</h3>
-								<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
+					{formsQuery.isLoading ? (
+						<LoadingSpinner />
+					) : filteredForms.length > 0 ? (
+						filteredForms.map(form => (
+							<div key={form.id} className={styles.card} onClick={() => handleFormClick(form)}>
+								<div className={styles.cardInfo}>
+									<h3 className={styles.cardTitle}>{form.title}</h3>
+									<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
+								</div>
+								<Button className={styles.sharedBtn} processing={createResponseMutation.isPending}>
+									{form.buttonLabel}
+								</Button>
 							</div>
-							<Button className={styles.sharedBtn} processing={createResponseMutation.isPending}>
-								{form.buttonLabel}
-							</Button>
-						</div>
-					))
-				) : (
-					<p className={styles.empty}>
-						{activeTab === UnitUserFormStatus.NOT_STARTED && "您沒有待填寫的表單。"}
-						{activeTab === UnitUserFormStatus.IN_PROGRESS && "您沒有填寫中的表單。"}
-						{activeTab === UnitUserFormStatus.COMPLETED && "您沒有已送出的表單。"}
-					</p>
-				)}
+						))
+					) : (
+						<p className={styles.empty}>
+							{activeTab === UnitUserFormStatus.NOT_STARTED && "您沒有待填寫的表單。"}
+							{activeTab === UnitUserFormStatus.IN_PROGRESS && "您沒有填寫中的表單。"}
+							{activeTab === UnitUserFormStatus.COMPLETED && "您沒有已送出的表單。"}
+						</p>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };

@@ -1,4 +1,6 @@
 import { UserLayout } from "@/layouts";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import type { DragItem } from "@/shared/components";
 import {
 	AccountButton,
@@ -33,6 +35,7 @@ import styles from "./ComponentsDemo.module.css";
 
 export const ComponentsDemo = () => {
 	const { pushToast } = useToast();
+	const meta = useSeo({ rule: SEO_CONFIG.adminPage });
 	const [switchValue, setSwitchValue] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [progress, setProgress] = useState(45);
@@ -48,6 +51,7 @@ export const ComponentsDemo = () => {
 
 	return (
 		<UserLayout>
+			{meta}
 			<div className={styles.container}>
 				<h1>Components Demo</h1>
 

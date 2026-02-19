@@ -5,6 +5,7 @@ import Fastify from "fastify";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildMeta } from "../dist/seo/buildMeta.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,7 @@ const DIST_DIR = path.resolve(__dirname, "../dist");
 // BACKEND_HOST_HEADER=dev.core-system.sdc.nycu.club (只有你真的需要 Host-based routing 才用)
 const BACKEND_ORIGIN = process.env.BACKEND_ORIGIN || "http://backend:8080";
 const BACKEND_HOST_HEADER = process.env.BACKEND_HOST_HEADER || "dev.core-system.sdc.nycu.club";
+const SITE_NAME = "Core System";
 
 // SDK 產生的函式使用相對路徑（/api/...），在 Node.js 中需要補上 origin。
 // 這裡 patch 全域 fetch，讓所有相對路徑自動指向後端。
@@ -59,6 +61,40 @@ function escapeHtml(s) {
 function injectIntoHead(html, headTags) {
 	if (html.includes("</head>")) return html.replace("</head>", `${headTags}\n</head>`);
 	return html;
+}
+
+function getCanonicalUrl(req) {
+	return `${req.protocol}://${req.headers.host}${req.url}`;
+}
+
+function renderMetaHead(meta) {
+	const tags = [`<title>${escapeHtml(meta.fullTitle)}</title>`];
+
+	if (meta.description) {
+		tags.push(`<meta name="description" content="${escapeHtml(meta.description)}" />`);
+	}
+	if (meta.noIndex) {
+		tags.push(`<meta name="robots" content="noindex,nofollow" />`);
+	}
+	if (meta.canonicalUrl) {
+		tags.push(`<link rel="canonical" href="${escapeHtml(meta.canonicalUrl)}" />`);
+	}
+
+	tags.push(`<meta property="og:title" content="${escapeHtml(meta.fullTitle)}" />`);
+	if (meta.description) {
+		tags.push(`<meta property="og:description" content="${escapeHtml(meta.description)}" />`);
+	}
+	if (meta.canonicalUrl) {
+		tags.push(`<meta property="og:url" content="${escapeHtml(meta.canonicalUrl)}" />`);
+	}
+	tags.push(`<meta property="og:type" content="website" />`);
+	tags.push(`<meta name="twitter:card" content="summary_large_image" />`);
+	tags.push(`<meta name="twitter:title" content="${escapeHtml(meta.fullTitle)}" />`);
+	if (meta.description) {
+		tags.push(`<meta name="twitter:description" content="${escapeHtml(meta.description)}" />`);
+	}
+
+	return `\n    ${tags.join("\n    ")}\n  `;
 }
 
 const TEMPLATES = {
@@ -131,22 +167,13 @@ async function handleFormSeoRoute(req, reply) {
 		}
 	}
 
-	const canonical = `${req.protocol}://${req.headers.host}${req.url}`;
-
-	const head = `
-    <title>${escapeHtml(title)}</title>
-    <meta name="description" content="${escapeHtml(description)}" />
-    <link rel="canonical" href="${escapeHtml(canonical)}" />
-
-    <meta property="og:title" content="${escapeHtml(title)}" />
-    <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="${escapeHtml(canonical)}" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${escapeHtml(title)}" />
-    <meta name="twitter:description" content="${escapeHtml(description)}" />
-  `;
+	const meta = buildMeta({
+		title,
+		description,
+		siteName: SITE_NAME,
+		canonicalUrl: getCanonicalUrl(req)
+	});
+	const head = renderMetaHead(meta);
 
 	reply
 		.header("content-type", "text/html; charset=utf-8")
@@ -159,7 +186,7 @@ async function handleFormSeoRoute(req, reply) {
 app.get("/forms/:formId", handleFormSeoRoute);
 app.get("/forms/:formId/:responseId", handleFormSeoRoute);
 
-// 4) forms 其他頁（list / public routes）回 forms.html（不做動態 meta 也行）
+// 4) forms 其他頁（list / public routes）回 forms.html（SEO 由 CSR 處理）
 const FORMS_HTML_ROUTES = ["/", "/callback", "/welcome", "/logout", "/forms", "/forms/*"];
 for (const r of FORMS_HTML_ROUTES) {
 	app.get(r, (_req, reply) => {
@@ -169,14 +196,31 @@ for (const r of FORMS_HTML_ROUTES) {
 
 // 5) admin app：/orgs/*、/demo 都回 admin.html
 for (const r of ["/orgs/*", "/demo"]) {
-	app.get(r, (_req, reply) => {
-		reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES.admin);
+	app.get(r, (req, reply) => {
+		const pathname = req.url.split("?")[0];
+		const title = pathname === "/demo" ? "Components Demo" : "Admin";
+		const meta = buildMeta({
+			title,
+			description: "Core System admin console",
+			noIndex: true,
+			siteName: SITE_NAME,
+			canonicalUrl: getCanonicalUrl(req)
+		});
+
+		reply.header("content-type", "text/html; charset=utf-8").send(injectIntoHead(TEMPLATES.admin, renderMetaHead(meta)));
 	});
 }
 
-// 6) 其他全部回 forms.html（或你想回 404）
+// 6) 其他全部回 forms.html（注入 404 / noindex meta）
 app.get("/*", (_req, reply) => {
-	reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES.forms);
+	const meta = buildMeta({
+		title: "404",
+		description: "Page not found",
+		noIndex: true,
+		siteName: SITE_NAME
+	});
+
+	reply.header("content-type", "text/html; charset=utf-8").send(injectIntoHead(TEMPLATES.forms, renderMetaHead(meta)));
 });
 
 const port = Number(process.env.PORT || 80);

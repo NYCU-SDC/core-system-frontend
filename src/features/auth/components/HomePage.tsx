@@ -1,4 +1,6 @@
 import { UserLayout } from "@/layouts";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { Button } from "@/shared/components";
 import { SiGoogle } from "@icons-pack/react-simple-icons";
 import { School } from "lucide-react";
@@ -9,6 +11,7 @@ import styles from "./HomePage.module.css";
 import { WaveMarquee } from "./WaveMarquee";
 
 export const HomePage = () => {
+	const meta = useSeo({ rule: SEO_CONFIG.home });
 	const { isAuthenticated, isLoading } = useAuth();
 
 	const handleGoogleLogin = () => {
@@ -29,6 +32,7 @@ export const HomePage = () => {
 
 	return (
 		<UserLayout>
+			{meta}
 			<h1 className={styles.title}>歡迎來到 Core System</h1>
 			<p className={styles.subtitle}>NYCU SDC 製作</p>
 

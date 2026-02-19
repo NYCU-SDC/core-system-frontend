@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
+import { HelmetProvider } from "react-helmet-async";
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -13,7 +14,9 @@ const queryClient = new QueryClient({
 export function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<StrictMode>
-			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+			<HelmetProvider>
+				<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+			</HelmetProvider>
 		</StrictMode>
 	);
 }

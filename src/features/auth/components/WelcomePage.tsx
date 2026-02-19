@@ -1,6 +1,8 @@
 ﻿import { useMe } from "@/features/auth/hooks/useAuth";
 import { authService } from "@/features/auth/services/authService";
 import { UserLayout } from "@/layouts";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { Button, Input, useToast } from "@/shared/components";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -11,6 +13,7 @@ import styles from "./WelcomePage.module.css";
 export const WelcomePage = () => {
 	const navigate = useNavigate();
 	const meQuery = useMe();
+	const meta = useSeo({ rule: SEO_CONFIG.welcome });
 	const [nickname, setNickname] = useState("");
 	const [username, setUsername] = useState("");
 	const [isUsernameFocused, setIsUsernameFocused] = useState(false);
@@ -70,6 +73,7 @@ export const WelcomePage = () => {
 
 	return (
 		<UserLayout>
+			{meta}
 			<NameMarquee name={displayName} />
 			<div className={styles.content}>
 				<h1 className={styles.title}>很高興認識您，{displayName}</h1>

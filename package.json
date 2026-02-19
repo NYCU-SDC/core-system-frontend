@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "tsc -b && vite build",
+		"postbuild": "node ./scripts/copy-seo-build-meta.mjs",
 		"dev": "vite",
 		"format": "prettier --write .",
 		"preinstall": "npx only-allow pnpm",
@@ -45,6 +46,7 @@
 		"pnpm": "^10.30.0",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
+		"react-helmet-async": "^2.0.5",
 		"react-router-dom": "^7.13.0",
 		"uuid": "^13.0.0"
 	},

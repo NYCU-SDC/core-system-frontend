@@ -34,6 +34,8 @@ export const useFormById = (formId: string | undefined, enabled = true) =>
 		enabled: enabled && !!formId
 	});
 
+export const useFormQuery = useFormById;
+
 export const useUpdateForm = (formId: string) => {
 	const qc = useQueryClient();
 

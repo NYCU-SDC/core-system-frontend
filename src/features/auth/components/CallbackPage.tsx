@@ -1,4 +1,6 @@
 import { UserLayout } from "@/layouts";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +26,7 @@ function getSafeRedirectTarget(): string | null {
 export const CallbackPage = () => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+	const meta = useSeo({ rule: SEO_CONFIG.callback });
 
 	useEffect(() => {
 		const processCallback = async () => {
@@ -63,6 +66,7 @@ export const CallbackPage = () => {
 
 	return (
 		<UserLayout>
+			{meta}
 			<div className={styles.container}>
 				<div className={styles.spinner} />
 				<p className={styles.message}>Authenticating...</p>
