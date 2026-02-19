@@ -110,7 +110,8 @@ export const FlowRenderer = ({
 		return <div>載入中...</div>;
 	}
 
-	return <div className={styles.container}>{renderNode(nodes[0].id)}</div>;
+	const startNode = nodes.find(n => n.type === "START") ?? nodes[0];
+	return <div className={styles.container}>{renderNode(startNode.id)}</div>;
 };
 
 interface FlowNodeProps {
@@ -147,7 +148,7 @@ const FlowNode = ({
 	// ── Condition rule data ───────────────────────────────────────────────────
 	const allQuestions = useMemo(() => {
 		if (!sections) return [];
-		return sections.flatMap(sr => sr.sections.flatMap(s => s.questions.map(q => ({ ...q, sectionTitle: s.title }))));
+		return sections.flatMap(sr => (Array.isArray(sr.sections) ? sr.sections : []).flatMap(s => (s.questions ?? []).map(q => ({ ...q, sectionTitle: s.title }))));
 	}, [sections]);
 
 	const selectedQuestion = useMemo(() => allQuestions.find(q => q.id === node.conditionRule?.question), [allQuestions, node.conditionRule?.question]);

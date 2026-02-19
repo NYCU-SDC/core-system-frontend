@@ -3,7 +3,7 @@ import { useSections } from "@/features/form/hooks/useSections";
 import { useCreateWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
@@ -63,39 +63,39 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	};
 
 	const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
-		const updatedNodes = nodes.map(node => ({ ...node, isMergeNode: false }));
-		const nodeMap = new Map<string, NodeItem>(updatedNodes.map(n => [n.id, n]));
+		// Pass 1: compute mergeIds and collapse non-CONDITION branch nodes — use
+		// a read-only snapshot for lookups so mutations don't affect other nodes'
+		// findMergeNodeId calculations.
+		const snapshot = new Map<string, NodeItem>(nodes.map(n => [n.id, { ...n, isMergeNode: false }]));
 
-		updatedNodes.forEach(node => {
-			if (node.nextTrue || node.nextFalse) {
-				const mergeId = findMergeNodeId(node, nodeMap);
-				if (node.nextTrue == mergeId && node.type !== "CONDITION") {
-					node.next = node.nextFalse;
-					node.nextFalse = undefined;
-					node.nextTrue = undefined;
-				}
-				if (node.nextFalse == mergeId && node.type !== "CONDITION") {
-					node.next = node.nextTrue;
-					node.nextFalse = undefined;
-					node.nextTrue = undefined;
-				}
-
-				if (mergeId) {
-					node.mergeId = mergeId;
+		const pass1 = nodes.map(node => {
+			const copy = { ...node, isMergeNode: false };
+			if (copy.nextTrue || copy.nextFalse) {
+				const mergeId = findMergeNodeId(copy, snapshot);
+				if (copy.nextTrue === mergeId && copy.type !== "CONDITION") {
+					copy.next = copy.nextFalse;
+					copy.nextFalse = undefined;
+					copy.nextTrue = undefined;
+				} else if (copy.nextFalse === mergeId && copy.type !== "CONDITION") {
+					copy.next = copy.nextTrue;
+					copy.nextFalse = undefined;
+					copy.nextTrue = undefined;
+				} else if (mergeId) {
+					copy.mergeId = mergeId;
 				}
 			}
+			return copy;
 		});
 
-		updatedNodes.forEach(node => {
-			if (updatedNodes.filter(n => n.next === node.id).length + updatedNodes.filter(n => n.nextTrue === node.id).length + updatedNodes.filter(n => n.nextFalse === node.id).length > 1) {
-				node.isMergeNode = true;
-			}
-		});
-
-		return updatedNodes;
+		// Pass 2: mark merge nodes (nodes pointed to by more than one parent)
+		return pass1.map(node => ({
+			...node,
+			isMergeNode: pass1.filter(n => n.next === node.id).length + pass1.filter(n => n.nextTrue === node.id).length + pass1.filter(n => n.nextFalse === node.id).length > 1
+		}));
 	};
 
 	const [nodeItems, setNodeItems] = useState<NodeItem[]>([]);
+	const initializedRef = useRef(false);
 	const sectionsQuery = useSections(formData.id);
 
 	const createNodeViaSdk = async (type: "SECTION" | "CONDITION", fallbackLabel: string): Promise<NodeItem | null> => {
@@ -117,7 +117,10 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	};
 
 	useEffect(() => {
+		if (initializedRef.current) return;
+		if (workflowQuery.isLoading) return;
 		if (workflowQuery.data && workflowQuery.data.length > 0) {
+			initializedRef.current = true;
 			const loaded: NodeItem[] = workflowQuery.data.map(n => {
 				const node = n as typeof n & { title?: string; description?: string };
 				return {
@@ -133,8 +136,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				};
 			});
 			setNodeItems(postProcessNodes(loaded));
-		} else if (!workflowQuery.isLoading && workflowQuery.data) {
+		} else if (workflowQuery.data) {
 			// API returned empty workflow — seed with minimal default
+			initializedRef.current = true;
 			const defaultNodes: NodeItem[] = [
 				{ id: uuidv4(), label: "開始表單", type: "START", next: "__section__" },
 				{ id: "__section__", label: "第一區塊", type: "SECTION", next: "__end__" },
@@ -285,13 +289,14 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			nextTrue: newTrueSectionId,
 			nextFalse: newFalseSectionId
 		};
+		const oldNext = prevNodes.find(node => node.id === id)?.next;
 		const trueSectionNode: NodeItem = {
 			...trueSectionNodeBase,
-			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextTrue
+			next: oldNext
 		};
 		const falseSectionNode: NodeItem = {
 			...falseSectionNodeBase,
-			next: prevNodes.find(node => node.id === id)?.next || prevNodes.find(node => node.id === id)?.nextFalse
+			next: oldNext
 		};
 		const updatedNodes = prevNodes.map(node => {
 			if (node.id === id) {
