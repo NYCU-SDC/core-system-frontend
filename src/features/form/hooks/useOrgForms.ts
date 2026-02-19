@@ -43,7 +43,7 @@ export const useUpdateForm = (formId: string) => {
 		mutationFn: req => api.updateForm(formId, req),
 		onSuccess: updatedForm => {
 			qc.setQueryData(orgKeys.form(formId), updatedForm);
-			qc.invalidateQueries({ queryKey: orgKeys.forms("sdc") });
+			qc.invalidateQueries({ queryKey: orgKeys.forms("SDC") });
 		}
 	});
 };

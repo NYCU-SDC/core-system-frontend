@@ -13,11 +13,11 @@ export const useMyOrgs = () =>
 		staleTime: 1000 * 60 * 5
 	});
 
-/** Returns the active org slug: prefers `:orgSlug` URL param, then first org from API, then "sdc" as fallback. */
+/** Returns the active org slug: prefers `:orgSlug` URL param, then first org from API, then "SDC" as fallback. */
 export const useActiveOrgSlug = () => {
 	const params = useParams<{ orgSlug?: string }>();
 	const myOrgsQuery = useMyOrgs();
-	return params.orgSlug ?? myOrgsQuery.data?.[0]?.slug ?? "sdc";
+	return params.orgSlug ?? myOrgsQuery.data?.[0]?.slug ?? "SDC";
 };
 
 export const useOrg = (slug: string) =>

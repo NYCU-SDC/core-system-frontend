@@ -4,14 +4,15 @@ import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
 import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminFormDetailPage, AdminFormsPage } from "@/features/form/components";
 import { AdminLayout } from "@/layouts";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
 import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
 
 const DefaultOrgRedirect = () => {
+	const { orgSlug } = useParams<{ orgSlug?: string }>();
 	const myOrgsQuery = useMyOrgs();
 	if (myOrgsQuery.isLoading) return null;
-	const slug = myOrgsQuery.data?.[0]?.slug ?? "sdc";
+	const slug = orgSlug ?? myOrgsQuery.data?.[0]?.slug ?? "SDC";
 	return <Navigate to={`/orgs/${slug}/forms`} replace />;
 };
 

@@ -8,7 +8,7 @@ const OrgRewriteToSdc = () => {
 
 	if (myOrgsQuery.isLoading) return null;
 
-	const targetSlug = myOrgsQuery.data?.[0]?.slug ?? "sdc";
+	const targetSlug = myOrgsQuery.data?.[0]?.slug ?? "SDC";
 
 	// Only redirect if the orgId in the URL is different from the target slug
 	if (orgId === targetSlug) return null;
