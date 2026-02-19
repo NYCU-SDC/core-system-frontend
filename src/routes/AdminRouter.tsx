@@ -3,7 +3,6 @@ import { AdminSettingsPage } from "@/features/dashboard/components/AdminSettings
 import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
 import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminFormDetailPage, AdminFormsPage } from "@/features/form/components";
-import { AdminLayout } from "@/layouts";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
 import RequireOrgAdminAccess from "./RequireOrgAdminAccess";
@@ -32,62 +31,13 @@ export const AdminRouter = () => {
 
 				{/* Admin routes (org admin only) */}
 				<Route element={<RequireOrgAdminAccess />}>
-					<Route
-						path="/orgs/:orgSlug/forms"
-						element={
-							<AdminLayout>
-								<AdminFormsPage />
-							</AdminLayout>
-						}
-					/>
-					<Route
-						path="/orgs/:orgSlug/forms/:formid/info"
-						element={
-							<AdminLayout>
-								<AdminFormDetailPage />
-							</AdminLayout>
-						}
-					/>
-					<Route
-						path="/orgs/:orgSlug/forms/:formid/edit"
-						element={
-							<AdminLayout>
-								<AdminFormDetailPage />
-							</AdminLayout>
-						}
-					/>
-					<Route
-						path="/orgs/:orgSlug/forms/:formid/section/:sectionId/edit"
-						element={
-							<AdminLayout>
-								<AdminFormDetailPage />
-							</AdminLayout>
-						}
-					/>
-					<Route
-						path="/orgs/:orgSlug/forms/:formid/reply"
-						element={
-							<AdminLayout>
-								<AdminFormDetailPage />
-							</AdminLayout>
-						}
-					/>
-					<Route
-						path="/orgs/:orgSlug/forms/:formid/design"
-						element={
-							<AdminLayout>
-								<AdminFormDetailPage />
-							</AdminLayout>
-						}
-					/>
-					<Route
-						path="/orgs/:orgSlug/settings"
-						element={
-							<AdminLayout>
-								<AdminSettingsPage />
-							</AdminLayout>
-						}
-					/>
+					<Route path="/orgs/:orgSlug/forms" element={<AdminFormsPage />} />
+					<Route path="/orgs/:orgSlug/forms/:formid/info" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/:orgSlug/forms/:formid/edit" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/:orgSlug/forms/:formid/section/:sectionId/edit" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/:orgSlug/forms/:formid/reply" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/:orgSlug/forms/:formid/design" element={<AdminFormDetailPage />} />
+					<Route path="/orgs/:orgSlug/settings" element={<AdminSettingsPage />} />
 				</Route>
 
 				{/* 404 */}
