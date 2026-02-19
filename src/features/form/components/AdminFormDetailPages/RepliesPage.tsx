@@ -147,8 +147,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		<>
 			<div className={styles.container}>
 				<div className={styles.wrapper}>
-					<h2>回覆蒐集</h2>
-					<Badge className={styles.status} variant={isVerified ? "success" : "default"} showDot={isVerified}>
+					<h2>回覆蒐集（暫無此功能）</h2>
+					<Badge className={isVerified ? styles.statusLinked : styles.statusUnlinked} variant={isVerified ? "success" : "default"} showDot={isVerified}>
 						{isVerified ? "已連結 Google Sheets" : "未連結"}
 					</Badge>
 				</div>

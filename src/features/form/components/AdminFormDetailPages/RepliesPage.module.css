@@ -8,11 +8,19 @@
 	display: flex;
 	align-items: center;
 	gap: 1rem;
+	margin-bottom: 4rem;
 }
 
-.status {
+.statusLinked {
 	color: var(--green);
 	background-color: var(--green-subtle);
+	border-radius: 0;
+	clip-path: polygon(0.25rem 0, 100% 0, 100% 0, calc(100% - 0.25rem) 100%, 0 100%, 0 100%);
+}
+
+.statusUnlinked {
+	color: var(--foreground);
+	background-color: var(--background-color-tertiary);
 	border-radius: 0;
 	clip-path: polygon(0.25rem 0, 100% 0, 100% 0, calc(100% - 0.25rem) 100%, 0 100%, 0 100%);
 }

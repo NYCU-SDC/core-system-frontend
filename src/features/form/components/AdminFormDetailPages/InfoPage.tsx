@@ -46,8 +46,15 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
 	const isArchived = formData.status === "ARCHIVED";
+	const initialConfirmMsg = formData.messageAfterSubmission ?? "";
+	const initialDeadline = formData.deadline ? formData.deadline.split("T")[0] : "";
+	const initialPublishTime = formData.publishTime ? formData.publishTime.split("T")[0] : "";
+	const initialIsPublic = formData.visibility === "PUBLIC";
+	const hasSettingChanges = confirmMsg !== initialConfirmMsg || deadline !== initialDeadline || publishTime !== initialPublishTime || isPublic !== initialIsPublic;
 
 	const handleSave = () => {
+		if (!hasSettingChanges) return;
+
 		updateFormMutation.mutate(
 			{
 				messageAfterSubmission: confirmMsg,
@@ -154,7 +161,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isSettingRequired || allQuestions.length === 0} />}
 				</div>
 				<div style={{ marginTop: "1rem" }}>
-					<Button onClick={handleSave} processing={updateFormMutation.isPending}>
+					<Button onClick={handleSave} processing={updateFormMutation.isPending} disabled={!hasSettingChanges || updateFormMutation.isPending}>
 						儲存設定
 					</Button>
 				</div>

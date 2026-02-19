@@ -43,8 +43,15 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 	const [headerFont, setHeaderFont] = useState(formData.dressing?.headerFont ?? "");
 	const [questionFont, setQuestionFont] = useState(formData.dressing?.questionFont ?? "");
 	const [textFont, setTextFont] = useState(formData.dressing?.textFont ?? "");
+	const initialColor = formData.dressing?.color ?? "#ff5555";
+	const initialHeaderFont = formData.dressing?.headerFont ?? "";
+	const initialQuestionFont = formData.dressing?.questionFont ?? "";
+	const initialTextFont = formData.dressing?.textFont ?? "";
+	const hasDressingChanges = color !== initialColor || headerFont !== initialHeaderFont || questionFont !== initialQuestionFont || textFont !== initialTextFont;
 
 	const handleSaveDressing = () => {
+		if (!hasDressingChanges) return;
+
 		updateFormMutation.mutate(
 			{ dressing: { color, headerFont, questionFont, textFont } },
 			{
@@ -75,7 +82,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 						<img src={coverQuery.data} alt="Current cover" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "0.5rem", objectFit: "cover" }} />
 					</div>
 				)}
-				<FileUpload label="封面圖片" onChange={handleCoverUpload} />
+				<FileUpload label="封面圖片（格式只支援 Webp）" onChange={handleCoverUpload} />
 				{uploadCoverMutation.isPending && <LoadingSpinner />}
 				<h3>表單外觀</h3>
 				{fontsQuery.isLoading ? (
@@ -114,7 +121,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 						尋找適合的字體。
 					</p>
 				</blockquote>
-				<Button onClick={handleSaveDressing} processing={updateFormMutation.isPending}>
+				<Button onClick={handleSaveDressing} processing={updateFormMutation.isPending} disabled={!hasDressingChanges || updateFormMutation.isPending}>
 					儲存外觀設定
 				</Button>
 			</section>
