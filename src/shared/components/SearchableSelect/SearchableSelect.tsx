@@ -31,7 +31,7 @@ export const SearchableSelect = ({ label, placeholder, options, themeColor, ...p
 					{label}
 				</Label.Root>
 			)}
-			<RadixSelect.Root modal={false} {...props}>
+			<RadixSelect.Root {...props}>
 				<RadixSelect.Trigger className={styles.trigger} id={triggerId} style={themeColor ? { borderColor: themeColor } : undefined}>
 					<RadixSelect.Value placeholder={placeholder || "請選擇一個選項"} />
 					<RadixSelect.Icon className={styles.icon}>
