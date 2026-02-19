@@ -35,6 +35,8 @@ export const AdminSectionEditPage = () => {
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
 	const [sectionTitle, setSectionTitle] = useState("");
 	const [sectionDescription, setSectionDescription] = useState("");
+	const [savedSectionTitle, setSavedSectionTitle] = useState("");
+	const [savedSectionDescription, setSavedSectionDescription] = useState("");
 
 	// Sync from API on first load
 	useEffect(() => {
@@ -68,19 +70,32 @@ export const AdminSectionEditPage = () => {
 	useEffect(() => {
 		setSectionTitle(section?.title ?? "");
 		setSectionDescription(section?.description ?? "");
+		setSavedSectionTitle(section?.title ?? "");
+		setSavedSectionDescription(section?.description ?? "");
 	}, [section?.id, section?.title, section?.description]);
 
-	const handleSaveSectionInfo = async () => {
+	useEffect(() => {
 		if (!sectionId) return;
+		if (sectionTitle === savedSectionTitle && sectionDescription === savedSectionDescription) return;
 
-		try {
-			await updateSectionMutation.mutateAsync({ title: sectionTitle, description: sectionDescription });
-			pushToast({ title: "已儲存", description: "區段資訊已更新。", variant: "success" });
-			sectionsQuery.refetch();
-		} catch (err) {
-			pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
-		}
-	};
+		const timerId = window.setTimeout(() => {
+			updateSectionMutation.mutate(
+				{ title: sectionTitle, description: sectionDescription },
+				{
+					onSuccess: () => {
+						setSavedSectionTitle(sectionTitle);
+						setSavedSectionDescription(sectionDescription);
+						pushToast({ title: "已儲存", description: "區段資訊已更新。", variant: "success" });
+					},
+					onError: err => {
+						pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
+					}
+				}
+			);
+		}, 500);
+
+		return () => window.clearTimeout(timerId);
+	}, [sectionId, sectionTitle, sectionDescription, savedSectionTitle, savedSectionDescription, updateSectionMutation, pushToast]);
 
 	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
 		const base: FormsQuestionRequest = {
@@ -414,9 +429,6 @@ export const AdminSectionEditPage = () => {
 						<section className={styles.card}>
 							<Input placeholder="區段標題" variant="flushed" themeColor="--comment" textSize="h2" value={sectionTitle} onChange={event => setSectionTitle(event.target.value)} />
 							<Input placeholder="區段描述" variant="flushed" themeColor="--comment" value={sectionDescription} onChange={event => setSectionDescription(event.target.value)} />
-							<Button onClick={handleSaveSectionInfo} disabled={updateSectionMutation.isPending}>
-								{updateSectionMutation.isPending ? "儲存中…" : "儲存區段資訊"}
-							</Button>
 						</section>
 						{questions.map((question, index) => (
 							<QuestionCard
