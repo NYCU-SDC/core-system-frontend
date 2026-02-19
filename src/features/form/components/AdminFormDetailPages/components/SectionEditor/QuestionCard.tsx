@@ -124,7 +124,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 										props.onTitleChange(e.target.value);
 									}
 								}}
-								placeholder="Question 標題"
+								placeholder="問題標題"
 								variant="flushed"
 								themeColor="--comment"
 								textSize="h2"
@@ -255,7 +255,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			) : (
 				<div className={styles.preview}>
 					{typeMap[question.type].icon}
-					<p>{props.question.title || "Question 標題"}</p>
+					<p>{props.question.title || "問題標題"}</p>
 				</div>
 			)}
 		</section>

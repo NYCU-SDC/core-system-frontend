@@ -650,7 +650,7 @@ export const FormDetailPage = () => {
 	return (
 		<>
 			{meta}
-			{coverQuery.data && <img src={coverQuery.data} className={styles.cover} alt="Form Cover" />}
+			{coverQuery.data && <img src={coverQuery.data} className={styles.cover} alt="表單封面" />}
 			<div className={styles.container}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{form.title}</h1>
@@ -700,7 +700,7 @@ export const FormDetailPage = () => {
 								) : (
 									<>
 										{sections[currentStep].questions?.map(question => renderQuestion(question))}
-										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此 section 目前沒有問題</p>}
+										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此區段目前沒有問題</p>}
 									</>
 								)}
 							</div>

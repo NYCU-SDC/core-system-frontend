@@ -23,7 +23,7 @@ export const DashboardPage = () => {
 
 	return (
 		<div className={styles.container}>
-			<h1 className={styles.title}>Dashboard</h1>
+			<h1 className={styles.title}>儀表板</h1>
 			<p className={styles.subtitle}>{meQuery.isLoading ? <LoadingSpinner /> : `歡迎回來，${meQuery.data?.name ?? ""}！`}</p>
 
 			<div className={styles.grid}>

@@ -63,7 +63,7 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 							{hasAvatar ? <img src={user?.avatarUrl} alt={displayName} className={styles.avatarImg} /> : <div className={styles.avatarFallback}>{initials}</div>}
 						</div>
 
-						<Link to="/logout" className={styles.link} aria-label="Logout" title="Logout">
+						<Link to="/logout" className={styles.link} aria-label="登出" title="登出">
 							<div className={`${styles.navItem} ${styles.logoutItem}`}>
 								<LogOut size={22} />
 							</div>

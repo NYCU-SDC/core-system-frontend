@@ -37,7 +37,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 						className={`${styles.colorCircle} ${value === color ? styles.selected : ""}`}
 						style={{ backgroundColor: color }}
 						onClick={() => handleColorSelect(color)}
-						aria-label={`Select color ${color}`}
+						aria-label={`選擇顏色 ${color}`}
 					>
 						{value === color && (
 							<span className={styles.checkmark}>
@@ -47,7 +47,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 					</button>
 				))}
 				{allowCustom && (
-					<button type="button" className={styles.addButton} onClick={() => setShowCustomDialog(true)} aria-label="Add custom color">
+					<button type="button" className={styles.addButton} onClick={() => setShowCustomDialog(true)} aria-label="新增自訂顏色">
 						<Plus size={20} />
 					</button>
 				)}
@@ -57,14 +57,14 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 				<Dialog
 					open={showCustomDialog}
 					onOpenChange={setShowCustomDialog}
-					title="Custom Color"
-					description="Enter a custom color in hex format"
+					title="自訂顏色"
+					description="請輸入十六進位（Hex）格式的顏色"
 					footer={
 						<>
 							<Button variant="secondary" onClick={() => setShowCustomDialog(false)}>
-								Cancel
+								取消
 							</Button>
-							<Button onClick={handleCustomColorSubmit}>Apply</Button>
+							<Button onClick={handleCustomColorSubmit}>套用</Button>
 						</>
 					}
 				>

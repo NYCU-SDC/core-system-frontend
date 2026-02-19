@@ -69,7 +69,7 @@ export const WelcomePage = () => {
 		}
 	};
 
-	const displayName = `${nickname.trim() || "Welcome"}！`;
+	const displayName = `${nickname.trim() || "歡迎"}！`;
 
 	return (
 		<UserLayout>
@@ -81,7 +81,7 @@ export const WelcomePage = () => {
 					<Input
 						id="nickname"
 						label="暱稱"
-						placeholder="Enter your nickname"
+						placeholder="請輸入你的暱稱"
 						value={nickname}
 						onChange={e => setNickname(e.target.value)}
 						error={nicknameError}
@@ -93,7 +93,7 @@ export const WelcomePage = () => {
 					<Input
 						id="username"
 						label="使用者名稱"
-						placeholder="Becomes your user URL"
+						placeholder="將作為你的使用者網址"
 						value={username}
 						onChange={e => setUsername(e.target.value.replace(/\s/g, ""))}
 						onFocus={() => setIsUsernameFocused(true)}

@@ -36,7 +36,7 @@ export const Select = ({ label, placeholder, options, error, themeColor, variant
 					id={triggerId}
 					style={themeColor ? { borderColor: themeColor } : undefined}
 				>
-					<RadixSelect.Value placeholder={placeholder || "Select an option"} />
+					<RadixSelect.Value placeholder={placeholder || "請選擇一個選項"} />
 					{variant !== "text" && (
 						<RadixSelect.Icon className={styles.icon}>
 							<ChevronDown size={16} />

@@ -119,8 +119,8 @@ export const AdminFormsPage = () => {
 				},
 				onError: error => {
 					pushToast({
-						title: "Error",
-						description: error.message || "Failed to create form",
+						title: "錯誤",
+						description: error.message || "建立表單失敗",
 						variant: "error"
 					});
 				}
@@ -162,8 +162,8 @@ export const AdminFormsPage = () => {
 									<StatusTag variant={form.status} showDot />
 								</div>
 								<div className={styles.cardInfo}>
-									<span>Last edited: {form.lastEdited}</span>
-									<span>Deadline: {form.deadline}</span>
+									<span>最後編輯：{form.lastEdited}</span>
+									<span>截止日期：{form.deadline}</span>
 								</div>
 								<div className={styles.cardActions} onClick={e => e.stopPropagation()}>
 									{form.status === "draft" && (
@@ -188,7 +188,7 @@ export const AdminFormsPage = () => {
 					</div>
 				) : (
 					<div className={styles.empty}>
-						<p>No forms created yet</p>
+						<p>尚未建立任何表單</p>
 					</div>
 				)}
 			</div>

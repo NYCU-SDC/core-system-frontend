@@ -400,8 +400,8 @@ const FlowNode = ({
 				{node.type !== "CONDITION" && isEditing && (
 					<div className={styles.editForm} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
 						<input className={styles.editInput} value={draftLabel} onChange={e => setDraftLabel(e.target.value)} placeholder="節點標籤（內部使用）" autoFocus />
-						<input className={styles.editInput} value={draftTitle} onChange={e => setDraftTitle(e.target.value)} placeholder="Section 標題（受訪者可見）" />
-						<input className={styles.editInput} value={draftDesc} onChange={e => setDraftDesc(e.target.value)} placeholder="Section 說明（受訪者可見）" />
+						<input className={styles.editInput} value={draftTitle} onChange={e => setDraftTitle(e.target.value)} placeholder="區段標題（受訪者可見）" />
+						<input className={styles.editInput} value={draftDesc} onChange={e => setDraftDesc(e.target.value)} placeholder="區段說明（受訪者可見）" />
 						<div className={styles.editActions}>
 							<Button onClick={handleSaveEdit}>儲存</Button>
 							<Button variant="secondary" onClick={handleCancelEdit}>
@@ -437,7 +437,7 @@ const FlowNode = ({
 						{node.conditionRule?.question && !isChoiceQuestion && (
 							<>
 								<p className={styles.text}>符合</p>
-								<input className={styles.editInput} value={node.conditionRule?.pattern ?? ""} onChange={e => handlePatternChange(e.target.value)} placeholder="Regex 模式（如 ^.+$）" />
+								<input className={styles.editInput} value={node.conditionRule?.pattern ?? ""} onChange={e => handlePatternChange(e.target.value)} placeholder="正則模式（如 ^.+$）" />
 							</>
 						)}
 					</div>

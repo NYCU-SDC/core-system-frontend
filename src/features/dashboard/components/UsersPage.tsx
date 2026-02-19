@@ -16,8 +16,8 @@ export const UsersPage = () => {
 
 	return (
 		<div className={styles.container}>
-			<h1 className={styles.title}>Users</h1>
-			<p className={styles.subtitle}>Manage your application users.</p>
+			<h1 className={styles.title}>使用者</h1>
+			<p className={styles.subtitle}>管理您的應用程式使用者。</p>
 
 			<div className={styles.card}>
 				{membersQuery.isLoading ? (

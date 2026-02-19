@@ -35,12 +35,12 @@ export const SettingsPage = () => {
 
 	return (
 		<div className={styles.container}>
-			<h1 className={styles.title}>Settings</h1>
-			<p className={styles.subtitle}>Manage your application settings and preferences.</p>
+			<h1 className={styles.title}>設定</h1>
+			<p className={styles.subtitle}>管理您的應用程式設定與偏好。</p>
 
 			<div className={styles.cards}>
 				<div className={styles.card}>
-					<h2 className={styles.cardTitle}>Account Settings</h2>
+					<h2 className={styles.cardTitle}>帳號設定</h2>
 					{meQuery.isLoading ? (
 						<LoadingSpinner />
 					) : (
@@ -85,12 +85,12 @@ export const SettingsPage = () => {
 				</div>
 
 				<div className={styles.card}>
-					<h2 className={styles.cardTitle}>General Settings</h2>
+					<h2 className={styles.cardTitle}>一般設定</h2>
 					<div className={styles.settings}>
 						<div className={styles.settingItem}>
 							<div className={styles.settingInfo}>
-								<div className={styles.settingLabel}>Email Notifications</div>
-								<div className={styles.settingDescription}>Receive email updates about your account</div>
+								<div className={styles.settingLabel}>Email 通知</div>
+								<div className={styles.settingDescription}>接收關於您帳號的電子郵件更新</div>
 							</div>
 							<Tooltip content="此功能尚未支援，API 待開放">
 								<Switch disabled />
@@ -99,8 +99,8 @@ export const SettingsPage = () => {
 
 						<div className={styles.settingItem}>
 							<div className={styles.settingInfo}>
-								<div className={styles.settingLabel}>Auto-save</div>
-								<div className={styles.settingDescription}>Automatically save your changes</div>
+								<div className={styles.settingLabel}>自動儲存</div>
+								<div className={styles.settingDescription}>自動儲存您的變更</div>
 							</div>
 							<Tooltip content="此功能尚未支援，API 待開放">
 								<Switch disabled />

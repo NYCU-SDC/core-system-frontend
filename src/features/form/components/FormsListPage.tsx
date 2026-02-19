@@ -79,8 +79,8 @@ export const FormsListPage = () => {
 				},
 				onError: error => {
 					pushToast({
-						title: "Error",
-						description: error.message || "Failed to start form",
+						title: "錯誤",
+						description: error.message || "開始填寫表單失敗",
 						variant: "error"
 					});
 				}

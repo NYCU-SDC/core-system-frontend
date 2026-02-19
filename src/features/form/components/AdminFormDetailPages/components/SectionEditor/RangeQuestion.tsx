@@ -36,7 +36,7 @@ export const RangeQuestion = (props: RangeQuestionProps) => {
 								props.onChangeIcon(iconValue);
 							}
 						}}
-						placeholder="icon"
+						placeholder="圖示"
 					></Select>
 				)}
 				<Select
@@ -46,7 +46,7 @@ export const RangeQuestion = (props: RangeQuestionProps) => {
 					]}
 					value={props.start.toString()}
 					onValueChange={value => props.onStartChange && props.onStartChange(Number(value))}
-					placeholder="value"
+					placeholder="數值"
 				></Select>
 				<span>到</span>
 				<Select
@@ -59,7 +59,7 @@ export const RangeQuestion = (props: RangeQuestionProps) => {
 					})()}
 					value={props.end.toString()}
 					onValueChange={value => props.onEndChange && props.onEndChange(Number(value))}
-					placeholder="value"
+					placeholder="數值"
 				></Select>
 			</div>
 			<OptionsInput

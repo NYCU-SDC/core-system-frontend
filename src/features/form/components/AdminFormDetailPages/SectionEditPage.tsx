@@ -337,13 +337,13 @@ export const AdminSectionEditPage = () => {
 		<>
 			<div className={styles.layout}>
 				<div className={styles.content}>
-					<Button onClick={handleBack}>Back</Button>
+					<Button onClick={handleBack}>返回</Button>
 					{sectionsQuery.isLoading && <LoadingSpinner />}
 					{sectionsQuery.isError && <ErrorMessage message={(sectionsQuery.error as Error)?.message ?? "無法載入區塊資料"} />}
 					<div className={styles.container}>
 						<section className={styles.card}>
-							<Input placeholder="Section 標題" variant="flushed" themeColor="--comment" textSize="h2" value={section?.title ?? ""} readOnly title="Section 標題需透過左側流程編輯器的節點標籤修改" />
-							<Input placeholder="（透過流程編輯器的節點標籤編輯 Section 標題）" variant="flushed" themeColor="--comment" value={section?.description ?? ""} readOnly />
+							<Input placeholder="區段標題" variant="flushed" themeColor="--comment" textSize="h2" value={section?.title ?? ""} readOnly title="區段標題需透過左側流程編輯器的節點標籤修改" />
+							<Input placeholder="（透過流程編輯器的節點標籤編輯區段標題）" variant="flushed" themeColor="--comment" value={section?.description ?? ""} readOnly />
 						</section>
 						{questions.map((question, index) => (
 							<>
@@ -354,9 +354,9 @@ export const AdminSectionEditPage = () => {
 									removeQuestion={() => handleDeleteQuestionWithApi(index)}
 									onTitleChange={newTitle => handleTitleChange(index, newTitle)}
 									onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
-									onAddOption={() => handleAddOption(index, { label: "New Option" })}
+									onAddOption={() => handleAddOption(index, { label: "新選項" })}
 									onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
-									onAddDetailOption={() => handleAddDetailOption(index, { label: "New Option", description: "Option Description" })}
+									onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
 									onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
 									onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
 									onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}

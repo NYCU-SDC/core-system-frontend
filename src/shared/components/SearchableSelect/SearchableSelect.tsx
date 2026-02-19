@@ -33,7 +33,7 @@ export const SearchableSelect = ({ label, placeholder, options, themeColor, ...p
 			)}
 			<RadixSelect.Root {...props}>
 				<RadixSelect.Trigger className={styles.trigger} id={triggerId} style={themeColor ? { borderColor: themeColor } : undefined}>
-					<RadixSelect.Value placeholder={placeholder || "Select an option"} />
+					<RadixSelect.Value placeholder={placeholder || "請選擇一個選項"} />
 					<RadixSelect.Icon className={styles.icon}>
 						<ChevronDown size={20} />
 					</RadixSelect.Icon>
@@ -44,7 +44,7 @@ export const SearchableSelect = ({ label, placeholder, options, themeColor, ...p
 						<div className={styles.search}>
 							<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
 								<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--comment)" }} />
-								<input type="text" className={styles.searchInput} placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ paddingLeft: "2.5rem" }} />
+								<input type="text" className={styles.searchInput} placeholder="搜尋..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ paddingLeft: "2.5rem" }} />
 							</div>
 						</div>
 						<RadixSelect.Viewport className={styles.viewport}>
@@ -55,7 +55,7 @@ export const SearchableSelect = ({ label, placeholder, options, themeColor, ...p
 									</RadixSelect.Item>
 								))
 							) : (
-								<div className={styles.empty}>No results found</div>
+								<div className={styles.empty}>查無結果</div>
 							)}
 						</RadixSelect.Viewport>
 					</RadixSelect.Content>

@@ -17,54 +17,54 @@ interface FormSeoData {
 
 export const SEO_CONFIG: Record<string, SeoRule> = {
 	home: {
-		title: "Home",
-		description: "Core System homepage"
+		title: "首頁",
+		description: "NYCU SDC 製作"
 	},
 
 	formsList: {
-		title: "My Forms",
-		description: "View and complete your assigned forms"
+		title: "我的表單",
+		description: "管理你的表單"
 	},
 
 	adminForms: {
-		title: "Admin Forms",
+		title: "表單管理",
 		noIndex: true
 	},
 
 	adminPage: {
-		title: "Admin",
+		title: "管理後台",
 		noIndex: true
 	},
 
 	callback: {
-		title: "Sign In",
-		description: "Processing sign-in",
+		title: "登入中...",
+		description: "正在使用第三方服務登入，請稍候...",
 		noIndex: true,
 		canonical: false
 	},
 
 	welcome: {
-		title: "Welcome",
-		description: "Complete your profile setup",
+		title: "歡迎使用 Core System！",
+		description: "完成你的帳戶設定，開始使用 Core System 吧！",
 		noIndex: true
 	},
 
 	logout: {
-		title: "Sign Out",
-		description: "Signing out from Core System",
+		title: "登出中...",
+		description: "正在登出 Core System",
 		noIndex: true,
 		canonical: false
 	},
 
 	notFound: {
-		title: "404",
-		description: "Page not found",
+		title: "找不到頁面",
+		description: "你要找的頁面不存在或已被刪除。",
 		noIndex: true,
 		canonical: false
 	},
 
 	formDetail: {
-		title: ({ data }) => (data as FormSeoData | undefined)?.title ?? "Form",
+		title: ({ data }) => (data as FormSeoData | undefined)?.title ?? "表單",
 		description: ({ data }) => (data as FormSeoData | undefined)?.description
 	}
 };

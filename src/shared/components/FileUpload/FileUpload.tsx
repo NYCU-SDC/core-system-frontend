@@ -53,8 +53,8 @@ export const FileUpload = ({ label, onChange, error, accept = "image/*", ...prop
 
 				{preview ? (
 					<div className={styles.preview}>
-						<img src={preview} alt="Preview" className={styles.previewImage} />
-						<button type="button" className={styles.removeBtn} onClick={handleRemove} aria-label="Remove file">
+						<img src={preview} alt="預覽圖" className={styles.previewImage} />
+						<button type="button" className={styles.removeBtn} onClick={handleRemove} aria-label="移除檔案">
 							<X size={16} />
 						</button>
 					</div>
@@ -64,7 +64,7 @@ export const FileUpload = ({ label, onChange, error, accept = "image/*", ...prop
 							<File size={48} />
 						</div>
 						<span className={styles.text}>{fileName}</span>
-						<button type="button" className={styles.removeBtn} onClick={handleRemove} aria-label="Remove file">
+						<button type="button" className={styles.removeBtn} onClick={handleRemove} aria-label="移除檔案">
 							<X size={16} />
 						</button>
 					</>
@@ -73,7 +73,7 @@ export const FileUpload = ({ label, onChange, error, accept = "image/*", ...prop
 						<div className={styles.icon}>
 							<Upload size={48} />
 						</div>
-						<span className={styles.text}>Click to upload</span>
+						<span className={styles.text}>點擊以上傳</span>
 					</>
 				)}
 			</div>
