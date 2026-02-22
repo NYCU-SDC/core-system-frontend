@@ -22,9 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
-interface Section extends FormsSection {
-	progress?: "DRAFT" | "SUBMITTED";
-}
+type Section = FormsSection;
 
 interface FormResponseData {
 	sections: ResponsesResponseSections[];
@@ -93,7 +91,6 @@ export const FormDetailPage = () => {
 				formId: section.formId,
 				title: section.title,
 				description: section.description,
-				progress: "DRAFT" as const,
 				questions: section.questions
 			}));
 		});
@@ -101,7 +98,6 @@ export const FormDetailPage = () => {
 			id: "preview",
 			formId: formId!,
 			title: "填答結果預覽",
-			progress: "DRAFT" as const,
 			questions: []
 		});
 		return loaded;

@@ -4,7 +4,7 @@ import { useSeo } from "@/seo/useSeo";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService, canAccessWelcome, type AuthUser } from "../services/authService";
+import { authService, type AuthUser } from "../services/authService";
 import styles from "./CallbackPage.module.css";
 
 function getSafeRedirectTarget(): string | null {
@@ -57,7 +57,7 @@ export const CallbackPage = () => {
 				const redirectTarget = getSafeRedirectTarget();
 
 				if (user) {
-					if (canAccessWelcome(user)) {
+					if (user.require_onboarding === true) {
 						navigate("/welcome", { replace: true });
 						return;
 					}
