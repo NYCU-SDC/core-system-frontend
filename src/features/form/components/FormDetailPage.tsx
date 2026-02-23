@@ -18,7 +18,7 @@ import type {
 	ResponsesStringAnswer,
 	ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
@@ -62,6 +62,9 @@ export const FormDetailPage = () => {
 	const responseQuery = useFormResponse(formId, urlResponseId, !!urlResponseId);
 	const updateResponseMutation = useUpdateFormResponse(urlResponseId ?? "");
 	const submitResponseMutation = useSubmitFormResponse(formId ?? "");
+	const updateResponseMutateAsyncRef = useRef(updateResponseMutation.mutateAsync);
+	const lastAutoSavePayloadRef = useRef<string>("");
+	const lastFailedAutoSavePayloadRef = useRef<string>("");
 	const coverImageUrl = formId ? `/api/forms/${formId}/cover` : null;
 
 	// ── Derived state ────────────────────────────────────────────────────────
@@ -78,6 +81,10 @@ export const FormDetailPage = () => {
 			.filter((fontId): fontId is string => Boolean(fontId))
 			.forEach(ensureEmfontStylesheet);
 	}, [formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]);
+
+	useEffect(() => {
+		updateResponseMutateAsyncRef.current = updateResponseMutation.mutateAsync;
+	}, [updateResponseMutation.mutateAsync]);
 
 	const sections: Section[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
@@ -148,78 +155,65 @@ export const FormDetailPage = () => {
 	}, [isOnPreviewStep, responseQuery.data]);
 
 	// ── Auto-save (debounced 1 s) ────────────────────────────────────────────
-	const saveAnswers = useCallback(async () => {
-		if (!urlResponseId) return;
+	const autoSavePayload = useMemo(() => {
+		const questionTypeMap: Record<string, string> = {};
+		sections.forEach(section => {
+			section.questions?.forEach(question => {
+				questionTypeMap[question.id] = question.type;
+			});
+		});
 
-		try {
-			const questionTypeMap: Record<string, string> = {};
-			sections.forEach(section => {
-				section.questions?.forEach(question => {
-					questionTypeMap[question.id] = question.type;
-				});
+		const answersArray = Object.entries(answers)
+			.filter(([, value]) => value !== "")
+			.map(([questionId, value]) => {
+				const questionType = questionTypeMap[questionId];
+				const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
+				const dateTypes = ["DATE"];
+				const scaleTypes = ["LINEAR_SCALE", "RATING"];
+
+				if (dateTypes.includes(questionType)) {
+					return { questionId, questionType: "DATE" as const, value } as ResponsesDateAnswer;
+				}
+				if (scaleTypes.includes(questionType)) {
+					return { questionId, questionType: questionType as ResponsesScaleAnswer["questionType"], value: parseInt(value, 10) } as ResponsesScaleAnswer;
+				}
+				if (stringArrayTypes.includes(questionType)) {
+					const valueArray = value.includes(",") ? value.split(",") : [value];
+					const otherText = otherTexts[questionId]?.trim();
+					return { questionId, questionType: questionType as ResponsesStringArrayAnswer["questionType"], value: valueArray, ...(otherText ? { otherText } : {}) } as ResponsesStringArrayAnswer;
+				}
+				return { questionId, questionType: questionType as ResponsesStringAnswer["questionType"], value } as ResponsesStringAnswer;
 			});
 
-			const answersArray = Object.entries(answers)
-				.filter(([, value]) => value !== "")
-				.map(([questionId, value]) => {
-					const questionType = questionTypeMap[questionId];
-
-					// Determine answer type based on question type
-					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
-					const dateTypes = ["DATE"];
-					const scaleTypes = ["LINEAR_SCALE", "RATING"];
-
-					if (dateTypes.includes(questionType)) {
-						return {
-							questionId,
-							questionType: "DATE" as const,
-							value: value
-						} as ResponsesDateAnswer;
-					} else if (scaleTypes.includes(questionType)) {
-						return {
-							questionId,
-							questionType: questionType as ResponsesScaleAnswer["questionType"],
-							value: parseInt(value, 10)
-						} as ResponsesScaleAnswer;
-					} else if (stringArrayTypes.includes(questionType)) {
-						const valueArray = value.includes(",") ? value.split(",") : [value];
-						const otherText = otherTexts[questionId]?.trim();
-						return {
-							questionId,
-							questionType: questionType as ResponsesStringArrayAnswer["questionType"],
-							value: valueArray,
-							...(otherText ? { otherText } : {})
-						} as ResponsesStringArrayAnswer;
-					} else {
-						return {
-							questionId,
-							questionType: questionType as ResponsesStringAnswer["questionType"],
-							value: value
-						} as ResponsesStringAnswer;
-					}
-				});
-
-			if (answersArray.length === 0) return;
-
-			const answersUpdate: ResponsesAnswersRequestUpdate = {
-				answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[]
-			};
-
-			await updateResponseMutation.mutateAsync(answersUpdate);
-		} catch (error) {
-			pushToast({ title: "自動儲存失敗", description: (error as Error).message, variant: "error" });
-		}
-	}, [urlResponseId, answers, otherTexts, sections, updateResponseMutation, pushToast]);
+		if (answersArray.length === 0) return null;
+		return {
+			answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[]
+		} satisfies ResponsesAnswersRequestUpdate;
+	}, [answers, otherTexts, sections]);
 
 	useEffect(() => {
-		if (!urlResponseId) return;
+		if (!urlResponseId || !autoSavePayload) return;
+
+		const payloadKey = JSON.stringify(autoSavePayload);
+		if (payloadKey === lastAutoSavePayloadRef.current || payloadKey === lastFailedAutoSavePayloadRef.current) {
+			return;
+		}
 
 		const timer = setTimeout(() => {
-			saveAnswers();
-		}, 1000); // 1 秒後儲存
+			lastAutoSavePayloadRef.current = payloadKey;
+			updateResponseMutateAsyncRef
+				.current(autoSavePayload)
+				.then(() => {
+					lastFailedAutoSavePayloadRef.current = "";
+				})
+				.catch(error => {
+					lastFailedAutoSavePayloadRef.current = payloadKey;
+					pushToast({ title: "自動儲存失敗", description: (error as Error).message, variant: "error" });
+				});
+		}, 1000);
 
 		return () => clearTimeout(timer);
-	}, [answers, urlResponseId, saveAnswers]);
+	}, [urlResponseId, autoSavePayload, pushToast]);
 
 	// ── Loading / Error ──────────────────────────────────────────────────────
 	const isLoading = formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading;
