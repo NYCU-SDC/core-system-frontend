@@ -222,6 +222,7 @@ export const FormDetailPage = () => {
 
 	const isLastStep = sections.length === 0 || currentStep === sections.length - 1;
 	const isFirstStep = currentStep === 0;
+	const currentSection = sections[currentStep];
 
 	// Clamp currentStep to the valid range whenever sections data changes
 	useEffect(() => {
@@ -652,7 +653,9 @@ export const FormDetailPage = () => {
 			<div className={styles.container} style={themedContainerStyle}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{form.title}</h1>
-					{currentStep === 0 ? <p className={styles.description}>{form.description}</p> : <h2 className={styles.sectionHeader}>{sections[currentStep]?.title}</h2>}
+					{currentStep === 0 && form.description && <Markdown content={form.description} className={styles.description} />}
+					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
+					{currentSection.description && <Markdown content={currentSection.description} className={styles.sectionDescription} />}
 				</div>
 
 				<div className={styles.structure}>

@@ -20,6 +20,12 @@
 	background-color: aliceblue;
 }
 
+.header {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
 .title {
 	margin-bottom: 1.5rem;
 	text-align: center;
@@ -35,8 +41,13 @@
 	font-size: 1.6rem;
 	margin: 0;
 	color: var(--color-heading);
-	text-align: center;
+	text-align: left;
 	font-family: var(--form-header-font, inherit);
+}
+
+.sectionDescription {
+	color: var(--color-caption);
+	font-size: 1rem;
 }
 
 .fields label {

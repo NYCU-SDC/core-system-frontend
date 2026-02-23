@@ -1,5 +1,6 @@
 import { Select, Switch } from "@/shared/components";
 import { X } from "lucide-react";
+import { useState } from "react";
 import type { Option } from "../../types/option";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./OptionsQuestion.module.css";
@@ -19,6 +20,37 @@ export interface OptionsQuestionProps {
 	onSourceChange?: (sourceId: string) => void;
 }
 
+interface OptionRowProps {
+	option: Option;
+	index: number;
+	type: "radio" | "checkbox" | "list";
+	isAutoFocus: boolean;
+	canRemove: boolean;
+	onCommit: (index: number, value: string) => void;
+	onRemove: (index: number) => void;
+}
+
+const OptionRow = ({ option, index, type, isAutoFocus, canRemove, onCommit, onRemove }: OptionRowProps) => {
+	const [localLabel, setLocalLabel] = useState(option.label);
+	return (
+		<div className={styles.optionWrapper}>
+			<OptionsInput
+				value={localLabel}
+				type={type}
+				themeColor="--comment"
+				variant="flushed"
+				listLabel={`${index + 1}.`}
+				className={styles.optionInput}
+				autoFocus={isAutoFocus}
+				onFocus={e => e.target.select()}
+				onChange={e => setLocalLabel(e.target.value)}
+				onBlur={() => onCommit(index, localLabel)}
+			/>
+			{canRemove && <X onClick={() => onRemove(index)} />}
+		</div>
+	);
+};
+
 export const OptionsQuestion = (props: OptionsQuestionProps) => {
 	return (
 		<div className={styles.container}>
@@ -26,22 +58,18 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 				<>
 					{props.options.map((option, index) => {
 						if (!option.isOther) {
+							const isLastNonOther = index === props.options.length - 1 - props.options.filter(o => o.isOther).length;
 							return (
-								<div className={styles.optionWrapper}>
-									<OptionsInput
-										key={index}
-										value={option.label}
-										type={props.type}
-										themeColor="--comment"
-										variant="flushed"
-										listLabel={`${index + 1}.`}
-										className={styles.optionInput}
-										autoFocus={index === props.options.length - 1 - props.options.filter(option => option.isOther).length}
-										onFocus={e => e.target.select()}
-										onChange={e => props.onChange(index, e.target.value)}
-									/>
-									{props.options.length > 1 && <X onClick={() => props.onRemove(index)} />}
-								</div>
+								<OptionRow
+									key={index}
+									option={option}
+									index={index}
+									type={props.type}
+									isAutoFocus={isLastNonOther}
+									canRemove={props.options.length > 1}
+									onCommit={props.onChange}
+									onRemove={props.onRemove}
+								/>
 							);
 						}
 						if (option.isOther) {
