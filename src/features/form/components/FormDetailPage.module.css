@@ -239,3 +239,35 @@
 	display: flex;
 	gap: 1rem;
 }
+
+.questionField {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.questionLabel {
+	font-weight: 500;
+}
+
+.questionDescription {
+	color: var(--color-caption);
+	font-size: 0.875rem;
+	margin-block: 0.2rem 0.5rem;
+}
+
+.choiceList {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.uploadHint {
+	font-size: 0.875rem;
+	color: var(--color-caption);
+}
+
+.uploadSuccess {
+	font-size: 0.875rem;
+	color: var(--green);
+}

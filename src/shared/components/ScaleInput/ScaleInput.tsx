@@ -40,7 +40,7 @@ export const ScaleInput = ({ id, label, description, value, options, required, o
 				{label}
 				{required && <span className={styles.required}> *</span>}
 			</label>
-			{description && <p className={styles.description}>{description}</p>}
+			{description && <p className={styles.description} dangerouslySetInnerHTML={{ __html: description }} />}
 
 			<div className={styles.scaleWrapper}>
 				{minValueLabel && <span className={styles.minLabel}>{minValueLabel}</span>}

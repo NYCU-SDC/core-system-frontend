@@ -6,7 +6,7 @@ import * as formApi from "@/features/form/services/api";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, Select, TextArea, useToast } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Radio, ScaleInput, Select, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
 	FormsSection,
@@ -273,29 +273,26 @@ export const FormDetailPage = () => {
 		switch (question.type) {
 			case "SHORT_TEXT":
 				return (
-					<Input
-						key={question.id}
-						id={question.id}
-						label={question.title}
-						placeholder={question.description || "請輸入..."}
-						value={value}
-						onChange={e => updateAnswer(question.id, e.target.value)}
-						required={question.required}
-					/>
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
+						<Input id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
+					</div>
 				);
 
 			case "LONG_TEXT":
 				return (
-					<TextArea
-						key={question.id}
-						id={question.id}
-						label={question.title}
-						placeholder={question.description || "請輸入..."}
-						value={value}
-						onChange={e => updateAnswer(question.id, e.target.value)}
-						rows={6}
-						required={question.required}
-					/>
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
+						<TextArea id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} rows={6} required={question.required} />
+					</div>
 				);
 
 			case "SINGLE_CHOICE": {
@@ -304,12 +301,12 @@ export const FormDetailPage = () => {
 				const otherValue = otherTexts[question.id] || "";
 
 				return (
-					<div key={question.id}>
-						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <Markdown content={question.description} />}
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Radio
 							options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
 							value={value}
@@ -320,9 +317,7 @@ export const FormDetailPage = () => {
 								}
 							}}
 						/>
-						{otherChoice && value === otherChoice.id && (
-							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
-						)}
+						{otherChoice && value === otherChoice.id && <Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} />}
 					</div>
 				);
 			}
@@ -331,14 +326,13 @@ export const FormDetailPage = () => {
 				const choices = question.choices ?? [];
 
 				return (
-					<div key={question.id}>
-						<Select
-							label={question.title + (question.required ? " *" : "")}
-							options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
-							value={value || undefined}
-							onValueChange={newValue => updateAnswer(question.id, newValue)}
-						/>
-						{question.description && <Markdown content={question.description} />}
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
+						<Select options={choices.map(choice => ({ value: choice.id, label: choice.name }))} value={value || undefined} onValueChange={newValue => updateAnswer(question.id, newValue)} />
 					</div>
 				);
 			}
@@ -350,13 +344,13 @@ export const FormDetailPage = () => {
 				const otherValue = otherTexts[question.id] || "";
 
 				return (
-					<div key={question.id}>
-						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
+						<div className={styles.choiceList}>
 							{choices.map(choice => (
 								<Checkbox
 									key={choice.id}
@@ -373,30 +367,35 @@ export const FormDetailPage = () => {
 								/>
 							))}
 						</div>
-						{otherChoice && selectedIds.includes(otherChoice.id) && (
-							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
-						)}
+						{otherChoice && selectedIds.includes(otherChoice.id) && <Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} />}
 					</div>
 				);
 			}
 
 			case "DETAILED_MULTIPLE_CHOICE":
 				return (
-					<div key={question.id} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-						{question.choices?.map(choice => (
-							<DetailedCheckbox
-								key={choice.id}
-								id={`${question.id}-${choice.id}`}
-								title={choice.name}
-								description={choice.description || ""}
-								checked={value.includes(choice.id)}
-								onCheckedChange={checked => {
-									const currentValues = value ? value.split(",") : [];
-									const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
-									updateAnswer(question.id, newValues.join(","));
-								}}
-							/>
-						))}
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
+						<div className={styles.choiceList}>
+							{question.choices?.map(choice => (
+								<DetailedCheckbox
+									key={choice.id}
+									id={`${question.id}-${choice.id}`}
+									title={choice.name}
+									description={choice.description || ""}
+									checked={value.includes(choice.id)}
+									onCheckedChange={checked => {
+										const currentValues = value ? value.split(",") : [];
+										const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
+										updateAnswer(question.id, newValues.join(","));
+									}}
+								/>
+							))}
+						</div>
 					</div>
 				);
 
@@ -431,12 +430,12 @@ export const FormDetailPage = () => {
 
 			case "RANKING":
 				return (
-					<div key={question.id}>
-						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <Markdown content={question.description} />}
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<DragToOrder
 							items={
 								value
@@ -461,12 +460,12 @@ export const FormDetailPage = () => {
 
 			case "UPLOAD_FILE":
 				return (
-					<div key={question.id}>
-						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <Markdown content={question.description} />}
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<FileUpload
 							id={question.id}
 							label=""
@@ -482,10 +481,10 @@ export const FormDetailPage = () => {
 								}
 							}}
 						/>
-						<p style={{ fontSize: "0.875rem", color: "var(--color-caption)", marginTop: "0.5rem" }}>
+						<p className={styles.uploadHint}>
 							最多 {question.uploadFile?.maxFileAmount || 1} 個檔案，每個檔案最大 {((question.uploadFile?.maxFileSizeLimit || 10485760) / 1024 / 1024).toFixed(0)} MB
 						</p>
-						{value && <p style={{ fontSize: "0.875rem", color: "var(--green)", marginTop: "0.25rem" }}>✓ 已上傳：{value}</p>}
+						{value && <p className={styles.uploadSuccess}>✓ 已上傳：{value}</p>}
 					</div>
 				);
 
@@ -494,21 +493,19 @@ export const FormDetailPage = () => {
 
 			case "HYPERLINK":
 				return (
-					<div key={question.id}>
-						<Input
-							id={question.id}
-							label={question.title}
-							placeholder={question.description || "https://"}
-							value={value}
-							onChange={e => updateAnswer(question.id, e.target.value)}
-							required={question.required}
-						/>
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
+							{question.title}
+							{question.required && <span style={{ color: "red" }}> *</span>}
+						</label>
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
+						<Input id={question.id} placeholder="https://" value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
 					</div>
 				);
 
 			default:
 				return (
-					<div key={question.id}>
+					<div key={question.id} className={styles.questionField}>
 						<p>不支援的問題類型: {question.type}</p>
 						<p style={{ color: "var(--color-caption)" }}>{question.title}</p>
 					</div>
@@ -676,9 +673,9 @@ export const FormDetailPage = () => {
 			<div className={styles.container} style={themedContainerStyle}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{form.title}</h1>
-					{currentStep === 0 && form.description && <Markdown content={form.description} className={styles.description} />}
+					{currentStep === 0 && form.description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
 					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
-					{currentSection.description && <Markdown content={currentSection.description} className={styles.sectionDescription} />}
+					{currentSection.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
 				</div>
 
 				<div className={styles.structure}>

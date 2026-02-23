@@ -44,10 +44,6 @@
 	font-weight: 700;
 }
 
-.input::placeholder {
-	color: var(--color-body);
-}
-
 .input:focus {
 	border-color: var(--form-theme-color, var(--orange));
 }

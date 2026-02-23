@@ -50,10 +50,6 @@
 	border-color: var(--orange);
 }
 
-.input::placeholder {
-	color: var(--color-caption);
-}
-
 .unit {
 	font-size: 0.875rem;
 	color: var(--color-caption);

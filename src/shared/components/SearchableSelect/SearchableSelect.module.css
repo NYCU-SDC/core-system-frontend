@@ -70,10 +70,6 @@
 	outline: none;
 }
 
-.searchInput::placeholder {
-	color: var(--comment);
-}
-
 .searchInput:focus {
 	outline: 0.125rem solid var(--orange);
 	outline-offset: -0.125rem;

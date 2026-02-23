@@ -86,7 +86,7 @@ export const DateInput = ({ id, label, description, value, options, required, on
 				{label}
 				{required && <span className={styles.required}> *</span>}
 			</label>
-			{description && <p className={styles.description}>{description}</p>}
+			{description && <p className={styles.description} dangerouslySetInnerHTML={{ __html: description }} />}
 
 			<div className={styles.inputGroup}>
 				{hasYear && (

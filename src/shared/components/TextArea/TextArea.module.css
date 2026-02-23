@@ -40,10 +40,6 @@
 	overflow: hidden;
 }
 
-.textarea::placeholder {
-	color: var(--color-body);
-}
-
 .textarea:focus {
 	border-color: var(--form-theme-color, var(--orange));
 }
