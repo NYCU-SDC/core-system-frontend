@@ -657,6 +657,24 @@ export const FormDetailPage = () => {
 
 		if (!urlResponseId) return;
 
+		// Validate required fields across all non-preview sections
+		const realSections = sections.filter(s => s.id !== "preview");
+		for (let i = 0; i < realSections.length; i++) {
+			const section = realSections[i];
+			const missingQuestion = section.questions?.find(q => {
+				if (!q.required) return false;
+				if (q.type === "OAUTH_CONNECT") return false;
+				const value = answers[q.id] ?? "";
+				return value.trim() === "";
+			});
+			if (missingQuestion) {
+				const sectionIndex = sections.findIndex(s => s.id === section.id);
+				if (sectionIndex >= 0) setCurrentStep(sectionIndex);
+				pushToast({ title: "尚有必填欄位未填寫", description: `「${missingQuestion.title}」為必填`, variant: "error" });
+				return;
+			}
+		}
+
 		try {
 			// Build answers payload (same logic as saveAnswers)
 			const questionTypeMap: Record<string, string> = {};
