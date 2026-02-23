@@ -4,3 +4,4 @@ export { AdminFormsPage } from "./AdminFormsPage";
 export { FormDetailPage } from "./FormDetailPage";
 export { FormEntryPage } from "./FormEntryPage";
 export { FormsListPage } from "./FormsListPage";
+export { OAuthConnectCallbackPage } from "./OAuthConnectCallbackPage";

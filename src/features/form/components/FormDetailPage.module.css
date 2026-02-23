@@ -299,6 +299,12 @@
 	color: var(--green);
 }
 
+.oauthConnectActions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
 .fileUploadList {
 	display: flex;
 	flex-direction: column;

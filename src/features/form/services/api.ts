@@ -1,5 +1,6 @@
 import { withAuthRefreshRetry } from "@/features/auth/services/authService";
 import type {
+	AuthOAuthProviders,
 	FormWorkflowCreateNodeRequest,
 	FormWorkflowGetWorkflowResponse,
 	FormWorkflowNodeRequest,
@@ -44,6 +45,7 @@ import {
 	formsUpdateSection,
 	formsUploadFormCoverImage,
 	formsVerifyGoogleSheet,
+	getResponsesConnectOauthAccountUrl,
 	responsesCreateFormResponse,
 	responsesDeleteFormResponse,
 	responsesGetFormResponse,
@@ -250,6 +252,14 @@ export const getQuestionResponse = async (responseId: string, questionId: string
 	const res = await withAuthRefreshRetry(() => responsesGetQuestionResponse(responseId, questionId, defaultRequestOptions));
 	assertOk(res.status, "Failed to get question response", res.data);
 	return res.data as ResponsesGetQuestionResponse;
+};
+
+export const getConnectOauthAccountUrl = (provider: AuthOAuthProviders, responseId: string, questionId: string, redirectUrl?: string): string => {
+	return getResponsesConnectOauthAccountUrl(provider, {
+		responseId,
+		questionId,
+		...(redirectUrl ? { r: redirectUrl } : {})
+	});
 };
 
 // ── Google Sheet ──────────────────────────────────────────────────────────

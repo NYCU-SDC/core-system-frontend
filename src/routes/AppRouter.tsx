@@ -5,7 +5,7 @@ import { NotFoundPage } from "@/features/auth/components/NotFoundPage";
 import { WelcomePage } from "@/features/auth/components/WelcomePage";
 import { AdminSettingsPage } from "@/features/dashboard/components/AdminSettingsPage";
 import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
-import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage } from "@/features/form/components";
+import { AdminFormDetailPage, AdminFormsPage, FormDetailPage, FormsListPage, OAuthConnectCallbackPage } from "@/features/form/components";
 import { SmartLayout } from "@/layouts";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import OrgRewriteToSdc from "./OrgRewriteToSdc";
@@ -19,6 +19,7 @@ export const AppRouter = () => {
 				{/* Public routes */}
 				<Route path="/" element={<HomePage />} />
 				<Route path="/callback" element={<CallbackPage />} />
+				<Route path="/forms/oauth-callback" element={<OAuthConnectCallbackPage />} />
 				<Route path="/welcome" element={<WelcomePage />} />
 				<Route path="/logout" element={<LogoutPage />} />
 

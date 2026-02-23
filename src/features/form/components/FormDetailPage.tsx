@@ -8,6 +8,7 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Input, LoadingSpinner, Radio, ScaleInput, Select, TextArea, useToast } from "@/shared/components";
 import type {
+	AuthOAuthProviders,
 	FormsQuestionResponse,
 	FormsSection,
 	ResponsesAnswersRequestUpdate,
@@ -161,6 +162,8 @@ export const FormDetailPage = () => {
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
+	const [connectingOauthQuestionId, setConnectingOauthQuestionId] = useState<string | null>(null);
+	const oauthPopupWatchTimerRef = useRef<number | null>(null);
 	const answersInitialized = useRef(false);
 
 	// ── React Query ──────────────────────────────────────────────────────────
@@ -277,7 +280,7 @@ export const FormDetailPage = () => {
 		});
 
 		const answersArray = Object.entries(answers)
-			.filter(([questionId, value]) => value !== "" && questionTypeMap[questionId] !== "UPLOAD_FILE")
+			.filter(([questionId, value]) => value !== "" && !["UPLOAD_FILE", "OAUTH_CONNECT"].includes(questionTypeMap[questionId]))
 			.map(([questionId, value]) => {
 				const questionType = questionTypeMap[questionId];
 				const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
@@ -378,6 +381,99 @@ export const FormDetailPage = () => {
 			[questionId]: value
 		}));
 	};
+
+	const handleOauthConnect = (question: FormsQuestionResponse) => {
+		if (!urlResponseId) {
+			pushToast({ title: "尚未建立填答", description: "請稍後再試一次", variant: "error" });
+			return;
+		}
+
+		const provider = (question.oauthConnect ?? "GITHUB") as AuthOAuthProviders;
+		const callbackUrl = new URL("/forms/oauth-callback", window.location.origin);
+		callbackUrl.searchParams.set("questionId", question.id);
+		callbackUrl.searchParams.set("responseId", urlResponseId);
+
+		const connectUrl = formApi.getConnectOauthAccountUrl(provider, urlResponseId, question.id, callbackUrl.toString());
+		const popup = window.open(connectUrl, "form-oauth-connect", "popup=yes,width=520,height=760");
+
+		if (!popup) {
+			pushToast({ title: "無法開啟綁定視窗", description: "請確認瀏覽器未封鎖彈出視窗", variant: "error" });
+			return;
+		}
+
+		setConnectingOauthQuestionId(question.id);
+		if (oauthPopupWatchTimerRef.current) {
+			window.clearInterval(oauthPopupWatchTimerRef.current);
+		}
+		oauthPopupWatchTimerRef.current = window.setInterval(() => {
+			if (popup.closed) {
+				setConnectingOauthQuestionId(prev => (prev === question.id ? null : prev));
+				if (oauthPopupWatchTimerRef.current) {
+					window.clearInterval(oauthPopupWatchTimerRef.current);
+					oauthPopupWatchTimerRef.current = null;
+				}
+			}
+		}, 500);
+		popup.focus();
+	};
+
+	useEffect(() => {
+		const handleMessage = async (event: MessageEvent) => {
+			if (event.origin !== window.location.origin) return;
+
+			const payload = event.data as {
+				type?: string;
+				questionId?: string;
+				responseId?: string;
+				params?: Record<string, string>;
+			};
+
+			if (payload?.type !== "FORM_OAUTH_CONNECTED" || !payload.questionId) return;
+			if (payload.responseId !== urlResponseId) return;
+			if (oauthPopupWatchTimerRef.current) {
+				window.clearInterval(oauthPopupWatchTimerRef.current);
+				oauthPopupWatchTimerRef.current = null;
+			}
+
+			setConnectingOauthQuestionId(prev => (prev === payload.questionId ? null : prev));
+
+			if (payload.params?.error) {
+				pushToast({ title: "綁定失敗", description: payload.params.error, variant: "error" });
+				return;
+			}
+
+			try {
+				const questionResponse = await formApi.getQuestionResponse(urlResponseId!, payload.questionId);
+				const answerPayload = questionResponse.answer;
+				const answerValue = answerPayload.answer as { value?: { username?: string } };
+				const oauthUsername = answerValue?.value?.username ?? "";
+				const displayValue = answerPayload.displayValue ?? "";
+				const finalValue = oauthUsername || displayValue;
+
+				if (finalValue) {
+					setAnswers(prev => ({
+						...prev,
+						[payload.questionId!]: finalValue
+					}));
+					pushToast({ title: "綁定成功", description: `已綁定帳號：${finalValue}`, variant: "success" });
+				} else {
+					pushToast({ title: "綁定完成", description: "已完成授權，但尚未取得帳號資訊", variant: "warning" });
+				}
+			} catch (error) {
+				pushToast({ title: "讀取綁定結果失敗", description: (error as Error).message, variant: "error" });
+			}
+		};
+
+		window.addEventListener("message", handleMessage);
+		return () => {
+			if (oauthPopupWatchTimerRef.current) {
+				window.clearInterval(oauthPopupWatchTimerRef.current);
+				oauthPopupWatchTimerRef.current = null;
+			}
+			window.removeEventListener("message", handleMessage);
+		};
+	}, [urlResponseId, pushToast]);
+
 	const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
 
 	const renderQuestion = (question: FormsQuestionResponse) => {
@@ -593,7 +689,25 @@ export const FormDetailPage = () => {
 				);
 
 			case "OAUTH_CONNECT":
-				return null;
+				return (
+					<div key={question.id} className={styles.questionField}>
+						<label className={styles.questionLabel}>
+							{question.title}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
+						</label>
+						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
+						<p className={styles.caption}>
+							綁定平台：
+							{question.oauthConnect === "GOOGLE" ? "Google" : "GitHub"}
+						</p>
+						<div className={styles.oauthConnectActions}>
+							<Button type="button" onClick={() => handleOauthConnect(question)} processing={connectingOauthQuestionId === question.id} themeColor="var(--form-theme-color, var(--orange))">
+								{connectingOauthQuestionId === question.id ? "綁定中" : value ? "重新綁定帳號" : "綁定帳號"}
+							</Button>
+							<p className={styles.uploadHint}>{value ? `已綁定帳號：${value}` : "尚未綁定，點擊上方按鈕開始 OAuth 綁定流程。"}</p>
+						</div>
+					</div>
+				);
 
 			case "HYPERLINK":
 				return (
@@ -679,7 +793,6 @@ export const FormDetailPage = () => {
 			const section = realSections[i];
 			const missingQuestion = section.questions?.find(q => {
 				if (!q.required) return false;
-				if (q.type === "OAUTH_CONNECT") return false;
 				const value = answers[q.id] ?? "";
 				return value.trim() === "";
 			});
@@ -701,7 +814,7 @@ export const FormDetailPage = () => {
 			});
 
 			const answersArray = Object.entries(answers)
-				.filter(([questionId, value]) => value !== "" && questionTypeMap[questionId] !== "UPLOAD_FILE")
+				.filter(([questionId, value]) => value !== "" && !["UPLOAD_FILE", "OAUTH_CONNECT"].includes(questionTypeMap[questionId]))
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
