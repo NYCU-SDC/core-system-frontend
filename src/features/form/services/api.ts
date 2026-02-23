@@ -51,7 +51,6 @@ import {
 	responsesListFormResponses,
 	responsesSubmitFormResponse,
 	responsesUpdateFormResponse,
-	responsesUploadQuestionFiles,
 	unitCreateOrgForm,
 	unitListFormsByOrg,
 	unitListFormsOfCurrentUser
@@ -231,9 +230,18 @@ export const submitFormResponse = async (responseId: string, answers: import("@n
 };
 
 export const uploadQuestionFiles = async (responseId: string, questionId: string, files: File[]): Promise<ResponsesQuestionFilesUploadResponse> => {
-	const res = await withAuthRefreshRetry(() =>
-		responsesUploadQuestionFiles(responseId, questionId, { files } as unknown as import("@nycu-sdc/core-system-sdk").ResponsesQuestionFilesUploadRequest, defaultRequestOptions)
-	);
+	const res = await withAuthRefreshRetry(async () => {
+		const formData = new FormData();
+		files.forEach(file => formData.append("file", file));
+		const response = await fetch(`/api/responses/${responseId}/questions/${questionId}/files`, {
+			...defaultRequestOptions,
+			method: "POST",
+			body: formData
+		});
+		const body = [204, 205, 304].includes(response.status) ? null : await response.text();
+		const data = body ? JSON.parse(body) : {};
+		return { data, status: response.status, headers: response.headers };
+	});
 	assertOk(res.status, "Failed to upload files", res.data);
 	return res.data as ResponsesQuestionFilesUploadResponse;
 };
