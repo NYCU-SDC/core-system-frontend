@@ -12,26 +12,48 @@
 
 .textarea {
 	width: 100%;
-	padding: 0.75rem 1rem;
 	font-size: 1rem;
-	background-color: var(--background-color-secondary);
 	color: var(--foreground);
-	border: 0.0625rem solid var(--background-color-tertiary);
-	border-radius: 0.5rem;
 	outline: none;
-	resize: vertical;
-	min-height: 6rem;
 	transition: all 0.2s ease;
 	font-family: inherit;
 	line-height: 1.5;
 }
 
+.outline {
+	padding: 0.75rem 1rem;
+	background-color: var(--background-color-secondary);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 0.5rem;
+	resize: vertical;
+	min-height: 6rem;
+}
+
+.flushed {
+	padding: 0.25rem 0;
+	background-color: transparent;
+	border: none;
+	border-bottom: 0.0625rem solid var(--custom-border-color, var(--background-color-tertiary));
+	border-radius: 0;
+	resize: none;
+	min-height: unset;
+	overflow: hidden;
+}
+
 .textarea::placeholder {
-	color: var(--comment);
+	color: var(--color-body);
 }
 
 .textarea:focus {
 	border-color: var(--orange);
+}
+
+.outline:focus {
+	border-color: var(--orange);
+}
+
+.flushed:focus {
+	border-bottom-color: var(--orange);
 }
 
 .textarea:disabled {

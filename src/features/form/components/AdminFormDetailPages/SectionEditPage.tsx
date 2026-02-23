@@ -1,9 +1,10 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, ErrorMessage, Input, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
 import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
+import { marked } from "marked";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
@@ -38,6 +39,7 @@ export const AdminSectionEditPage = () => {
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
 	const [sectionTitle, setSectionTitle] = useState("");
 	const [sectionDescription, setSectionDescription] = useState("");
+	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState("");
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
 	const [savedSectionDescription, setSavedSectionDescription] = useState("");
 	const questionsRef = useRef<Question[]>([]);
@@ -120,6 +122,7 @@ export const AdminSectionEditPage = () => {
 	useEffect(() => {
 		setSectionTitle(section?.title ?? "");
 		setSectionDescription(section?.description ?? "");
+		setSectionDescriptionDraft(section?.description ?? "");
 		setSavedSectionTitle(section?.title ?? "");
 		setSavedSectionDescription(section?.description ?? "");
 	}, [section?.id, section?.title, section?.description]);
@@ -130,7 +133,7 @@ export const AdminSectionEditPage = () => {
 
 		const timerId = window.setTimeout(() => {
 			updateSectionMutation.mutate(
-				{ title: sectionTitle, description: sectionDescription },
+				{ title: sectionTitle, description: sectionDescription ? (marked.parse(sectionDescription) as string) : sectionDescription },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(sectionTitle);
@@ -164,7 +167,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: q.description,
+			description: q.description ? (marked.parse(q.description) as string) : q.description,
 			required: q.required ?? false,
 			order
 		};
@@ -172,7 +175,7 @@ export const AdminSectionEditPage = () => {
 			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
 		}
 		if (q.type === "DETAILED_MULTIPLE_CHOICE" && q.detailOptions) {
-			base.choices = q.detailOptions.map(o => ({ name: o.label, description: o.description }));
+			base.choices = q.detailOptions.map(o => ({ name: o.label, description: o.description ? (marked.parse(o.description) as string) : o.description }));
 		}
 		if (q.start !== undefined) {
 			base.scale = {
@@ -566,7 +569,15 @@ export const AdminSectionEditPage = () => {
 					<div className={styles.container}>
 						<section className={styles.card}>
 							<Input placeholder="區段標題" variant="flushed" themeColor="--comment" textSize="h2" value={sectionTitle} onChange={event => setSectionTitle(event.target.value)} />
-							<Input placeholder="區段描述" variant="flushed" themeColor="--comment" value={sectionDescription} onChange={event => setSectionDescription(event.target.value)} />
+							<TextArea
+								placeholder="區段描述（支援 Markdown）"
+								variant="flushed"
+								themeColor="--comment"
+								value={sectionDescriptionDraft}
+								onChange={event => setSectionDescriptionDraft(event.target.value)}
+								onBlur={() => setSectionDescription(sectionDescriptionDraft)}
+								rows={1}
+							/>
 						</section>
 						{questions.map((question, index) => (
 							<QuestionCard

@@ -4,7 +4,7 @@ import { useSections } from "@/features/form/hooks/useSections";
 import * as formApi from "@/features/form/services/api";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
 	FormsSection,
@@ -304,7 +304,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <Markdown content={question.description} />}
+						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Radio
 							options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
 							value={value}
@@ -334,7 +334,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <Markdown content={question.description} />}
+						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 							{choices.map(choice => (
 								<Checkbox
@@ -415,7 +415,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <Markdown content={question.description} />}
+						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<DragToOrder
 							items={
 								value
@@ -445,7 +445,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <Markdown content={question.description} />}
+						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<FileUpload
 							id={question.id}
 							label=""
@@ -499,7 +499,7 @@ export const FormDetailPage = () => {
 								{question.title}
 								{question.required && <span style={{ color: "red" }}> *</span>}
 							</label>
-							{question.description && <Markdown content={question.description} />}
+							{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
 							<Button
 								onClick={() => {
 									if (!urlResponseId) return;

@@ -1,4 +1,4 @@
-import { Button, Input, Switch } from "@/shared/components";
+import { Button, Input, Switch, TextArea } from "@/shared/components";
 import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Question } from "../../types/option";
@@ -109,6 +109,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 
 	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? false);
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
+	const [localDesc, setLocalDesc] = useState(question.description);
+	const localDescRef = useRef(question.description);
+	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
 
@@ -125,6 +128,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 
 		const handleOutsideClick = (event: MouseEvent) => {
 			if (!cardRef.current?.contains(event.target as Node)) {
+				// flush description before blur fires (mousedown precedes blur)
+				props.onDescriptionChange?.(localDescRef.current);
 				props.onFold?.();
 				setIsExpanded(false);
 				setIsTypeMenuOpen(false);
@@ -167,16 +172,14 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								themeColor="--comment"
 								textSize="h2"
 							/>
-							<Input
-								value={question.description}
-								onChange={e => {
-									if (props.onDescriptionChange) {
-										props.onDescriptionChange(e.target.value);
-									}
-								}}
-								placeholder="這裡可以寫一段描述"
+							<TextArea
+								value={localDesc}
+								onChange={e => setLocalDesc(e.target.value)}
+								onBlur={() => props.onDescriptionChange?.(localDesc)}
+								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
+								rows={1}
 							/>
 						</div>
 						<div className={styles.typeWrapper}>
