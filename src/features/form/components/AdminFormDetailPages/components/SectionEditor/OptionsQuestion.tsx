@@ -34,6 +34,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 										listLabel={`${index + 1}.`}
 										className={styles.optionInput}
 										autoFocus={index === props.options.length - 1 - props.options.filter(option => option.isOther).length}
+										onFocus={e => e.target.select()}
 										onChange={e => props.onChange(index, e.target.value)}
 									/>
 									{props.options.length > 1 && <X onClick={() => props.onRemove(index)} />}
@@ -43,7 +44,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 						if (option.isOther) {
 							return (
 								<div className={styles.optionWrapper}>
-									<OptionsInput key="other" value="其他" type={props.type} variant="none" readOnly />
+									<OptionsInput key="other" value="其他（使用者填寫）" type={props.type} variant="none" readOnly />
 									{props.options.length > 1 && <X onClick={props.onRemoveOther} />}
 								</div>
 							);

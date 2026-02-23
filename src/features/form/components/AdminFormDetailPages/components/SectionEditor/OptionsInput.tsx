@@ -26,7 +26,7 @@ export const OptionsInput = forwardRef<HTMLInputElement, OptionsInputProps>(({ t
 					]}
 				/>
 			)}
-			<Input size={4} ref={ref} className={styles.input} {...props} />
+			<Input size={6} ref={ref} className={styles.input} {...props} />
 		</div>
 	);
 });

@@ -10,6 +10,8 @@ import { RangeQuestion } from "./RangeQuestion";
 export interface QuestionCardProps {
 	question: Question;
 	questionNumber?: number;
+	defaultExpanded?: boolean;
+	autoFocusTitle?: boolean;
 	onTitleChange?: (newTitle: string) => void;
 	onDescriptionChange?: (newDescription: string) => void;
 	removeQuestion: () => void;
@@ -105,9 +107,18 @@ const questionTypes = Object.keys(typeMap) as Question["type"][];
 export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const { question, removeQuestion, duplicateQuestion } = props;
 
-	const [isExpanded, setIsExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? false);
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const cardRef = useRef<HTMLElement | null>(null);
+	const titleRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		if (props.autoFocusTitle && isExpanded && titleRef.current) {
+			titleRef.current.focus();
+			titleRef.current.select();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	useEffect(() => {
 		if (!isExpanded) return;
@@ -125,17 +136,26 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	}, [isExpanded, props]);
 
 	return (
-		<section ref={cardRef} className={styles.card} onClick={() => !isExpanded && setIsExpanded(true)}>
+		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)}>
 			{isExpanded ? (
 				<div
 					onClick={e => {
 						e.stopPropagation();
+					}}
+					onKeyDown={e => {
+						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+							e.preventDefault();
+							props.onFold?.();
+							setIsExpanded(false);
+							setIsTypeMenuOpen(false);
+						}
 					}}
 					className={styles.content}
 				>
 					<div className={styles.header}>
 						<div className={styles.input}>
 							<Input
+								ref={titleRef}
 								value={question.title}
 								onChange={e => {
 									if (props.onTitleChange) {

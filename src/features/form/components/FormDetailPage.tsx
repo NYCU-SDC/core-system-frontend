@@ -149,7 +149,7 @@ export const FormDetailPage = () => {
 			});
 
 			const answersArray = Object.entries(answers)
-				.filter(([, value]) => value !== "")
+				.filter(([questionId, value]) => value !== "" && !questionId.endsWith(".__other"))
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 
@@ -245,6 +245,9 @@ export const FormDetailPage = () => {
 		}));
 	};
 
+	const getOtherAnswerKey = (questionId: string) => `${questionId}.__other`;
+	const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
+
 	const renderQuestion = (question: FormsQuestionResponse) => {
 		const value = answers[question.id] || "";
 
@@ -277,7 +280,12 @@ export const FormDetailPage = () => {
 				);
 
 			case "SINGLE_CHOICE":
-			case "DROPDOWN":
+			case "DROPDOWN": {
+				const choices = question.choices ?? [];
+				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
+				const otherAnswerKey = getOtherAnswerKey(question.id);
+				const otherValue = answers[otherAnswerKey] || "";
+
 				return (
 					<div key={question.id}>
 						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
@@ -286,19 +294,29 @@ export const FormDetailPage = () => {
 						</label>
 						{question.description && <Markdown content={question.description} />}
 						<Radio
-							options={
-								question.choices?.map(choice => ({
-									value: choice.id,
-									label: choice.name
-								})) || []
-							}
+							options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
 							value={value}
-							onValueChange={newValue => updateAnswer(question.id, newValue)}
+							onValueChange={newValue => {
+								updateAnswer(question.id, newValue);
+								if (newValue !== otherChoice?.id) {
+									updateAnswer(otherAnswerKey, "");
+								}
+							}}
 						/>
+						{otherChoice && value === otherChoice.id && (
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+						)}
 					</div>
 				);
+			}
 
-			case "MULTIPLE_CHOICE":
+			case "MULTIPLE_CHOICE": {
+				const choices = question.choices ?? [];
+				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
+				const selectedIds = getSelectedChoiceIds(value);
+				const otherAnswerKey = getOtherAnswerKey(question.id);
+				const otherValue = answers[otherAnswerKey] || "";
+
 				return (
 					<div key={question.id}>
 						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
@@ -307,22 +325,28 @@ export const FormDetailPage = () => {
 						</label>
 						{question.description && <Markdown content={question.description} />}
 						<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-							{question.choices?.map(choice => (
+							{choices.map(choice => (
 								<Checkbox
 									key={choice.id}
 									id={`${question.id}-${choice.id}`}
 									label={choice.name}
-									checked={value.includes(choice.id)}
+									checked={selectedIds.includes(choice.id)}
 									onCheckedChange={checked => {
-										const currentValues = value ? value.split(",") : [];
-										const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
+										const newValues = checked ? [...selectedIds, choice.id] : selectedIds.filter(v => v !== choice.id);
 										updateAnswer(question.id, newValues.join(","));
+										if (otherChoice?.id === choice.id && !checked) {
+											updateAnswer(otherAnswerKey, "");
+										}
 									}}
 								/>
 							))}
 						</div>
+						{otherChoice && selectedIds.includes(otherChoice.id) && (
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+						)}
 					</div>
 				);
+			}
 
 			case "DETAILED_MULTIPLE_CHOICE":
 				return (
@@ -564,7 +588,7 @@ export const FormDetailPage = () => {
 			});
 
 			const answersArray = Object.entries(answers)
-				.filter(([, value]) => value !== "")
+				.filter(([questionId, value]) => value !== "" && !questionId.endsWith(".__other"))
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];

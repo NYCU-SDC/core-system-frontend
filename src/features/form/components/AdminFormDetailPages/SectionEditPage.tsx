@@ -47,7 +47,7 @@ export const AdminSectionEditPage = () => {
 				description: q.description ?? "",
 				required: q.required ?? false,
 				isFromAnswer: !!q.sourceId,
-				options: q.choices?.map(c => ({ label: c.name ?? "" })),
+				options: q.choices?.map(c => ({ label: c.name ?? "", isOther: (c as { isOther?: boolean }).isOther ?? false })),
 				detailOptions: q.choices?.map(c => ({ label: c.name ?? "", description: c.description ?? "" })),
 				start: q.scale?.minVal,
 				end: q.scale?.maxVal,
@@ -266,8 +266,14 @@ export const AdminSectionEditPage = () => {
 		navigate(`/orgs/${orgSlug}/forms/${formid}/edit`);
 	};
 
+	const [newlyAddedIndex, setNewlyAddedIndex] = useState<number | null>(null);
+
 	const handleAddQuestion = (setQuestion: () => Question) => {
-		setQuestions([...questions, setQuestion()]);
+		const newIndex = questions.length;
+		const q = setQuestion();
+		q.title = `問題${newIndex + 1}`;
+		setQuestions([...questions, q]);
+		setNewlyAddedIndex(newIndex);
 	};
 
 	const handleRemoveQuestion = (index: number) => {
@@ -435,6 +441,8 @@ export const AdminSectionEditPage = () => {
 								key={questionIds[index] ?? index}
 								question={question}
 								questionNumber={index + 1}
+								defaultExpanded={index === newlyAddedIndex}
+								autoFocusTitle={index === newlyAddedIndex}
 								duplicateQuestion={() => handleDuplicateQuestion(index)}
 								removeQuestion={() => handleDeleteQuestionWithApi(index)}
 								onTitleChange={newTitle => handleTitleChange(index, newTitle)}

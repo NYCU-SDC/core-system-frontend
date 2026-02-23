@@ -68,6 +68,9 @@ export const AdminFormPreviewPage = () => {
 		setAnswers(prev => ({ ...prev, [questionId]: value }));
 	};
 
+	const getOtherAnswerKey = (questionId: string) => `${questionId}.__other`;
+	const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
+
 	const renderQuestion = (question: FormsQuestionResponse) => {
 		const value = answers[question.id] || "";
 
@@ -100,7 +103,12 @@ export const AdminFormPreviewPage = () => {
 				);
 
 			case "SINGLE_CHOICE":
-			case "DROPDOWN":
+			case "DROPDOWN": {
+				const choices = question.choices ?? [];
+				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
+				const otherAnswerKey = getOtherAnswerKey(question.id);
+				const otherValue = answers[otherAnswerKey] || "";
+
 				return (
 					<div key={question.id}>
 						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
@@ -108,11 +116,30 @@ export const AdminFormPreviewPage = () => {
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
 						{question.description && <Markdown content={question.description} />}
-						<Radio options={question.choices?.map(c => ({ value: c.id, label: c.name })) || []} value={value} onValueChange={v => updateAnswer(question.id, v)} />
+						<Radio
+							options={choices.map(c => ({ value: c.id, label: c.name }))}
+							value={value}
+							onValueChange={newValue => {
+								updateAnswer(question.id, newValue);
+								if (newValue !== otherChoice?.id) {
+									updateAnswer(otherAnswerKey, "");
+								}
+							}}
+						/>
+						{otherChoice && value === otherChoice.id && (
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+						)}
 					</div>
 				);
+			}
 
-			case "MULTIPLE_CHOICE":
+			case "MULTIPLE_CHOICE": {
+				const choices = question.choices ?? [];
+				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
+				const selectedIds = getSelectedChoiceIds(value);
+				const otherAnswerKey = getOtherAnswerKey(question.id);
+				const otherValue = answers[otherAnswerKey] || "";
+
 				return (
 					<div key={question.id}>
 						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
@@ -121,22 +148,28 @@ export const AdminFormPreviewPage = () => {
 						</label>
 						{question.description && <Markdown content={question.description} />}
 						<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-							{question.choices?.map(choice => (
+							{choices.map(choice => (
 								<Checkbox
 									key={choice.id}
 									id={`${question.id}-${choice.id}`}
 									label={choice.name}
-									checked={value.includes(choice.id)}
+									checked={selectedIds.includes(choice.id)}
 									onCheckedChange={checked => {
-										const cur = value ? value.split(",") : [];
-										const next = checked ? [...cur, choice.id] : cur.filter(v => v !== choice.id);
+										const next = checked ? [...selectedIds, choice.id] : selectedIds.filter(v => v !== choice.id);
 										updateAnswer(question.id, next.join(","));
+										if (otherChoice?.id === choice.id && !checked) {
+											updateAnswer(otherAnswerKey, "");
+										}
 									}}
 								/>
 							))}
 						</div>
+						{otherChoice && selectedIds.includes(otherChoice.id) && (
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+						)}
 					</div>
 				);
+			}
 
 			case "DETAILED_MULTIPLE_CHOICE":
 				return (

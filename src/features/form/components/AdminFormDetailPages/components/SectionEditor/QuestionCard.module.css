@@ -8,6 +8,10 @@
 	cursor: pointer;
 }
 
+.card.expanded {
+	cursor: auto;
+}
+
 .content {
 	display: flex;
 	flex-direction: column;
