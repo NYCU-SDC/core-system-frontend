@@ -18,7 +18,7 @@ import type {
 	ResponsesStringAnswer,
 	ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { RefreshCw, Upload, X } from "lucide-react";
+import { ChevronLeft, RefreshCw, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
@@ -767,6 +767,10 @@ export const FormDetailPage = () => {
 			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 			<div className={styles.container} style={themedContainerStyle}>
 				<div className={styles.header}>
+					<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--foreground)">
+						<ChevronLeft size={16} />
+						返回表單列表
+					</Button>
 					<h1 className={styles.title}>{form.title}</h1>
 					{currentStep === 0 && form.description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
 					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
