@@ -503,9 +503,14 @@ export const AdminSectionEditPage = () => {
 			icon: <Star />,
 			text: "評分",
 			type: "RATING",
-			setDefaultQuestion: () => ({ type: "RATING", title: "", description: "", required: false, isFromAnswer: false, start: 1, end: 5, startLabel: "", endLabel: "", icon: "STAR" })
+			setDefaultQuestion: () => ({ type: "RATING", title: "", description: "", required: false, isFromAnswer: false, start: 1, end: 5, startLabel: "", endLabel: "", icon: "star" })
 		},
-		{ icon: <ListOrdered />, text: "排序", type: "RANKING", setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
+		{
+			icon: <ListOrdered />,
+			text: "排序",
+			type: "RANKING",
+			setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", required: false, options: [{ label: "選項 1" }, { label: "選項 2" }, { label: "選項 3" }], isFromAnswer: false })
+		},
 		{
 			icon: <Calendar />,
 			text: "日期選擇",

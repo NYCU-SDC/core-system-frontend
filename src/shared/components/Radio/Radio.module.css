@@ -24,7 +24,7 @@
 }
 
 .radio:hover {
-	border-color: var(--orange);
+	border-color: var(--form-theme-color, var(--orange));
 }
 
 .radio:focus-visible {
@@ -33,7 +33,7 @@
 }
 
 .radio[data-state="checked"] {
-	border-color: var(--orange);
+	border-color: var(--form-theme-color, var(--orange));
 }
 
 .radio[data-disabled] {
@@ -52,7 +52,7 @@
 	width: 0.625rem;
 	height: 0.625rem;
 	border-radius: 50%;
-	background-color: var(--indicator-color, var(--orange));
+	background-color: var(--indicator-color, var(--form-theme-color, var(--orange)));
 }
 
 .label {

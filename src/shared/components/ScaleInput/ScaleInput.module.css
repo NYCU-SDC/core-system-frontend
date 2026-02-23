@@ -69,18 +69,18 @@
 }
 
 .scaleButton:hover {
-	border-color: var(--orange);
-	background: rgba(255, 131, 43, 0.1);
+	border-color: var(--form-theme-color, var(--orange));
+	background: color-mix(in srgb, var(--form-theme-color, var(--orange)) 10%, transparent);
 }
 
 .scaleButton.hover {
-	border-color: var(--orange);
-	background: rgba(255, 131, 43, 0.05);
+	border-color: var(--form-theme-color, var(--orange));
+	background: color-mix(in srgb, var(--form-theme-color, var(--orange)) 5%, transparent);
 }
 
 .scaleButton.selected {
-	border-color: var(--orange);
-	background: var(--orange);
+	border-color: var(--form-theme-color, var(--orange));
+	background: var(--form-theme-color, var(--orange));
 	color: white;
 }
 
@@ -93,17 +93,17 @@
 
 .scaleButton:has(svg):hover {
 	background: transparent;
-	color: var(--orange);
+	color: var(--form-theme-color, var(--orange));
 }
 
 .scaleButton:has(svg).hover {
 	background: transparent;
-	color: var(--orange);
+	color: var(--form-theme-color, var(--orange));
 }
 
 .scaleButton:has(svg).selected {
 	background: transparent;
-	color: var(--orange);
+	color: var(--form-theme-color, var(--orange));
 }
 
 .scaleButton svg {

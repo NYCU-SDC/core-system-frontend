@@ -52,7 +52,7 @@
 }
 
 .checkbox:hover {
-	border-color: var(--orange);
+	border-color: var(--form-theme-color, var(--orange));
 }
 
 .checkbox:focus-visible {
@@ -61,8 +61,8 @@
 }
 
 .checkbox[data-state="checked"] {
-	background-color: var(--orange);
-	border-color: var(--orange);
+	background-color: var(--form-theme-color, var(--orange));
+	border-color: var(--form-theme-color, var(--orange));
 }
 
 .checkbox[data-disabled] {
@@ -226,7 +226,7 @@
 	padding-left: 1.5rem;
 	font-size: 1rem;
 	line-height: 1.6;
-	color: var(--orange);
+	color: var(--form-theme-color, var(--orange));
 	text-decoration: underline;
 	white-space: nowrap;
 	background: linear-gradient(to right, transparent, var(--selection) 1rem, var(--selection));

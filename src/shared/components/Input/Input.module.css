@@ -49,7 +49,7 @@
 }
 
 .input:focus {
-	border-color: var(--orange);
+	border-color: var(--form-theme-color, var(--orange));
 }
 
 .input:disabled {

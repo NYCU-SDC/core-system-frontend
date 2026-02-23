@@ -18,7 +18,7 @@
 }
 
 .checkbox:hover {
-	border-color: var(--orange);
+	border-color: var(--form-theme-color, var(--orange));
 }
 
 .checkbox:focus-visible {
@@ -27,8 +27,8 @@
 }
 
 .checkbox[data-state="checked"] {
-	background-color: var(--orange);
-	border-color: var(--orange);
+	background-color: var(--form-theme-color, var(--orange));
+	border-color: var(--form-theme-color, var(--orange));
 }
 
 .checkbox[data-disabled] {
