@@ -91,15 +91,9 @@ export const AdminFormPreviewPage = () => {
 		return [...sectionMap.values()];
 	}, [sectionsQuery.data, workflowQuery.data]);
 
-	// Clamp step if sections shrink
-	useEffect(() => {
-		if (sections.length > 0 && currentStep >= sections.length) {
-			setCurrentStep(sections.length - 1);
-		}
-	}, [sections.length, currentStep]);
-
-	const isFirstStep = currentStep === 0;
-	const isLastStep = sections.length === 0 || currentStep === sections.length - 1;
+	const safeCurrentStep = sections.length > 0 ? Math.min(currentStep, sections.length - 1) : currentStep;
+	const isFirstStep = safeCurrentStep === 0;
+	const isLastStep = sections.length === 0 || safeCurrentStep === sections.length - 1;
 
 	const updateAnswer = (questionId: string, value: string) => {
 		setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -357,7 +351,7 @@ export const AdminFormPreviewPage = () => {
 				<div className={formStyles.container} style={themedContainerStyle}>
 					<div className={formStyles.header}>
 						<h1 className={formStyles.title}>{form.title}</h1>
-						{currentStep === 0 ? <p className={formStyles.description}>{form.description}</p> : <h2 className={formStyles.sectionHeader}>{sections[currentStep]?.title}</h2>}
+						{safeCurrentStep === 0 ? <p className={formStyles.description}>{form.description}</p> : <h2 className={formStyles.sectionHeader}>{sections[safeCurrentStep]?.title}</h2>}
 					</div>
 
 					<div className={formStyles.structure}>
@@ -366,7 +360,7 @@ export const AdminFormPreviewPage = () => {
 						</div>
 						<div className={formStyles.workflow}>
 							{sections.map((section, index) => (
-								<button key={section.id} type="button" className={`${formStyles.workflowButton} ${index === currentStep ? formStyles.active : ""}`} onClick={() => setCurrentStep(index)}>
+								<button key={section.id} type="button" className={`${formStyles.workflowButton} ${index === safeCurrentStep ? formStyles.active : ""}`} onClick={() => setCurrentStep(index)}>
 									{section.title}
 								</button>
 							))}
@@ -374,11 +368,11 @@ export const AdminFormPreviewPage = () => {
 					</div>
 
 					<div className={formStyles.form}>
-						{sections[currentStep] && (
+						{sections[safeCurrentStep] && (
 							<div className={formStyles.section}>
 								<div className={formStyles.fields}>
-									{sections[currentStep].questions?.map(q => renderQuestion(q))}
-									{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此區段目前沒有問題</p>}
+									{sections[safeCurrentStep].questions?.map(q => renderQuestion(q))}
+									{(!sections[safeCurrentStep].questions || sections[safeCurrentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此區段目前沒有問題</p>}
 								</div>
 							</div>
 						)}
