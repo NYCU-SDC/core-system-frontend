@@ -1,8 +1,6 @@
 import { useFormFonts, useUpdateForm, useUploadFormCoverImage } from "@/features/form/hooks/useOrgForms";
 import { ColorPicker, FileUpload, LoadingSpinner, SearchableSelect, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
-import { formsGetFormCoverImage } from "@nycu-sdc/core-system-sdk";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import styles from "./DesignPage.module.css";
 
@@ -15,29 +13,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 	const fontsQuery = useFormFonts();
 	const updateFormMutation = useUpdateForm(formData.id);
 	const uploadCoverMutation = useUploadFormCoverImage(formData.id);
-
-	// Fetch existing cover image
-	const coverQuery = useQuery({
-		queryKey: ["form", formData.id, "cover"],
-		queryFn: async () => {
-			const res = await formsGetFormCoverImage(formData.id, { credentials: "include" });
-			if (res.status === 200 && res.data) {
-				const blob = new Blob([res.data], { type: "image/webp" });
-				return URL.createObjectURL(blob);
-			}
-			return null;
-		},
-		staleTime: Infinity,
-		gcTime: 0
-	});
-
-	// Revoke blob URL on unmount
-	useEffect(() => {
-		const url = coverQuery.data;
-		return () => {
-			if (url) URL.revokeObjectURL(url);
-		};
-	}, [coverQuery.data]);
+	const coverImageUrl = `/api/forms/${formData.id}/cover`;
 
 	const [color, setColor] = useState(formData.dressing?.color ?? "#ff5555");
 	const [headerFont, setHeaderFont] = useState(formData.dressing?.headerFont ?? "");
@@ -84,12 +60,17 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 					<p className={styles.label}>主題顏色</p>
 					<ColorPicker value={color} onChange={setColor} allowCustom={false} />
 				</div>
-				{coverQuery.data && (
+				{
 					<div>
 						<p className={styles.label}>目前封面圖片</p>
-						<img src={coverQuery.data} alt="Current cover" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "0.5rem", objectFit: "cover" }} />
+						<img
+							src={coverImageUrl}
+							alt="Current cover"
+							onError={e => (e.currentTarget.style.display = "none")}
+							style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "0.5rem", objectFit: "cover" }}
+						/>
 					</div>
-				)}
+				}
 				<FileUpload label="封面圖片（格式只支援 Webp）" onChange={handleCoverUpload} />
 				{uploadCoverMutation.isPending && <LoadingSpinner />}
 				<h3>表單外觀</h3>

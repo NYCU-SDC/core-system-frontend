@@ -64,9 +64,7 @@ export const DetailedCheckbox = ({ title, description, themeColor, style, id, ..
 								}
 							}}
 						>
-							<div ref={handleDescriptionRef} className={`${styles.description} ${isExpanded ? styles.descriptionExpanded : ""}`}>
-								{description}
-							</div>
+							<div ref={handleDescriptionRef} className={`${styles.description} ${isExpanded ? styles.descriptionExpanded : ""}`} dangerouslySetInnerHTML={{ __html: description }} />
 							{needsExpansion && !isExpanded && <span className={styles.showMoreButton}>...顯示全部</span>}
 						</div>
 					</div>

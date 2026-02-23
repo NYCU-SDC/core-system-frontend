@@ -3,12 +3,21 @@ import { useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, ErrorMessage, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea } from "@/shared/components";
 import type { FormsQuestionResponse, FormsSection } from "@nycu-sdc/core-system-sdk";
-import { formsGetFormCoverImage } from "@nycu-sdc/core-system-sdk";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
 import formStyles from "./FormDetailPage.module.css";
+
+const ensureEmfontStylesheet = (fontId: string) => {
+	if (!fontId) return;
+	const linkId = `emfont-${fontId}`;
+	if (document.getElementById(linkId)) return;
+	const link = document.createElement("link");
+	link.id = linkId;
+	link.rel = "stylesheet";
+	link.href = `https://font.emtech.cc/css/${encodeURIComponent(fontId)}`;
+	document.head.appendChild(link);
+};
 
 export const AdminFormPreviewPage = () => {
 	const { formid } = useParams<{ formid: string }>();
@@ -19,28 +28,13 @@ export const AdminFormPreviewPage = () => {
 	const formQuery = useFormById(formid);
 	const sectionsQuery = useSections(formid);
 	const workflowQuery = useWorkflow(formid);
-
-	const coverQuery = useQuery({
-		queryKey: ["form", formid, "cover"],
-		queryFn: async () => {
-			const res = await formsGetFormCoverImage(formid!, { credentials: "include" });
-			if (res.status === 200 && res.data) {
-				const blob = new Blob([res.data], { type: "image/webp" });
-				return URL.createObjectURL(blob);
-			}
-			return null;
-		},
-		enabled: !!formid,
-		staleTime: Infinity,
-		gcTime: 0
-	});
+	const coverImageUrl = formid ? `/api/forms/${formid}/cover` : null;
 
 	useEffect(() => {
-		const url = coverQuery.data;
-		return () => {
-			if (url) URL.revokeObjectURL(url);
-		};
-	}, [coverQuery.data]);
+		[formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]
+			.filter((fontId): fontId is string => Boolean(fontId))
+			.forEach(ensureEmfontStylesheet);
+	}, [formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]);
 
 	const sections: FormsSection[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
@@ -336,6 +330,13 @@ export const AdminFormPreviewPage = () => {
 	}
 
 	const form = formQuery.data;
+	const primaryThemeColor = form.dressing?.color ?? "var(--orange)";
+	const themedContainerStyle = {
+		["--form-theme-color" as string]: primaryThemeColor,
+		["--form-header-font" as string]: form.dressing?.headerFont || undefined,
+		["--form-question-font" as string]: form.dressing?.questionFont || undefined,
+		["--form-text-font" as string]: form.dressing?.textFont || undefined
+	} as CSSProperties;
 
 	return (
 		<div className={styles.page}>
@@ -350,8 +351,8 @@ export const AdminFormPreviewPage = () => {
 
 			{/* Same visual layout as FormDetailPage */}
 			<div className={styles.content}>
-				{coverQuery.data && <img src={coverQuery.data} className={formStyles.cover} alt="表單封面" />}
-				<div className={formStyles.container}>
+				{coverImageUrl && <img src={coverImageUrl} className={formStyles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
+				<div className={formStyles.container} style={themedContainerStyle}>
 					<div className={formStyles.header}>
 						<h1 className={formStyles.title}>{form.title}</h1>
 						{currentStep === 0 ? <p className={formStyles.description}>{form.description}</p> : <h2 className={formStyles.sectionHeader}>{sections[currentStep]?.title}</h2>}
@@ -385,7 +386,7 @@ export const AdminFormPreviewPage = () => {
 							<Button type="button" onClick={() => setCurrentStep(p => p - 1)} disabled={isFirstStep} themeColor="var(--foreground)">
 								上一頁
 							</Button>
-							<Button type="button" onClick={() => setCurrentStep(p => p + 1)} disabled={isLastStep} themeColor="var(--orange)">
+							<Button type="button" onClick={() => setCurrentStep(p => p + 1)} disabled={isLastStep} themeColor={primaryThemeColor}>
 								下一頁
 							</Button>
 						</div>

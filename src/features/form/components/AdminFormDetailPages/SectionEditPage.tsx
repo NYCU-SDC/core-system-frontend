@@ -53,15 +53,15 @@ export const AdminSectionEditPage = () => {
 	}, []);
 
 	const markQuestionsDirty = useCallback((indexes: number[]) => {
-		let changed = false;
+		let hasValidIndex = false;
 		indexes.forEach(index => {
 			if (index < 0) return;
+			hasValidIndex = true;
 			if (!dirtyQuestionIndexesRef.current.has(index)) {
 				dirtyQuestionIndexesRef.current.add(index);
-				changed = true;
 			}
 		});
-		if (changed) {
+		if (hasValidIndex) {
 			setDirtyQuestionVersion(version => version + 1);
 		}
 	}, []);

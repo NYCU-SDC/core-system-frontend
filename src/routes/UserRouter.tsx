@@ -41,7 +41,7 @@ export const UserRouter = () => {
 					<Route
 						path="/forms/:formId/:responseId"
 						element={
-							<UserLayout>
+							<UserLayout disablePadding>
 								<FormDetailPage />
 							</UserLayout>
 						}

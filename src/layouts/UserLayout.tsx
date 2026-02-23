@@ -4,12 +4,13 @@ import styles from "./UserLayout.module.css";
 
 interface UserLayoutProps {
 	children: ReactNode;
+	disablePadding?: boolean;
 }
 
-export const UserLayout = ({ children }: UserLayoutProps) => {
+export const UserLayout = ({ children, disablePadding = false }: UserLayoutProps) => {
 	return (
 		<main className={styles.main}>
-			<div className={styles.container}>{children}</div>
+			<div className={`${styles.container} ${disablePadding ? styles.noPadding : ""}`}>{children}</div>
 			<Footer />
 		</main>
 	);

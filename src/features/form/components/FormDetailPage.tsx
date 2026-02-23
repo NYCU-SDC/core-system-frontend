@@ -16,9 +16,7 @@ import type {
 	ResponsesStringAnswer,
 	ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { formsGetFormCoverImage } from "@nycu-sdc/core-system-sdk";
-import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
 
@@ -28,6 +26,17 @@ interface FormResponseData {
 	sections: ResponsesResponseSections[];
 	progress: ResponsesResponseProgress;
 }
+
+const ensureEmfontStylesheet = (fontId: string) => {
+	if (!fontId) return;
+	const linkId = `emfont-${fontId}`;
+	if (document.getElementById(linkId)) return;
+	const link = document.createElement("link");
+	link.id = linkId;
+	link.rel = "stylesheet";
+	link.href = `https://font.emtech.cc/css/${encodeURIComponent(fontId)}`;
+	document.head.appendChild(link);
+};
 
 export const FormDetailPage = () => {
 	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
@@ -50,38 +59,22 @@ export const FormDetailPage = () => {
 	const responseQuery = useFormResponse(formId, urlResponseId, !!urlResponseId);
 	const updateResponseMutation = useUpdateFormResponse(urlResponseId ?? "");
 	const submitResponseMutation = useSubmitFormResponse(formId ?? "");
-
-	// Cover image (binary blob — keep in a dedicated query)
-	const coverQuery = useQuery({
-		queryKey: ["form", formId, "cover"],
-		queryFn: async () => {
-			const res = await formsGetFormCoverImage(formId!, { credentials: "include" });
-			if (res.status === 200 && res.data) {
-				const blob = new Blob([res.data], { type: "image/webp" });
-				return URL.createObjectURL(blob);
-			}
-			return null;
-		},
-		enabled: !!formId,
-		staleTime: Infinity,
-		gcTime: 0
-	});
-
-	// Revoke blob URL when it changes or component unmounts
-	useEffect(() => {
-		const url = coverQuery.data;
-		return () => {
-			if (url) URL.revokeObjectURL(url);
-		};
-	}, [coverQuery.data]);
+	const coverImageUrl = formId ? `/api/forms/${formId}/cover` : null;
 
 	// ── Derived state ────────────────────────────────────────────────────────
 	const form = formQuery.data ?? null;
+	const primaryThemeColor = form?.dressing?.color ?? "var(--orange)";
 
 	const responseProgress: ResponsesResponseProgress = useMemo(() => {
 		const data = responseQuery.data as unknown as FormResponseData | undefined;
 		return data?.progress ?? "DRAFT";
 	}, [responseQuery.data]);
+
+	useEffect(() => {
+		[formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]
+			.filter((fontId): fontId is string => Boolean(fontId))
+			.forEach(ensureEmfontStylesheet);
+	}, [formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]);
 
 	const sections: Section[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
@@ -516,7 +509,7 @@ export const FormDetailPage = () => {
 									// Mark as pending so the focus listener can pick it up
 									updateAnswer(question.id, "__pending__");
 								}}
-								themeColor={isConnected && value !== "__pending__" ? "var(--color-caption)" : "var(--orange)"}
+								themeColor={isConnected && value !== "__pending__" ? "var(--color-caption)" : primaryThemeColor}
 							>
 								{isConnected && value !== "__pending__" ? `已連接 ${question.oauthConnect} 帳號` : `連接 ${question.oauthConnect} 帳號`}
 							</Button>
@@ -564,7 +557,7 @@ export const FormDetailPage = () => {
 							<button
 								type="button"
 								onClick={() => handleSectionClick(sectionIndex)}
-								style={{ fontSize: "0.875rem", color: "var(--orange)", background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
+								style={{ fontSize: "0.875rem", color: primaryThemeColor, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
 							>
 								修改
 							</button>
@@ -655,7 +648,7 @@ export const FormDetailPage = () => {
 							<Button type="button" onClick={() => urlResponseId && navigate(`/forms/${formId}?responseId=${urlResponseId}`)} themeColor="var(--code-foreground)">
 								查看問卷副本
 							</Button>
-							<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--orange)">
+							<Button type="button" onClick={() => navigate("/forms")} themeColor={primaryThemeColor}>
 								返回主頁
 							</Button>
 						</div>
@@ -693,11 +686,18 @@ export const FormDetailPage = () => {
 		);
 	}
 
+	const themedContainerStyle = {
+		["--form-theme-color" as string]: primaryThemeColor,
+		["--form-header-font" as string]: form?.dressing?.headerFont || undefined,
+		["--form-question-font" as string]: form?.dressing?.questionFont || undefined,
+		["--form-text-font" as string]: form?.dressing?.textFont || undefined
+	} as CSSProperties;
+
 	return (
 		<>
 			{meta}
-			{coverQuery.data && <img src={coverQuery.data} className={styles.cover} alt="表單封面" />}
-			<div className={styles.container}>
+			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
+			<div className={styles.container} style={themedContainerStyle}>
 				<div className={styles.header}>
 					<h1 className={styles.title}>{form.title}</h1>
 					{currentStep === 0 ? <p className={styles.description}>{form.description}</p> : <h2 className={styles.sectionHeader}>{sections[currentStep]?.title}</h2>}
@@ -718,7 +718,7 @@ export const FormDetailPage = () => {
 							<p>待填寫</p>
 						</div>
 						<div className={styles.structureLegend}>
-							<span style={{ backgroundColor: "var(--orange)" }}></span>
+							<span style={{ backgroundColor: primaryThemeColor }}></span>
 							<p>目前位置</p>
 						</div>
 					</div>
@@ -758,11 +758,11 @@ export const FormDetailPage = () => {
 							上一頁
 						</Button>
 						{isLastStep ? (
-							<Button type="submit" disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending}>
+							<Button type="submit" disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending} themeColor={primaryThemeColor}>
 								{responseProgress === "SUBMITTED" ? "已送出" : "送出"}
 							</Button>
 						) : (
-							<Button type="button" onClick={handleNext}>
+							<Button type="button" onClick={handleNext} themeColor={primaryThemeColor}>
 								下一頁
 							</Button>
 						)}
