@@ -38,7 +38,7 @@ const toFormRow = (form: UnitUserForm): FormRow => {
 	return {
 		id: form.id,
 		title: form.title,
-		deadline: formatDate(form.deadline),
+		deadline: form.deadline ? formatDate(form.deadline) : "無期限",
 		status: form.status,
 		buttonLabel: statusMap[form.status],
 		responseIds: form.responseIds
