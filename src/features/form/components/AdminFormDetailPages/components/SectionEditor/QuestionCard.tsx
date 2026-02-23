@@ -9,6 +9,7 @@ import { RangeQuestion } from "./RangeQuestion";
 
 export interface QuestionCardProps {
 	question: Question;
+	questionNumber?: number;
 	onTitleChange?: (newTitle: string) => void;
 	onDescriptionChange?: (newDescription: string) => void;
 	removeQuestion: () => void;
@@ -290,7 +291,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			) : (
 				<div className={styles.preview}>
 					{typeMap[question.type].icon}
-					<p>{props.question.title || "問題標題"}</p>
+					<p>
+						{props.questionNumber !== undefined ? `Q${props.questionNumber}. ` : ""}
+						{props.question.title || "問題標題"}
+					</p>
 				</div>
 			)}
 		</section>

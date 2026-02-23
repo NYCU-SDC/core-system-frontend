@@ -134,7 +134,7 @@ export const AdminSectionEditPage = () => {
 
 	const handleSaveQuestion = async (index: number) => {
 		if (!formid || !sectionId) return;
-		const req = toApiRequest(questions[index], index);
+		const req = toApiRequest(questions[index], index + 1);
 		const existingId = questionIds[index];
 		try {
 			if (existingId) {
@@ -434,6 +434,7 @@ export const AdminSectionEditPage = () => {
 							<QuestionCard
 								key={questionIds[index] ?? index}
 								question={question}
+								questionNumber={index + 1}
 								duplicateQuestion={() => handleDuplicateQuestion(index)}
 								removeQuestion={() => handleDeleteQuestionWithApi(index)}
 								onTitleChange={newTitle => handleTitleChange(index, newTitle)}

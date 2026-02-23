@@ -2,6 +2,7 @@ import { useMe } from "@/features/auth/hooks/useAuth";
 import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
+import * as formApi from "@/features/form/services/api";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
@@ -75,14 +76,18 @@ export const FormsListPage = () => {
 		return forms.filter(form => form.status === activeTab);
 	}, [forms, activeTab]);
 
+	const [pendingFormId, setPendingFormId] = useState<string | null>(null);
+
 	const handleFormClick = (form: FormRow) => {
 		if (form.status === UnitUserFormStatus.NOT_STARTED) {
-			// Create form response first, then navigate with formId + responseId
+			setPendingFormId(form.id);
 			createResponseMutation.mutate(form.id, {
 				onSuccess: data => {
+					setPendingFormId(null);
 					navigate(`/forms/${form.id}/${data.id}`);
 				},
 				onError: error => {
+					setPendingFormId(null);
 					pushToast({
 						title: "錯誤",
 						description: error.message || "開始填寫表單失敗",
@@ -95,6 +100,21 @@ export const FormsListPage = () => {
 			const responseId = form.responseIds?.[0];
 			if (responseId) {
 				navigate(`/forms/${form.id}/${responseId}`);
+			} else {
+				// responseIds missing from list API — fetch existing response
+				setPendingFormId(form.id);
+				formApi
+					.listFormResponses(form.id)
+					.then(data => {
+						const existing = data.responses?.[0]?.id;
+						if (existing) {
+							navigate(`/forms/${form.id}/${existing}`);
+						} else {
+							pushToast({ title: "找不到填答紀錄", variant: "error" });
+						}
+					})
+					.catch(() => pushToast({ title: "無法載入填答紀錄", variant: "error" }))
+					.finally(() => setPendingFormId(null));
 			}
 		}
 	};
@@ -139,7 +159,7 @@ export const FormsListPage = () => {
 									<h3 className={styles.cardTitle}>{form.title}</h3>
 									<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
 								</div>
-								<Button className={styles.sharedBtn} processing={createResponseMutation.isPending}>
+								<Button className={styles.sharedBtn} processing={pendingFormId === form.id}>
 									{form.buttonLabel}
 								</Button>
 							</div>
