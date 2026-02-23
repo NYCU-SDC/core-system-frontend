@@ -92,6 +92,7 @@ h6 {
 
 p {
 	line-height: 1.33;
+	word-break: break-word;
 }
 
 a {

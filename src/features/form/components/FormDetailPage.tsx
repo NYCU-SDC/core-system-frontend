@@ -1,10 +1,10 @@
-import { useFormResponse, useGetQuestionResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
+import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as formApi from "@/features/form/services/api";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { AccountButton, Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
 	FormsSection,
@@ -16,7 +16,6 @@ import type {
 	ResponsesStringAnswer,
 	ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { Chrome, Github } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
@@ -469,59 +468,8 @@ export const FormDetailPage = () => {
 					</div>
 				);
 
-			case "OAUTH_CONNECT": {
-				// Track per-question whether a popup for this question is open
-				const OAuthConnectQuestion = () => {
-					const oauthAnswerQuery = useGetQuestionResponse(urlResponseId, question.id, !!value || false);
-
-					// When window regains focus, refetch to see if OAuth completed
-					useEffect(() => {
-						const onFocus = () => oauthAnswerQuery.refetch();
-						window.addEventListener("focus", onFocus);
-						return () => window.removeEventListener("focus", onFocus);
-					}, [oauthAnswerQuery]);
-
-					// Sync server answer back into local state
-					useEffect(() => {
-						if (oauthAnswerQuery.data) {
-							const payload = oauthAnswerQuery.data as unknown as Record<string, unknown>;
-							const displayVal = String(payload.displayValue ?? payload.username ?? "connected");
-							if (displayVal && displayVal !== value) {
-								updateAnswer(question.id, displayVal);
-							}
-						}
-					}, [oauthAnswerQuery.data]);
-
-					const isConnected = !!value && value !== "";
-
-					return (
-						<div key={question.id}>
-							<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-								{question.title}
-								{question.required && <span style={{ color: "red" }}> *</span>}
-							</label>
-							{question.description && <Markdown content={question.description} />}
-							<AccountButton
-								onClick={() => {
-									if (!urlResponseId) return;
-									const provider = question.oauthConnect;
-									const url = `/api/oauth/questions/${provider}?responseId=${urlResponseId}&questionId=${question.id}&r=${encodeURIComponent(window.location.href)}`;
-									window.open(url, "_blank");
-									// Mark as pending so the focus listener can pick it up
-									updateAnswer(question.id, "__pending__");
-								}}
-								logo={question.oauthConnect === "GOOGLE" ? <Chrome size={18} /> : <Github size={18} />}
-								style={isConnected && value !== "__pending__" ? { opacity: 0.85 } : undefined}
-							>
-								{isConnected && value !== "__pending__" ? `已連接 ${question.oauthConnect} 帳號` : `連接 ${question.oauthConnect} 帳號`}
-							</AccountButton>
-							{isConnected && value !== "__pending__" && <p style={{ fontSize: "0.875rem", color: "var(--green)", marginTop: "0.5rem" }}>✓ 已連接：{value}</p>}
-							{value === "__pending__" && <p style={{ fontSize: "0.875rem", color: "var(--color-caption)", marginTop: "0.5rem" }}>等待驗證中…</p>}
-						</div>
-					);
-				};
-				return <OAuthConnectQuestion key={question.id} />;
-			}
+			case "OAUTH_CONNECT":
+				return null;
 
 			case "HYPERLINK":
 				return (

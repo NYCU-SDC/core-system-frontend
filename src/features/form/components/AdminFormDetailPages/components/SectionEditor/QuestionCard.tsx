@@ -160,6 +160,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const [isDuplicating, setIsDuplicating] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [localTitle, setLocalTitle] = useState(question.title);
+	const localTitleRef = useRef(question.title);
+	localTitleRef.current = localTitle;
 	const [localDesc, setLocalDesc] = useState(question.description);
 	const localDescRef = useRef(question.description);
 	localDescRef.current = localDesc;
@@ -200,7 +203,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			// Ignore clicks inside Radix UI portals (dropdowns, popovers, etc.)
 			if (target.closest("[data-radix-popper-content-wrapper], [data-radix-select-content], [data-radix-dropdown-menu-content]")) return;
 			if (!cardRef.current?.contains(target)) {
-				// flush description before blur fires (mousedown precedes blur)
+				// flush title & description before blur fires (mousedown precedes blur)
+				props.onTitleChange?.(localTitleRef.current);
 				props.onDescriptionChange?.(localDescRef.current);
 				props.onFold?.();
 				setIsExpanded(false);
@@ -241,6 +245,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					onKeyDown={e => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
+							props.onTitleChange?.(localTitleRef.current);
+							props.onDescriptionChange?.(localDescRef.current);
 							props.onFold?.();
 							setIsExpanded(false);
 							setIsTypeMenuOpen(false);
@@ -252,12 +258,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 						<div className={styles.input}>
 							<Input
 								ref={titleRef}
-								value={question.title}
-								onChange={e => {
-									if (props.onTitleChange) {
-										props.onTitleChange(e.target.value);
-									}
-								}}
+								value={localTitle}
+								onChange={e => setLocalTitle(e.target.value)}
+								onBlur={() => props.onTitleChange?.(localTitle)}
 								placeholder="問題標題"
 								variant="flushed"
 								themeColor="--comment"
