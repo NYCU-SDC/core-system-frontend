@@ -347,7 +347,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		const falsePath = getPath(nodeToUpdate.nextFalse || "", nodeMap);
 
 		const updatedNodes = prevNodes.map(node => {
-			if (!truePath.includes(node.id) && !falsePath.includes(node.id)) {
+			if (!truePath.includes(node.id) && !falsePath.includes(node.id) && node.id !== id) {
 				return node;
 			}
 			if (node.next === nodeToUpdate.mergeId) {
