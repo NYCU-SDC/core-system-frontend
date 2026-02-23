@@ -76,7 +76,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Input id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
@@ -88,7 +88,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<TextArea id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} rows={6} required={question.required} />
@@ -104,7 +104,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Radio
@@ -129,7 +129,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Select options={choices.map(c => ({ value: c.id, label: c.name }))} value={value || undefined} onValueChange={newValue => updateAnswer(question.id, newValue)} />
@@ -147,7 +147,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<div className={formStyles.choiceList}>
@@ -177,7 +177,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<div className={formStyles.choiceList}>
@@ -233,7 +233,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<DragToOrder
@@ -255,7 +255,7 @@ export const AdminFormPreviewPage = () => {
 					<div key={question.id} className={formStyles.questionField}>
 						<label className={formStyles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Input id={question.id} placeholder="https://" value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
@@ -266,7 +266,7 @@ export const AdminFormPreviewPage = () => {
 				return (
 					<div key={question.id} className={formStyles.questionField}>
 						<p>不支援的問題類型: {question.type}</p>
-						<p style={{ color: "var(--color-caption)" }}>{question.title}</p>
+						<p className={formStyles.caption}>{question.title}</p>
 					</div>
 				);
 		}
@@ -279,7 +279,7 @@ export const AdminFormPreviewPage = () => {
 					<span className={styles.bannerLabel}>預覽模式</span>
 					<span className={styles.bannerDesc}>此為管理員預覽，表單尚未發布，填答內容不會被儲存</span>
 				</div>
-				<div className={formStyles.container} style={{ marginTop: "3rem" }}>
+				<div className={`${formStyles.container} ${styles.previewContainer}`}>
 					<LoadingSpinner />
 				</div>
 			</div>
@@ -293,7 +293,7 @@ export const AdminFormPreviewPage = () => {
 					<span className={styles.bannerLabel}>預覽模式</span>
 					<span className={styles.bannerDesc}>此為管理員預覽，表單尚未發布，填答內容不會被儲存</span>
 				</div>
-				<div className={formStyles.container} style={{ marginTop: "3rem" }}>
+				<div className={`${formStyles.container} ${styles.previewContainer}`}>
 					<ErrorMessage message={(formQuery.error as Error)?.message ?? "找不到表單"} />
 				</div>
 			</div>
@@ -347,11 +347,11 @@ export const AdminFormPreviewPage = () => {
 							<div className={formStyles.section}>
 								<div className={formStyles.fields}>
 									{sections[safeCurrentStep].questions?.map(q => renderQuestion(q))}
-									{(!sections[safeCurrentStep].questions || sections[safeCurrentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此區段目前沒有問題</p>}
+									{(!sections[safeCurrentStep].questions || sections[safeCurrentStep].questions.length === 0) && <p className={formStyles.caption}>此區段目前沒有問題</p>}
 								</div>
 							</div>
 						)}
-						{sections.length === 0 && <p style={{ color: "var(--color-caption)" }}>此表單尚無任何區段</p>}
+						{sections.length === 0 && <p className={formStyles.caption}>此表單尚無任何區段</p>}
 
 						<div className={formStyles.navigation}>
 							<Button type="button" onClick={() => setCurrentStep(p => p - 1)} disabled={isFirstStep} themeColor="var(--foreground)">

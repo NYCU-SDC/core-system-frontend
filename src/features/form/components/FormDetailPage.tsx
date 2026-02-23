@@ -268,7 +268,7 @@ export const FormDetailPage = () => {
 		});
 
 		const answersArray = Object.entries(answers)
-			.filter(([, value]) => value !== "")
+			.filter(([questionId, value]) => value !== "" && questionTypeMap[questionId] !== "UPLOAD_FILE")
 			.map(([questionId, value]) => {
 				const questionType = questionTypeMap[questionId];
 				const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
@@ -380,7 +380,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Input id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
@@ -392,7 +392,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<TextArea id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} rows={6} required={question.required} />
@@ -408,7 +408,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Radio
@@ -433,7 +433,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Select options={choices.map(choice => ({ value: choice.id, label: choice.name }))} value={value || undefined} onValueChange={newValue => updateAnswer(question.id, newValue)} />
@@ -451,7 +451,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<div className={styles.choiceList}>
@@ -481,7 +481,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<div className={styles.choiceList}>
@@ -537,7 +537,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<DragToOrder
@@ -567,7 +567,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<FileUploadQuestion
@@ -591,7 +591,7 @@ export const FormDetailPage = () => {
 					<div key={question.id} className={styles.questionField}>
 						<label className={styles.questionLabel}>
 							{question.title}
-							{question.required && <span style={{ color: "red" }}> *</span>}
+							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 						<Input id={question.id} placeholder="https://" value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
@@ -602,7 +602,7 @@ export const FormDetailPage = () => {
 				return (
 					<div key={question.id} className={styles.questionField}>
 						<p>不支援的問題類型: {question.type}</p>
-						<p style={{ color: "var(--color-caption)" }}>{question.title}</p>
+						<p className={styles.caption}>{question.title}</p>
 					</div>
 				);
 		}
@@ -610,38 +610,38 @@ export const FormDetailPage = () => {
 
 	const renderPreviewSection = () => {
 		if (!previewData || previewData.length === 0) {
-			return <p style={{ color: "var(--color-caption)" }}>尚無填答資料</p>;
+			return <p className={styles.caption}>尚無填答資料</p>;
 		}
 
 		return (
-			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+			<div className={styles.previewSection}>
 				{previewData.map(section => (
-					<div key={section.id} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-							<h3 style={{ margin: 0 }}>{section.title}</h3>
+					<div key={section.id} className={styles.previewBlock}>
+						<div className={styles.previewHeader}>
+							<h3 className={styles.previewSectionTitle}>{section.title}</h3>
 							<button
 								type="button"
+								className={styles.editButton}
 								onClick={() => {
 									const targetIndex = sections.findIndex(s => s.id === section.id);
 									if (targetIndex >= 0) handleSectionClick(targetIndex);
 								}}
-								style={{ fontSize: "0.875rem", color: primaryThemeColor, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
 							>
 								修改
 							</button>
 						</div>
-						<ul style={{ listStyleType: "disc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+						<ul className={styles.previewList}>
 							{section.answerDetails?.map((detail, questionIndex: number) => {
 								const isEmpty = !detail.payload?.displayValue;
 								const isRequiredAndEmpty = isEmpty && detail.question.required;
 								return (
 									<li key={questionIndex}>
-										<span style={{ fontWeight: 500 }}>
+										<span className={styles.previewAnswerLabel}>
 											{detail.question.title}
-											{detail.question.required && <span style={{ color: "red" }}> *</span>}
+											{detail.question.required && <span className={styles.requiredAsterisk}> *</span>}
 										</span>
 										<span>：</span>
-										<span style={{ color: isRequiredAndEmpty ? "red" : undefined }}>{detail.payload?.displayValue || "未填寫"}</span>
+										<span className={isRequiredAndEmpty ? styles.previewAnswerEmpty : ""}>{detail.payload?.displayValue || "未填寫"}</span>
 									</li>
 								);
 							}) || []}
@@ -667,7 +667,7 @@ export const FormDetailPage = () => {
 			});
 
 			const answersArray = Object.entries(answers)
-				.filter(([, value]) => value !== "")
+				.filter(([questionId, value]) => value !== "" && questionTypeMap[questionId] !== "UPLOAD_FILE")
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
@@ -745,7 +745,7 @@ export const FormDetailPage = () => {
 				{meta}
 				<div className={styles.container}>
 					<h1 className={styles.title}>載入失敗</h1>
-					<pre style={{ whiteSpace: "pre-wrap", color: "red", marginBottom: "1rem" }}>{error || "找不到表單"}</pre>
+					<pre className={styles.errorPre}>{error || "找不到表單"}</pre>
 					<Button onClick={() => navigate("/forms")} themeColor="var(--orange)">
 						返回表單列表
 					</Button>
@@ -778,17 +778,17 @@ export const FormDetailPage = () => {
 						<h2>表單結構</h2>
 						<p>（可點擊項目返回編輯）</p>
 					</div>
-					<div style={{ display: "flex", gap: "0.625rem" }}>
+					<div className={styles.structureLegendRow}>
 						<div className={styles.structureLegend}>
-							<span style={{ backgroundColor: "var(--color-caption)" }}></span>
+							<span className={styles.structureLegendDotCompleted}></span>
 							<p>完成填寫</p>
 						</div>
 						<div className={styles.structureLegend}>
-							<span style={{ backgroundColor: "var(--code-foreground)" }}></span>
+							<span className={styles.structureLegendDotPending}></span>
 							<p>待填寫</p>
 						</div>
 						<div className={styles.structureLegend}>
-							<span style={{ backgroundColor: primaryThemeColor }}></span>
+							<span className={styles.structureLegendDotCurrent}></span>
 							<p>目前位置</p>
 						</div>
 					</div>
@@ -807,7 +807,7 @@ export const FormDetailPage = () => {
 							<div className={styles.fields}>
 								{sections[currentStep].id === "preview" ? (
 									responseQuery.isFetching ? (
-										<div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
+										<div className={styles.loadingCenter}>
 											<LoadingSpinner />
 										</div>
 									) : (
@@ -816,7 +816,7 @@ export const FormDetailPage = () => {
 								) : (
 									<>
 										{sections[currentStep].questions?.map(question => renderQuestion(question))}
-										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p style={{ color: "var(--color-caption)" }}>此區段目前沒有問題</p>}
+										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p className={styles.caption}>此區段目前沒有問題</p>}
 									</>
 								)}
 							</div>

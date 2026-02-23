@@ -387,3 +387,61 @@
 	opacity: 0;
 	cursor: pointer;
 }
+
+.requiredAsterisk {
+	color: var(--red);
+}
+
+.caption {
+	color: var(--color-caption);
+}
+
+.structureLegendRow {
+	display: flex;
+	gap: 0.625rem;
+}
+
+.structureLegendDotCompleted {
+	background-color: var(--color-caption);
+}
+
+.structureLegendDotPending {
+	background-color: var(--code-foreground);
+}
+
+.structureLegendDotCurrent {
+	background-color: var(--form-theme-color, var(--orange));
+}
+
+.loadingCenter {
+	display: flex;
+	justify-content: center;
+	padding: 2rem;
+}
+
+.errorPre {
+	white-space: pre-wrap;
+	color: var(--red);
+	margin-bottom: 1rem;
+}
+
+.previewSectionTitle {
+	margin: 0;
+}
+
+.editButton {
+	font-size: 0.875rem;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0.25rem 0.5rem;
+	color: var(--form-theme-color, var(--orange));
+}
+
+.previewAnswerLabel {
+	font-weight: 500;
+}
+
+.previewAnswerEmpty {
+	color: var(--red);
+}

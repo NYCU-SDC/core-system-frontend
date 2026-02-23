@@ -57,3 +57,7 @@
 	background-image: linear-gradient(to right, var(--background-color-tertiary) 1px, transparent 1px), linear-gradient(to bottom, var(--background-color-tertiary) 1px, transparent 1px);
 	background-size: 20px 20px;
 }
+
+.previewContainer {
+	margin-top: 3rem;
+}
