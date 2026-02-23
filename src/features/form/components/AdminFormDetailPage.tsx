@@ -1,10 +1,9 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
-import { useCreateFormResponse } from "@/features/form/hooks/useMyForms";
 import { useFormById, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, ErrorMessage, LoadingSpinner, Tooltip, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { useIsMutating } from "@tanstack/react-query";
 import { Check, LoaderCircle } from "lucide-react";
 import { useState } from "react";
@@ -34,7 +33,6 @@ export const AdminFormDetailPage = () => {
 	// Fetch form data
 	const formQuery = useFormById(formid);
 	const publishFormMutation = usePublishForm(orgSlug);
-	const createResponseMutation = useCreateFormResponse();
 	const meta = useSeo({ rule: SEO_CONFIG.adminForms });
 	const activeEditorMutations = useIsMutating({ mutationKey: ["form-editor", formid ?? ""] });
 	const isSaving = activeEditorMutations > 0;
@@ -57,12 +55,7 @@ export const AdminFormDetailPage = () => {
 
 	const handleViewForm = () => {
 		if (!formid) return;
-		createResponseMutation.mutate(formid, {
-			onSuccess: data => {
-				window.open(`/forms/${formid}/${data.id}`, "_blank", "noopener,noreferrer");
-			},
-			onError: error => pushToast({ title: "開啟失敗", description: (error as Error).message, variant: "error" })
-		});
+		window.open(`/forms/${formid}`, "_blank", "noopener,noreferrer");
 	};
 
 	if (formQuery.isLoading) {
@@ -104,11 +97,9 @@ export const AdminFormDetailPage = () => {
 						<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
 							預覽表單
 						</Button>
-						<Tooltip content="請先發佈表單才能檢視" side="bottom">
-							<Button variant="secondary" onClick={formQuery.data.status !== "DRAFT" ? handleViewForm : undefined} disabled={formQuery.data.status === "DRAFT" || createResponseMutation.isPending}>
-								檢視表單
-							</Button>
-						</Tooltip>
+						<Button variant="secondary" onClick={handleViewForm} disabled={formQuery.data.status === "DRAFT"}>
+							檢視表單
+						</Button>
 					</div>
 				</div>
 
