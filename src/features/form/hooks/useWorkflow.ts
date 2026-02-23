@@ -1,6 +1,6 @@
 import * as api from "@/features/form/services/api";
 import { formKeys, orgKeys } from "@/shared/queryKeys/org";
-import type { FormWorkflowCreateNodeRequest, FormWorkflowGetWorkflowResponse, FormWorkflowNodeRequest, FormWorkflowNodeStructure } from "@nycu-sdc/core-system-sdk";
+import type { FormWorkflowCreateNodeRequest, FormWorkflowGetWorkflowResponse, FormWorkflowNodeRequest, FormWorkflowNodeResponse, FormWorkflowNodeStructure } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useWorkflow = (formId: string | undefined, enabled = true) =>
@@ -16,6 +16,7 @@ export const useWorkflow = (formId: string | undefined, enabled = true) =>
 export const useUpdateWorkflow = (formId: string) => {
 	const qc = useQueryClient();
 	return useMutation<FormWorkflowNodeResponse[], Error, FormWorkflowNodeRequest[]>({
+		mutationKey: ["form-editor", formId, "workflow", "update"],
 		mutationFn: nodes => api.updateWorkflow(formId, nodes),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: formKeys.workflow(formId) });
@@ -27,6 +28,7 @@ export const useUpdateWorkflow = (formId: string) => {
 export const useCreateWorkflowNode = (formId: string) => {
 	const qc = useQueryClient();
 	return useMutation<FormWorkflowNodeStructure, Error, FormWorkflowCreateNodeRequest>({
+		mutationKey: ["form-editor", formId, "workflow", "create-node"],
 		mutationFn: req => api.createWorkflowNode(formId, req),
 		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.workflow(formId) })
 	});
@@ -35,6 +37,7 @@ export const useCreateWorkflowNode = (formId: string) => {
 export const useDeleteWorkflowNode = (formId: string) => {
 	const qc = useQueryClient();
 	return useMutation<void, Error, string>({
+		mutationKey: ["form-editor", formId, "workflow", "delete-node"],
 		mutationFn: nodeId => api.deleteWorkflowNode(formId, nodeId),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: formKeys.workflow(formId) });

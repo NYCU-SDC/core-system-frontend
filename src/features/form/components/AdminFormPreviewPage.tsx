@@ -1,5 +1,6 @@
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
+import { useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, ErrorMessage, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea } from "@/shared/components";
 import type { FormsQuestionResponse, FormsSection } from "@nycu-sdc/core-system-sdk";
 import { formsGetFormCoverImage } from "@nycu-sdc/core-system-sdk";
@@ -16,6 +17,7 @@ export const AdminFormPreviewPage = () => {
 
 	const formQuery = useFormById(formid);
 	const sectionsQuery = useSections(formid);
+	const workflowQuery = useWorkflow(formid);
 
 	const coverQuery = useQuery({
 		queryKey: ["form", formid, "cover"],
@@ -41,18 +43,58 @@ export const AdminFormPreviewPage = () => {
 
 	const sections: FormsSection[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
-		return sectionsQuery.data.flatMap(item =>
-			Array.isArray(item.sections)
-				? item.sections.map(s => ({
-						id: s.id,
-						formId: s.formId,
-						title: s.title,
-						description: s.description,
-						questions: s.questions
-					}))
-				: []
-		);
-	}, [sectionsQuery.data]);
+
+		// Build a flat map of all sections from the API
+		const sectionMap = new Map<string, FormsSection>();
+		for (const item of sectionsQuery.data) {
+			const list = Array.isArray(item.sections) ? item.sections : [];
+			for (const s of list) {
+				sectionMap.set(s.id, { id: s.id, formId: s.formId, title: s.title, description: s.description, questions: s.questions ?? [] });
+			}
+		}
+
+		// If workflow is available, walk the `next` chain to build ordered list
+		const workflow = workflowQuery.data?.workflow;
+		if (workflow && workflow.length > 0) {
+			const nodeMap = new Map(workflow.map(n => [n.id, n]));
+			const startNode = workflow.find(n => n.type === "START");
+			const ordered: FormsSection[] = [];
+			const visited = new Set<string>();
+
+			// Walk the graph collecting SECTION nodes in traversal order
+			const walk = (id: string | undefined) => {
+				if (!id || visited.has(id)) return;
+				visited.add(id);
+				const node = nodeMap.get(id);
+				if (!node) return;
+				if (node.type === "SECTION") {
+					const section = sectionMap.get(id);
+					if (section) ordered.push(section);
+				}
+				// Follow all branches
+				walk(node.next);
+				walk(node.nextTrue);
+				walk(node.nextFalse);
+			};
+
+			walk(startNode?.id);
+
+			// Append any sections not reachable from workflow (orphans)
+			for (const [id, section] of sectionMap) {
+				if (!visited.has(id)) ordered.push(section);
+			}
+
+			// Defensive: if walk produced nothing but we have sections, fall back
+			if (ordered.length === 0 && sectionMap.size > 0) {
+				return [...sectionMap.values()];
+			}
+
+			return ordered;
+		}
+
+		// Fallback: API order
+		return [...sectionMap.values()];
+	}, [sectionsQuery.data, workflowQuery.data]);
 
 	// Clamp step if sections shrink
 	useEffect(() => {
@@ -264,7 +306,7 @@ export const AdminFormPreviewPage = () => {
 		}
 	};
 
-	if (formQuery.isLoading || sectionsQuery.isLoading) {
+	if (formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading) {
 		return (
 			<div className={styles.page}>
 				<div className={styles.banner}>

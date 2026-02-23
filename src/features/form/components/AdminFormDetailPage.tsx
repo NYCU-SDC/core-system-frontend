@@ -5,6 +5,8 @@ import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, Tooltip, useToast } from "@/shared/components";
+import { useIsMutating } from "@tanstack/react-query";
+import { Check, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./AdminFormDetailPage.module.css";
@@ -34,6 +36,8 @@ export const AdminFormDetailPage = () => {
 	const publishFormMutation = usePublishForm(orgSlug);
 	const createResponseMutation = useCreateFormResponse();
 	const meta = useSeo({ rule: SEO_CONFIG.adminForms });
+	const activeEditorMutations = useIsMutating({ mutationKey: ["form-editor", formid ?? ""] });
+	const isSaving = activeEditorMutations > 0;
 
 	const handleTabChange = (tab: TabType) => {
 		setActiveTab(tab);
@@ -90,6 +94,10 @@ export const AdminFormDetailPage = () => {
 				<div className={styles.header}>
 					<h1 className={styles.title}>{formQuery.data.title}</h1>
 					<div className={styles.headerActions}>
+						<div className={styles.saveStatus} aria-live="polite">
+							{isSaving ? <LoaderCircle size={16} className={styles.spinningIcon} /> : <Check size={16} />}
+							<span>{isSaving ? "儲存中" : "已儲存"}</span>
+						</div>
 						<Button onClick={handlePublish} disabled={publishFormMutation.isPending || formQuery.data.status !== "DRAFT"}>
 							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
 						</Button>

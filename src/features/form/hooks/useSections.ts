@@ -20,6 +20,7 @@ export const useFormFonts = () =>
 export const useCreateQuestion = (formId: string, sectionId: string) => {
 	const qc = useQueryClient();
 	return useMutation<FormsQuestionResponse, Error, FormsQuestionRequest>({
+		mutationKey: ["form-editor", formId, "questions", sectionId, "create"],
 		mutationFn: req => api.createQuestion(sectionId, req),
 		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.sections(formId) })
 	});
@@ -28,6 +29,7 @@ export const useCreateQuestion = (formId: string, sectionId: string) => {
 export const useUpdateQuestion = (formId: string, sectionId: string) => {
 	const qc = useQueryClient();
 	return useMutation<FormsQuestionResponse, Error, { questionId: string; req: FormsQuestionRequest }>({
+		mutationKey: ["form-editor", formId, "questions", sectionId, "update"],
 		mutationFn: ({ questionId, req }) => api.updateQuestion(sectionId, questionId, req),
 		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.sections(formId) })
 	});
@@ -36,6 +38,7 @@ export const useUpdateQuestion = (formId: string, sectionId: string) => {
 export const useDeleteQuestion = (formId: string, sectionId: string) => {
 	const qc = useQueryClient();
 	return useMutation<void, Error, string>({
+		mutationKey: ["form-editor", formId, "questions", sectionId, "delete"],
 		mutationFn: questionId => api.deleteQuestion(sectionId, questionId),
 		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.sections(formId) })
 	});
@@ -44,6 +47,7 @@ export const useDeleteQuestion = (formId: string, sectionId: string) => {
 export const useUpdateSection = (formId: string, sectionId: string) => {
 	const qc = useQueryClient();
 	return useMutation<FormsSection, Error, FormsSectionRequest>({
+		mutationKey: ["form-editor", formId, "section", sectionId],
 		mutationFn: req => api.updateSection(formId, sectionId, req),
 		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.sections(formId) })
 	});

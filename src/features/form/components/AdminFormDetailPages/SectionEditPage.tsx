@@ -4,7 +4,7 @@ import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflo
 import { Button, ErrorMessage, Input, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/SectionEditor/QuestionCard";
@@ -40,6 +40,45 @@ export const AdminSectionEditPage = () => {
 	const [sectionDescription, setSectionDescription] = useState("");
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
 	const [savedSectionDescription, setSavedSectionDescription] = useState("");
+	const questionsRef = useRef<Question[]>([]);
+	const questionIdsRef = useRef<(string | undefined)[]>([]);
+	const dirtyQuestionIndexesRef = useRef<Set<number>>(new Set());
+	const autosaveTimerRef = useRef<number | null>(null);
+	const isFlushingDirtyQuestionsRef = useRef(false);
+	const [dirtyQuestionVersion, setDirtyQuestionVersion] = useState(0);
+
+	const setQuestionIdsAndRef = useCallback((nextQuestionIds: (string | undefined)[]) => {
+		questionIdsRef.current = nextQuestionIds;
+		setQuestionIds(nextQuestionIds);
+	}, []);
+
+	const markQuestionsDirty = useCallback((indexes: number[]) => {
+		let changed = false;
+		indexes.forEach(index => {
+			if (index < 0) return;
+			if (!dirtyQuestionIndexesRef.current.has(index)) {
+				dirtyQuestionIndexesRef.current.add(index);
+				changed = true;
+			}
+		});
+		if (changed) {
+			setDirtyQuestionVersion(version => version + 1);
+		}
+	}, []);
+
+	const markQuestionDirty = useCallback(
+		(index: number) => {
+			markQuestionsDirty([index]);
+		},
+		[markQuestionsDirty]
+	);
+
+	const markQuestionsDirtyFrom = useCallback(
+		(startIndex: number, length: number) => {
+			markQuestionsDirty(Array.from({ length: Math.max(0, length - startIndex) }, (_, offset) => startIndex + offset));
+		},
+		[markQuestionsDirty]
+	);
 
 	// Sync from API on first load
 	useEffect(() => {
@@ -65,10 +104,18 @@ export const AdminSectionEditPage = () => {
 				oauthProvider: (q as any).oauthConnect as Question["oauthProvider"] | undefined
 			}));
 			setQuestions(mapped);
-			setQuestionIds(apiQuestions.map(q => q.id));
+			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [apiQuestions.length]);
+
+	useEffect(() => {
+		questionsRef.current = questions;
+	}, [questions]);
+
+	useEffect(() => {
+		questionIdsRef.current = questionIds;
+	}, [questionIds]);
 
 	useEffect(() => {
 		setSectionTitle(section?.title ?? "");
@@ -88,7 +135,6 @@ export const AdminSectionEditPage = () => {
 					onSuccess: () => {
 						setSavedSectionTitle(sectionTitle);
 						setSavedSectionDescription(sectionDescription);
-						pushToast({ title: "已儲存", description: "區段資訊已更新。", variant: "success" });
 						// Sync workflow node label to match section title
 						if (workflowQuery.data?.workflow) {
 							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: sectionTitle } : n));
@@ -149,24 +195,39 @@ export const AdminSectionEditPage = () => {
 		return base;
 	};
 
-	const handleSaveQuestion = async (index: number) => {
+	const flushDirtyQuestions = useCallback(async () => {
 		if (!formid || !sectionId) return;
-		const req = toApiRequest(questions[index], index + 1);
-		const existingId = questionIds[index];
+		if (isFlushingDirtyQuestionsRef.current) return;
+		if (dirtyQuestionIndexesRef.current.size === 0) return;
+
+		isFlushingDirtyQuestionsRef.current = true;
 		try {
-			if (existingId) {
-				await updateQuestion.mutateAsync({ questionId: existingId, req });
-			} else {
-				const res = await createQuestion.mutateAsync(req);
-				const newIds = [...questionIds];
-				newIds[index] = res.id;
-				setQuestionIds(newIds);
+			while (dirtyQuestionIndexesRef.current.size > 0) {
+				const dirtyIndexes = [...dirtyQuestionIndexesRef.current].sort((a, b) => a - b);
+				dirtyQuestionIndexesRef.current.clear();
+
+				for (const index of dirtyIndexes) {
+					const question = questionsRef.current[index];
+					if (!question) continue;
+
+					const req = toApiRequest(question, index + 1);
+					const existingId = questionIdsRef.current[index];
+					if (existingId) {
+						await updateQuestion.mutateAsync({ questionId: existingId, req });
+					} else {
+						const res = await createQuestion.mutateAsync(req);
+						const nextQuestionIds = [...questionIdsRef.current];
+						nextQuestionIds[index] = res.id;
+						setQuestionIdsAndRef(nextQuestionIds);
+					}
+				}
 			}
-			pushToast({ title: "已儲存", description: "問題已更新。", variant: "success" });
 		} catch (err) {
 			pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
+		} finally {
+			isFlushingDirtyQuestionsRef.current = false;
 		}
-	};
+	}, [formid, sectionId, updateQuestion, createQuestion, pushToast, setQuestionIdsAndRef]);
 
 	const handleQuestionTypeChange = (index: number, nextType: Question["type"]) => {
 		const updatedQuestions = [...questions];
@@ -216,7 +277,34 @@ export const AdminSectionEditPage = () => {
 
 		updatedQuestions[index] = nextQuestion;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(index);
 	};
+
+	useEffect(() => {
+		if (dirtyQuestionVersion === 0) return;
+		if (autosaveTimerRef.current !== null) {
+			window.clearTimeout(autosaveTimerRef.current);
+		}
+		autosaveTimerRef.current = window.setTimeout(() => {
+			void flushDirtyQuestions();
+		}, 500);
+
+		return () => {
+			if (autosaveTimerRef.current !== null) {
+				window.clearTimeout(autosaveTimerRef.current);
+			}
+		};
+	}, [dirtyQuestionVersion, flushDirtyQuestions]);
+
+	useEffect(
+		() => () => {
+			if (autosaveTimerRef.current !== null) {
+				window.clearTimeout(autosaveTimerRef.current);
+			}
+			void flushDirtyQuestions();
+		},
+		[flushDirtyQuestions]
+	);
 
 	const handleDeleteQuestionWithApi = async (index: number) => {
 		const existingId = questionIds[index];
@@ -289,14 +377,20 @@ export const AdminSectionEditPage = () => {
 		const newIndex = questions.length;
 		const q = setQuestion();
 		q.title = `問題${newIndex + 1}`;
-		setQuestions([...questions, q]);
+		const updatedQuestions = [...questions, q];
+		setQuestions(updatedQuestions);
 		setNewlyAddedIndex(newIndex);
+		markQuestionDirty(newIndex);
 	};
 
 	const handleRemoveQuestion = (index: number) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions.splice(index, 1);
 		setQuestions(updatedQuestions);
+		const updatedQuestionIds = [...questionIds];
+		updatedQuestionIds.splice(index, 1);
+		setQuestionIdsAndRef(updatedQuestionIds);
+		markQuestionsDirtyFrom(index, updatedQuestions.length);
 	};
 
 	const handleDuplicateQuestion = (index: number) => {
@@ -304,18 +398,24 @@ export const AdminSectionEditPage = () => {
 		const questionToDuplicate = updatedQuestions[index];
 		updatedQuestions.splice(index + 1, 0, { ...questionToDuplicate });
 		setQuestions(updatedQuestions);
+		const updatedQuestionIds = [...questionIds];
+		updatedQuestionIds.splice(index + 1, 0, undefined);
+		setQuestionIdsAndRef(updatedQuestionIds);
+		markQuestionsDirtyFrom(index + 1, updatedQuestions.length);
 	};
 
 	const handleTitleChange = (index: number, newTitle: string) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[index].title = newTitle;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(index);
 	};
 
 	const handleDescriptionChange = (index: number, newDescription: string) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[index].description = newDescription;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(index);
 	};
 
 	const handleAddOption = (questionIndex: number, newOption: Option) => {
@@ -338,6 +438,7 @@ export const AdminSectionEditPage = () => {
 		}
 
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleAddDetailOption = (questionIndex: number, newDetailOption: { label: string; description: string }) => {
@@ -347,6 +448,7 @@ export const AdminSectionEditPage = () => {
 		}
 		updatedQuestions[questionIndex].detailOptions!.push(newDetailOption);
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
@@ -356,6 +458,7 @@ export const AdminSectionEditPage = () => {
 		}
 		updatedQuestions[questionIndex].options!.splice(optionIndex, 1);
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleChangeOption = (questionIndex: number, optionIndex: number, newLabel: string) => {
@@ -368,60 +471,70 @@ export const AdminSectionEditPage = () => {
 			label: newLabel
 		};
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleStartChange = (questionIndex: number, newStart: number) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].start = newStart;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleEndChange = (questionIndex: number, newEnd: number) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].end = newEnd;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleChangeIcon = (questionIndex: number, newIcon: Question["icon"]) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].icon = newIcon;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleToggleIsFromAnswer = (questionIndex: number) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].isFromAnswer = !updatedQuestions[questionIndex].isFromAnswer;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleRequiredChange = (questionIndex: number, required: boolean) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].required = required;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleUrlChange = (questionIndex: number, url: string) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].url = url;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleOauthProviderChange = (questionIndex: number, provider: "GOOGLE" | "GITHUB") => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].oauthProvider = provider;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleStartLabelChange = (questionIndex: number, label: string) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].startLabel = label;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleEndLabelChange = (questionIndex: number, label: string) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].endLabel = label;
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleDetailOptionChange = (questionIndex: number, optionIndex: number, field: "label" | "description", value: string) => {
@@ -432,6 +545,7 @@ export const AdminSectionEditPage = () => {
 			[field]: value
 		};
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	const handleRemoveDetailOption = (questionIndex: number, optionIndex: number) => {
@@ -439,6 +553,7 @@ export const AdminSectionEditPage = () => {
 		if (!updatedQuestions[questionIndex].detailOptions) return;
 		updatedQuestions[questionIndex].detailOptions!.splice(optionIndex, 1);
 		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
 	};
 
 	return (
@@ -487,7 +602,7 @@ export const AdminSectionEditPage = () => {
 								onUrlChange={url => handleUrlChange(index, url)}
 								onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
 								onFold={() => {
-									void handleSaveQuestion(index);
+									void flushDirtyQuestions();
 								}}
 								onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
 							/>

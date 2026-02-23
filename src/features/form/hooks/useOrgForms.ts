@@ -40,6 +40,7 @@ export const useUpdateForm = (formId: string) => {
 	const qc = useQueryClient();
 
 	return useMutation<FormsForm, Error, FormsFormRequestUpdate>({
+		mutationKey: ["form-editor", formId, "form"],
 		mutationFn: req => api.updateForm(formId, req),
 		onSuccess: updatedForm => {
 			qc.setQueryData(orgKeys.form(formId), updatedForm);
@@ -85,6 +86,7 @@ export const useUploadFormCoverImage = (formId: string) => {
 	const qc = useQueryClient();
 
 	return useMutation<FormsFormCoverUploadResponse, Error, File>({
+		mutationKey: ["form-editor", formId, "cover"],
 		mutationFn: file => api.uploadFormCoverImage(formId, file),
 		onSuccess: () => qc.invalidateQueries({ queryKey: orgKeys.form(formId) })
 	});

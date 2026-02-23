@@ -6,7 +6,7 @@ import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./InfoPage.module.css";
 
@@ -47,39 +47,45 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
+	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
+	const [savedDescription, setSavedDescription] = useState(formData.description ?? "");
+	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
+	const [savedDeadline, setSavedDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
+	const [savedPublishTime, setSavedPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
+	const [savedIsPublic, setSavedIsPublic] = useState(formData.visibility === "PUBLIC");
 	const isArchived = formData.status === "ARCHIVED";
-	const initialTitle = formData.title ?? "";
-	const initialDescription = formData.description ?? "";
-	const initialConfirmMsg = formData.messageAfterSubmission ?? "";
-	const initialDeadline = formData.deadline ? formData.deadline.split("T")[0] : "";
-	const initialPublishTime = formData.publishTime ? formData.publishTime.split("T")[0] : "";
-	const initialIsPublic = formData.visibility === "PUBLIC";
 	const hasSettingChanges =
-		title !== initialTitle ||
-		description !== initialDescription ||
-		confirmMsg !== initialConfirmMsg ||
-		deadline !== initialDeadline ||
-		publishTime !== initialPublishTime ||
-		isPublic !== initialIsPublic;
+		title !== savedTitle || description !== savedDescription || confirmMsg !== savedConfirmMsg || deadline !== savedDeadline || publishTime !== savedPublishTime || isPublic !== savedIsPublic;
 
-	const handleSave = () => {
-		if (!hasSettingChanges) return;
+	useEffect(() => {
+		if (!hasSettingChanges || updateFormMutation.isPending) return;
 
-		updateFormMutation.mutate(
-			{
-				title,
-				description,
-				messageAfterSubmission: confirmMsg,
-				deadline: deadline ? new Date(deadline).toISOString() : undefined,
-				publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
-				visibility: isPublic ? "PUBLIC" : "PRIVATE"
-			},
-			{
-				onSuccess: () => pushToast({ title: "儲存成功", variant: "success" }),
-				onError: e => pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" })
-			}
-		);
-	};
+		const timerId = window.setTimeout(() => {
+			updateFormMutation.mutate(
+				{
+					title,
+					description,
+					messageAfterSubmission: confirmMsg,
+					deadline: deadline ? new Date(deadline).toISOString() : undefined,
+					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
+					visibility: isPublic ? "PUBLIC" : "PRIVATE"
+				},
+				{
+					onSuccess: () => {
+						setSavedTitle(title);
+						setSavedDescription(description);
+						setSavedConfirmMsg(confirmMsg);
+						setSavedDeadline(deadline);
+						setSavedPublishTime(publishTime);
+						setSavedIsPublic(isPublic);
+					},
+					onError: e => pushToast({ title: "儲存失敗", description: (e as Error).message, variant: "error" })
+				}
+			);
+		}, 500);
+
+		return () => window.clearTimeout(timerId);
+	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, confirmMsg, deadline, publishTime, isPublic, pushToast]);
 
 	const handleToggleAllRequired = async (checked: boolean) => {
 		if (allQuestions.length === 0) {
@@ -173,11 +179,6 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				<div className={`${styles.switch}`}>
 					<p className={`${styles.label}`}>所有問題設為必填</p>
 					{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isSettingRequired || allQuestions.length === 0} />}
-				</div>
-				<div style={{ marginTop: "1rem" }}>
-					<Button onClick={handleSave} processing={updateFormMutation.isPending} disabled={!hasSettingChanges || updateFormMutation.isPending}>
-						儲存設定
-					</Button>
 				</div>
 				<div className={styles.dangerActions}>
 					<Button onClick={handleArchive} disabled={archiveFormMutation.isPending || isArchived}>
