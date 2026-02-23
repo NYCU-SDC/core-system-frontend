@@ -45,6 +45,10 @@
 	gap: 1rem;
 }
 
+.actions svg {
+	cursor: pointer;
+}
+
 .switch {
 	display: flex;
 }

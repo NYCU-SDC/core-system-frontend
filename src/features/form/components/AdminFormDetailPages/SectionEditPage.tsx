@@ -37,8 +37,7 @@ export const AdminSectionEditPage = () => {
 
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
-	const [sectionTitle, setSectionTitle] = useState("");
-	const [sectionDescription, setSectionDescription] = useState("");
+	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
 	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState("");
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
 	const [savedSectionDescription, setSavedSectionDescription] = useState("");
@@ -120,27 +119,25 @@ export const AdminSectionEditPage = () => {
 	}, [questionIds]);
 
 	useEffect(() => {
-		setSectionTitle(section?.title ?? "");
-		setSectionDescription(section?.description ?? "");
+		setSectionTitleDraft(section?.title ?? "");
 		setSectionDescriptionDraft(section?.description ?? "");
 		setSavedSectionTitle(section?.title ?? "");
 		setSavedSectionDescription(section?.description ?? "");
 	}, [section?.id, section?.title, section?.description]);
 
-	useEffect(() => {
-		if (!sectionId) return;
-		if (sectionTitle === savedSectionTitle && sectionDescription === savedSectionDescription) return;
+	const saveSectionIfChanged = useCallback(
+		(nextSectionTitle: string, nextSectionDescription: string) => {
+			if (!sectionId) return;
+			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
 
-		const timerId = window.setTimeout(() => {
 			updateSectionMutation.mutate(
-				{ title: sectionTitle, description: sectionDescription ? (marked.parse(sectionDescription) as string) : sectionDescription },
+				{ title: nextSectionTitle, description: nextSectionDescription ? (marked.parse(nextSectionDescription) as string) : nextSectionDescription },
 				{
 					onSuccess: () => {
-						setSavedSectionTitle(sectionTitle);
-						setSavedSectionDescription(sectionDescription);
-						// Sync workflow node label to match section title
+						setSavedSectionTitle(nextSectionTitle);
+						setSavedSectionDescription(nextSectionDescription);
 						if (workflowQuery.data?.workflow) {
-							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: sectionTitle } : n));
+							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: nextSectionTitle } : n));
 							updateWorkflowMutation.mutate(
 								updatedNodes.map(n => ({
 									id: n.id,
@@ -158,10 +155,14 @@ export const AdminSectionEditPage = () => {
 					}
 				}
 			);
-		}, 500);
+		},
+		[sectionId, savedSectionTitle, savedSectionDescription, updateSectionMutation, workflowQuery.data, updateWorkflowMutation, pushToast]
+	);
 
-		return () => window.clearTimeout(timerId);
-	}, [sectionId, sectionTitle, sectionDescription, savedSectionTitle, savedSectionDescription, updateSectionMutation, workflowQuery.data, updateWorkflowMutation, pushToast]);
+	const handleSectionBlurSave = useCallback(() => {
+		if (!sectionId) return;
+		saveSectionIfChanged(sectionTitleDraft, sectionDescriptionDraft);
+	}, [sectionId, saveSectionIfChanged, sectionTitleDraft, sectionDescriptionDraft]);
 
 	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
 		const base: FormsQuestionRequest = {
@@ -215,10 +216,42 @@ export const AdminSectionEditPage = () => {
 
 					const req = toApiRequest(question, index + 1);
 					const existingId = questionIdsRef.current[index];
+					const syncQuestionFromApi = (apiQuestion: {
+						description?: string | null;
+						title?: string | null;
+						required?: boolean | null;
+						choices?: { name?: string | null; isOther?: boolean | null; description?: string | null }[] | null;
+					}) => {
+						setQuestions(prev => {
+							if (!prev[index]) return prev;
+							const next = [...prev];
+							const target = next[index];
+							target.title = apiQuestion.title ?? target.title;
+							target.description = apiQuestion.description ?? target.description;
+							target.required = apiQuestion.required ?? target.required;
+
+							if (target.type === "DETAILED_MULTIPLE_CHOICE" && apiQuestion.choices) {
+								target.detailOptions = apiQuestion.choices.map(choice => ({
+									label: choice.name ?? "",
+									description: choice.description ?? ""
+								}));
+							} else if (apiQuestion.choices) {
+								target.options = apiQuestion.choices.map(choice => ({
+									label: choice.name ?? "",
+									isOther: choice.isOther ?? false
+								}));
+							}
+
+							questionsRef.current = next;
+							return next;
+						});
+					};
 					if (existingId) {
-						await updateQuestion.mutateAsync({ questionId: existingId, req });
+						const updated = await updateQuestion.mutateAsync({ questionId: existingId, req });
+						syncQuestionFromApi(updated);
 					} else {
 						const res = await createQuestion.mutateAsync(req);
+						syncQuestionFromApi(res);
 						const nextQuestionIds = [...questionIdsRef.current];
 						nextQuestionIds[index] = res.id;
 						setQuestionIdsAndRef(nextQuestionIds);
@@ -332,7 +365,12 @@ export const AdminSectionEditPage = () => {
 			}
 		},
 		{ icon: <TextAlignStart />, text: "文字詳答", type: "LONG_TEXT", setDefaultQuestion: () => ({ type: "LONG_TEXT", title: "", description: "", required: false, isFromAnswer: false }) },
-		{ icon: <List />, text: "單選選擇題", type: "SINGLE_CHOICE", setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
+		{
+			icon: <List />,
+			text: "單選選擇題",
+			type: "SINGLE_CHOICE",
+			setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", required: false, options: [{ label: "選項 1" }], isFromAnswer: false })
+		},
 		{
 			icon: <SquareCheckBig />,
 			text: "核取方塊",
@@ -568,14 +606,22 @@ export const AdminSectionEditPage = () => {
 					{sectionsQuery.isError && <ErrorMessage message={(sectionsQuery.error as Error)?.message ?? "無法載入區塊資料"} />}
 					<div className={styles.container}>
 						<section className={styles.card}>
-							<Input placeholder="區段標題" variant="flushed" themeColor="--comment" textSize="h2" value={sectionTitle} onChange={event => setSectionTitle(event.target.value)} />
+							<Input
+								placeholder="區段標題"
+								variant="flushed"
+								themeColor="--comment"
+								textSize="h2"
+								value={sectionTitleDraft}
+								onChange={event => setSectionTitleDraft(event.target.value)}
+								onBlur={handleSectionBlurSave}
+							/>
 							<TextArea
 								placeholder="區段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
 								value={sectionDescriptionDraft}
 								onChange={event => setSectionDescriptionDraft(event.target.value)}
-								onBlur={() => setSectionDescription(sectionDescriptionDraft)}
+								onBlur={handleSectionBlurSave}
 								rows={1}
 							/>
 						</section>

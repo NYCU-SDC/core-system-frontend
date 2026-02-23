@@ -9,28 +9,10 @@ import {
 	unitRemoveOrgMember,
 	unitUpdateOrg
 } from "@nycu-sdc/core-system-sdk";
+import { assertOk } from "../../../shared/utils/apiError";
 
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"
-};
-
-const getErrorDetail = (payload: unknown): string | null => {
-	if (typeof payload === "string") return payload;
-	if (!payload || typeof payload !== "object") return null;
-
-	const record = payload as Record<string, unknown>;
-	if (typeof record.detail === "string" && record.detail) return record.detail;
-	if (typeof record.message === "string" && record.message) return record.message;
-	if (typeof record.title === "string" && record.title) return record.title;
-
-	return null;
-};
-
-const assertOk = (status: number, message: string, payload?: unknown) => {
-	if (status < 200 || status >= 300) {
-		const detail = getErrorDetail(payload);
-		throw new Error(detail ? `${message}: ${detail}` : `${message} (status ${status})`);
-	}
 };
 
 export const getOrg = async (slug: string): Promise<UnitOrganization> => {

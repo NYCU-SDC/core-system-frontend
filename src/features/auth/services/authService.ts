@@ -1,5 +1,6 @@
 import type { UserOnboardingRequest, UserUser } from "@nycu-sdc/core-system-sdk";
 import { authLogout, authRefreshToken, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
+import { assertOk } from "../../../shared/utils/apiError";
 
 export type OAuthProvider = "google" | "nycu";
 
@@ -12,12 +13,6 @@ const defaultRequestOptions: RequestInit = {
 };
 
 const REFRESH_TOKEN_STORAGE_KEY = "core-system.refresh-token";
-
-const assertOk = (status: number, message: string) => {
-	if (status < 200 || status >= 300) {
-		throw new Error(`${message} (status ${status})`);
-	}
-};
 
 const normalizeProvider = (provider: OAuthProvider): string => {
 	return provider.toLowerCase();
@@ -49,7 +44,7 @@ export const authService = {
 			throw new Error("Refresh token expired");
 		}
 
-		assertOk(res.status, "Failed to refresh access token");
+		assertOk(res.status, "Failed to refresh access token", res.data);
 		if (res.data?.refreshToken) {
 			this.setStoredRefreshToken(res.data.refreshToken);
 		}
@@ -81,18 +76,18 @@ export const authService = {
 
 	async logout(): Promise<void> {
 		const res = await authLogout(defaultRequestOptions);
-		assertOk(res.status, "Failed to logout");
+		assertOk(res.status, "Failed to logout", res.data);
 		this.clearStoredRefreshToken();
 	},
 
 	async getCurrentUser<T extends UserUser = UserUser>(): Promise<T> {
 		const res = await userGetMe(defaultRequestOptions);
-		assertOk(res.status, "Failed to get current user");
+		assertOk(res.status, "Failed to get current user", res.data);
 		return res.data as T;
 	},
 
 	async updateOnboarding(data: UserOnboardingRequest): Promise<void> {
 		const res = await userUpdateUsername(data, defaultRequestOptions);
-		assertOk(res.status, "Failed to update onboarding");
+		assertOk(res.status, "Failed to update onboarding", res.data);
 	}
 };

@@ -304,7 +304,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
+						{question.description && <Markdown content={question.description} />}
 						<Radio
 							options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
 							value={value}
@@ -415,7 +415,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
+						{question.description && <Markdown content={question.description} />}
 						<DragToOrder
 							items={
 								value
@@ -445,7 +445,7 @@ export const FormDetailPage = () => {
 							{question.title}
 							{question.required && <span style={{ color: "red" }}> *</span>}
 						</label>
-						{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
+						{question.description && <Markdown content={question.description} />}
 						<FileUpload
 							id={question.id}
 							label=""
@@ -499,7 +499,7 @@ export const FormDetailPage = () => {
 								{question.title}
 								{question.required && <span style={{ color: "red" }}> *</span>}
 							</label>
-							{question.description && <div dangerouslySetInnerHTML={{ __html: question.description }} />}
+							{question.description && <Markdown content={question.description} />}
 							<Button
 								onClick={() => {
 									if (!urlResponseId) return;

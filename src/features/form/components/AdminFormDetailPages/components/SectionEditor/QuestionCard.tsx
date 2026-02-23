@@ -116,6 +116,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const titleRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
+		setLocalDesc(question.description);
+	}, [question.description]);
+
+	useEffect(() => {
 		if (props.autoFocusTitle && isExpanded && titleRef.current) {
 			titleRef.current.focus();
 			titleRef.current.select();
