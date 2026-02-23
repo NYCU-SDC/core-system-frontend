@@ -18,7 +18,7 @@ import type {
 	ResponsesStringAnswer,
 	ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { ChevronLeft, RefreshCw, Upload, X } from "lucide-react";
+import { AlertCircle, Check, ChevronLeft, LoaderCircle, RefreshCw, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
@@ -619,16 +619,16 @@ export const FormDetailPage = () => {
 					<div key={section.id} className={styles.previewBlock}>
 						<div className={styles.previewHeader}>
 							<h3 className={styles.previewSectionTitle}>{section.title}</h3>
-							<button
+							<Button
 								type="button"
-								className={styles.editButton}
+								variant="secondary"
 								onClick={() => {
 									const targetIndex = sections.findIndex(s => s.id === section.id);
 									if (targetIndex >= 0) handleSectionClick(targetIndex);
 								}}
 							>
 								修改
-							</button>
+							</Button>
 						</div>
 						<ul className={styles.previewList}>
 							{section.answerDetails?.map((detail, questionIndex: number) => {
@@ -767,10 +767,32 @@ export const FormDetailPage = () => {
 			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 			<div className={styles.container} style={themedContainerStyle}>
 				<div className={styles.header}>
-					<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--foreground)">
-						<ChevronLeft size={16} />
-						返回表單列表
-					</Button>
+					<div className={styles.topBar}>
+						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--foreground)">
+							<ChevronLeft size={16} />
+							返回表單列表
+						</Button>
+						{urlResponseId && (
+							<div className={styles.saveStatus} aria-live="polite">
+								{updateResponseMutation.isPending ? (
+									<>
+										<LoaderCircle size={16} className={styles.spinningIcon} />
+										<span>儲存中</span>
+									</>
+								) : updateResponseMutation.isError ? (
+									<>
+										<AlertCircle size={16} />
+										<span>有問題</span>
+									</>
+								) : (
+									<>
+										<Check size={16} />
+										<span>已儲存</span>
+									</>
+								)}
+							</div>
+						)}
+					</div>
 					<h1 className={styles.title}>{form.title}</h1>
 					{currentStep === 0 && form.description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
 					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
