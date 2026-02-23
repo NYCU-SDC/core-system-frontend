@@ -160,6 +160,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const [isDuplicating, setIsDuplicating] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [localUploadMaxFileAmountStr, setLocalUploadMaxFileAmountStr] = useState(() => String(question.uploadMaxFileAmount ?? 1));
+	const [localUploadMaxFileSizeMbStr, setLocalUploadMaxFileSizeMbStr] = useState(() => String(Number(((question.uploadMaxFileSizeLimit ?? 10485760) / 1024 / 1024).toFixed(2))));
 	const [localTitle, setLocalTitle] = useState(question.title);
 	const localTitleRef = useRef(question.title);
 	localTitleRef.current = localTitle;
@@ -203,7 +205,12 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			// Ignore clicks inside Radix UI portals (dropdowns, popovers, etc.)
 			if (target.closest("[data-radix-popper-content-wrapper], [data-radix-select-content], [data-radix-dropdown-menu-content]")) return;
 			if (!cardRef.current?.contains(target)) {
-				// flush title & description before blur fires (mousedown precedes blur)
+				// Force blur on any focused input inside the card so its onBlur fires
+				// while the component is still mounted (mousedown precedes blur)
+				if (document.activeElement instanceof HTMLElement && cardRef.current?.contains(document.activeElement)) {
+					document.activeElement.blur();
+				}
+				// flush title & description via refs as a safety net
 				props.onTitleChange?.(localTitleRef.current);
 				props.onDescriptionChange?.(localDescRef.current);
 				props.onFold?.();
@@ -226,12 +233,11 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 		void runWithIndicator(removeQuestion, setIsDeleting);
 	};
 
-	const uploadMaxFileAmount = question.uploadMaxFileAmount ?? 1;
-	const uploadMaxFileSizeLimit = question.uploadMaxFileSizeLimit ?? 10485760;
-	const uploadMaxFileSizeMb = Number((uploadMaxFileSizeLimit / 1024 / 1024).toFixed(2));
 	const uploadFileTypeValues = (question.uploadAllowedFileTypes ?? ["PDF"]) as FormsAllowedFileTypes[];
-	const uploadMaxFileAmountError = uploadMaxFileAmount < 1 || uploadMaxFileAmount > 10 ? "上傳數量需介於 1 到 10" : "";
-	const uploadMaxFileSizeError = uploadMaxFileSizeMb <= 0 || uploadMaxFileSizeMb > 10 ? "檔案大小需介於 0 到 10 MB" : "";
+	const localUploadMaxFileAmountNum = Number(localUploadMaxFileAmountStr);
+	const uploadMaxFileAmountError = isNaN(localUploadMaxFileAmountNum) || localUploadMaxFileAmountNum < 1 || localUploadMaxFileAmountNum > 10 ? "上傳數量需介於 1 到 10" : "";
+	const localUploadMaxFileSizeMbNum = Number(localUploadMaxFileSizeMbStr);
+	const uploadMaxFileSizeError = isNaN(localUploadMaxFileSizeMbNum) || localUploadMaxFileSizeMbNum <= 0 || localUploadMaxFileSizeMbNum > 10 ? "檔案大小需介於 0 到 10 MB" : "";
 	const minDateError = question.dateHasMinDate && !question.dateMinDate ? "請填開始日期" : "";
 	const maxDateError = question.dateHasMaxDate && !question.dateMaxDate ? "請填結束日期" : "";
 
@@ -404,9 +410,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 									label="上傳數量"
 									min={1}
 									max={10}
-									value={uploadMaxFileAmount}
+									value={localUploadMaxFileAmountStr}
 									error={uploadMaxFileAmountError}
-									onChange={event => props.onUploadMaxFileAmountChange?.(Number(event.target.value))}
+									onChange={event => setLocalUploadMaxFileAmountStr(event.target.value)}
+									onBlur={() => {
+										const num = Number(localUploadMaxFileAmountStr);
+										if (!isNaN(num)) props.onUploadMaxFileAmountChange?.(num);
+									}}
 								/>
 								<Input
 									type="number"
@@ -414,9 +424,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 									min={0.01}
 									max={10}
 									step={0.01}
-									value={uploadMaxFileSizeMb}
+									value={localUploadMaxFileSizeMbStr}
 									error={uploadMaxFileSizeError}
-									onChange={event => props.onUploadMaxFileSizeLimitChange?.(Math.round(Number(event.target.value) * 1024 * 1024))}
+									onChange={event => setLocalUploadMaxFileSizeMbStr(event.target.value)}
+									onBlur={() => {
+										const num = Number(localUploadMaxFileSizeMbStr);
+										if (!isNaN(num)) props.onUploadMaxFileSizeLimitChange?.(Math.round(num * 1024 * 1024));
+									}}
 								/>
 							</div>
 						</div>
