@@ -14,6 +14,7 @@ export const AdminFormPreviewPage = () => {
 	const { formid } = useParams<{ formid: string }>();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
+	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
 
 	const formQuery = useFormById(formid);
 	const sectionsQuery = useSections(formid);
@@ -110,7 +111,9 @@ export const AdminFormPreviewPage = () => {
 		setAnswers(prev => ({ ...prev, [questionId]: value }));
 	};
 
-	const getOtherAnswerKey = (questionId: string) => `${questionId}.__other`;
+	const updateOtherText = (questionId: string, value: string) => {
+		setOtherTexts(prev => ({ ...prev, [questionId]: value }));
+	};
 	const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
 
 	const renderQuestion = (question: FormsQuestionResponse) => {
@@ -147,9 +150,8 @@ export const AdminFormPreviewPage = () => {
 			case "SINGLE_CHOICE":
 			case "DROPDOWN": {
 				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
-				const otherAnswerKey = getOtherAnswerKey(question.id);
-				const otherValue = answers[otherAnswerKey] || "";
+				const otherChoice = choices.find(choice => choice.isOther);
+				const otherValue = otherTexts[question.id] || "";
 
 				return (
 					<div key={question.id}>
@@ -164,12 +166,12 @@ export const AdminFormPreviewPage = () => {
 							onValueChange={newValue => {
 								updateAnswer(question.id, newValue);
 								if (newValue !== otherChoice?.id) {
-									updateAnswer(otherAnswerKey, "");
+									updateOtherText(question.id, "");
 								}
 							}}
 						/>
 						{otherChoice && value === otherChoice.id && (
-							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
 						)}
 					</div>
 				);
@@ -177,10 +179,9 @@ export const AdminFormPreviewPage = () => {
 
 			case "MULTIPLE_CHOICE": {
 				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
+				const otherChoice = choices.find(choice => choice.isOther);
 				const selectedIds = getSelectedChoiceIds(value);
-				const otherAnswerKey = getOtherAnswerKey(question.id);
-				const otherValue = answers[otherAnswerKey] || "";
+				const otherValue = otherTexts[question.id] || "";
 
 				return (
 					<div key={question.id}>
@@ -200,14 +201,14 @@ export const AdminFormPreviewPage = () => {
 										const next = checked ? [...selectedIds, choice.id] : selectedIds.filter(v => v !== choice.id);
 										updateAnswer(question.id, next.join(","));
 										if (otherChoice?.id === choice.id && !checked) {
-											updateAnswer(otherAnswerKey, "");
+											updateOtherText(question.id, "");
 										}
 									}}
 								/>
 							))}
 						</div>
 						{otherChoice && selectedIds.includes(otherChoice.id) && (
-							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
 						)}
 					</div>
 				);

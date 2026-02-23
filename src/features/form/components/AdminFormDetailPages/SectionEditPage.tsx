@@ -89,7 +89,7 @@ export const AdminSectionEditPage = () => {
 				description: q.description ?? "",
 				required: q.required ?? false,
 				isFromAnswer: !!q.sourceId,
-				options: q.choices?.map(c => ({ label: c.name ?? "", isOther: (c as { isOther?: boolean }).isOther ?? false })),
+				options: q.choices?.map(c => ({ label: c.name ?? "", isOther: c.isOther ?? false })),
 				detailOptions: q.choices?.map(c => ({ label: c.name ?? "", description: c.description ?? "" })),
 				start: q.scale?.minVal,
 				end: q.scale?.maxVal,

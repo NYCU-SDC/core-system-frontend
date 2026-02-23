@@ -36,6 +36,7 @@ export const FormDetailPage = () => {
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
+	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
 	const answersInitialized = useRef(false);
 
 	// ── React Query ──────────────────────────────────────────────────────────
@@ -109,14 +110,26 @@ export const FormDetailPage = () => {
 		const data = responseQuery.data as unknown as FormResponseData | undefined;
 		if (!data?.sections) return;
 		const loaded: Record<string, string> = {};
+		const loadedOtherTexts: Record<string, string> = {};
 		data.sections.forEach(section => {
 			section.answerDetails?.forEach(detail => {
-				if (detail.question.id && detail.payload?.displayValue) {
+				if (!detail.question.id) return;
+				const answerPayload = detail.payload?.answer;
+				if (answerPayload && Array.isArray((answerPayload as ResponsesStringArrayAnswer).value)) {
+					const arrayAnswer = answerPayload as ResponsesStringArrayAnswer;
+					loaded[detail.question.id] = arrayAnswer.value.join(",");
+					if (arrayAnswer.otherText) {
+						loadedOtherTexts[detail.question.id] = arrayAnswer.otherText;
+					}
+					return;
+				}
+				if (detail.payload?.displayValue) {
 					loaded[detail.question.id] = detail.payload.displayValue;
 				}
 			});
 		});
 		setAnswers(loaded);
+		setOtherTexts(loadedOtherTexts);
 		answersInitialized.current = true;
 	}, [responseQuery.data]);
 
@@ -149,7 +162,7 @@ export const FormDetailPage = () => {
 			});
 
 			const answersArray = Object.entries(answers)
-				.filter(([questionId, value]) => value !== "" && !questionId.endsWith(".__other"))
+				.filter(([, value]) => value !== "")
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 
@@ -172,10 +185,12 @@ export const FormDetailPage = () => {
 						} as ResponsesScaleAnswer;
 					} else if (stringArrayTypes.includes(questionType)) {
 						const valueArray = value.includes(",") ? value.split(",") : [value];
+						const otherText = otherTexts[questionId]?.trim();
 						return {
 							questionId,
 							questionType: questionType as ResponsesStringArrayAnswer["questionType"],
-							value: valueArray
+							value: valueArray,
+							...(otherText ? { otherText } : {})
 						} as ResponsesStringArrayAnswer;
 					} else {
 						return {
@@ -196,7 +211,7 @@ export const FormDetailPage = () => {
 		} catch (error) {
 			pushToast({ title: "自動儲存失敗", description: (error as Error).message, variant: "error" });
 		}
-	}, [urlResponseId, answers, sections, updateResponseMutation, pushToast]);
+	}, [urlResponseId, answers, otherTexts, sections, updateResponseMutation, pushToast]);
 
 	useEffect(() => {
 		if (!urlResponseId) return;
@@ -245,7 +260,12 @@ export const FormDetailPage = () => {
 		}));
 	};
 
-	const getOtherAnswerKey = (questionId: string) => `${questionId}.__other`;
+	const updateOtherText = (questionId: string, value: string) => {
+		setOtherTexts(prev => ({
+			...prev,
+			[questionId]: value
+		}));
+	};
 	const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
 
 	const renderQuestion = (question: FormsQuestionResponse) => {
@@ -282,9 +302,8 @@ export const FormDetailPage = () => {
 			case "SINGLE_CHOICE":
 			case "DROPDOWN": {
 				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
-				const otherAnswerKey = getOtherAnswerKey(question.id);
-				const otherValue = answers[otherAnswerKey] || "";
+				const otherChoice = choices.find(choice => choice.isOther);
+				const otherValue = otherTexts[question.id] || "";
 
 				return (
 					<div key={question.id}>
@@ -299,12 +318,12 @@ export const FormDetailPage = () => {
 							onValueChange={newValue => {
 								updateAnswer(question.id, newValue);
 								if (newValue !== otherChoice?.id) {
-									updateAnswer(otherAnswerKey, "");
+									updateOtherText(question.id, "");
 								}
 							}}
 						/>
 						{otherChoice && value === otherChoice.id && (
-							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
 						)}
 					</div>
 				);
@@ -312,10 +331,9 @@ export const FormDetailPage = () => {
 
 			case "MULTIPLE_CHOICE": {
 				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => (choice as { isOther?: boolean }).isOther);
+				const otherChoice = choices.find(choice => choice.isOther);
 				const selectedIds = getSelectedChoiceIds(value);
-				const otherAnswerKey = getOtherAnswerKey(question.id);
-				const otherValue = answers[otherAnswerKey] || "";
+				const otherValue = otherTexts[question.id] || "";
 
 				return (
 					<div key={question.id}>
@@ -335,14 +353,14 @@ export const FormDetailPage = () => {
 										const newValues = checked ? [...selectedIds, choice.id] : selectedIds.filter(v => v !== choice.id);
 										updateAnswer(question.id, newValues.join(","));
 										if (otherChoice?.id === choice.id && !checked) {
-											updateAnswer(otherAnswerKey, "");
+											updateOtherText(question.id, "");
 										}
 									}}
 								/>
 							))}
 						</div>
 						{otherChoice && selectedIds.includes(otherChoice.id) && (
-							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateAnswer(otherAnswerKey, e.target.value)} style={{ marginTop: "0.75rem" }} />
+							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
 						)}
 					</div>
 				);
@@ -588,7 +606,7 @@ export const FormDetailPage = () => {
 			});
 
 			const answersArray = Object.entries(answers)
-				.filter(([questionId, value]) => value !== "" && !questionId.endsWith(".__other"))
+				.filter(([, value]) => value !== "")
 				.map(([questionId, value]) => {
 					const questionType = questionTypeMap[questionId];
 					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
@@ -601,7 +619,8 @@ export const FormDetailPage = () => {
 						return { questionId, questionType: questionType as ResponsesScaleAnswer["questionType"], value: parseInt(value, 10) } as ResponsesScaleAnswer;
 					} else if (stringArrayTypes.includes(questionType)) {
 						const valueArray = value.includes(",") ? value.split(",") : [value];
-						return { questionId, questionType: questionType as ResponsesStringArrayAnswer["questionType"], value: valueArray } as ResponsesStringArrayAnswer;
+						const otherText = otherTexts[questionId]?.trim();
+						return { questionId, questionType: questionType as ResponsesStringArrayAnswer["questionType"], value: valueArray, ...(otherText ? { otherText } : {}) } as ResponsesStringArrayAnswer;
 					} else {
 						return { questionId, questionType: questionType as ResponsesStringAnswer["questionType"], value } as ResponsesStringAnswer;
 					}
