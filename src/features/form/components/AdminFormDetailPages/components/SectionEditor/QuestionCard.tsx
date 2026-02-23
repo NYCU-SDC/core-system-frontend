@@ -14,8 +14,8 @@ export interface QuestionCardProps {
 	autoFocusTitle?: boolean;
 	onTitleChange?: (newTitle: string) => void;
 	onDescriptionChange?: (newDescription: string) => void;
-	removeQuestion: () => void;
-	duplicateQuestion: () => void;
+	removeQuestion: () => void | Promise<void>;
+	duplicateQuestion: () => void | Promise<void>;
 	onAddOption?: () => void;
 	onAddOtherOption?: () => void;
 	onRemoveOption?: (optionIndex: number) => void;
@@ -109,11 +109,27 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 
 	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? false);
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
+	const [isDuplicating, setIsDuplicating] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [localDesc, setLocalDesc] = useState(question.description);
 	const localDescRef = useRef(question.description);
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
+	const runWithIndicator = async (action: () => void | Promise<void>, setPending: (pending: boolean) => void) => {
+		setPending(true);
+		const startedAt = Date.now();
+		try {
+			await Promise.resolve(action());
+		} finally {
+			const elapsedMs = Date.now() - startedAt;
+			const minVisibleMs = 250;
+			if (elapsedMs < minVisibleMs) {
+				await new Promise(resolve => window.setTimeout(resolve, minVisibleMs - elapsedMs));
+			}
+			setPending(false);
+		}
+	};
 
 	useEffect(() => {
 		setLocalDesc(question.description);
@@ -143,6 +159,16 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 		document.addEventListener("mousedown", handleOutsideClick);
 		return () => document.removeEventListener("mousedown", handleOutsideClick);
 	}, [isExpanded, props]);
+
+	const handleDuplicateClick = () => {
+		if (isDuplicating || isDeleting) return;
+		void runWithIndicator(duplicateQuestion, setIsDuplicating);
+	};
+
+	const handleDeleteClick = () => {
+		if (isDeleting || isDuplicating) return;
+		void runWithIndicator(removeQuestion, setIsDeleting);
+	};
 
 	return (
 		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)}>
@@ -307,8 +333,24 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 						</div>
 					)}
 					<div className={styles.actions}>
-						<Copy onClick={duplicateQuestion} />
-						<Trash2 onClick={removeQuestion} />
+						<button
+							type="button"
+							className={`${styles.iconButton} ${isDuplicating ? styles.processing : ""}`}
+							onClick={handleDuplicateClick}
+							disabled={isDuplicating || isDeleting}
+							aria-label={isDuplicating ? "複製中" : "複製問題"}
+						>
+							<Copy />
+						</button>
+						<button
+							type="button"
+							className={`${styles.iconButton} ${isDeleting ? styles.processing : ""}`}
+							onClick={handleDeleteClick}
+							disabled={isDeleting || isDuplicating}
+							aria-label={isDeleting ? "刪除中" : "刪除問題"}
+						>
+							<Trash2 />
+						</button>
 						<div className={`${styles.switch}`}>
 							<p className={`${styles.label}`}>必填</p>
 							<Switch checked={question.required ?? false} onClick={() => props.onRequiredChange?.(!(question.required ?? false))} />

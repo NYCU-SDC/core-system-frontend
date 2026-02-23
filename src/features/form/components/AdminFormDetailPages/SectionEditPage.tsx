@@ -666,7 +666,7 @@ export const AdminSectionEditPage = () => {
 						))}
 					</div>
 				</div>
-				<div>
+				<div className={styles.sidebarContainer}>
 					<div className={styles.sidebar}>
 						<p>新增</p>
 						{newQuestionOptions.map((option, index) => (
