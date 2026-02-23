@@ -3,7 +3,7 @@ import { HomePage } from "@/features/auth/components/HomePage";
 import { LogoutPage } from "@/features/auth/components/LogoutPage";
 import { NotFoundPage } from "@/features/auth/components/NotFoundPage";
 import { WelcomePage } from "@/features/auth/components/WelcomePage";
-import { FormDetailPage, FormsListPage } from "@/features/form/components";
+import { FormDetailPage, FormEntryPage, FormsListPage } from "@/features/form/components";
 // ⚠️ 這裡先沿用你現有的 import；下一步我會教你怎麼避免 barrel 拉到 admin
 import { UserLayout } from "@/layouts";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -27,6 +27,14 @@ export const UserRouter = () => {
 						element={
 							<UserLayout>
 								<FormsListPage />
+							</UserLayout>
+						}
+					/>
+					<Route
+						path="/forms/:formId"
+						element={
+							<UserLayout>
+								<FormEntryPage />
 							</UserLayout>
 						}
 					/>
