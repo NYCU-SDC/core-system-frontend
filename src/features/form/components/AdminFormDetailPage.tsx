@@ -95,7 +95,7 @@ export const AdminFormDetailPage = () => {
 							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
 						</Button>
 						<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
-							預覽表單
+							預覽表單（beta）
 						</Button>
 						<Button variant="secondary" onClick={handleViewForm} disabled={formQuery.data.status === "DRAFT"}>
 							檢視表單

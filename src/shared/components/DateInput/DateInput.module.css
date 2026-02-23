@@ -63,6 +63,16 @@
 	font-style: italic;
 }
 
+.inputError {
+	border-color: var(--red);
+}
+
+.errorMessage {
+	margin: 0;
+	font-size: 0.875rem;
+	color: var(--red);
+}
+
 /* Remove number input spinner in webkit browsers */
 .input::-webkit-outer-spin-button,
 .input::-webkit-inner-spin-button {

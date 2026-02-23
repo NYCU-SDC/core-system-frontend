@@ -25,6 +25,15 @@ import styles from "./FormDetailPage.module.css";
 
 type Section = FormsSection;
 
+const isValidUrl = (url: string): boolean => {
+	try {
+		const u = new URL(url);
+		return u.protocol === "http:" || u.protocol === "https:";
+	} catch {
+		return false;
+	}
+};
+
 // ── File upload per-question component ────────────────────────────────────
 
 interface FileItem {
@@ -594,7 +603,14 @@ export const FormDetailPage = () => {
 							{question.required && <span className={styles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Input id={question.id} placeholder="https://" value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
+						<Input
+							id={question.id}
+							placeholder="https://"
+							value={value}
+							onChange={e => updateAnswer(question.id, e.target.value)}
+							required={question.required}
+							error={value && !isValidUrl(value) ? "請輸入有效的網址（需以 http:// 或 https:// 開頭）" : ""}
+						/>
 					</div>
 				);
 

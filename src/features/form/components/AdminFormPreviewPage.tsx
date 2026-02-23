@@ -20,6 +20,15 @@ const ensureEmfontStylesheet = (fontId: string) => {
 	document.head.appendChild(link);
 };
 
+const isValidUrl = (url: string): boolean => {
+	try {
+		const u = new URL(url);
+		return u.protocol === "http:" || u.protocol === "https:";
+	} catch {
+		return false;
+	}
+};
+
 export const AdminFormPreviewPage = () => {
 	const { formid } = useParams<{ formid: string }>();
 	const [currentStep, setCurrentStep] = useState(0);
@@ -51,12 +60,14 @@ export const AdminFormPreviewPage = () => {
 			}));
 		});
 
-		return resolveVisibleSectionsFromWorkflow(baseSections, workflowQuery.data?.workflow, answers);
-	}, [sectionsQuery.data, workflowQuery.data, answers]);
+		const visible = resolveVisibleSectionsFromWorkflow(baseSections, workflowQuery.data?.workflow, answers);
+		return [...visible, { id: "preview", formId: formid!, title: "填答結果預覽", questions: [] }];
+	}, [sectionsQuery.data, workflowQuery.data, answers, formid]);
 
 	const safeCurrentStep = sections.length > 0 ? Math.min(currentStep, sections.length - 1) : currentStep;
 	const isFirstStep = safeCurrentStep === 0;
 	const isLastStep = sections.length === 0 || safeCurrentStep === sections.length - 1;
+	const isOnPreviewStep = isLastStep && sections[safeCurrentStep]?.id === "preview";
 
 	const updateAnswer = (questionId: string, value: string) => {
 		setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -258,7 +269,14 @@ export const AdminFormPreviewPage = () => {
 							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
 						</label>
 						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Input id={question.id} placeholder="https://" value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
+						<Input
+							id={question.id}
+							placeholder="https://"
+							value={value}
+							onChange={e => updateAnswer(question.id, e.target.value)}
+							required={question.required}
+							error={value && !isValidUrl(value) ? "請輸入有效的網址（需以 http:// 或 https:// 開頭）" : ""}
+						/>
 					</div>
 				);
 
@@ -346,8 +364,57 @@ export const AdminFormPreviewPage = () => {
 						{sections[safeCurrentStep] && (
 							<div className={formStyles.section}>
 								<div className={formStyles.fields}>
-									{sections[safeCurrentStep].questions?.map(q => renderQuestion(q))}
-									{(!sections[safeCurrentStep].questions || sections[safeCurrentStep].questions.length === 0) && <p className={formStyles.caption}>此區段目前沒有問題</p>}
+									{isOnPreviewStep ? (
+										<div className={formStyles.previewSection}>
+											{sections
+												.filter(s => s.id !== "preview")
+												.map(section => (
+													<div key={section.id} className={formStyles.previewBlock}>
+														<div className={formStyles.previewHeader}>
+															<h3 className={formStyles.previewSectionTitle}>{section.title}</h3>
+															<Button
+																type="button"
+																variant="secondary"
+																onClick={() => {
+																	const idx = sections.findIndex(s => s.id === section.id);
+																	if (idx >= 0) setCurrentStep(idx);
+																}}
+															>
+																修改
+															</Button>
+														</div>
+														<ul className={formStyles.previewList}>
+															{section.questions?.map((q, qi) => {
+																const raw = answers[q.id] ?? "";
+																const displayValue = raw
+																	? q.choices
+																		? raw
+																				.split(",")
+																				.map(id => q.choices?.find(c => c.id === id)?.name ?? id)
+																				.join("、")
+																		: raw
+																	: "";
+																return (
+																	<li key={qi}>
+																		<span className={formStyles.previewAnswerLabel}>
+																			{q.title}
+																			{q.required && <span className={formStyles.requiredAsterisk}> *</span>}
+																		</span>
+																		<span>：</span>
+																		<span className={!displayValue && q.required ? formStyles.previewAnswerEmpty : ""}>{displayValue || "未填寫"}</span>
+																	</li>
+																);
+															})}
+														</ul>
+													</div>
+												))}
+										</div>
+									) : (
+										<>
+											{sections[safeCurrentStep].questions?.map(q => renderQuestion(q))}
+											{(!sections[safeCurrentStep].questions || sections[safeCurrentStep].questions.length === 0) && <p className={formStyles.caption}>此區段目前沒有問題</p>}
+										</>
+									)}
 								</div>
 							</div>
 						)}
@@ -357,9 +424,15 @@ export const AdminFormPreviewPage = () => {
 							<Button type="button" onClick={() => setCurrentStep(p => p - 1)} disabled={isFirstStep} themeColor="var(--foreground)">
 								上一頁
 							</Button>
-							<Button type="button" onClick={() => setCurrentStep(p => p + 1)} disabled={isLastStep} themeColor={primaryThemeColor}>
-								下一頁
-							</Button>
+							{isOnPreviewStep ? (
+								<Button type="button" disabled themeColor={primaryThemeColor}>
+									預覽
+								</Button>
+							) : (
+								<Button type="button" onClick={() => setCurrentStep(p => p + 1)} themeColor={primaryThemeColor}>
+									下一頁
+								</Button>
+							)}
 						</div>
 					</div>
 				</div>
