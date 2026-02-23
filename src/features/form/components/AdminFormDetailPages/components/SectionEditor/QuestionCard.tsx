@@ -1,5 +1,24 @@
-import { Button, Input, Switch, TextArea } from "@/shared/components";
-import { Calendar, CaseSensitive, CloudUpload, Copy, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart, Trash2 } from "lucide-react";
+import { Button, Checkbox, Input, Select, Switch, TextArea } from "@/shared/components";
+import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
+import {
+	Calendar,
+	CaseSensitive,
+	Chrome,
+	CloudUpload,
+	Copy,
+	Ellipsis,
+	Github,
+	LayoutList,
+	Link2,
+	List,
+	ListOrdered,
+	Rows3,
+	ShieldCheck,
+	SquareCheckBig,
+	Star,
+	TextAlignStart,
+	Trash2
+} from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Question } from "../../types/option";
 import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
@@ -30,7 +49,15 @@ export interface QuestionCardProps {
 	onEndLabelChange?: (label: string) => void;
 	onChangeIcon?: (newIcon: Question["icon"]) => void;
 	onToggleIsFromAnswer?: () => void;
+	onSourceQuestionChange?: (sourceId: string) => void;
+	sourceQuestionOptions?: Array<{ value: string; label: string }>;
+	sourceQuestionId?: string;
 	onRequiredChange?: (required: boolean) => void;
+	onUploadFileTypesChange?: (nextTypes: string[]) => void;
+	onUploadMaxFileAmountChange?: (value: number) => void;
+	onUploadMaxFileSizeLimitChange?: (value: number) => void;
+	onDateOptionChange?: (field: "dateHasYear" | "dateHasMonth" | "dateHasDay" | "dateHasMinDate" | "dateHasMaxDate", checked: boolean) => void;
+	onDateRangeChange?: (field: "dateMinDate" | "dateMaxDate", value: string) => void;
 	onUrlChange?: (url: string) => void;
 	onOauthProviderChange?: (provider: "GOOGLE" | "GITHUB") => void;
 	onFold?: () => void;
@@ -103,6 +130,28 @@ const typeMap: Record<Question["type"], typeInfo> = {
 };
 
 const questionTypes = Object.keys(typeMap) as Question["type"][];
+const uploadFileTypeCategoryMap: Record<string, FormsAllowedFileTypes[]> = {
+	圖片: [
+		FormsAllowedFileTypes.JPG,
+		FormsAllowedFileTypes.JPEG,
+		FormsAllowedFileTypes.PNG,
+		FormsAllowedFileTypes.WEBP,
+		FormsAllowedFileTypes.GIF,
+		FormsAllowedFileTypes.TIFF,
+		FormsAllowedFileTypes.BMP,
+		FormsAllowedFileTypes.HEIC,
+		FormsAllowedFileTypes.RAW,
+		FormsAllowedFileTypes.SVG,
+		FormsAllowedFileTypes.AI,
+		FormsAllowedFileTypes.EPS
+	],
+	影片: [FormsAllowedFileTypes.MP4, FormsAllowedFileTypes.WEBM, FormsAllowedFileTypes.MOV, FormsAllowedFileTypes.MKV, FormsAllowedFileTypes.AVI],
+	音訊: [FormsAllowedFileTypes.MP3, FormsAllowedFileTypes.WAV, FormsAllowedFileTypes.M4A, FormsAllowedFileTypes.AAC, FormsAllowedFileTypes.OGG, FormsAllowedFileTypes.FLAC],
+	文件: [FormsAllowedFileTypes.TXT, FormsAllowedFileTypes.MD, FormsAllowedFileTypes.DOC, FormsAllowedFileTypes.DOCX, FormsAllowedFileTypes.ODT, FormsAllowedFileTypes.RTF, FormsAllowedFileTypes.PDF],
+	簡報: [FormsAllowedFileTypes.PPT, FormsAllowedFileTypes.PPTX, FormsAllowedFileTypes.ODP],
+	試算表: [FormsAllowedFileTypes.XLS, FormsAllowedFileTypes.XLSX, FormsAllowedFileTypes.ODS, FormsAllowedFileTypes.CSV],
+	壓縮檔: [FormsAllowedFileTypes.ZIP]
+};
 
 export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const { question, removeQuestion, duplicateQuestion } = props;
@@ -147,7 +196,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 		if (!isExpanded) return;
 
 		const handleOutsideClick = (event: MouseEvent) => {
-			if (!cardRef.current?.contains(event.target as Node)) {
+			const target = event.target as Element;
+			// Ignore clicks inside Radix UI portals (dropdowns, popovers, etc.)
+			if (target.closest("[data-radix-popper-content-wrapper], [data-radix-select-content], [data-radix-dropdown-menu-content]")) return;
+			if (!cardRef.current?.contains(target)) {
 				// flush description before blur fires (mousedown precedes blur)
 				props.onDescriptionChange?.(localDescRef.current);
 				props.onFold?.();
@@ -169,6 +221,15 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 		if (isDeleting || isDuplicating) return;
 		void runWithIndicator(removeQuestion, setIsDeleting);
 	};
+
+	const uploadMaxFileAmount = question.uploadMaxFileAmount ?? 1;
+	const uploadMaxFileSizeLimit = question.uploadMaxFileSizeLimit ?? 10485760;
+	const uploadMaxFileSizeMb = Number((uploadMaxFileSizeLimit / 1024 / 1024).toFixed(2));
+	const uploadFileTypeValues = (question.uploadAllowedFileTypes ?? ["PDF"]) as FormsAllowedFileTypes[];
+	const uploadMaxFileAmountError = uploadMaxFileAmount < 1 || uploadMaxFileAmount > 10 ? "上傳數量需介於 1 到 10" : "";
+	const uploadMaxFileSizeError = uploadMaxFileSizeMb <= 0 || uploadMaxFileSizeMb > 10 ? "檔案大小需介於 0 到 10 MB" : "";
+	const minDateError = question.dateHasMinDate && !question.dateMinDate ? "請填開始日期" : "";
+	const maxDateError = question.dateHasMaxDate && !question.dateMaxDate ? "請填結束日期" : "";
 
 	return (
 		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)}>
@@ -241,6 +302,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							type={typeMap[question.type].optionType || "radio"}
 							options={question.options || []}
 							isFromAnswer={question.isFromAnswer}
+							sourceOptions={question.type === "RANKING" ? props.sourceQuestionOptions : []}
+							sourceValue={question.sourceQuestionId}
+							onSourceChange={sourceId => props.onSourceQuestionChange?.(sourceId)}
 							onAdd={() => {
 								if (props.onAddOption) {
 									props.onAddOption();
@@ -310,26 +374,119 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					{question.type === "DETAILED_MULTIPLE_CHOICE" && (
 						<DetailOptionsQuestion options={question.detailOptions || []} onAdd={props.onAddDetailOption || (() => {})} onEdit={props.onDetailOptionChange} onRemove={props.onRemoveDetailOption} />
 					)}
-					{question.type === "HYPERLINK" && (
-						<Input value={question.url ?? ""} placeholder="輸入超連結 URL" variant="flushed" themeColor="--comment" onChange={e => props.onUrlChange?.(e.target.value)} />
-					)}
-					{question.type === "OAUTH_CONNECT" && (
-						<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.25rem 0" }}>
-							<span style={{ fontSize: "0.875rem" }}>OAuth 提供商</span>
-							<label style={{ display: "flex", alignItems: "center", gap: "0.25rem", cursor: "pointer" }}>
-								<input
-									type="radio"
-									name={`oauth-provider-${question.title}`}
-									value="GITHUB"
-									checked={(question.oauthProvider ?? "GITHUB") === "GITHUB"}
-									onChange={() => props.onOauthProviderChange?.("GITHUB")}
+					{question.type === "UPLOAD_FILE" && (
+						<div className={styles.configSection}>
+							<p className={styles.sectionTitle}>檔案類型</p>
+							<div className={styles.checkboxGrid}>
+								{Object.entries(uploadFileTypeCategoryMap).map(([categoryLabel, fileTypes]) => {
+									const checked = fileTypes.every(fileType => uploadFileTypeValues.includes(fileType));
+									return (
+										<Checkbox
+											key={categoryLabel}
+											id={`${question.title}-${categoryLabel}`}
+											label={categoryLabel}
+											checked={checked}
+											onCheckedChange={checked => {
+												const checkedBoolean = Boolean(checked);
+												const next = checkedBoolean ? Array.from(new Set([...uploadFileTypeValues, ...fileTypes])) : uploadFileTypeValues.filter(value => !fileTypes.includes(value));
+												props.onUploadFileTypesChange?.(next);
+											}}
+										/>
+									);
+								})}
+							</div>
+							<div className={styles.numberConfigRow}>
+								<Input
+									type="number"
+									label="上傳數量"
+									min={1}
+									max={10}
+									value={uploadMaxFileAmount}
+									error={uploadMaxFileAmountError}
+									onChange={event => props.onUploadMaxFileAmountChange?.(Number(event.target.value))}
 								/>
-								GitHub
-							</label>
-							<label style={{ display: "flex", alignItems: "center", gap: "0.25rem", cursor: "pointer" }}>
-								<input type="radio" name={`oauth-provider-${question.title}`} value="GOOGLE" checked={question.oauthProvider === "GOOGLE"} onChange={() => props.onOauthProviderChange?.("GOOGLE")} />
-								Google
-							</label>
+								<Input
+									type="number"
+									label="大小上限（MB）"
+									min={0.01}
+									max={10}
+									step={0.01}
+									value={uploadMaxFileSizeMb}
+									error={uploadMaxFileSizeError}
+									onChange={event => props.onUploadMaxFileSizeLimitChange?.(Math.round(Number(event.target.value) * 1024 * 1024))}
+								/>
+							</div>
+						</div>
+					)}
+					{question.type === "DATE" && (
+						<div className={styles.configSection}>
+							<p className={styles.sectionTitle}>日期選項</p>
+							<div className={styles.checkboxRow}>
+								<Checkbox
+									id={`${question.title}-hasYear`}
+									label="詢問年"
+									checked={question.dateHasYear ?? true}
+									onCheckedChange={checked => props.onDateOptionChange?.("dateHasYear", Boolean(checked))}
+								/>
+								<Checkbox
+									id={`${question.title}-hasMonth`}
+									label="詢問月"
+									checked={question.dateHasMonth ?? true}
+									onCheckedChange={checked => props.onDateOptionChange?.("dateHasMonth", Boolean(checked))}
+								/>
+								<Checkbox
+									id={`${question.title}-hasDay`}
+									label="詢問日"
+									checked={question.dateHasDay ?? true}
+									onCheckedChange={checked => props.onDateOptionChange?.("dateHasDay", Boolean(checked))}
+								/>
+							</div>
+							<div className={styles.checkboxRow}>
+								<Checkbox
+									id={`${question.title}-hasMinDate`}
+									label="是否限制開始"
+									checked={question.dateHasMinDate ?? false}
+									onCheckedChange={checked => props.onDateOptionChange?.("dateHasMinDate", Boolean(checked))}
+								/>
+								<Checkbox
+									id={`${question.title}-hasMaxDate`}
+									label="是否限制結束"
+									checked={question.dateHasMaxDate ?? false}
+									onCheckedChange={checked => props.onDateOptionChange?.("dateHasMaxDate", Boolean(checked))}
+								/>
+							</div>
+							<div className={styles.numberConfigRow}>
+								<Input
+									type="date"
+									label="開始日期"
+									value={question.dateMinDate ?? ""}
+									error={minDateError}
+									disabled={!(question.dateHasMinDate ?? false)}
+									onChange={event => props.onDateRangeChange?.("dateMinDate", event.target.value)}
+								/>
+								<Input
+									type="date"
+									label="結束日期"
+									value={question.dateMaxDate ?? ""}
+									error={maxDateError}
+									disabled={!(question.dateHasMaxDate ?? false)}
+									onChange={event => props.onDateRangeChange?.("dateMaxDate", event.target.value)}
+								/>
+							</div>
+						</div>
+					)}
+					{question.type === "HYPERLINK" && <p className={styles.hintText}>此題型會讓填答者輸入 URL，僅需設定標題與描述。</p>}
+					{question.type === "OAUTH_CONNECT" && (
+						<div className={styles.configSection}>
+							<Select
+								label="綁定平台"
+								value={question.oauthProvider ?? "GITHUB"}
+								onValueChange={value => props.onOauthProviderChange?.(value as "GOOGLE" | "GITHUB")}
+								options={[
+									{ label: "GitHub", value: "GITHUB", icon: <Github size={16} /> },
+									{ label: "Google", value: "GOOGLE", icon: <Chrome size={16} /> }
+								]}
+							/>
 						</div>
 					)}
 					<div className={styles.actions}>

@@ -2,10 +2,10 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
-import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
+import type { FormsAllowedFileTypes, FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
 import { marked } from "marked";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/SectionEditor/QuestionCard";
@@ -89,16 +89,25 @@ export const AdminSectionEditPage = () => {
 				title: q.title,
 				description: q.description ?? "",
 				required: q.required ?? false,
-				isFromAnswer: !!q.sourceId,
+				isFromAnswer: Boolean(q.sourceId),
+				sourceQuestionId: q.sourceId,
 				options: q.choices?.map(c => ({ label: c.name ?? "", isOther: c.isOther ?? false })),
 				detailOptions: q.choices?.map(c => ({ label: c.name ?? "", description: c.description ?? "" })),
 				start: q.scale?.minVal,
 				end: q.scale?.maxVal,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				startLabel: (q.scale as any)?.minLabel ?? "",
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				endLabel: (q.scale as any)?.maxLabel ?? "",
+				startLabel: q.scale?.minValueLabel ?? "",
+				endLabel: q.scale?.maxValueLabel ?? "",
 				icon: q.scale?.icon as Question["icon"],
+				uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
+				uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
+				uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
+				dateHasYear: q.date?.hasYear ?? true,
+				dateHasMonth: q.date?.hasMonth ?? true,
+				dateHasDay: q.date?.hasDay ?? true,
+				dateHasMinDate: Boolean(q.date?.minDate),
+				dateHasMaxDate: Boolean(q.date?.maxDate),
+				dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
+				dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				url: (q as any).url ?? "",
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -165,6 +174,12 @@ export const AdminSectionEditPage = () => {
 	}, [sectionId, saveSectionIfChanged, sectionTitleDraft, sectionDescriptionDraft]);
 
 	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
+		const normalizeDateToUtc = (dateInput: string, endOfDay = false) => {
+			if (!dateInput) return undefined;
+			const suffix = endOfDay ? "T23:59:59Z" : "T00:00:00Z";
+			return `${dateInput}${suffix}`;
+		};
+
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
@@ -182,11 +197,26 @@ export const AdminSectionEditPage = () => {
 			base.scale = {
 				minVal: q.start,
 				maxVal: q.end ?? 5,
-				icon: q.icon as FormsQuestionRequest["scale"] extends object ? FormsQuestionRequest["scale"]["icon"] : never
+				icon: q.icon
 			};
-			// Extend with labels (backend extension)
-			if (q.startLabel !== undefined) (base.scale as unknown as Record<string, unknown>).minLabel = q.startLabel;
-			if (q.endLabel !== undefined) (base.scale as unknown as Record<string, unknown>).maxLabel = q.endLabel;
+			if (q.startLabel !== undefined) base.scale.minValueLabel = q.startLabel;
+			if (q.endLabel !== undefined) base.scale.maxValueLabel = q.endLabel;
+		}
+		if (q.type === "UPLOAD_FILE") {
+			base.uploadFile = {
+				allowedFileTypes: (q.uploadAllowedFileTypes?.length ? q.uploadAllowedFileTypes : ["PDF"]) as FormsAllowedFileTypes[],
+				maxFileAmount: q.uploadMaxFileAmount ?? 1,
+				maxFileSizeLimit: q.uploadMaxFileSizeLimit ?? 10485760
+			};
+		}
+		if (q.type === "DATE") {
+			base.date = {
+				hasYear: q.dateHasYear ?? true,
+				hasMonth: q.dateHasMonth ?? true,
+				hasDay: q.dateHasDay ?? true,
+				...(q.dateHasMinDate ? { minDate: normalizeDateToUtc(q.dateMinDate ?? "") } : {}),
+				...(q.dateHasMaxDate ? { maxDate: normalizeDateToUtc(q.dateMaxDate ?? "", true) } : {})
+			};
 		}
 		// HYPERLINK url field
 		if (q.type === "HYPERLINK" && q.url !== undefined) {
@@ -196,8 +226,26 @@ export const AdminSectionEditPage = () => {
 		if (q.type === "OAUTH_CONNECT") {
 			base.oauthConnect = (q.oauthProvider ?? "GITHUB") as FormsQuestionRequest["oauthConnect"];
 		}
+		if (q.isFromAnswer && q.sourceQuestionId) {
+			base.sourceId = q.sourceQuestionId;
+		}
 		return base;
 	};
+
+	const rankingSourceQuestionOptions = useMemo(
+		() =>
+			(sectionsQuery.data ?? [])
+				.flatMap(sectionRes => sectionRes.sections ?? [])
+				.flatMap(sectionItem =>
+					(sectionItem.questions ?? [])
+						.filter(question => question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE")
+						.map(question => ({
+							value: question.id,
+							label: `${sectionItem.title} / ${question.title}`
+						}))
+				),
+		[sectionsQuery.data]
+	);
 
 	const flushDirtyQuestions = useCallback(async () => {
 		if (!formid || !sectionId) return;
@@ -216,12 +264,7 @@ export const AdminSectionEditPage = () => {
 
 					const req = toApiRequest(question, index + 1);
 					const existingId = questionIdsRef.current[index];
-					const syncQuestionFromApi = (apiQuestion: {
-						description?: string | null;
-						title?: string | null;
-						required?: boolean | null;
-						choices?: { name?: string | null; isOther?: boolean | null; description?: string | null }[] | null;
-					}) => {
+					const syncQuestionFromApi = (apiQuestion: FormsQuestionResponse) => {
 						setQuestions(prev => {
 							if (!prev[index]) return prev;
 							const next = [...prev];
@@ -229,6 +272,23 @@ export const AdminSectionEditPage = () => {
 							target.title = apiQuestion.title ?? target.title;
 							target.description = apiQuestion.description ?? target.description;
 							target.required = apiQuestion.required ?? target.required;
+							target.sourceQuestionId = apiQuestion.sourceId ?? target.sourceQuestionId;
+							target.isFromAnswer = Boolean(apiQuestion.sourceId);
+							target.icon = apiQuestion.scale?.icon ?? target.icon;
+							target.start = apiQuestion.scale?.minVal ?? target.start;
+							target.end = apiQuestion.scale?.maxVal ?? target.end;
+							target.startLabel = apiQuestion.scale?.minValueLabel ?? target.startLabel;
+							target.endLabel = apiQuestion.scale?.maxValueLabel ?? target.endLabel;
+							target.uploadAllowedFileTypes = apiQuestion.uploadFile?.allowedFileTypes ? [...apiQuestion.uploadFile.allowedFileTypes] : target.uploadAllowedFileTypes;
+							target.uploadMaxFileAmount = apiQuestion.uploadFile?.maxFileAmount ?? target.uploadMaxFileAmount;
+							target.uploadMaxFileSizeLimit = apiQuestion.uploadFile?.maxFileSizeLimit ?? target.uploadMaxFileSizeLimit;
+							target.dateHasYear = apiQuestion.date?.hasYear ?? target.dateHasYear;
+							target.dateHasMonth = apiQuestion.date?.hasMonth ?? target.dateHasMonth;
+							target.dateHasDay = apiQuestion.date?.hasDay ?? target.dateHasDay;
+							target.dateHasMinDate = Boolean(apiQuestion.date?.minDate);
+							target.dateHasMaxDate = Boolean(apiQuestion.date?.maxDate);
+							target.dateMinDate = apiQuestion.date?.minDate ? apiQuestion.date.minDate.slice(0, 10) : "";
+							target.dateMaxDate = apiQuestion.date?.maxDate ? apiQuestion.date.maxDate.slice(0, 10) : "";
 
 							if (target.type === "DETAILED_MULTIPLE_CHOICE" && apiQuestion.choices) {
 								target.detailOptions = apiQuestion.choices.map(choice => ({
@@ -300,7 +360,23 @@ export const AdminSectionEditPage = () => {
 		}
 
 		if (nextType === "RATING") {
-			nextQuestion.icon = prev.icon ?? nextQuestion.icon ?? "STAR";
+			nextQuestion.icon = prev.icon ?? nextQuestion.icon ?? "star";
+		}
+
+		if (nextType === "UPLOAD_FILE") {
+			nextQuestion.uploadAllowedFileTypes = prev.uploadAllowedFileTypes ?? nextQuestion.uploadAllowedFileTypes ?? ["PDF"];
+			nextQuestion.uploadMaxFileAmount = prev.uploadMaxFileAmount ?? nextQuestion.uploadMaxFileAmount ?? 1;
+			nextQuestion.uploadMaxFileSizeLimit = prev.uploadMaxFileSizeLimit ?? nextQuestion.uploadMaxFileSizeLimit ?? 10485760;
+		}
+
+		if (nextType === "DATE") {
+			nextQuestion.dateHasYear = prev.dateHasYear ?? nextQuestion.dateHasYear ?? true;
+			nextQuestion.dateHasMonth = prev.dateHasMonth ?? nextQuestion.dateHasMonth ?? true;
+			nextQuestion.dateHasDay = prev.dateHasDay ?? nextQuestion.dateHasDay ?? true;
+			nextQuestion.dateHasMinDate = prev.dateHasMinDate ?? nextQuestion.dateHasMinDate ?? false;
+			nextQuestion.dateHasMaxDate = prev.dateHasMaxDate ?? nextQuestion.dateHasMaxDate ?? false;
+			nextQuestion.dateMinDate = prev.dateMinDate ?? nextQuestion.dateMinDate ?? "";
+			nextQuestion.dateMaxDate = prev.dateMaxDate ?? nextQuestion.dateMaxDate ?? "";
 		}
 
 		if (nextType === "HYPERLINK") {
@@ -309,6 +385,11 @@ export const AdminSectionEditPage = () => {
 
 		if (nextType === "OAUTH_CONNECT") {
 			nextQuestion.oauthProvider = prev.oauthProvider ?? nextQuestion.oauthProvider ?? "GITHUB";
+		}
+
+		if (nextType === "RANKING") {
+			nextQuestion.isFromAnswer = prev.isFromAnswer;
+			nextQuestion.sourceQuestionId = prev.sourceQuestionId;
 		}
 
 		updatedQuestions[index] = nextQuestion;
@@ -375,16 +456,43 @@ export const AdminSectionEditPage = () => {
 			icon: <SquareCheckBig />,
 			text: "核取方塊",
 			type: "MULTIPLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", required: false, options: [], isFromAnswer: false })
+			setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", required: false, options: [{ label: "選項 1" }], isFromAnswer: false })
 		},
-		{ icon: <Rows3 />, text: "下拉選單", type: "DROPDOWN", setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
+		{
+			icon: <Rows3 />,
+			text: "下拉選單",
+			type: "DROPDOWN",
+			setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", required: false, options: [{ label: "選項 1" }], isFromAnswer: false })
+		},
 		{
 			icon: <LayoutList />,
 			text: "詳細核取方塊",
 			type: "DETAILED_MULTIPLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "DETAILED_MULTIPLE_CHOICE", title: "", description: "", required: false, options: [], isFromAnswer: false, detailOptions: [] })
+			setDefaultQuestion: () => ({
+				type: "DETAILED_MULTIPLE_CHOICE",
+				title: "",
+				description: "",
+				required: false,
+				options: [],
+				isFromAnswer: false,
+				detailOptions: [{ label: "選項 1", description: "" }]
+			})
 		},
-		{ icon: <CloudUpload />, text: "檔案上傳", type: "UPLOAD_FILE", setDefaultQuestion: () => ({ type: "UPLOAD_FILE", title: "", description: "", required: false, isFromAnswer: false }) },
+		{
+			icon: <CloudUpload />,
+			text: "檔案上傳",
+			type: "UPLOAD_FILE",
+			setDefaultQuestion: () => ({
+				type: "UPLOAD_FILE",
+				title: "",
+				description: "",
+				required: false,
+				isFromAnswer: false,
+				uploadAllowedFileTypes: ["PDF"],
+				uploadMaxFileAmount: 1,
+				uploadMaxFileSizeLimit: 10485760
+			})
+		},
 		{
 			icon: <Ellipsis />,
 			text: "線性刻度",
@@ -398,7 +506,25 @@ export const AdminSectionEditPage = () => {
 			setDefaultQuestion: () => ({ type: "RATING", title: "", description: "", required: false, isFromAnswer: false, start: 1, end: 5, startLabel: "", endLabel: "", icon: "STAR" })
 		},
 		{ icon: <ListOrdered />, text: "排序", type: "RANKING", setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", required: false, options: [], isFromAnswer: false }) },
-		{ icon: <Calendar />, text: "日期選擇", type: "DATE", setDefaultQuestion: () => ({ type: "DATE", title: "", description: "", required: false, isFromAnswer: false }) },
+		{
+			icon: <Calendar />,
+			text: "日期選擇",
+			type: "DATE",
+			setDefaultQuestion: () => ({
+				type: "DATE",
+				title: "",
+				description: "",
+				required: false,
+				isFromAnswer: false,
+				dateHasYear: true,
+				dateHasMonth: true,
+				dateHasDay: true,
+				dateHasMinDate: false,
+				dateHasMaxDate: false,
+				dateMinDate: "",
+				dateMaxDate: ""
+			})
+		},
 		{ icon: <Link2 />, text: "超連結", type: "HYPERLINK", setDefaultQuestion: () => ({ type: "HYPERLINK", title: "", description: "", required: false, url: "", isFromAnswer: false }) },
 		{
 			icon: <ShieldCheck />,
@@ -539,6 +665,17 @@ export const AdminSectionEditPage = () => {
 	const handleToggleIsFromAnswer = (questionIndex: number) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].isFromAnswer = !updatedQuestions[questionIndex].isFromAnswer;
+		if (!updatedQuestions[questionIndex].isFromAnswer) {
+			updatedQuestions[questionIndex].sourceQuestionId = undefined;
+		}
+		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
+	};
+
+	const handleSourceQuestionChange = (questionIndex: number, sourceQuestionId: string) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].sourceQuestionId = sourceQuestionId;
+		updatedQuestions[questionIndex].isFromAnswer = true;
 		setQuestions(updatedQuestions);
 		markQuestionDirty(questionIndex);
 	};
@@ -574,6 +711,54 @@ export const AdminSectionEditPage = () => {
 	const handleEndLabelChange = (questionIndex: number, label: string) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].endLabel = label;
+		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
+	};
+
+	const handleUploadFileTypesChange = (questionIndex: number, nextTypes: string[]) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].uploadAllowedFileTypes = nextTypes;
+		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
+	};
+
+	const handleUploadMaxFileAmountChange = (questionIndex: number, maxAmount: number) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].uploadMaxFileAmount = maxAmount;
+		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
+	};
+
+	const handleUploadMaxFileSizeLimitChange = (questionIndex: number, maxFileSizeLimit: number) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex].uploadMaxFileSizeLimit = maxFileSizeLimit;
+		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
+	};
+
+	const handleDateOptionChange = (questionIndex: number, field: "dateHasYear" | "dateHasMonth" | "dateHasDay" | "dateHasMinDate" | "dateHasMaxDate", value: boolean) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex][field] = value;
+		const todayStr = new Date().toISOString().split("T")[0];
+		if (!value && field === "dateHasMinDate") {
+			updatedQuestions[questionIndex].dateMinDate = "";
+		}
+		if (value && field === "dateHasMinDate" && !updatedQuestions[questionIndex].dateMinDate) {
+			updatedQuestions[questionIndex].dateMinDate = todayStr;
+		}
+		if (!value && field === "dateHasMaxDate") {
+			updatedQuestions[questionIndex].dateMaxDate = "";
+		}
+		if (value && field === "dateHasMaxDate" && !updatedQuestions[questionIndex].dateMaxDate) {
+			updatedQuestions[questionIndex].dateMaxDate = todayStr;
+		}
+		setQuestions(updatedQuestions);
+		markQuestionDirty(questionIndex);
+	};
+
+	const handleDateRangeChange = (questionIndex: number, field: "dateMinDate" | "dateMaxDate", value: string) => {
+		const updatedQuestions = [...questions];
+		updatedQuestions[questionIndex][field] = value;
 		setQuestions(updatedQuestions);
 		markQuestionDirty(questionIndex);
 	};
@@ -655,7 +840,15 @@ export const AdminSectionEditPage = () => {
 								onEndLabelChange={label => handleEndLabelChange(index, label)}
 								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
 								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+								onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
+								sourceQuestionOptions={rankingSourceQuestionOptions}
+								sourceQuestionId={question.sourceQuestionId}
 								onRequiredChange={required => handleRequiredChange(index, required)}
+								onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
+								onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
+								onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
+								onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
+								onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
 								onUrlChange={url => handleUrlChange(index, url)}
 								onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
 								onFold={() => {

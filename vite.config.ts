@@ -60,6 +60,12 @@ export default defineConfig({
 				const srcDir = resolve(process.cwd(), "node_modules/lucide-static/icons");
 				const destDir = resolve(process.cwd(), "public/icons/lucide");
 				fs.cpSync(srcDir, destDir, { recursive: true });
+				const iconNames = fs
+					.readdirSync(destDir)
+					.filter(fileName => fileName.endsWith(".svg"))
+					.map(fileName => fileName.slice(0, -4))
+					.sort();
+				fs.writeFileSync(resolve(destDir, "names.json"), JSON.stringify(iconNames));
 			}
 		}
 	],

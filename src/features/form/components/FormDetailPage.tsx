@@ -4,7 +4,7 @@ import { useSections } from "@/features/form/hooks/useSections";
 import * as formApi from "@/features/form/services/api";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
+import { AccountButton, Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
 	FormsSection,
@@ -16,6 +16,7 @@ import type {
 	ResponsesStringAnswer,
 	ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
+import { Chrome, Github } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
@@ -500,7 +501,7 @@ export const FormDetailPage = () => {
 								{question.required && <span style={{ color: "red" }}> *</span>}
 							</label>
 							{question.description && <Markdown content={question.description} />}
-							<Button
+							<AccountButton
 								onClick={() => {
 									if (!urlResponseId) return;
 									const provider = question.oauthConnect;
@@ -509,10 +510,11 @@ export const FormDetailPage = () => {
 									// Mark as pending so the focus listener can pick it up
 									updateAnswer(question.id, "__pending__");
 								}}
-								themeColor={isConnected && value !== "__pending__" ? "var(--color-caption)" : primaryThemeColor}
+								logo={question.oauthConnect === "GOOGLE" ? <Chrome size={18} /> : <Github size={18} />}
+								style={isConnected && value !== "__pending__" ? { opacity: 0.85 } : undefined}
 							>
 								{isConnected && value !== "__pending__" ? `已連接 ${question.oauthConnect} 帳號` : `連接 ${question.oauthConnect} 帳號`}
-							</Button>
+							</AccountButton>
 							{isConnected && value !== "__pending__" && <p style={{ fontSize: "0.875rem", color: "var(--green)", marginTop: "0.5rem" }}>✓ 已連接：{value}</p>}
 							{value === "__pending__" && <p style={{ fontSize: "0.875rem", color: "var(--color-caption)", marginTop: "0.5rem" }}>等待驗證中…</p>}
 						</div>
@@ -524,12 +526,14 @@ export const FormDetailPage = () => {
 			case "HYPERLINK":
 				return (
 					<div key={question.id}>
-						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>{question.title}</label>
-						{question.description && (
-							<a href={question.description} target="_blank" rel="noopener noreferrer" style={{ color: "var(--orange)", textDecoration: "underline" }}>
-								{question.description}
-							</a>
-						)}
+						<Input
+							id={question.id}
+							label={question.title}
+							placeholder={question.description || "https://"}
+							value={value}
+							onChange={e => updateAnswer(question.id, e.target.value)}
+							required={question.required}
+						/>
 					</div>
 				);
 

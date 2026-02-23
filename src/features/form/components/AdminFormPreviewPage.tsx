@@ -282,12 +282,14 @@ export const AdminFormPreviewPage = () => {
 			case "HYPERLINK":
 				return (
 					<div key={question.id}>
-						<label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>{question.title}</label>
-						{question.description && (
-							<a href={question.description} target="_blank" rel="noopener noreferrer" style={{ color: "var(--orange)", textDecoration: "underline" }}>
-								{question.description}
-							</a>
-						)}
+						<Input
+							id={question.id}
+							label={question.title}
+							placeholder={question.description || "https://"}
+							value={value}
+							onChange={e => updateAnswer(question.id, e.target.value)}
+							required={question.required}
+						/>
 					</div>
 				);
 

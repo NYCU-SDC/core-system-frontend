@@ -4,9 +4,7 @@ import { assertOk } from "../../../shared/utils/apiError";
 
 export type OAuthProvider = "google" | "nycu";
 
-export interface AuthUser extends UserUser {
-	require_onboarding?: boolean;
-}
+export interface AuthUser extends UserUser {}
 
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"

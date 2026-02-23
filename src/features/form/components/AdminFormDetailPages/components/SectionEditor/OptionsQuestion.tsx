@@ -8,12 +8,15 @@ export interface OptionsQuestionProps {
 	type: "radio" | "checkbox" | "list";
 	options: Array<Option>;
 	isFromAnswer: boolean;
+	sourceOptions?: Array<{ value: string; label: string }>;
+	sourceValue?: string;
 	onChange: (optionIndex: number, newLabel: string) => void;
 	onAdd: () => void;
 	onAddOther: () => void;
 	onRemove: (optionIndex: number) => void;
 	onRemoveOther: () => void;
 	onToggleIsFromAnswer: () => void;
+	onSourceChange?: (sourceId: string) => void;
 }
 
 export const OptionsQuestion = (props: OptionsQuestionProps) => {
@@ -63,19 +66,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 					</div>
 				</>
 			)}
-			{props.isFromAnswer && (
-				<Select
-					disabled
-					placeholder="從回答選項中選擇"
-					options={[
-						{
-							label: "區域A",
-							value: "areaA"
-						}
-					]}
-					value="areaA"
-				/>
-			)}
+			{props.isFromAnswer && <Select placeholder="從回答選項中選擇" options={props.sourceOptions ?? []} value={props.sourceValue} onValueChange={value => props.onSourceChange?.(value)} />}
 			<div className={styles.wrapper}>
 				<p>問題來自答案</p>
 				<Switch checked={props.isFromAnswer} onClick={props.onToggleIsFromAnswer} />
