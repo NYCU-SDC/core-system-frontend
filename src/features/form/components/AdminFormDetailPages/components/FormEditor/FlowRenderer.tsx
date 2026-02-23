@@ -343,7 +343,6 @@ const FlowNode = ({
 				{node.type !== "CONDITION" && (
 					<div className={styles.nodeContent}>
 						<p className={styles.nodeLabel}>{node.label}</p>
-						{node.type === "SECTION" && node.title && <p className={styles.nodeTitle}>{node.title}</p>}
 					</div>
 				)}
 

@@ -1,5 +1,6 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
+import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
@@ -30,6 +31,8 @@ export const AdminSectionEditPage = () => {
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
 	const deleteQuestion = useDeleteQuestion(formid!, sectionId!);
 	const updateSectionMutation = useUpdateSection(formid!, sectionId!);
+	const workflowQuery = useWorkflow(formid);
+	const updateWorkflowMutation = useUpdateWorkflow(formid!);
 
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
@@ -86,6 +89,20 @@ export const AdminSectionEditPage = () => {
 						setSavedSectionTitle(sectionTitle);
 						setSavedSectionDescription(sectionDescription);
 						pushToast({ title: "已儲存", description: "區段資訊已更新。", variant: "success" });
+						// Sync workflow node label to match section title
+						if (workflowQuery.data?.workflow) {
+							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: sectionTitle } : n));
+							updateWorkflowMutation.mutate(
+								updatedNodes.map(n => ({
+									id: n.id,
+									label: n.label,
+									...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
+									...(n.next !== undefined && { next: n.next }),
+									...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+									...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+								}))
+							);
+						}
 					},
 					onError: err => {
 						pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
@@ -95,7 +112,7 @@ export const AdminSectionEditPage = () => {
 		}, 500);
 
 		return () => window.clearTimeout(timerId);
-	}, [sectionId, sectionTitle, sectionDescription, savedSectionTitle, savedSectionDescription, updateSectionMutation, pushToast]);
+	}, [sectionId, sectionTitle, sectionDescription, savedSectionTitle, savedSectionDescription, updateSectionMutation, workflowQuery.data, updateWorkflowMutation, pushToast]);
 
 	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
 		const base: FormsQuestionRequest = {

@@ -1,7 +1,7 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useSections } from "@/features/form/hooks/useSections";
-import { useCreateWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
+import { useCreateWorkflowNode, useDeleteWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -18,8 +18,6 @@ const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
 	nodes.map(n => ({
 		id: n.id,
 		label: n.label,
-		...(n.title !== undefined && { title: n.title }),
-		...(n.description !== undefined && { description: n.description }),
 		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 		...(n.next !== undefined && { next: n.next }),
 		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -33,6 +31,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const workflowQuery = useWorkflow(formData.id);
 	const updateWorkflowMutation = useUpdateWorkflow(formData.id);
 	const createWorkflowNodeMutation = useCreateWorkflowNode(formData.id);
+	const deleteWorkflowNodeMutation = useDeleteWorkflowNode(formData.id);
 
 	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
 		const path: string[] = [];
@@ -112,39 +111,55 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		}
 	};
 
+	const nodeChangeSaveTimerRef = useRef<number | null>(null);
+
 	const handleNodeChange = (id: string, updates: Partial<NodeItem>) => {
-		setNodeItems(prev => prev.map(n => (n.id === id ? { ...n, ...updates } : n)));
+		const updated = nodeItems.map(n => (n.id === id ? { ...n, ...updates } : n));
+		setNodeItems(updated);
+		if (nodeChangeSaveTimerRef.current !== null) window.clearTimeout(nodeChangeSaveTimerRef.current);
+		nodeChangeSaveTimerRef.current = window.setTimeout(() => {
+			updateWorkflowMutation.mutate(toApiNodes(updated), {
+				onError: error => pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" })
+			});
+		}, 800);
 	};
 
 	useEffect(() => {
-		if (initializedRef.current) return;
 		if (workflowQuery.isLoading) return;
-		if (workflowQuery.data && workflowQuery.data.length > 0) {
+		if (!workflowQuery.data) return;
+
+		const mapNode = (n: (typeof workflowQuery.data.workflow)[number]): NodeItem => ({
+			id: n.id ?? uuidv4(),
+			label: n.label ?? "",
+			type: (n.type as NodeItem["type"]) ?? "SECTION",
+			...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
+			...(n.next !== undefined && { next: n.next }),
+			...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+			...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+		});
+
+		if (!initializedRef.current) {
+			// First load — fully initialize from API or seed defaults
 			initializedRef.current = true;
-			const loaded: NodeItem[] = workflowQuery.data.map(n => {
-				const node = n as typeof n & { title?: string; description?: string };
-				return {
-					id: n.id ?? uuidv4(),
-					label: n.label ?? "",
-					type: (n.type as NodeItem["type"]) ?? "SECTION",
-					...(node.title !== undefined && { title: node.title }),
-					...(node.description !== undefined && { description: node.description }),
-					...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
-					...(n.next !== undefined && { next: n.next }),
-					...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
-					...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
-				};
-			});
-			setNodeItems(postProcessNodes(loaded));
-		} else if (workflowQuery.data) {
-			// API returned empty workflow — seed with minimal default
-			initializedRef.current = true;
-			const defaultNodes: NodeItem[] = [
-				{ id: uuidv4(), label: "開始表單", type: "START", next: "__section__" },
-				{ id: "__section__", label: "第一區塊", type: "SECTION", next: "__end__" },
-				{ id: "__end__", label: "確認 / 送出", type: "END" }
-			];
-			setNodeItems(postProcessNodes(defaultNodes));
+			if (workflowQuery.data.workflow.length > 0) {
+				setNodeItems(postProcessNodes(workflowQuery.data.workflow.map(mapNode)));
+			} else {
+				const defaultNodes: NodeItem[] = [
+					{ id: uuidv4(), label: "開始表單", type: "START", next: "__section__" },
+					{ id: "__section__", label: "第一區塊", type: "SECTION", next: "__end__" },
+					{ id: "__end__", label: "確認 / 送出", type: "END" }
+				];
+				setNodeItems(postProcessNodes(defaultNodes));
+			}
+		} else {
+			// Subsequent refetch — only patch labels so external edits (e.g. section title change) are reflected
+			setNodeItems(prev =>
+				prev.map(local => {
+					const remote = workflowQuery.data!.workflow.find(n => n.id === local.id);
+					if (!remote) return local;
+					return { ...local, label: remote.label ?? local.label };
+				})
+			);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [workflowQuery.data, workflowQuery.isLoading]);
@@ -166,7 +181,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newSectionNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
 	const handleAddTrueSection = async (id: string) => {
@@ -186,7 +201,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newSectionNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
 	const handleAddTrueCondition = async (id: string) => {
@@ -219,7 +234,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newConditionNode, trueSectionNode, falseSectionNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
 	const handleAddFalseSection = async (id: string) => {
@@ -239,7 +254,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newSectionNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
 	const handleAddFalseCondition = async (id: string) => {
@@ -272,7 +287,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newConditionNode, trueSectionNode, falseSectionNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
 	const handleAddCondition = async (id: string) => {
@@ -306,7 +321,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newConditionNode, trueSectionNode, falseSectionNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
 	const handleAddMergeSection = async (id: string) => {
@@ -344,7 +359,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newMergeNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
 	const handleAddMergeCondition = async (id: string) => {
@@ -395,10 +410,10 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 		updatedNodes.push(newConditionNode, trueSectionNode, falseSectionNode);
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		saveNodes(processedNodes);
 	};
 
-	const handleDeleteSection = (id: string) => {
+	const handleDeleteSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
 		if (prevNodes.length <= 3) {
 			pushToast({
@@ -450,17 +465,28 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			});
 
 		const processedNodes = postProcessNodes(updatedNodes);
-		setNodeItems(processedNodes);
+		try {
+			await deleteWorkflowNodeMutation.mutateAsync(id);
+		} catch (error) {
+			pushToast({ title: "刪除節點失敗", description: (error as Error).message, variant: "error" });
+			return;
+		}
+		saveNodes(processedNodes);
 	};
 
-	const handleSave = () => {
-		updateWorkflowMutation.mutate(toApiNodes(nodeItems), {
-			onSuccess: () => pushToast({ title: "儲存成功", description: "表單結構已更新。", variant: "success" }),
+	const saveNodes = (nodes: NodeItem[]) => {
+		setNodeItems(nodes);
+		updateWorkflowMutation.mutate(toApiNodes(nodes), {
 			onError: error => pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
 	const handleEditSection = (nodeId: string) => {
+		const nodeInWorkflow = nodeItems.find(n => n.id === nodeId && n.type === "SECTION");
+		if (!nodeInWorkflow) {
+			pushToast({ title: "無法編輯區段", description: "此節點尚未出現在 Workflow 中。", variant: "error" });
+			return;
+		}
 		navigate(`/orgs/${orgSlug}/forms/${formData.id}/section/${nodeId}/edit`);
 	};
 
@@ -471,9 +497,6 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		<>
 			<div className={styles.header}>
 				<h2>表單結構</h2>
-				<Button onClick={handleSave} disabled={updateWorkflowMutation.isPending}>
-					{updateWorkflowMutation.isPending ? "儲存中…" : "儲存 Workflow"}
-				</Button>
 			</div>
 			<blockquote className={styles.description}>點擊區塊以新增或編輯條件與問題</blockquote>
 			<div className={styles.flowContainer}>
@@ -493,6 +516,22 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 					onEditSection={handleEditSection}
 				/>
 			</div>
+			{workflowQuery.data?.info && workflowQuery.data.info.length > 0 && (
+				<div className={styles.warnings}>
+					<p className={styles.warningsTitle}>⚠ Workflow 警告</p>
+					<ul>
+						{workflowQuery.data.info.map((w, i) => {
+							const node = nodeItems.find(n => n.id === w.nodeId);
+							return (
+								<li key={i} className={styles.warningItem}>
+									<span className={styles.warningNode}>{node?.label ?? w.nodeId}</span>
+									<span>{w.message}</span>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
+			)}
 		</>
 	);
 };
