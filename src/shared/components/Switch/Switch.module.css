@@ -1,7 +1,7 @@
 .switch {
 	width: 2.75rem;
 	height: 1.5rem;
-	background-color: var(--background-color-tertiary);
+	background-color: var(--background-color-secondary);
 	border-radius: 9999px;
 	position: relative;
 	cursor: pointer;

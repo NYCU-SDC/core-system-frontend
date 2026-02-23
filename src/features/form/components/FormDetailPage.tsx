@@ -1,10 +1,12 @@
 import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
+import { useWorkflow } from "@/features/form/hooks/useWorkflow";
 import * as formApi from "@/features/form/services/api";
+import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea, useToast } from "@/shared/components";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, FileUpload, Input, LoadingSpinner, Markdown, Radio, ScaleInput, Select, TextArea, useToast } from "@/shared/components";
 import type {
 	FormsQuestionResponse,
 	FormsSection,
@@ -56,6 +58,7 @@ export const FormDetailPage = () => {
 		data: formQuery.data
 	});
 	const sectionsQuery = useSections(formId, !!urlResponseId);
+	const workflowQuery = useWorkflow(formId, !!urlResponseId);
 	const responseQuery = useFormResponse(formId, urlResponseId, !!urlResponseId);
 	const updateResponseMutation = useUpdateFormResponse(urlResponseId ?? "");
 	const submitResponseMutation = useSubmitFormResponse(formId ?? "");
@@ -85,17 +88,19 @@ export const FormDetailPage = () => {
 				formId: section.formId,
 				title: section.title,
 				description: section.description,
-				questions: section.questions
+				questions: section.questions ?? []
 			}));
 		});
-		loaded.push({
+		const visible = resolveVisibleSectionsFromWorkflow(loaded, workflowQuery.data?.workflow, answers);
+		const withPreview = [...visible];
+		withPreview.push({
 			id: "preview",
 			formId: formId!,
 			title: "填答結果預覽",
 			questions: []
 		});
-		return loaded;
-	}, [sectionsQuery.data, formId]);
+		return withPreview;
+	}, [sectionsQuery.data, workflowQuery.data, answers, formId]);
 
 	// Sync pre-filled answers from the existing response (once on first load)
 	useEffect(() => {
@@ -217,8 +222,14 @@ export const FormDetailPage = () => {
 	}, [answers, urlResponseId, saveAnswers]);
 
 	// ── Loading / Error ──────────────────────────────────────────────────────
-	const isLoading = formQuery.isLoading || sectionsQuery.isLoading;
-	const error: string | null = formQuery.error ? (formQuery.error as Error).message : sectionsQuery.error ? (sectionsQuery.error as Error).message : null;
+	const isLoading = formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading;
+	const error: string | null = formQuery.error
+		? (formQuery.error as Error).message
+		: sectionsQuery.error
+			? (sectionsQuery.error as Error).message
+			: workflowQuery.error
+				? (workflowQuery.error as Error).message
+				: null;
 
 	const isLastStep = sections.length === 0 || currentStep === sections.length - 1;
 	const isFirstStep = currentStep === 0;
@@ -293,8 +304,7 @@ export const FormDetailPage = () => {
 					/>
 				);
 
-			case "SINGLE_CHOICE":
-			case "DROPDOWN": {
+			case "SINGLE_CHOICE": {
 				const choices = question.choices ?? [];
 				const otherChoice = choices.find(choice => choice.isOther);
 				const otherValue = otherTexts[question.id] || "";
@@ -319,6 +329,22 @@ export const FormDetailPage = () => {
 						{otherChoice && value === otherChoice.id && (
 							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
 						)}
+					</div>
+				);
+			}
+
+			case "DROPDOWN": {
+				const choices = question.choices ?? [];
+
+				return (
+					<div key={question.id}>
+						<Select
+							label={question.title + (question.required ? " *" : "")}
+							options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
+							value={value || undefined}
+							onValueChange={newValue => updateAnswer(question.id, newValue)}
+						/>
+						{question.description && <Markdown content={question.description} />}
 					</div>
 				);
 			}
@@ -503,13 +529,16 @@ export const FormDetailPage = () => {
 
 		return (
 			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-				{previewData.map((section, sectionIndex: number) => (
-					<div key={sectionIndex} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+				{previewData.map(section => (
+					<div key={section.id} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 							<h3 style={{ margin: 0 }}>{section.title}</h3>
 							<button
 								type="button"
-								onClick={() => handleSectionClick(sectionIndex)}
+								onClick={() => {
+									const targetIndex = sections.findIndex(s => s.id === section.id);
+									if (targetIndex >= 0) handleSectionClick(targetIndex);
+								}}
 								style={{ fontSize: "0.875rem", color: primaryThemeColor, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
 							>
 								修改

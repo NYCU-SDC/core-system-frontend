@@ -1,7 +1,8 @@
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, ErrorMessage, Input, LoadingSpinner, Markdown, Radio, ScaleInput, TextArea } from "@/shared/components";
+import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
+import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, ErrorMessage, Input, LoadingSpinner, Markdown, Radio, ScaleInput, Select, TextArea } from "@/shared/components";
 import type { FormsQuestionResponse, FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
@@ -39,57 +40,19 @@ export const AdminFormPreviewPage = () => {
 	const sections: FormsSection[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
 
-		// Build a flat map of all sections from the API
-		const sectionMap = new Map<string, FormsSection>();
-		for (const item of sectionsQuery.data) {
+		const baseSections: FormsSection[] = sectionsQuery.data.flatMap(item => {
 			const list = Array.isArray(item.sections) ? item.sections : [];
-			for (const s of list) {
-				sectionMap.set(s.id, { id: s.id, formId: s.formId, title: s.title, description: s.description, questions: s.questions ?? [] });
-			}
-		}
+			return list.map(section => ({
+				id: section.id,
+				formId: section.formId,
+				title: section.title,
+				description: section.description,
+				questions: section.questions ?? []
+			}));
+		});
 
-		// If workflow is available, walk the `next` chain to build ordered list
-		const workflow = workflowQuery.data?.workflow;
-		if (workflow && workflow.length > 0) {
-			const nodeMap = new Map(workflow.map(n => [n.id, n]));
-			const startNode = workflow.find(n => n.type === "START");
-			const ordered: FormsSection[] = [];
-			const visited = new Set<string>();
-
-			// Walk the graph collecting SECTION nodes in traversal order
-			const walk = (id: string | undefined) => {
-				if (!id || visited.has(id)) return;
-				visited.add(id);
-				const node = nodeMap.get(id);
-				if (!node) return;
-				if (node.type === "SECTION") {
-					const section = sectionMap.get(id);
-					if (section) ordered.push(section);
-				}
-				// Follow all branches
-				walk(node.next);
-				walk(node.nextTrue);
-				walk(node.nextFalse);
-			};
-
-			walk(startNode?.id);
-
-			// Append any sections not reachable from workflow (orphans)
-			for (const [id, section] of sectionMap) {
-				if (!visited.has(id)) ordered.push(section);
-			}
-
-			// Defensive: if walk produced nothing but we have sections, fall back
-			if (ordered.length === 0 && sectionMap.size > 0) {
-				return [...sectionMap.values()];
-			}
-
-			return ordered;
-		}
-
-		// Fallback: API order
-		return [...sectionMap.values()];
-	}, [sectionsQuery.data, workflowQuery.data]);
+		return resolveVisibleSectionsFromWorkflow(baseSections, workflowQuery.data?.workflow, answers);
+	}, [sectionsQuery.data, workflowQuery.data, answers]);
 
 	const safeCurrentStep = sections.length > 0 ? Math.min(currentStep, sections.length - 1) : currentStep;
 	const isFirstStep = safeCurrentStep === 0;
@@ -135,8 +98,7 @@ export const AdminFormPreviewPage = () => {
 					/>
 				);
 
-			case "SINGLE_CHOICE":
-			case "DROPDOWN": {
+			case "SINGLE_CHOICE": {
 				const choices = question.choices ?? [];
 				const otherChoice = choices.find(choice => choice.isOther);
 				const otherValue = otherTexts[question.id] || "";
@@ -161,6 +123,22 @@ export const AdminFormPreviewPage = () => {
 						{otherChoice && value === otherChoice.id && (
 							<Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} style={{ marginTop: "0.75rem" }} />
 						)}
+					</div>
+				);
+			}
+
+			case "DROPDOWN": {
+				const choices = question.choices ?? [];
+
+				return (
+					<div key={question.id}>
+						<Select
+							label={question.title + (question.required ? " *" : "")}
+							options={choices.map(c => ({ value: c.id, label: c.name }))}
+							value={value || undefined}
+							onValueChange={newValue => updateAnswer(question.id, newValue)}
+						/>
+						{question.description && <Markdown content={question.description} />}
 					</div>
 				);
 			}
