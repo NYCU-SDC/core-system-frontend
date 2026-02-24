@@ -31,7 +31,6 @@
 .content {
 	display: flex;
 	gap: 2rem;
-	align-items: flex-start;
 }
 
 .checkboxWrapper {
@@ -97,7 +96,6 @@
 .descriptionWrapper {
 	display: flex;
 	gap: 0.5rem;
-	align-items: flex-start;
 }
 
 .chevronButton {
