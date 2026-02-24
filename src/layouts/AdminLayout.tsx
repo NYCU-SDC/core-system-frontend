@@ -3,11 +3,13 @@ import { useState } from "react";
 import { Footer } from "../shared/components/Footer/Footer";
 import styles from "./AdminLayout.module.css";
 import { AdminNav } from "./AdminNav";
+import { useAuthRefreshInterval } from "./useAuthRefreshInterval";
 interface AdminLayoutProps {
 	children: ReactNode;
 }
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
+	useAuthRefreshInterval();
 	const [isNavOpen, setIsNavOpen] = useState(false);
 
 	return (
