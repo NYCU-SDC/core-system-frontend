@@ -224,6 +224,51 @@ export const FormDetailPage = () => {
 		return withPreview;
 	}, [sectionsQuery.data, workflowQuery.data, answers, formId]);
 
+	// Keep ranking answers in sync with source question selections.
+	// When a source checkbox option is unchecked, remove it from linked ranking answers
+	// (including cases where source/target are in different sections).
+	useEffect(() => {
+		const questions = sections.flatMap(section => section.questions ?? []);
+		if (questions.length === 0) return;
+		const questionMap = new Map(questions.map(question => [question.id, question]));
+
+		setAnswers(prev => {
+			let changed = false;
+			const next = { ...prev };
+
+			questions.forEach(question => {
+				if (question.type !== "RANKING" || !question.sourceId) return;
+
+				const rankingRaw = prev[question.id] ?? "";
+				if (!rankingRaw) return;
+
+				const sourceQuestion = questionMap.get(question.sourceId);
+				const sourceRaw = prev[question.sourceId] ?? "";
+				if (!sourceQuestion || !sourceRaw) {
+					next[question.id] = "";
+					changed = true;
+					return;
+				}
+
+				const sourceSelectedIds = sourceQuestion.type === "SINGLE_CHOICE" || sourceQuestion.type === "DROPDOWN" ? [sourceRaw] : sourceRaw.split(",").filter(Boolean);
+
+				const filteredRankingIds = rankingRaw
+					.split(",")
+					.filter(Boolean)
+					.filter(id => sourceSelectedIds.includes(id));
+				const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
+				const normalized = [...filteredRankingIds, ...missingIds].join(",");
+
+				if (normalized !== rankingRaw) {
+					next[question.id] = normalized;
+					changed = true;
+				}
+			});
+
+			return changed ? next : prev;
+		});
+	}, [sections]);
+
 	// Sync pre-filled answers from the existing response (once on first load)
 	useEffect(() => {
 		if (answersInitialized.current) return;
