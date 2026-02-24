@@ -97,7 +97,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 			{props.isFromAnswer && <Select placeholder="從回答選項中選擇" options={props.sourceOptions ?? []} value={props.sourceValue} onValueChange={value => props.onSourceChange?.(value)} />}
 			<div className={styles.wrapper}>
 				<p>問題來自答案</p>
-				<Switch checked={props.isFromAnswer} onClick={props.onToggleIsFromAnswer} />
+				<Switch checked={props.isFromAnswer} onCheckedChange={props.onToggleIsFromAnswer} />
 			</div>
 		</div>
 	);

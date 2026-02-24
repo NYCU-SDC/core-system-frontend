@@ -232,13 +232,13 @@ export const AdminSectionEditPage = () => {
 		return base;
 	};
 
-	const rankingSourceQuestionOptions = useMemo(
+	const sourceQuestionOptions = useMemo(
 		() =>
 			(sectionsQuery.data ?? [])
 				.flatMap(sectionRes => sectionRes.sections ?? [])
 				.flatMap(sectionItem =>
 					(sectionItem.questions ?? [])
-						.filter(question => question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE")
+						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
 						.map(question => ({
 							value: question.id,
 							label: `${sectionItem.title} / ${question.title}`
@@ -272,8 +272,10 @@ export const AdminSectionEditPage = () => {
 							target.title = apiQuestion.title ?? target.title;
 							target.description = apiQuestion.description ?? target.description;
 							target.required = apiQuestion.required ?? target.required;
-							target.sourceQuestionId = apiQuestion.sourceId ?? target.sourceQuestionId;
-							target.isFromAnswer = Boolean(apiQuestion.sourceId);
+							if (apiQuestion.sourceId !== undefined) {
+								target.sourceQuestionId = apiQuestion.sourceId ?? undefined;
+								target.isFromAnswer = Boolean(apiQuestion.sourceId);
+							}
 							target.icon = apiQuestion.scale?.icon ?? target.icon;
 							target.start = apiQuestion.scale?.minVal ?? target.start;
 							target.end = apiQuestion.scale?.maxVal ?? target.end;
@@ -846,7 +848,7 @@ export const AdminSectionEditPage = () => {
 								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
 								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
 								onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
-								sourceQuestionOptions={rankingSourceQuestionOptions}
+								sourceQuestionOptions={sourceQuestionOptions}
 								sourceQuestionId={question.sourceQuestionId}
 								onRequiredChange={required => handleRequiredChange(index, required)}
 								onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}

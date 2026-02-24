@@ -311,7 +311,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							type={typeMap[question.type].optionType || "radio"}
 							options={question.options || []}
 							isFromAnswer={question.isFromAnswer}
-							sourceOptions={question.type === "RANKING" ? props.sourceQuestionOptions : []}
+							sourceOptions={props.sourceQuestionOptions ?? []}
 							sourceValue={question.sourceQuestionId}
 							onSourceChange={sourceId => props.onSourceQuestionChange?.(sourceId)}
 							onAdd={() => {
