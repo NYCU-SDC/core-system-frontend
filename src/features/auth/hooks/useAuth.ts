@@ -38,7 +38,7 @@ export const useAuth = () => {
 export const useAuthRefreshInterval = () => {
 	useEffect(() => {
 		const interval = setInterval(() => {
-			authRefreshToken("");
+			authRefreshToken();
 		}, DEFAULT_AUTH_REFRESH_INTERVAL);
 
 		return () => clearInterval(interval);
