@@ -228,6 +228,7 @@ export const AdminSectionEditPage = () => {
 		}
 		if (q.isFromAnswer && q.sourceQuestionId) {
 			base.sourceId = q.sourceQuestionId;
+			delete base.choices;
 		}
 		return base;
 	};
@@ -302,6 +303,8 @@ export const AdminSectionEditPage = () => {
 									label: choice.name ?? "",
 									isOther: choice.isOther ?? false
 								}));
+							} else if (target.isFromAnswer) {
+								target.options = [];
 							}
 
 							questionsRef.current = next;
@@ -672,6 +675,9 @@ export const AdminSectionEditPage = () => {
 	const handleToggleIsFromAnswer = (questionIndex: number) => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].isFromAnswer = !updatedQuestions[questionIndex].isFromAnswer;
+		if (updatedQuestions[questionIndex].type === "RANKING" && updatedQuestions[questionIndex].isFromAnswer) {
+			updatedQuestions[questionIndex].options = [];
+		}
 		if (!updatedQuestions[questionIndex].isFromAnswer) {
 			updatedQuestions[questionIndex].sourceQuestionId = undefined;
 		}
@@ -683,6 +689,9 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestions = [...questions];
 		updatedQuestions[questionIndex].sourceQuestionId = sourceQuestionId;
 		updatedQuestions[questionIndex].isFromAnswer = true;
+		if (updatedQuestions[questionIndex].type === "RANKING") {
+			updatedQuestions[questionIndex].options = [];
+		}
 		setQuestions(updatedQuestions);
 		markQuestionDirty(questionIndex);
 	};
