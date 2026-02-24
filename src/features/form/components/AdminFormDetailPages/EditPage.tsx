@@ -87,10 +87,14 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		});
 
 		// Pass 2: mark merge nodes (nodes pointed to by more than one parent)
-		return pass1.map(node => ({
+		const res = pass1.map(node => ({
 			...node,
 			isMergeNode: pass1.filter(n => n.next === node.id).length + pass1.filter(n => n.nextTrue === node.id).length + pass1.filter(n => n.nextFalse === node.id).length > 1
 		}));
+
+		console.log("Post-processed nodes:", res);
+
+		return res;
 	};
 
 	const [nodeItems, setNodeItems] = useState<NodeItem[]>([]);
@@ -343,7 +347,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		const falsePath = getPath(nodeToUpdate.nextFalse || "", nodeMap);
 
 		const updatedNodes = prevNodes.map(node => {
-			if (!truePath.includes(node.id) && !falsePath.includes(node.id)) {
+			if (!truePath.includes(node.id) && !falsePath.includes(node.id) && node.id !== id) {
 				return node;
 			}
 			if (node.next === nodeToUpdate.mergeId) {
@@ -394,7 +398,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		const falsePath = getPath(nodeToUpdate.nextFalse || "", nodeMap);
 
 		const updatedNodes = prevNodes.map(node => {
-			if (!truePath.includes(node.id) && !falsePath.includes(node.id)) {
+			if (!truePath.includes(node.id) && !falsePath.includes(node.id) && node.id !== id) {
 				return node;
 			}
 			if (node.next === nodeToUpdate.mergeId) {
@@ -451,14 +455,14 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 					return {
 						...node,
 						nextFalse: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue),
-						nextTrue: node.type === "CONDITION" && nodeToDelete.isMergeNode ? nodeToDelete.next : node.nextTrue
+						nextTrue: node.type === "CONDITION" && node.nextTrue === nodeToDelete.id ? nodeToDelete.next : node.nextTrue
 					};
 				}
 				if (node.nextTrue === id) {
 					return {
 						...node,
 						nextTrue: nodeToDelete.next || (nodeToDelete.mergeId === nodeToDelete.nextTrue ? nodeToDelete.nextFalse : nodeToDelete.nextTrue),
-						nextFalse: node.type === "CONDITION" && nodeToDelete.isMergeNode ? nodeToDelete.next : node.nextFalse
+						nextFalse: node.type === "CONDITION" && node.nextFalse === nodeToDelete.id ? nodeToDelete.next : node.nextFalse
 					};
 				}
 				return node;
