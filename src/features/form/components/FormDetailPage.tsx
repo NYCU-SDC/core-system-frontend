@@ -7,16 +7,17 @@ import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workfl
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Input, LoadingSpinner, Radio, ScaleInput, Select, TextArea, useToast } from "@/shared/components";
-import type {
-	FormsQuestionResponse,
-	FormsSection,
-	ResponsesAnswersRequestUpdate,
-	ResponsesDateAnswer,
+import {
 	ResponsesResponseProgress,
-	ResponsesResponseSections,
-	ResponsesScaleAnswer,
-	ResponsesStringAnswer,
-	ResponsesStringArrayAnswer
+	ResponsesSectionProgress,
+	type FormsQuestionResponse,
+	type FormsSection,
+	type ResponsesAnswersRequestUpdate,
+	type ResponsesDateAnswer,
+	type ResponsesResponseSections,
+	type ResponsesScaleAnswer,
+	type ResponsesStringAnswer,
+	type ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
 import { AlertCircle, Check, ChevronLeft, LoaderCircle, RefreshCw, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
@@ -772,39 +773,41 @@ export const FormDetailPage = () => {
 
 		return (
 			<div className={styles.previewSection}>
-				{previewData.map(section => (
-					<div key={section.id} className={styles.previewBlock}>
-						<div className={styles.previewHeader}>
-							<h3 className={styles.previewSectionTitle}>{section.title}</h3>
-							<Button
-								type="button"
-								variant="secondary"
-								onClick={() => {
-									const targetIndex = sections.findIndex(s => s.id === section.id);
-									if (targetIndex >= 0) handleSectionClick(targetIndex);
-								}}
-							>
-								修改
-							</Button>
+				{previewData
+					.filter(section => section.progress !== ResponsesSectionProgress.SKIPPED)
+					.map(section => (
+						<div key={section.id} className={styles.previewBlock}>
+							<div className={styles.previewHeader}>
+								<h3 className={styles.previewSectionTitle}>{section.title}</h3>
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => {
+										const targetIndex = sections.findIndex(s => s.id === section.id);
+										if (targetIndex >= 0) handleSectionClick(targetIndex);
+									}}
+								>
+									修改
+								</Button>
+							</div>
+							<ul className={styles.previewList}>
+								{section.answerDetails?.map((detail, questionIndex: number) => {
+									const isEmpty = !detail.payload?.displayValue;
+									const isRequiredAndEmpty = isEmpty && detail.question.required;
+									return (
+										<li key={questionIndex}>
+											<span className={styles.previewAnswerLabel}>
+												{detail.question.title}
+												{detail.question.required && <span className={styles.requiredAsterisk}> *</span>}
+											</span>
+											<span>：</span>
+											<span className={isRequiredAndEmpty ? styles.previewAnswerEmpty : ""}>{detail.payload?.displayValue || "未填寫"}</span>
+										</li>
+									);
+								}) || []}
+							</ul>
 						</div>
-						<ul className={styles.previewList}>
-							{section.answerDetails?.map((detail, questionIndex: number) => {
-								const isEmpty = !detail.payload?.displayValue;
-								const isRequiredAndEmpty = isEmpty && detail.question.required;
-								return (
-									<li key={questionIndex}>
-										<span className={styles.previewAnswerLabel}>
-											{detail.question.title}
-											{detail.question.required && <span className={styles.requiredAsterisk}> *</span>}
-										</span>
-										<span>：</span>
-										<span className={isRequiredAndEmpty ? styles.previewAnswerEmpty : ""}>{detail.payload?.displayValue || "未填寫"}</span>
-									</li>
-								);
-							}) || []}
-						</ul>
-					</div>
-				))}
+					))}
 			</div>
 		);
 	};
