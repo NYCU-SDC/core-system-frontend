@@ -2,7 +2,7 @@
 	padding: 2rem;
 	display: flex;
 	flex-direction: column;
-	gap: 4rem;
+	gap: 2rem;
 	background-color: var(--background-color-secondary);
 	margin: 0 1rem 1rem;
 	width: 100%;
@@ -13,11 +13,17 @@
 
 .cover {
 	width: 100%;
-	max-width: 100%;
+	max-width: 75rem;
 	height: 13rem;
 	display: block;
 	object-fit: cover;
 	background-color: aliceblue;
+}
+
+@media (min-width: 75rem) {
+	.cover {
+		border-radius: 0 0 2rem 2rem;
+	}
 }
 
 .header {
@@ -30,6 +36,7 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	margin-bottom: 2rem;
 }
 
 .saveStatus {
@@ -62,6 +69,7 @@
 .description {
 	color: var(--color-caption);
 	font-size: 1rem;
+	margin-bottom: 1rem;
 }
 
 .sectionHeader {
