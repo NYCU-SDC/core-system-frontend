@@ -20,6 +20,11 @@
 	gap: 1rem;
 }
 
+.social {
+	display: flex;
+	gap: 1rem;
+}
+
 .credit {
 	flex-grow: 1;
 }
