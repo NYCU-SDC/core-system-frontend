@@ -92,8 +92,6 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			isMergeNode: pass1.filter(n => n.next === node.id).length + pass1.filter(n => n.nextTrue === node.id).length + pass1.filter(n => n.nextFalse === node.id).length > 1
 		}));
 
-		console.log("Post-processed nodes:", res);
-
 		return res;
 	};
 
