@@ -1,8 +1,8 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useSections } from "@/features/form/hooks/useSections";
-import { useCreateWorkflowNode, useDeleteWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { useCreateWorkflowNode, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
-import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
+import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -14,24 +14,24 @@ interface AdminFormEditPageProps {
 	formData: FormsForm;
 }
 
-const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
-	nodes.map(n => ({
-		id: n.id,
-		label: n.label,
-		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
-		...(n.next !== undefined && { next: n.next }),
-		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
-		...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
-	}));
+// const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
+// 	nodes.map(n => ({
+// 		id: n.id,
+// 		label: n.label,
+// 		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
+// 		...(n.next !== undefined && { next: n.next }),
+// 		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+// 		...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+// 	}));
 
 export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const { pushToast } = useToast();
 	const navigate = useNavigate();
 	const orgSlug = useActiveOrgSlug();
 	const workflowQuery = useWorkflow(formData.id);
-	const updateWorkflowMutation = useUpdateWorkflow(formData.id);
+	// const updateWorkflowMutation = useUpdateWorkflow(formData.id);
 	const createWorkflowNodeMutation = useCreateWorkflowNode(formData.id);
-	const deleteWorkflowNodeMutation = useDeleteWorkflowNode(formData.id);
+	// const deleteWorkflowNodeMutation = useDeleteWorkflowNode(formData.id);
 
 	const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
 		const path: string[] = [];
@@ -120,9 +120,10 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		setNodeItems(updated);
 		if (nodeChangeSaveTimerRef.current !== null) window.clearTimeout(nodeChangeSaveTimerRef.current);
 		nodeChangeSaveTimerRef.current = window.setTimeout(() => {
-			updateWorkflowMutation.mutate(toApiNodes(updated), {
-				onError: error => pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" })
-			});
+			// TODO: for production
+			// updateWorkflowMutation.mutate(toApiNodes(updated), {
+			// 	onError: error => pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" })
+			// });
 		}, 800);
 	};
 
@@ -468,7 +469,8 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 		const processedNodes = postProcessNodes(updatedNodes);
 		try {
-			await deleteWorkflowNodeMutation.mutateAsync(id);
+			// TODO: for production
+			// await deleteWorkflowNodeMutation.mutateAsync(id);
 		} catch (error) {
 			pushToast({ title: "刪除節點失敗", description: (error as Error).message, variant: "error" });
 			return;
@@ -478,9 +480,10 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const saveNodes = (nodes: NodeItem[]) => {
 		setNodeItems(nodes);
-		updateWorkflowMutation.mutate(toApiNodes(nodes), {
-			onError: error => pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" })
-		});
+		// TODO: for production
+		// updateWorkflowMutation.mutate(toApiNodes(nodes), {
+		// 	onError: error => pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" })
+		// });
 	};
 
 	const handleEditSection = (nodeId: string) => {
