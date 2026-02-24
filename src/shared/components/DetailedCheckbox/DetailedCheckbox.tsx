@@ -29,9 +29,6 @@ export const DetailedCheckbox = ({ title, description, themeColor, style, id, ..
 
 	return (
 		<div className={styles.container}>
-			<div className={styles.cornerTopLeft} />
-			<div className={styles.cornerBottomRight} />
-
 			<div className={styles.content}>
 				{/* 左側 Checkbox */}
 				<div className={styles.checkboxWrapper}>

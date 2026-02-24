@@ -103,7 +103,7 @@ export const ComponentsDemo = () => {
 				<section className={styles.section}>
 					<h2>Detailed Checkbox</h2>
 					<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-						<DetailedCheckbox id="option1" title="Frontend Development" description="Build modern web interfaces with React and TypeScript" />
+						<DetailedCheckbox id="option1" title="Frontend Development" description="Build modern web interfaces with React and TypeScript<br />React is cool.<br />Very Cool" />
 						<DetailedCheckbox id="option2" title="Backend Development" description="Create robust APIs and server-side applications" />
 						<DetailedCheckbox id="option3" title="DevOps & Infrastructure" description="Manage cloud infrastructure and CI/CD pipelines" />
 					</div>
