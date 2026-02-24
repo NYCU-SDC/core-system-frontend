@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - v*
 
 jobs:
   Lint:
@@ -99,6 +101,7 @@ jobs:
 
       - name: Build and Push Docker image
         uses: docker/build-push-action@v6
+        if: ${{ contains(github.ref, 'refs/heads/main') }}
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -108,7 +111,20 @@ jobs:
             nycusdc/core-system-frontend:${{ github.sha }}
           context: .
 
-  Deploy:
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
+        if: ${{ contains(github.ref, 'refs/tags/') }}
+        with:
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          tags: |
+            nycusdc/core-system-frontend:stage
+            nycusdc/core-system-frontend:${{ github.sha }}
+          context: .
+
+  Deploy-Dev:
+    if: ${{ contains(github.ref, 'refs/heads/main') }}
     needs: Push-Image
     runs-on: ubuntu-latest
     steps:
@@ -127,6 +143,42 @@ jobs:
             "method": "deploy",
             "metadata": {
               "environment": "dev",
+              "component": "frontend"
+            },
+            "post": {
+              "notify_discord": {
+                "enable": true,
+                "channel": "core-system-activity"
+              },
+              "setup_domain": {
+                "enable": true,
+                "title": "Endpoint",
+                "name": "dev.core-system.sdc.nycu.club",
+                "value": "default-eng-deploy:internal"
+              }
+            }
+          }'
+
+  Deploy-Stage:
+    if: ${{ contains(github.ref, 'refs/tags/') }}
+    needs: Push-Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger n8n Deploy Webhook
+        run: |
+          curl --location --fail-with-body --request POST 'https://webhook.sdc.nycu.club/webhook/deploy' \
+            --header 'Content-Type: application/json' \
+            --header "x-deploy-token: ${{ secrets.N8N_DEPLOY_TOKEN }}" \
+            --data-raw '{
+            "source": {
+              "title": "Core System",
+              "repo": "${{ github.repository }}",
+              "branch": "${{ github.head_ref || github.ref_name }}",
+              "commit": "${{ github.sha }}"
+            },
+            "method": "deploy",
+            "metadata": {
+              "environment": "stage",
               "component": "frontend"
             },
             "post": {
