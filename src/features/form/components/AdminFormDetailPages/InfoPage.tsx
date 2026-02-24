@@ -3,7 +3,7 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useArchiveForm, useDeleteForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
+import { Button, Input, LoadingSpinner, Switch, TextArea, Tooltip, useToast } from "@/shared/components";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -156,7 +156,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				</section>
 				<h3>表單設定</h3>
 				<Input label="表單標題" placeholder="輸入表單標題" value={title} onChange={e => setTitle(e.target.value)} />
-				<Input label="表單描述" placeholder="輸入表單描述" value={description} onChange={e => setDescription(e.target.value)} />
+				<TextArea label="表單描述" placeholder="輸入表單描述" value={description} onChange={e => setDescription(e.target.value)} />
 				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" value={confirmMsg} onChange={e => setConfirmMsg(e.target.value)} />
 				<Input label="開始日期" type="date" value={publishTime} onChange={e => setPublishTime(e.target.value)} />
 				<Input label="結束日期" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />

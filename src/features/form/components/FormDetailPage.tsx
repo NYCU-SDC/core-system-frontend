@@ -605,7 +605,7 @@ export const FormDetailPage = () => {
 						)}
 					</div>
 					<h1 className={styles.title}>{form.title}</h1>
-					{currentStep === 0 && form.description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
+					{currentStep === 0 && form.description && <p className={styles.description}>{form.description}</p>}
 					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
 					{currentSection.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
 				</div>
