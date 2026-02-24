@@ -23,11 +23,6 @@ function getSafeRedirectTarget(): string | null {
 	}
 }
 
-function getRefreshTokenFromUrl(): string | null {
-	const params = new URLSearchParams(window.location.search);
-	return params.get("refreshToken") ?? params.get("rt");
-}
-
 export const CallbackPage = () => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -38,11 +33,6 @@ export const CallbackPage = () => {
 			const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 			try {
-				const refreshToken = getRefreshTokenFromUrl();
-				if (refreshToken) {
-					authService.setStoredRefreshToken(refreshToken);
-				}
-
 				let user: AuthUser | null = null;
 
 				for (let attempt = 0; attempt < 3; attempt += 1) {
