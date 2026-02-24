@@ -4,7 +4,7 @@ import { authRefreshToken } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-const DEFAULT_AUTH_REFRESH_INTERVAL = 5 * 60 * 1000;
+const DEFAULT_AUTH_REFRESH_INTERVAL = 10 * 1000;
 
 export const useMe = () =>
 	useQuery({
@@ -36,6 +36,7 @@ export const useAuth = () => {
 };
 
 export const useAuthRefreshInterval = () => {
+	console.log("Setting up auth refresh interval");
 	useEffect(() => {
 		const interval = setInterval(() => {
 			authRefreshToken();

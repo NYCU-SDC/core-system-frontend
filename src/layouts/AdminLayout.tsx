@@ -1,4 +1,3 @@
-import { useAuthRefreshInterval } from "@/features/auth/hooks/useAuth";
 import { Footer } from "@/shared/components/Footer/Footer";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -10,8 +9,6 @@ interface AdminLayoutProps {
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
 	const [isNavOpen, setIsNavOpen] = useState(false);
-
-	useAuthRefreshInterval();
 
 	return (
 		<div className={styles.container}>
