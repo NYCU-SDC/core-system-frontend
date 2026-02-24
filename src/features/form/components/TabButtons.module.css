@@ -32,4 +32,5 @@
 .btnActive {
 	background-color: var(--orange);
 	color: var(--background-color-primary);
+	font-weight: 600;
 }

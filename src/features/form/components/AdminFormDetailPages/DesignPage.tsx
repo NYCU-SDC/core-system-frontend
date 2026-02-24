@@ -58,7 +58,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 			<section className={styles.container}>
 				<div>
 					<p className={styles.label}>主題顏色</p>
-					<ColorPicker value={color} onChange={setColor} allowCustom={false} />
+					<ColorPicker value={color} onChange={setColor} />
 				</div>
 				{
 					<div>

@@ -16,6 +16,7 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 	const isUserForms = pathname === "/forms" || pathname.startsWith("/forms/");
 	const isFormsDashboard = pathname === `/orgs/${orgSlug}/forms` || pathname.startsWith(`/orgs/${orgSlug}/forms/`);
 	const isSettings = pathname.startsWith(`/orgs/${orgSlug}/settings`);
+	const isUserSettings = pathname === "/account/settings";
 
 	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
 
@@ -59,9 +60,11 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 						</Link>
 
 						{/* Avatar */}
-						<div className={styles.avatarContainer} title={user?.username || displayName}>
-							{hasAvatar ? <img src={user?.avatarUrl} alt={displayName} className={styles.avatarImg} /> : <div className={styles.avatarFallback}>{initials}</div>}
-						</div>
+						<Link to="/account/settings" className={styles.link} title={user?.username || displayName}>
+							<div className={`${styles.avatarContainer} ${isUserSettings ? styles.avatarActive : ""}`}>
+								{hasAvatar ? <img src={user?.avatarUrl} alt={displayName} className={styles.avatarImg} /> : <div className={styles.avatarFallback}>{initials}</div>}
+							</div>
+						</Link>
 
 						<Link to="/logout" className={styles.link} aria-label="登出" title="登出">
 							<div className={`${styles.navItem} ${styles.logoutItem}`}>

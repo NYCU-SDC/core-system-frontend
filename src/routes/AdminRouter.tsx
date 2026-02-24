@@ -1,6 +1,7 @@
 import { NotFoundPage } from "@/features/auth/components/NotFoundPage";
 import { AdminSettingsPage } from "@/features/dashboard/components/AdminSettingsPage";
 import { ComponentsDemo } from "@/features/dashboard/components/ComponentsDemo";
+import { SettingsPage } from "@/features/dashboard/components/SettingsPage";
 import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminFormDetailPage, AdminFormPreviewPage, AdminFormsPage } from "@/features/form/components";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
@@ -40,6 +41,7 @@ export const AdminRouter = () => {
 					<Route path="/orgs/:orgSlug/forms/:formid/design" element={<AdminFormDetailPage />} />
 					<Route path="/orgs/:orgSlug/forms/:formid/preview" element={<AdminFormPreviewPage />} />
 					<Route path="/orgs/:orgSlug/settings" element={<AdminSettingsPage />} />
+					<Route path="/account/settings" element={<SettingsPage />} />
 				</Route>
 
 				{/* Cross-entry: force a hard navigation so the server can serve forms.html */}
