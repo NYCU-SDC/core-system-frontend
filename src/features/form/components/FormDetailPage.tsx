@@ -8,7 +8,6 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Input, LoadingSpinner, Radio, ScaleInput, Select, TextArea, useToast } from "@/shared/components";
 import type {
-	AuthOAuthProviders,
 	FormsQuestionResponse,
 	FormsSection,
 	ResponsesAnswersRequestUpdate,
@@ -388,12 +387,11 @@ export const FormDetailPage = () => {
 			return;
 		}
 
-		const provider = (question.oauthConnect ?? "GITHUB") as AuthOAuthProviders;
 		const callbackUrl = new URL("/forms/oauth-callback", window.location.origin);
 		callbackUrl.searchParams.set("questionId", question.id);
 		callbackUrl.searchParams.set("responseId", urlResponseId);
 
-		const connectUrl = formApi.getConnectOauthAccountUrl(provider, urlResponseId, question.id, callbackUrl.toString());
+		const connectUrl = formApi.getConnectOauthAccountUrl(urlResponseId, question.id, callbackUrl.toString());
 		const popup = window.open(connectUrl, "form-oauth-connect", "popup=yes,width=520,height=760");
 
 		if (!popup) {
@@ -1002,7 +1000,7 @@ export const FormDetailPage = () => {
 						</Button>
 						{isLastStep ? (
 							<Button type="submit" disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending} themeColor={primaryThemeColor}>
-								{responseProgress === "SUBMITTED" ? "已送出" : "送出"}
+								{responseProgress === "SUBMITTED" ? "已儲存編輯" : "送出"}
 							</Button>
 						) : (
 							<Button type="button" onClick={handleNext} themeColor={primaryThemeColor}>

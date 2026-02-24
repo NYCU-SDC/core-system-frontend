@@ -502,7 +502,11 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			<div className={styles.header}>
 				<h2>表單結構</h2>
 			</div>
-			<blockquote className={styles.description}>點擊區塊以新增或編輯條件與問題</blockquote>
+			<blockquote className={styles.description}>
+				點擊區塊以新增或編輯條件與問題
+				<br />
+				畫面超過了嗎？<kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>-</kbd>
+			</blockquote>
 			<div className={styles.flowContainer}>
 				<FlowRenderer
 					nodes={nodeItems}
