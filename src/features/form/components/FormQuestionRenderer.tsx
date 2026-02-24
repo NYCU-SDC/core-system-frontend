@@ -303,9 +303,11 @@ export const FormQuestionRenderer = ({
 				/>
 			);
 
-		case "RANKING":
+		case "RANKING": {
+			const isFromAnswerRanking = Boolean(question.sourceId);
 			const rankingChoices = question.choices?.length ? question.choices : (sourceQuestion?.choices ?? []);
 			const sourceSelectedIds = sourceAnswerValue ? sourceAnswerValue.split(",").filter(Boolean) : [];
+			const shouldWaitSourceSelection = isFromAnswerRanking && sourceSelectedIds.length === 0;
 			const allowedIds = sourceSelectedIds.length > 0 ? sourceSelectedIds : rankingChoices.map(choice => choice.id);
 			const currentRankingIds = value
 				? value
@@ -323,20 +325,25 @@ export const FormQuestionRenderer = ({
 						{question.required && <span className={styles.requiredAsterisk}> *</span>}
 					</label>
 					{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-					<DragToOrder
-						items={displayIds.map(choiceId => {
-							const choice = rankingChoices.find(c => c.id === choiceId);
-							return {
-								id: choiceId,
-								content: choice?.name || choiceId
-							};
-						})}
-						onReorder={items => {
-							onAnswerChange(question.id, items.map(item => item.id).join(","));
-						}}
-					/>
+					{shouldWaitSourceSelection ? (
+						<p className={styles.caption}>請先在「{sourceQuestion?.title || "來源題目"}」選擇至少一個項目，才可進行排序。</p>
+					) : (
+						<DragToOrder
+							items={displayIds.map(choiceId => {
+								const choice = rankingChoices.find(c => c.id === choiceId);
+								return {
+									id: choiceId,
+									content: choice?.name || choiceId
+								};
+							})}
+							onReorder={items => {
+								onAnswerChange(question.id, items.map(item => item.id).join(","));
+							}}
+						/>
+					)}
 				</div>
 			);
+		}
 
 		case "UPLOAD_FILE":
 			return (
