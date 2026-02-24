@@ -2,12 +2,13 @@ import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, ErrorMessage, Input, LoadingSpinner, Radio, ScaleInput, Select, TextArea } from "@/shared/components";
-import type { FormsQuestionResponse, FormsSection } from "@nycu-sdc/core-system-sdk";
+import { Button, ErrorMessage, LoadingSpinner } from "@/shared/components";
+import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
 import formStyles from "./FormDetailPage.module.css";
+import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
 const ensureEmfontStylesheet = (fontId: string) => {
 	if (!fontId) return;
@@ -18,15 +19,6 @@ const ensureEmfontStylesheet = (fontId: string) => {
 	link.rel = "stylesheet";
 	link.href = `https://font.emtech.cc/css/${encodeURIComponent(fontId)}`;
 	document.head.appendChild(link);
-};
-
-const isValidUrl = (url: string): boolean => {
-	try {
-		const u = new URL(url);
-		return u.protocol === "http:" || u.protocol === "https:";
-	} catch {
-		return false;
-	}
 };
 
 export const AdminFormPreviewPage = () => {
@@ -75,219 +67,6 @@ export const AdminFormPreviewPage = () => {
 
 	const updateOtherText = (questionId: string, value: string) => {
 		setOtherTexts(prev => ({ ...prev, [questionId]: value }));
-	};
-	const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
-
-	const renderQuestion = (question: FormsQuestionResponse) => {
-		const value = answers[question.id] || "";
-
-		switch (question.type) {
-			case "SHORT_TEXT":
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Input id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
-					</div>
-				);
-
-			case "LONG_TEXT":
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<TextArea id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} rows={6} required={question.required} />
-					</div>
-				);
-
-			case "SINGLE_CHOICE": {
-				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => choice.isOther);
-				const otherValue = otherTexts[question.id] || "";
-
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Radio
-							options={choices.map(c => ({ value: c.id, label: c.name }))}
-							value={value}
-							onValueChange={newValue => {
-								updateAnswer(question.id, newValue);
-								if (newValue !== otherChoice?.id) {
-									updateOtherText(question.id, "");
-								}
-							}}
-						/>
-						{otherChoice && value === otherChoice.id && <Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} />}
-					</div>
-				);
-			}
-
-			case "DROPDOWN": {
-				const choices = question.choices ?? [];
-
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Select options={choices.map(c => ({ value: c.id, label: c.name }))} value={value || undefined} onValueChange={newValue => updateAnswer(question.id, newValue)} />
-					</div>
-				);
-			}
-
-			case "MULTIPLE_CHOICE": {
-				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => choice.isOther);
-				const selectedIds = getSelectedChoiceIds(value);
-				const otherValue = otherTexts[question.id] || "";
-
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<div className={formStyles.choiceList}>
-							{choices.map(choice => (
-								<Checkbox
-									key={choice.id}
-									id={`${question.id}-${choice.id}`}
-									label={choice.name}
-									checked={selectedIds.includes(choice.id)}
-									onCheckedChange={checked => {
-										const next = checked ? [...selectedIds, choice.id] : selectedIds.filter(v => v !== choice.id);
-										updateAnswer(question.id, next.join(","));
-										if (otherChoice?.id === choice.id && !checked) {
-											updateOtherText(question.id, "");
-										}
-									}}
-								/>
-							))}
-						</div>
-						{otherChoice && selectedIds.includes(otherChoice.id) && <Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} />}
-					</div>
-				);
-			}
-
-			case "DETAILED_MULTIPLE_CHOICE":
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<div className={formStyles.choiceList}>
-							{question.choices?.map(choice => (
-								<DetailedCheckbox
-									key={choice.id}
-									id={`${question.id}-${choice.id}`}
-									title={choice.name}
-									description={choice.description || ""}
-									checked={value.includes(choice.id)}
-									onCheckedChange={checked => {
-										const cur = value ? value.split(",") : [];
-										const next = checked ? [...cur, choice.id] : cur.filter(v => v !== choice.id);
-										updateAnswer(question.id, next.join(","));
-									}}
-								/>
-							))}
-						</div>
-					</div>
-				);
-
-			case "DATE":
-				return (
-					<DateInput
-						key={question.id}
-						id={question.id}
-						label={question.title}
-						description={question.description || undefined}
-						value={value}
-						options={question.date || { hasYear: true, hasMonth: true, hasDay: true }}
-						required={question.required}
-						onChange={v => updateAnswer(question.id, v)}
-					/>
-				);
-
-			case "LINEAR_SCALE":
-			case "RATING":
-				return (
-					<ScaleInput
-						key={question.id}
-						id={question.id}
-						label={question.title}
-						description={question.description || undefined}
-						value={value}
-						options={question.scale || { minVal: 1, maxVal: 5 }}
-						required={question.required}
-						onChange={v => updateAnswer(question.id, v)}
-					/>
-				);
-
-			case "RANKING":
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<DragToOrder
-							items={
-								value
-									? value.split(",").map(id => {
-											const c = question.choices?.find(ch => ch.id === id);
-											return { id, content: c?.name || id };
-										})
-									: question.choices?.map(c => ({ id: c.id, content: c.name })) || []
-							}
-							onReorder={items => updateAnswer(question.id, items.map(i => i.id).join(","))}
-						/>
-					</div>
-				);
-
-			case "HYPERLINK":
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<label className={formStyles.questionLabel}>
-							{question.title}
-							{question.required && <span className={formStyles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={formStyles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Input
-							id={question.id}
-							placeholder="https://"
-							value={value}
-							onChange={e => updateAnswer(question.id, e.target.value)}
-							required={question.required}
-							error={value && !isValidUrl(value) ? "請輸入有效的網址（需以 http:// 或 https:// 開頭）" : ""}
-						/>
-					</div>
-				);
-
-			default:
-				return (
-					<div key={question.id} className={formStyles.questionField}>
-						<p>不支援的問題類型: {question.type}</p>
-						<p className={formStyles.caption}>{question.title}</p>
-					</div>
-				);
-		}
 	};
 
 	if (formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading) {
@@ -411,7 +190,17 @@ export const AdminFormPreviewPage = () => {
 										</div>
 									) : (
 										<>
-											{sections[safeCurrentStep].questions?.map(q => renderQuestion(q))}
+											{sections[safeCurrentStep].questions?.map(question => (
+												<FormQuestionRenderer
+													key={question.id}
+													question={question}
+													value={answers[question.id] || ""}
+													otherTextValue={otherTexts[question.id] || ""}
+													disableFileUpload
+													onAnswerChange={updateAnswer}
+													onOtherTextChange={updateOtherText}
+												/>
+											))}
 											{(!sections[safeCurrentStep].questions || sections[safeCurrentStep].questions.length === 0) && <p className={formStyles.caption}>此區段目前沒有問題</p>}
 										</>
 									)}

@@ -6,7 +6,7 @@ import * as formApi from "@/features/form/services/api";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Input, LoadingSpinner, Radio, ScaleInput, Select, TextArea, useToast } from "@/shared/components";
+import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import {
 	ResponsesResponseProgress,
 	ResponsesSectionProgress,
@@ -19,124 +19,13 @@ import {
 	type ResponsesStringAnswer,
 	type ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
-import { AlertCircle, Check, ChevronLeft, LoaderCircle, RefreshCw, Upload, X } from "lucide-react";
+import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./FormDetailPage.module.css";
+import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
 type Section = FormsSection;
-
-const isValidUrl = (url: string): boolean => {
-	try {
-		const u = new URL(url);
-		return u.protocol === "http:" || u.protocol === "https:";
-	} catch {
-		return false;
-	}
-};
-
-// ── File upload per-question component ────────────────────────────────────
-
-interface FileItem {
-	id: string;
-	file: File;
-	status: "uploading" | "success" | "error";
-	error?: string;
-}
-
-interface FileUploadQuestionProps {
-	responseId: string;
-	questionId: string;
-	maxFileAmount: number;
-	allowedFileTypes: string;
-	onFilesChange: (fileNames: string) => void;
-}
-
-const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFileTypes, onFilesChange }: FileUploadQuestionProps) => {
-	const [items, setItems] = useState<FileItem[]>([]);
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	const doUpload = async (item: FileItem) => {
-		setItems(prev => prev.map(i => (i.id === item.id ? { ...i, status: "uploading" as const, error: undefined } : i)));
-		try {
-			await formApi.uploadQuestionFiles(responseId, questionId, [item.file]);
-			setItems(prev => {
-				const next = prev.map(i => (i.id === item.id ? { ...i, status: "success" as const } : i));
-				onFilesChange(
-					next
-						.filter(i => i.status === "success")
-						.map(i => i.file.name)
-						.join(",")
-				);
-				return next;
-			});
-		} catch (err) {
-			setItems(prev => prev.map(i => (i.id === item.id ? { ...i, status: "error" as const, error: (err as Error).message } : i)));
-		}
-	};
-
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const newFiles = Array.from(e.target.files || []);
-		const activeCount = items.filter(i => i.status !== "error").length;
-		const canAdd = Math.max(0, maxFileAmount - activeCount);
-		const toAdd: FileItem[] = newFiles.slice(0, canAdd).map(file => ({
-			id: crypto.randomUUID(),
-			file,
-			status: "uploading" as const
-		}));
-		if (inputRef.current) inputRef.current.value = "";
-		setItems(prev => [...prev, ...toAdd]);
-		toAdd.forEach(doUpload);
-	};
-
-	const removeItem = (id: string) => {
-		setItems(prev => {
-			const next = prev.filter(i => i.id !== id);
-			onFilesChange(
-				next
-					.filter(i => i.status === "success")
-					.map(i => i.file.name)
-					.join(",")
-			);
-			return next;
-		});
-	};
-
-	const activeCount = items.filter(i => i.status !== "error").length;
-	const canAddMore = activeCount < maxFileAmount;
-
-	return (
-		<div className={styles.fileUploadList}>
-			{items.map(item => (
-				<div key={item.id} className={`${styles.fileItem} ${item.status === "error" ? styles.fileItemError : item.status === "uploading" ? styles.fileItemUploading : ""}`}>
-					<span className={styles.fileItemName}>{item.file.name}</span>
-					{item.status === "uploading" && <span className={styles.fileItemHint}>上傳中…</span>}
-					{item.status === "error" && <span className={styles.fileItemHint}>{item.error || "上傳失敗"}</span>}
-					<div className={styles.fileItemActions}>
-						{item.status === "error" && (
-							<button type="button" className={styles.fileRetryBtn} onClick={() => doUpload(item)}>
-								<RefreshCw size={12} />
-								重新上傳
-							</button>
-						)}
-						{item.status !== "uploading" && (
-							<button type="button" className={styles.fileRemoveBtn} onClick={() => removeItem(item.id)} aria-label="移除">
-								<X size={14} />
-							</button>
-						)}
-					</div>
-				</div>
-			))}
-			{canAddMore && (
-				<label className={styles.fileAddZone}>
-					<input ref={inputRef} type="file" multiple={maxFileAmount > 1} accept={allowedFileTypes} onChange={handleInputChange} className={styles.fileAddInput} />
-					<Upload size={14} />
-					<span>點擊上傳{maxFileAmount > 1 ? "（可多選）" : ""}</span>
-				</label>
-			)}
-		</div>
-	);
-};
 
 interface FormResponseData {
 	sections: ResponsesResponseSections[];
@@ -496,276 +385,6 @@ export const FormDetailPage = () => {
 		};
 	}, [urlResponseId, pushToast]);
 
-	const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
-
-	const renderQuestion = (question: FormsQuestionResponse) => {
-		const value = answers[question.id] || "";
-
-		switch (question.type) {
-			case "SHORT_TEXT":
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Input id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} required={question.required} />
-					</div>
-				);
-
-			case "LONG_TEXT":
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<TextArea id={question.id} placeholder="請輸入..." value={value} onChange={e => updateAnswer(question.id, e.target.value)} rows={6} required={question.required} />
-					</div>
-				);
-
-			case "SINGLE_CHOICE": {
-				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => choice.isOther);
-				const otherValue = otherTexts[question.id] || "";
-
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Radio
-							options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
-							value={value}
-							onValueChange={newValue => {
-								updateAnswer(question.id, newValue);
-								if (newValue !== otherChoice?.id) {
-									updateOtherText(question.id, "");
-								}
-							}}
-						/>
-						{otherChoice && value === otherChoice.id && <Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} />}
-					</div>
-				);
-			}
-
-			case "DROPDOWN": {
-				const choices = question.choices ?? [];
-
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Select options={choices.map(choice => ({ value: choice.id, label: choice.name }))} value={value || undefined} onValueChange={newValue => updateAnswer(question.id, newValue)} />
-					</div>
-				);
-			}
-
-			case "MULTIPLE_CHOICE": {
-				const choices = question.choices ?? [];
-				const otherChoice = choices.find(choice => choice.isOther);
-				const selectedIds = getSelectedChoiceIds(value);
-				const otherValue = otherTexts[question.id] || "";
-
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<div className={styles.choiceList}>
-							{choices.map(choice => (
-								<Checkbox
-									key={choice.id}
-									id={`${question.id}-${choice.id}`}
-									label={choice.name}
-									checked={selectedIds.includes(choice.id)}
-									onCheckedChange={checked => {
-										const newValues = checked ? [...selectedIds, choice.id] : selectedIds.filter(v => v !== choice.id);
-										updateAnswer(question.id, newValues.join(","));
-										if (otherChoice?.id === choice.id && !checked) {
-											updateOtherText(question.id, "");
-										}
-									}}
-								/>
-							))}
-						</div>
-						{otherChoice && selectedIds.includes(otherChoice.id) && <Input placeholder="請填寫其他" value={otherValue} onChange={e => updateOtherText(question.id, e.target.value)} />}
-					</div>
-				);
-			}
-
-			case "DETAILED_MULTIPLE_CHOICE":
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<div className={styles.choiceList}>
-							{question.choices?.map(choice => (
-								<DetailedCheckbox
-									key={choice.id}
-									id={`${question.id}-${choice.id}`}
-									title={choice.name}
-									description={choice.description || ""}
-									checked={value.includes(choice.id)}
-									onCheckedChange={checked => {
-										const currentValues = value ? value.split(",") : [];
-										const newValues = checked ? [...currentValues, choice.id] : currentValues.filter(v => v !== choice.id);
-										updateAnswer(question.id, newValues.join(","));
-									}}
-								/>
-							))}
-						</div>
-					</div>
-				);
-
-			case "DATE":
-				return (
-					<DateInput
-						key={question.id}
-						id={question.id}
-						label={question.title}
-						description={question.description || undefined}
-						value={value}
-						options={question.date || { hasYear: true, hasMonth: true, hasDay: true }}
-						required={question.required}
-						onChange={newValue => updateAnswer(question.id, newValue)}
-					/>
-				);
-
-			case "LINEAR_SCALE":
-			case "RATING":
-				return (
-					<ScaleInput
-						key={question.id}
-						id={question.id}
-						label={question.title}
-						description={question.description || undefined}
-						value={value}
-						options={question.scale || { minVal: 1, maxVal: 5 }}
-						required={question.required}
-						onChange={newValue => updateAnswer(question.id, newValue)}
-					/>
-				);
-
-			case "RANKING":
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<DragToOrder
-							items={
-								value
-									? value.split(",").map(choiceId => {
-											const choice = question.choices?.find(c => c.id === choiceId);
-											return {
-												id: choiceId,
-												content: choice?.name || choiceId
-											};
-										})
-									: question.choices?.map(choice => ({
-											id: choice.id,
-											content: choice.name
-										})) || []
-							}
-							onReorder={items => {
-								updateAnswer(question.id, items.map(item => item.id).join(","));
-							}}
-						/>
-					</div>
-				);
-
-			case "UPLOAD_FILE":
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<FileUploadQuestion
-							responseId={urlResponseId || ""}
-							questionId={question.id}
-							maxFileAmount={question.uploadFile?.maxFileAmount || 1}
-							allowedFileTypes={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
-							onFilesChange={fileNames => updateAnswer(question.id, fileNames)}
-						/>
-						<p className={styles.uploadHint}>
-							最多 {question.uploadFile?.maxFileAmount || 1} 個檔案，每個檔案最大 {((question.uploadFile?.maxFileSizeLimit || 10485760) / 1024 / 1024).toFixed(0)} MB
-						</p>
-					</div>
-				);
-
-			case "OAUTH_CONNECT":
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<p className={styles.caption}>
-							綁定平台：
-							{question.oauthConnect === "GOOGLE" ? "Google" : "GitHub"}
-						</p>
-						<div className={styles.oauthConnectActions}>
-							<Button
-								type="button"
-								onClick={() => handleOauthConnect(question)}
-								disabled={!urlResponseId}
-								processing={connectingOauthQuestionId === question.id}
-								themeColor="var(--form-theme-color, var(--orange))"
-							>
-								{connectingOauthQuestionId === question.id ? "綁定中" : value ? "重新綁定帳號" : "綁定帳號"}
-							</Button>
-							<p className={styles.uploadHint}>{value ? `已綁定帳號：${value}` : "尚未綁定，點擊上方按鈕開始 OAuth 綁定流程。"}</p>
-						</div>
-					</div>
-				);
-
-			case "HYPERLINK":
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<label className={styles.questionLabel}>
-							{question.title}
-							{question.required && <span className={styles.requiredAsterisk}> *</span>}
-						</label>
-						{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
-						<Input
-							id={question.id}
-							placeholder="https://"
-							value={value}
-							onChange={e => updateAnswer(question.id, e.target.value)}
-							required={question.required}
-							error={value && !isValidUrl(value) ? "請輸入有效的網址（需以 http:// 或 https:// 開頭）" : ""}
-						/>
-					</div>
-				);
-
-			default:
-				return (
-					<div key={question.id} className={styles.questionField}>
-						<p>不支援的問題類型: {question.type}</p>
-						<p className={styles.caption}>{question.title}</p>
-					</div>
-				);
-		}
-	};
-
 	const renderPreviewSection = () => {
 		if (!previewData || previewData.length === 0) {
 			return <p className={styles.caption}>尚無填答資料</p>;
@@ -1018,7 +637,19 @@ export const FormDetailPage = () => {
 									)
 								) : (
 									<>
-										{sections[currentStep].questions?.map(question => renderQuestion(question))}
+										{sections[currentStep].questions?.map(question => (
+											<FormQuestionRenderer
+												key={question.id}
+												question={question}
+												value={answers[question.id] || ""}
+												otherTextValue={otherTexts[question.id] || ""}
+												responseId={urlResponseId}
+												connectingOauthQuestionId={connectingOauthQuestionId}
+												onAnswerChange={updateAnswer}
+												onOtherTextChange={updateOtherText}
+												onOauthConnect={handleOauthConnect}
+											/>
+										))}
 										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p className={styles.caption}>此區段目前沒有問題</p>}
 									</>
 								)}
