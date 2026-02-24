@@ -253,14 +253,11 @@ export const getQuestionResponse = async (responseId: string, questionId: string
 };
 
 export const getConnectOauthAccountUrl = (responseId: string, questionId: string, redirectUrl?: string): string => {
-	const params = new URLSearchParams({
-		responseId,
-		questionId
-	});
+	const base = `/api/responses/${responseId}/questions/${questionId}/oauth`;
 	if (redirectUrl) {
-		params.set("r", redirectUrl);
+		return `${base}?r=${encodeURIComponent(redirectUrl)}`;
 	}
-	return `/api/oauth/questions?${params.toString()}`;
+	return base;
 };
 
 // ── Google Sheet ──────────────────────────────────────────────────────────

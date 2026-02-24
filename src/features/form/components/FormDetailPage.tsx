@@ -224,51 +224,6 @@ export const FormDetailPage = () => {
 		return withPreview;
 	}, [sectionsQuery.data, workflowQuery.data, answers, formId]);
 
-	// Keep ranking answers in sync with source question selections.
-	// When a source checkbox option is unchecked, remove it from linked ranking answers
-	// (including cases where source/target are in different sections).
-	useEffect(() => {
-		const questions = sections.flatMap(section => section.questions ?? []);
-		if (questions.length === 0) return;
-		const questionMap = new Map(questions.map(question => [question.id, question]));
-
-		setAnswers(prev => {
-			let changed = false;
-			const next = { ...prev };
-
-			questions.forEach(question => {
-				if (question.type !== "RANKING" || !question.sourceId) return;
-
-				const rankingRaw = prev[question.id] ?? "";
-				if (!rankingRaw) return;
-
-				const sourceQuestion = questionMap.get(question.sourceId);
-				const sourceRaw = prev[question.sourceId] ?? "";
-				if (!sourceQuestion || !sourceRaw) {
-					next[question.id] = "";
-					changed = true;
-					return;
-				}
-
-				const sourceSelectedIds = sourceQuestion.type === "SINGLE_CHOICE" || sourceQuestion.type === "DROPDOWN" ? [sourceRaw] : sourceRaw.split(",").filter(Boolean);
-
-				const filteredRankingIds = rankingRaw
-					.split(",")
-					.filter(Boolean)
-					.filter(id => sourceSelectedIds.includes(id));
-				const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
-				const normalized = [...filteredRankingIds, ...missingIds].join(",");
-
-				if (normalized !== rankingRaw) {
-					next[question.id] = normalized;
-					changed = true;
-				}
-			});
-
-			return changed ? next : prev;
-		});
-	}, [sections]);
-
 	// Sync pre-filled answers from the existing response (once on first load)
 	useEffect(() => {
 		if (answersInitialized.current) return;
@@ -413,10 +368,33 @@ export const FormDetailPage = () => {
 	};
 
 	const updateAnswer = (questionId: string, value: string) => {
-		setAnswers(prev => ({
-			...prev,
-			[questionId]: value
-		}));
+		setAnswers(prev => {
+			const next = { ...prev, [questionId]: value };
+
+			// Sync ranking questions whose source is the changed question
+			const allQuestions = sections.flatMap(s => s.questions ?? []);
+			const questionMap = new Map(allQuestions.map(q => [q.id, q]));
+			allQuestions.forEach(q => {
+				if (q.type !== "RANKING" || q.sourceId !== questionId) return;
+				const rankingRaw = prev[q.id] ?? "";
+				if (!rankingRaw) return;
+				if (!value) {
+					next[q.id] = "";
+					return;
+				}
+				const sourceQuestion = questionMap.get(q.sourceId);
+				const sourceSelectedIds = sourceQuestion?.type === "SINGLE_CHOICE" || sourceQuestion?.type === "DROPDOWN" ? [value] : value.split(",").filter(Boolean);
+				const filteredRankingIds = rankingRaw
+					.split(",")
+					.filter(Boolean)
+					.filter(id => sourceSelectedIds.includes(id));
+				const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
+				const normalized = [...filteredRankingIds, ...missingIds].join(",");
+				if (normalized !== rankingRaw) next[q.id] = normalized;
+			});
+
+			return next;
+		});
 	};
 
 	const updateOtherText = (questionId: string, value: string) => {
@@ -744,7 +722,13 @@ export const FormDetailPage = () => {
 							{question.oauthConnect === "GOOGLE" ? "Google" : "GitHub"}
 						</p>
 						<div className={styles.oauthConnectActions}>
-							<Button type="button" onClick={() => handleOauthConnect(question)} processing={connectingOauthQuestionId === question.id} themeColor="var(--form-theme-color, var(--orange))">
+							<Button
+								type="button"
+								onClick={() => handleOauthConnect(question)}
+								disabled={!urlResponseId}
+								processing={connectingOauthQuestionId === question.id}
+								themeColor="var(--form-theme-color, var(--orange))"
+							>
 								{connectingOauthQuestionId === question.id ? "綁定中" : value ? "重新綁定帳號" : "綁定帳號"}
 							</Button>
 							<p className={styles.uploadHint}>{value ? `已綁定帳號：${value}` : "尚未綁定，點擊上方按鈕開始 OAuth 綁定流程。"}</p>

@@ -72,7 +72,7 @@ h1 {
 h2 {
 	font-size: 2rem;
 	font-weight: 700;
-	margin-bottom: 1rem;
+	margin-block: 1rem;
 }
 
 h3 {
@@ -156,6 +156,7 @@ pre code {
 ul,
 ol {
 	list-style-position: inside;
+	margin-bottom: 1rem;
 }
 
 button {
@@ -171,7 +172,7 @@ select {
 
 kbd {
 	display: inline-block;
-	padding: 0.25rem 0.5rem;
+	padding: 0.1rem 0.25rem;
 	font-family: FiraCode, "Courier New", Courier, monospace;
 	font-size: 0.875rem;
 	color: var(--foreground);
@@ -200,4 +201,30 @@ blockquote cite {
 	font-size: 0.875rem;
 	color: var(--color-caption);
 	font-style: normal;
+}
+
+table {
+	border-collapse: collapse;
+	margin-bottom: 1rem;
+}
+
+table th,
+table td {
+	border: 1px solid var(--background-color-tertiary);
+	padding: 0.5rem 1rem;
+}
+
+table th {
+	background-color: var(--background-color-secondary);
+	font-weight: 600;
+}
+
+table tbody tr:hover {
+	background-color: var(--background-color-overlay);
+}
+
+hr {
+	border: none;
+	border-top: 1px solid var(--background-color-tertiary);
+	margin: 2rem 0;
 }

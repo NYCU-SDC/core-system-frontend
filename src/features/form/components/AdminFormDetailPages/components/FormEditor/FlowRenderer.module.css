@@ -73,8 +73,9 @@
 
 .text {
 	margin: 0rem 0.5rem;
+	pointer-events: none;
+	user-select: text;
 }
-
 /* ── Node content (label + optional section title) ── */
 .nodeContent {
 	display: flex;
