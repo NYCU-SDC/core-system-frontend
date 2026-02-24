@@ -21,13 +21,13 @@ export const HomePage = () => {
 		});
 	};
 
-	const handleNycuLogin = () => {
-		const origin = window.location.origin;
-		authService.redirectToOAuthLogin("nycu", {
-			callbackUrl: new URL("/callback", origin).toString(),
-			redirectUrl: new URL("/callback", origin).toString()
-		});
-	};
+	// const handleNycuLogin = () => {
+	// 	const origin = window.location.origin;
+	// 	authService.redirectToOAuthLogin("nycu", {
+	// 		callbackUrl: new URL("/callback", origin).toString(),
+	// 		redirectUrl: new URL("/callback", origin).toString()
+	// 	});
+	// };
 
 	return (
 		<UserLayout>
