@@ -1,6 +1,10 @@
 import { authService } from "@/features/auth/services/authService";
 import type { UserOnboardingRequest } from "@nycu-sdc/core-system-sdk";
+import { authRefreshToken } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+
+const DEFAULT_AUTH_REFRESH_INTERVAL = 5 * 60 * 1000;
 
 export const useMe = () =>
 	useQuery({
@@ -29,4 +33,16 @@ export const useAuth = () => {
 		isAuthenticated: !!user,
 		isLoading
 	};
+};
+
+export const useAuthRefreshInterval = () => {
+	useEffect(() => {
+		console.log("Setting up auth refresh interval");
+		const interval = setInterval(() => {
+			console.log("Refreshing auth token");
+			authRefreshToken("");
+		}, DEFAULT_AUTH_REFRESH_INTERVAL);
+
+		return () => clearInterval(interval);
+	}, []);
 };

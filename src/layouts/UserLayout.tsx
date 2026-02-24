@@ -1,7 +1,7 @@
+import { useAuthRefreshInterval } from "@/features/auth/hooks/useAuth";
 import { Footer } from "@/shared/components/Footer/Footer";
 import type { ReactNode } from "react";
 import styles from "./UserLayout.module.css";
-import { useAuthRefreshInterval } from "./useAuthRefreshInterval";
 
 interface UserLayoutProps {
 	children: ReactNode;
