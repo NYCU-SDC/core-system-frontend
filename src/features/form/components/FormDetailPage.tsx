@@ -113,6 +113,9 @@ export const FormDetailPage = () => {
 		});
 		return withPreview;
 	}, [sectionsQuery.data, workflowQuery.data, answers, formId]);
+	const questionsById = useMemo(() => {
+		return new Map(sections.flatMap(section => section.questions ?? []).map(question => [question.id, question]));
+	}, [sections]);
 
 	// Sync pre-filled answers from the existing response (once on first load)
 	useEffect(() => {
@@ -643,6 +646,8 @@ export const FormDetailPage = () => {
 												question={question}
 												value={answers[question.id] || ""}
 												otherTextValue={otherTexts[question.id] || ""}
+												sourceQuestion={question.sourceId ? questionsById.get(question.sourceId) : undefined}
+												sourceAnswerValue={question.sourceId ? answers[question.sourceId] || "" : ""}
 												responseId={urlResponseId}
 												connectingOauthQuestionId={connectingOauthQuestionId}
 												onAnswerChange={updateAnswer}

@@ -55,6 +55,9 @@ export const AdminFormPreviewPage = () => {
 		const visible = resolveVisibleSectionsFromWorkflow(baseSections, workflowQuery.data?.workflow, answers);
 		return [...visible, { id: "preview", formId: formid!, title: "填答結果預覽", questions: [] }];
 	}, [sectionsQuery.data, workflowQuery.data, answers, formid]);
+	const questionsById = useMemo(() => {
+		return new Map(sections.flatMap(section => section.questions ?? []).map(question => [question.id, question]));
+	}, [sections]);
 
 	const safeCurrentStep = sections.length > 0 ? Math.min(currentStep, sections.length - 1) : currentStep;
 	const isFirstStep = safeCurrentStep === 0;
@@ -196,6 +199,8 @@ export const AdminFormPreviewPage = () => {
 													question={question}
 													value={answers[question.id] || ""}
 													otherTextValue={otherTexts[question.id] || ""}
+													sourceQuestion={question.sourceId ? questionsById.get(question.sourceId) : undefined}
+													sourceAnswerValue={question.sourceId ? answers[question.sourceId] || "" : ""}
 													disableFileUpload
 													onAnswerChange={updateAnswer}
 													onOtherTextChange={updateOtherText}

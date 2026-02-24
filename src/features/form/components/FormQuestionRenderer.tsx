@@ -1,7 +1,7 @@
 import * as formApi from "@/features/form/services/api";
-import { Button, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Input, Radio, ScaleInput, Select, TextArea } from "@/shared/components";
+import { AccountButton, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Input, Radio, ScaleInput, Select, TextArea } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { RefreshCw, Upload, X } from "lucide-react";
+import { Chrome, Github, RefreshCw, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import styles from "./FormDetailPage.module.css";
 
@@ -122,6 +122,8 @@ type FormQuestionRendererProps = {
 	question: FormsQuestionResponse;
 	value: string;
 	otherTextValue?: string;
+	sourceQuestion?: FormsQuestionResponse;
+	sourceAnswerValue?: string;
 	responseId?: string;
 	connectingOauthQuestionId?: string | null;
 	disableFileUpload?: boolean;
@@ -136,6 +138,8 @@ export const FormQuestionRenderer = ({
 	question,
 	value,
 	otherTextValue = "",
+	sourceQuestion,
+	sourceAnswerValue = "",
 	responseId,
 	connectingOauthQuestionId = null,
 	disableFileUpload = false,
@@ -300,6 +304,18 @@ export const FormQuestionRenderer = ({
 			);
 
 		case "RANKING":
+			const rankingChoices = question.choices?.length ? question.choices : (sourceQuestion?.choices ?? []);
+			const sourceSelectedIds = sourceAnswerValue ? sourceAnswerValue.split(",").filter(Boolean) : [];
+			const allowedIds = sourceSelectedIds.length > 0 ? sourceSelectedIds : rankingChoices.map(choice => choice.id);
+			const currentRankingIds = value
+				? value
+						.split(",")
+						.filter(Boolean)
+						.filter(id => allowedIds.includes(id))
+				: [];
+			const missingIds = allowedIds.filter(id => !currentRankingIds.includes(id));
+			const displayIds = [...currentRankingIds, ...missingIds];
+
 			return (
 				<div key={question.id} className={styles.questionField}>
 					<label className={styles.questionLabel}>
@@ -308,20 +324,13 @@ export const FormQuestionRenderer = ({
 					</label>
 					{question.description && <div className={styles.questionDescription} dangerouslySetInnerHTML={{ __html: question.description }} />}
 					<DragToOrder
-						items={
-							value
-								? value.split(",").map(choiceId => {
-										const choice = question.choices?.find(c => c.id === choiceId);
-										return {
-											id: choiceId,
-											content: choice?.name || choiceId
-										};
-									})
-								: question.choices?.map(choice => ({
-										id: choice.id,
-										content: choice.name
-									})) || []
-						}
+						items={displayIds.map(choiceId => {
+							const choice = rankingChoices.find(c => c.id === choiceId);
+							return {
+								id: choiceId,
+								content: choice?.name || choiceId
+							};
+						})}
 						onReorder={items => {
 							onAnswerChange(question.id, items.map(item => item.id).join(","));
 						}}
@@ -365,15 +374,15 @@ export const FormQuestionRenderer = ({
 						{question.oauthConnect === "GOOGLE" ? "Google" : "GitHub"}
 					</p>
 					<div className={styles.oauthConnectActions}>
-						<Button
+						<AccountButton
 							type="button"
+							logo={question.oauthConnect === "GOOGLE" ? <Chrome size={20} /> : <Github size={20} />}
+							connected={Boolean(value)}
 							onClick={() => onOauthConnect?.(question)}
-							disabled={!responseId || !onOauthConnect}
-							processing={connectingOauthQuestionId === question.id}
-							themeColor="var(--form-theme-color, var(--orange))"
+							disabled={!responseId || !onOauthConnect || connectingOauthQuestionId === question.id}
 						>
 							{connectingOauthQuestionId === question.id ? "綁定中" : value ? "重新綁定帳號" : "綁定帳號"}
-						</Button>
+						</AccountButton>
 						<p className={styles.uploadHint}>{value ? `已綁定帳號：${value}` : "尚未綁定，點擊上方按鈕開始 OAuth 綁定流程。"}</p>
 					</div>
 				</div>
