@@ -63,6 +63,10 @@ export const AdminFormPreviewPage = () => {
 	const isFirstStep = safeCurrentStep === 0;
 	const isLastStep = sections.length === 0 || safeCurrentStep === sections.length - 1;
 	const isOnPreviewStep = isLastStep && sections[safeCurrentStep]?.id === "preview";
+	const goToStep = (step: number | ((prev: number) => number)) => {
+		setCurrentStep(step);
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
 
 	const updateAnswer = (questionId: string, value: string) => {
 		setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -135,7 +139,7 @@ export const AdminFormPreviewPage = () => {
 						</div>
 						<div className={formStyles.workflow}>
 							{sections.map((section, index) => (
-								<button key={section.id} type="button" className={`${formStyles.workflowButton} ${index === safeCurrentStep ? formStyles.active : ""}`} onClick={() => setCurrentStep(index)}>
+								<button key={section.id} type="button" className={`${formStyles.workflowButton} ${index === safeCurrentStep ? formStyles.active : ""}`} onClick={() => goToStep(index)}>
 									{section.title}
 								</button>
 							))}
@@ -159,7 +163,7 @@ export const AdminFormPreviewPage = () => {
 																variant="secondary"
 																onClick={() => {
 																	const idx = sections.findIndex(s => s.id === section.id);
-																	if (idx >= 0) setCurrentStep(idx);
+																	if (idx >= 0) goToStep(idx);
 																}}
 															>
 																修改
@@ -215,7 +219,7 @@ export const AdminFormPreviewPage = () => {
 						{sections.length === 0 && <p className={formStyles.caption}>此表單尚無任何區段</p>}
 
 						<div className={formStyles.navigation}>
-							<Button type="button" onClick={() => setCurrentStep(p => p - 1)} disabled={isFirstStep} themeColor="var(--foreground)">
+							<Button type="button" onClick={() => goToStep(p => p - 1)} disabled={isFirstStep} themeColor="var(--foreground)">
 								上一頁
 							</Button>
 							{isOnPreviewStep ? (
@@ -223,7 +227,7 @@ export const AdminFormPreviewPage = () => {
 									預覽
 								</Button>
 							) : (
-								<Button type="button" onClick={() => setCurrentStep(p => p + 1)} themeColor={primaryThemeColor}>
+								<Button type="button" onClick={() => goToStep(p => p + 1)} themeColor={primaryThemeColor}>
 									下一頁
 								</Button>
 							)}

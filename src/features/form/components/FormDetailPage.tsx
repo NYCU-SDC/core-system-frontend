@@ -245,20 +245,27 @@ export const FormDetailPage = () => {
 		}
 	}, [sections.length, currentStep]);
 
+	const scrollToTop = () => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+
 	const handleNext = () => {
 		if (!isLastStep) {
 			setCurrentStep(prev => prev + 1);
+			scrollToTop();
 		}
 	};
 
 	const handlePrevious = () => {
 		if (!isFirstStep) {
 			setCurrentStep(prev => prev - 1);
+			scrollToTop();
 		}
 	};
 
 	const handleSectionClick = (index: number) => {
 		setCurrentStep(index);
+		scrollToTop();
 	};
 
 	const updateAnswer = (questionId: string, value: string) => {
@@ -451,7 +458,10 @@ export const FormDetailPage = () => {
 			});
 			if (missingQuestion) {
 				const sectionIndex = sections.findIndex(s => s.id === section.id);
-				if (sectionIndex >= 0) setCurrentStep(sectionIndex);
+				if (sectionIndex >= 0) {
+					setCurrentStep(sectionIndex);
+					scrollToTop();
+				}
 				pushToast({ title: "尚有必填欄位未填寫", description: `「${missingQuestion.title}」為必填`, variant: "error" });
 				return;
 			}
