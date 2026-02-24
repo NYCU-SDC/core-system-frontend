@@ -767,7 +767,6 @@ export const FormDetailPage = () => {
 	};
 
 	const renderPreviewSection = () => {
-
 		if (!previewData || previewData.length === 0) {
 			return <p className={styles.caption}>尚無填答資料</p>;
 		}
