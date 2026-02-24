@@ -1001,7 +1001,7 @@ export const FormDetailPage = () => {
 					</div>
 				</div>
 
-				<form className={styles.form} onSubmit={handleSubmit}>
+				<form className={styles.form}>
 					{sections[currentStep] && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
@@ -1028,7 +1028,7 @@ export const FormDetailPage = () => {
 							上一頁
 						</Button>
 						{isLastStep ? (
-							<Button type="submit" disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending} themeColor={primaryThemeColor}>
+							<Button type="button" onClick={handleSubmit} disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending} themeColor={primaryThemeColor}>
 								{responseProgress === "SUBMITTED" ? "已儲存編輯" : "送出"}
 							</Button>
 						) : (
