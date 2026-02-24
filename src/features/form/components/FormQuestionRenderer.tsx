@@ -2,7 +2,7 @@ import * as formApi from "@/features/form/services/api";
 import { AccountButton, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Input, Radio, ScaleInput, Select, TextArea } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { Chrome, Github, RefreshCw, Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./FormDetailPage.module.css";
 
 const isValidUrl = (url: string): boolean => {
@@ -147,6 +147,17 @@ export const FormQuestionRenderer = ({
 	onOtherTextChange,
 	onOauthConnect
 }: FormQuestionRendererProps) => {
+	useEffect(() => {
+		if (question.type !== "RANKING") return;
+		const rankingChoices = question.choices?.length ? question.choices : (sourceQuestion?.choices ?? []);
+		const sourceSelectedIds = sourceAnswerValue ? sourceAnswerValue.split(",").filter(Boolean) : [];
+		const isFromAnswerRanking = Boolean(question.sourceId);
+		const allowedIds = isFromAnswerRanking ? sourceSelectedIds : rankingChoices.map(choice => choice.id);
+		if (allowedIds.length !== 1) return;
+		if (value === allowedIds[0]) return;
+		onAnswerChange(question.id, allowedIds[0]);
+	}, [question, sourceQuestion, sourceAnswerValue, value, onAnswerChange]);
+
 	switch (question.type) {
 		case "SHORT_TEXT":
 			return (
