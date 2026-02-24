@@ -1,6 +1,6 @@
+import { Footer } from "@/shared/components/Footer/Footer";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Footer } from "../shared/components/Footer/Footer";
 import styles from "./AdminLayout.module.css";
 import { AdminNav } from "./AdminNav";
 import { useAuthRefreshInterval } from "./useAuthRefreshInterval";

@@ -1,3 +1,5 @@
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { authService } from "@/features/auth/services/authService";
 import { UserLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -5,8 +7,6 @@ import { Button } from "@/shared/components";
 import { SiGoogle } from "@icons-pack/react-simple-icons";
 import { School } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import { authService } from "../services/authService";
 import styles from "./HomePage.module.css";
 import { WaveMarquee } from "./WaveMarquee";
 

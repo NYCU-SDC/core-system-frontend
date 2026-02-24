@@ -1,7 +1,7 @@
+import type { DetailOption } from "@/features/form/components/AdminFormDetailPages/types/option";
 import { Checkbox, Input, TextArea } from "@/shared/components";
 import { X } from "lucide-react";
 import { useState } from "react";
-import type { DetailOption } from "../../types/option";
 import styles from "./DetailOptionsInput.module.css";
 
 export interface DetailOptionInputProps {

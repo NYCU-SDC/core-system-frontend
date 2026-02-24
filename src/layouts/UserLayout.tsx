@@ -1,5 +1,5 @@
+import { Footer } from "@/shared/components/Footer/Footer";
 import type { ReactNode } from "react";
-import { Footer } from "../shared/components/Footer/Footer";
 import styles from "./UserLayout.module.css";
 import { useAuthRefreshInterval } from "./useAuthRefreshInterval";
 

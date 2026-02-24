@@ -1,8 +1,8 @@
+import type { NodeItem } from "@/features/form/components/AdminFormDetailPages/types/workflow";
 import { Button, Popover, Select } from "@/shared/components";
 import type { FormWorkflowConditionRule, FormsListSectionsResponse } from "@nycu-sdc/core-system-sdk";
 import { FormWorkflowConditionSource } from "@nycu-sdc/core-system-sdk";
 import { useMemo } from "react";
-import type { NodeItem } from "../../types/workflow";
 import { Arrow } from "./Arrow";
 import styles from "./FlowRenderer.module.css";
 

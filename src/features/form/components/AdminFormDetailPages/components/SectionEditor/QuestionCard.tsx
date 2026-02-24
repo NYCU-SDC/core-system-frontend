@@ -1,3 +1,4 @@
+import type { Question } from "@/features/form/components/AdminFormDetailPages/types/option";
 import { Button, Checkbox, Input, Select, Switch, TextArea } from "@/shared/components";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import {
@@ -20,7 +21,6 @@ import {
 	Trash2
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { Question } from "../../types/option";
 import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
 import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";

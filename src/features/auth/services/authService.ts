@@ -1,6 +1,6 @@
+import { assertOk } from "@/shared/utils/apiError";
 import type { UserOnboardingRequest, UserUser } from "@nycu-sdc/core-system-sdk";
 import { authLogout, authRefreshToken, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
-import { assertOk } from "../../../shared/utils/apiError";
 
 export type OAuthProvider = "google" | "nycu";
 

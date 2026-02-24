@@ -1,5 +1,5 @@
+import type { DetailOption } from "@/features/form/components/AdminFormDetailPages/types/option";
 import { Plus } from "lucide-react";
-import type { DetailOption } from "../../types/option";
 import { DetailOptionInput } from "./DetailOptionsInput";
 import styles from "./DetailOptionsQuestion.module.css";
 

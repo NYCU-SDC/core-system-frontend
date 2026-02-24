@@ -1,7 +1,7 @@
+import type { Question } from "@/features/form/components/AdminFormDetailPages/types/option";
 import { InlineSvg, Input } from "@/shared/components";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { Question } from "../../types/option";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./RangeQuestion.module.css";
 

@@ -1,10 +1,10 @@
+import { authService } from "@/features/auth/services/authService";
 import { UserLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "../services/authService";
 import styles from "./LogoutPage.module.css";
 
 export const LogoutPage = () => {

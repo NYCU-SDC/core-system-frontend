@@ -1,4 +1,5 @@
 import { withAuthRefreshRetry } from "@/features/auth/services/authService";
+import { assertOk } from "@/shared/utils/apiError";
 import type { SlugGetSlugHistory200, SlugStatus, UnitOrgMemberRequest, UnitOrganization, UnitUpdateOrgRequest } from "@nycu-sdc/core-system-sdk";
 import {
 	slugGetSlugHistory,
@@ -10,7 +11,6 @@ import {
 	unitRemoveOrgMember,
 	unitUpdateOrg
 } from "@nycu-sdc/core-system-sdk";
-import { assertOk } from "../../../shared/utils/apiError";
 
 const defaultRequestOptions: RequestInit = {
 	credentials: "include"

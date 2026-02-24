@@ -1,7 +1,7 @@
+import type { Option } from "@/features/form/components/AdminFormDetailPages/types/option";
 import { Select, Switch } from "@/shared/components";
 import { X } from "lucide-react";
 import { useState } from "react";
-import type { Option } from "../../types/option";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./OptionsQuestion.module.css";
 
