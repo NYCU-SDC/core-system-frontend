@@ -172,6 +172,7 @@ export const FormDetailPage = () => {
 		});
 
 		const answersArray = Object.entries(answers)
+			.filter(([questionId]) => sections.some(section => section.questions?.some(q => q.id === questionId)))
 			.filter(([questionId, value]) => value !== "" && !["UPLOAD_FILE", "OAUTH_CONNECT"].includes(questionTypeMap[questionId]))
 			.map(([questionId, value]) => {
 				const questionType = questionTypeMap[questionId];
