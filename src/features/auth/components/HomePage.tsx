@@ -5,6 +5,7 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button } from "@/shared/components";
 import { SiGoogle } from "@icons-pack/react-simple-icons";
+import { School } from "lucide-react";
 import { Link } from "react-router-dom";
 import styles from "./HomePage.module.css";
 import { WaveMarquee } from "./WaveMarquee";
@@ -54,11 +55,11 @@ export const HomePage = () => {
 				</>
 			) : (
 				<>
-					{/* <div className={styles.btn}>
+					<div className={styles.btn}>
 						<Button icon={School} themeColor="var(--color-caption)" disabled={isLoading} onClick={handleNycuLogin}>
 							使用 NYCU 帳號登入
 						</Button>
-					</div> */}
+					</div>
 					<div className={styles.btn}>
 						<Button simpleIcon={SiGoogle} themeColor="var(--orange)" disabled={isLoading} onClick={handleGoogleLogin}>
 							使用 Google 帳號登入
