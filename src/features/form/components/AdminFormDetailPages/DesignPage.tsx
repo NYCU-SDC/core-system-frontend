@@ -63,12 +63,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 				{
 					<div>
 						<p className={styles.label}>目前封面圖片</p>
-						<img
-							src={coverImageUrl}
-							alt="Current cover"
-							onError={e => (e.currentTarget.style.display = "none")}
-							style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "0.5rem", objectFit: "cover" }}
-						/>
+						<img src={coverImageUrl} alt="Current cover" onError={e => (e.currentTarget.style.display = "none")} className={styles.coverImage} />
 					</div>
 				}
 				<FileUpload label="封面圖片（格式只支援 Webp）" onChange={handleCoverUpload} />

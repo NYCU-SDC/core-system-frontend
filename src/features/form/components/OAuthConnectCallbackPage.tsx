@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import styles from "./OAuthConnectCallbackPage.module.css";
 
 const buildParamsObject = (searchParams: URLSearchParams) => {
 	const params: Record<string, string> = {};
@@ -29,5 +30,5 @@ export const OAuthConnectCallbackPage = () => {
 		window.close();
 	}, []);
 
-	return <p style={{ padding: "1rem" }}>綁定完成，視窗將自動關閉…</p>;
+	return <p className={styles.message}>綁定完成，視窗將自動關閉…</p>;
 };

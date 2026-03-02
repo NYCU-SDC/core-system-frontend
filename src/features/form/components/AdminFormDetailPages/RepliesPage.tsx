@@ -17,7 +17,7 @@ const ResponseDetailRow = ({ formId, responseId }: ResponseDetailRowProps) => {
 	if (detailQuery.isLoading) {
 		return (
 			<tr>
-				<td colSpan={3} style={{ padding: "0.75rem 1rem" }}>
+				<td colSpan={3} className={styles.stateCell}>
 					<LoadingSpinner />
 				</td>
 			</tr>
@@ -26,7 +26,7 @@ const ResponseDetailRow = ({ formId, responseId }: ResponseDetailRowProps) => {
 	if (detailQuery.isError) {
 		return (
 			<tr>
-				<td colSpan={3} style={{ padding: "0.75rem 1rem" }}>
+				<td colSpan={3} className={styles.stateCell}>
 					<ErrorMessage message={(detailQuery.error as Error)?.message ?? "無法載入回覆詳情"} />
 				</td>
 			</tr>
@@ -39,7 +39,7 @@ const ResponseDetailRow = ({ formId, responseId }: ResponseDetailRowProps) => {
 		<tr>
 			<td colSpan={3} className={styles.detailCell}>
 				{answers.length === 0 ? (
-					<p style={{ margin: 0 }}>此回覆沒有作答記錄。</p>
+					<p className={styles.noMargin}>此回覆沒有作答記錄。</p>
 				) : (
 					<table className={styles.detailInnerTable}>
 						<thead>
@@ -198,7 +198,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<tr>
 										<td>{r.submittedBy}</td>
 										<td>{new Date(r.createdAt).toLocaleString("zh-TW")}</td>
-										<td style={{ display: "flex", gap: "0.5rem" }}>
+										<td className={styles.actionsCell}>
 											<Button variant="secondary" onClick={() => setExpandedId(prev => (prev === r.id ? null : r.id))} title={expandedId === r.id ? "收起" : "查看回覆"}>
 												{expandedId === r.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 											</Button>

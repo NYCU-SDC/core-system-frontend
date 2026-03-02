@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import styles from "./InlineSvg.module.css";
 
 const svgCache = new Map<string, string>();
 
@@ -36,5 +37,5 @@ export const InlineSvg = ({ name, filled, size = 24, className }: InlineSvgProps
 
 	const processed = svg.replace("<svg", `<svg width="${size}" height="${size}" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" class="${className ?? ""}"`);
 
-	return <span dangerouslySetInnerHTML={{ __html: processed }} style={{ display: "inline-flex" }} />;
+	return <span dangerouslySetInnerHTML={{ __html: processed }} className={styles.wrapper} />;
 };

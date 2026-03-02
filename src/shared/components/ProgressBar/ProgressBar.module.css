@@ -8,10 +8,11 @@
 }
 
 .indicator {
-	background-color: var(--orange);
+	background-color: var(--theme-color, var(--orange));
 	width: 100%;
 	height: 100%;
 	transition: transform 0.3s ease;
+	transform: translateX(calc(var(--progress, 0%) - 100%));
 }
 
 .wrapper {

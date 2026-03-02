@@ -49,15 +49,15 @@ export const SettingsPage = () => {
 							<div className={styles.settings}>
 								<div className={styles.settingItem}>
 									<Label htmlFor="displayName">暱稱（name）</Label>
-									<p style={{ fontSize: "0.75rem", color: "var(--color-caption)", margin: "0.1rem 0 0.25rem" }}>4–15 字元，僅限英數字與底線</p>
-									<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+									<p className={styles.fieldHint}>4–15 字元，僅限英數字與底線</p>
+									<div className={styles.inputRow}>
 										<Input id="displayName" value={displayNameValue} onChange={e => setDisplayName(e.target.value)} placeholder={meQuery.isLoading ? "Loading…" : "Enter display name"} />
 									</div>
 								</div>
-								<div className={styles.settingItem} style={{ marginTop: "0.75rem" }}>
+								<div className={`${styles.settingItem} ${styles.fieldSpacer}`}>
 									<Label htmlFor="username">使用者名稱（username）</Label>
-									<p style={{ fontSize: "0.75rem", color: "var(--color-caption)", margin: "0.1rem 0 0.25rem" }}>唯一識別名稱，4–15 字元，僅限英數字與底線</p>
-									<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+									<p className={styles.fieldHint}>唯一識別名稱，4–15 字元，僅限英數字與底線</p>
+									<div className={styles.inputRow}>
 										<Input
 											id="username"
 											value={usernameValue}
@@ -67,12 +67,12 @@ export const SettingsPage = () => {
 										/>
 									</div>
 								</div>
-								<div style={{ marginTop: "0.75rem" }}>
+								<div className={styles.fieldSpacer}>
 									<Button onClick={handleSave} processing={updateOnboardingMutation.isPending} disabled={meQuery.isLoading || !displayNameValue.trim() || !usernameValue.trim()}>
 										儲存
 									</Button>
 								</div>
-								<div className={styles.settingItem} style={{ marginTop: "0.75rem" }}>
+								<div className={`${styles.settingItem} ${styles.fieldSpacer}`}>
 									<div className={styles.settingInfo}>
 										<div className={styles.settingLabel}>Email</div>
 										<div className={styles.settingDescription}>

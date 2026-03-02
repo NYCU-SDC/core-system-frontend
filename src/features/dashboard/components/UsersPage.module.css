@@ -48,3 +48,8 @@
 .table tbody tr:hover {
 	background-color: var(--background-color-tertiary);
 }
+
+.idCell {
+	font-size: 0.75rem;
+	color: var(--color-caption);
+}

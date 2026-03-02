@@ -50,11 +50,11 @@ export const DashboardPage = () => {
 				) : (formsQuery.data?.slice(0, 5) ?? []).length === 0 ? (
 					<p className={styles.cardContent}>尚無表單。</p>
 				) : (
-					<ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+					<ul className={styles.formList}>
 						{formsQuery.data!.slice(0, 5).map(form => (
-							<li key={form.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+							<li key={form.id} className={styles.formItem}>
 								<span>{form.title}</span>
-								<span style={{ fontSize: "0.75rem", color: "var(--color-caption)" }}>{form.status}</span>
+								<span className={styles.formStatus}>{form.status}</span>
 							</li>
 						))}
 					</ul>

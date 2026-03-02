@@ -57,3 +57,19 @@
 	font-size: 0.75rem;
 	color: var(--color-caption);
 }
+
+.fieldHint {
+	font-size: 0.75rem;
+	color: var(--color-caption);
+	margin: 0.1rem 0 0.25rem;
+}
+
+.inputRow {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 0.25rem;
+}
+
+.fieldSpacer {
+	margin-top: 0.75rem;
+}

@@ -64,3 +64,23 @@
 .cardContent {
 	color: var(--color-caption);
 }
+
+.formList {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.formItem {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.formStatus {
+	font-size: 0.75rem;
+	color: var(--color-caption);
+}

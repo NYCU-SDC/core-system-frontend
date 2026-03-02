@@ -19,7 +19,7 @@
 	font-size: 1rem;
 	background-color: var(--background-color-secondary);
 	color: var(--foreground);
-	border: 0.0625rem solid var(--background-color-tertiary);
+	border: 0.0625rem solid var(--theme-color, var(--background-color-tertiary));
 	border-radius: 0.5rem;
 	cursor: pointer;
 	transition: all 0.2s ease;
@@ -61,13 +61,26 @@
 
 .searchInput {
 	width: 100%;
-	padding: 0.5rem 0.75rem;
+	padding: 0.5rem 0.75rem 0.5rem 2.5rem;
 	font-size: 0.875rem;
 	background-color: var(--background-color-tertiary);
 	color: var(--foreground);
 	border: none;
 	border-radius: 0.25rem;
 	outline: none;
+}
+
+.searchInputWrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.searchIcon {
+	position: absolute;
+	left: 0.75rem;
+	color: var(--comment);
+	pointer-events: none;
 }
 
 .searchInput:focus {

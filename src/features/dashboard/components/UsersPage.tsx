@@ -43,7 +43,7 @@ export const UsersPage = () => {
 									<tr key={id}>
 										<td>{name}</td>
 										<td>{email}</td>
-										<td style={{ fontSize: "0.75rem", color: "var(--color-caption)" }}>{id}</td>
+										<td className={styles.idCell}>{id}</td>
 									</tr>
 								);
 							})}

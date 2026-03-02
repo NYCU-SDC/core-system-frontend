@@ -23,3 +23,9 @@
 	align-items: center;
 	margin-block: 1rem;
 }
+
+.column {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}

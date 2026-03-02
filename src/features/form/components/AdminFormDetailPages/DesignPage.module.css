@@ -36,3 +36,10 @@
 .link {
 	color: var(--orange);
 }
+
+.coverImage {
+	max-width: 100%;
+	max-height: 200px;
+	border-radius: 0.5rem;
+	object-fit: cover;
+}

@@ -53,7 +53,7 @@ export const NameMarquee = ({ name, speed = 60 }: NameMarqueeProps) => {
 	return (
 		<div className={styles.overlay}>
 			{Array.from({ length: lineCount }).map((_, i) => (
-				<div key={i} className={styles.row} style={{ animationDuration: `${duration}s` }}>
+				<div key={i} className={styles.row} style={{ "--duration": `${duration}s` } as React.CSSProperties}>
 					{Array.from({ length: 2 }).map((_, k) => (
 						<div key={k} className={styles.track} ref={k === 0 ? trackRef : undefined}>
 							{Array.from({ length: 20 }).map((_, j) => (

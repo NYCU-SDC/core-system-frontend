@@ -145,7 +145,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 						key={color}
 						type="button"
 						className={`${styles.colorCircle} ${value === color ? styles.selected : ""}`}
-						style={{ backgroundColor: color }}
+						style={{ "--color": color } as React.CSSProperties}
 						onClick={() => handleColorSelect(color)}
 						aria-label={`選擇顏色 ${color}`}
 					>
@@ -163,7 +163,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 							<button
 								type="button"
 								className={`${styles.addButton} ${isCustomSelected ? styles.addButtonCustomSelected : ""}`}
-								style={isCustomSelected ? { backgroundColor: value } : undefined}
+								style={isCustomSelected ? ({ "--color": value } as React.CSSProperties) : undefined}
 								onClick={handleOpenDialog}
 								aria-label="新增自訂顏色"
 							>
@@ -196,14 +196,16 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 				>
 					<div className={styles.dialogContent}>
 						{/* Saturation / Brightness picker */}
-						<div ref={svPickerRef} className={styles.svPicker} style={{ background: `linear-gradient(to right, #fff, ${hueColor})` }} onMouseDown={handleSvMouseDown}>
+						<div ref={svPickerRef} className={styles.svPicker} style={{ "--hue-color": hueColor } as React.CSSProperties} onMouseDown={handleSvMouseDown}>
 							<div className={styles.svPickerOverlay} />
 							<div
 								className={styles.svCursor}
-								style={{
-									left: `${saturation}%`,
-									top: `${100 - brightness}%`
-								}}
+								style={
+									{
+										"--cursor-left": `${saturation}%`,
+										"--cursor-top": `${100 - brightness}%`
+									} as React.CSSProperties
+								}
 							/>
 						</div>
 
@@ -212,7 +214,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 
 						{/* Preview + Hex input */}
 						<div className={styles.colorInputRow}>
-							<div className={styles.preview} style={{ backgroundColor: currentHex }} />
+							<div className={styles.preview} style={{ "--preview-color": currentHex } as React.CSSProperties} />
 							<input type="text" className={styles.customInput} placeholder="#000000" value={hexInput} onChange={handleHexInputChange} spellCheck={false} />
 						</div>
 					</div>

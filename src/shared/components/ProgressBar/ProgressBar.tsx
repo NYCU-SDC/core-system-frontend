@@ -22,13 +22,7 @@ export const ProgressBar = ({ value, max = 100, label, showPercentage = true, th
 				</div>
 			)}
 			<Progress.Root className={`${styles.root} ${className || ""}`} value={value} max={max} {...props}>
-				<Progress.Indicator
-					className={styles.indicator}
-					style={{
-						transform: `translateX(-${100 - percentage}%)`,
-						backgroundColor: themeColor || undefined
-					}}
-				/>
+				<Progress.Indicator className={styles.indicator} style={{ "--progress": `${percentage}%`, "--theme-color": themeColor } as React.CSSProperties} />
 			</Progress.Root>
 		</div>
 	);

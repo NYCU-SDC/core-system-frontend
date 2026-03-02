@@ -8,7 +8,7 @@
 
 .row {
 	width: max-content;
-	animation: marquee-infinite linear infinite;
+	animation: marquee-infinite var(--duration, 20s) linear infinite;
 	display: flex;
 	gap: 2rem;
 	padding-left: 1.5rem;
