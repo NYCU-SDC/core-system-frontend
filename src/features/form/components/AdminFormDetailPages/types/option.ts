@@ -40,11 +40,15 @@ export type Question = {
 };
 
 export type Option = {
+	/** Stable identity for React key – use API choice ID or a client-side UUID */
+	id?: string;
 	label: string;
 	isOther?: boolean;
 };
 
 export type DetailOption = {
+	/** Stable identity for React key – use API choice ID or a client-side UUID */
+	id?: string;
 	label: string;
 	description: string;
 };

@@ -61,7 +61,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 							const isLastNonOther = index === props.options.length - 1 - props.options.filter(o => o.isOther).length;
 							return (
 								<OptionRow
-									key={index}
+									key={option.id ?? index}
 									option={option}
 									index={index}
 									type={props.type}

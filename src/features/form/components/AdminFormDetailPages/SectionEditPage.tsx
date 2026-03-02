@@ -7,6 +7,7 @@ import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List
 import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/SectionEditor/QuestionCard";
 import type { Option, Question } from "./types/option";
@@ -91,8 +92,8 @@ export const AdminSectionEditPage = () => {
 				required: q.required ?? false,
 				isFromAnswer: Boolean(q.sourceId),
 				sourceQuestionId: q.sourceId,
-				options: q.choices?.map(c => ({ label: c.name ?? "", isOther: c.isOther ?? false })),
-				detailOptions: q.choices?.map(c => ({ label: c.name ?? "", description: c.description ?? "" })),
+				options: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", isOther: c.isOther ?? false })),
+				detailOptions: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", description: c.description ?? "" })),
 				start: q.scale?.minVal,
 				end: q.scale?.maxVal,
 				startLabel: q.scale?.minValueLabel ?? "",
@@ -295,11 +296,13 @@ export const AdminSectionEditPage = () => {
 
 							if (target.type === "DETAILED_MULTIPLE_CHOICE" && apiQuestion.choices) {
 								target.detailOptions = apiQuestion.choices.map(choice => ({
+									id: choice.id,
 									label: choice.name ?? "",
 									description: choice.description ?? ""
 								}));
 							} else if (apiQuestion.choices) {
 								target.options = apiQuestion.choices.map(choice => ({
+									id: choice.id,
 									label: choice.name ?? "",
 									isOther: choice.isOther ?? false
 								}));
@@ -455,19 +458,19 @@ export const AdminSectionEditPage = () => {
 			icon: <List />,
 			text: "單選選擇題",
 			type: "SINGLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", required: false, options: [{ label: "選項 1" }], isFromAnswer: false })
+			setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", required: false, options: [{ id: uuidv4(), label: "選項 1" }], isFromAnswer: false })
 		},
 		{
 			icon: <SquareCheckBig />,
 			text: "核取方塊",
 			type: "MULTIPLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", required: false, options: [{ label: "選項 1" }], isFromAnswer: false })
+			setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", required: false, options: [{ id: uuidv4(), label: "選項 1" }], isFromAnswer: false })
 		},
 		{
 			icon: <Rows3 />,
 			text: "下拉選單",
 			type: "DROPDOWN",
-			setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", required: false, options: [{ label: "選項 1" }], isFromAnswer: false })
+			setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", required: false, options: [{ id: uuidv4(), label: "選項 1" }], isFromAnswer: false })
 		},
 		{
 			icon: <LayoutList />,
@@ -480,7 +483,7 @@ export const AdminSectionEditPage = () => {
 				required: false,
 				options: [],
 				isFromAnswer: false,
-				detailOptions: [{ label: "選項 1", description: "" }]
+				detailOptions: [{ id: uuidv4(), label: "選項 1", description: "" }]
 			})
 		},
 		{
@@ -514,7 +517,18 @@ export const AdminSectionEditPage = () => {
 			icon: <ListOrdered />,
 			text: "排序",
 			type: "RANKING",
-			setDefaultQuestion: () => ({ type: "RANKING", title: "", description: "", required: false, options: [{ label: "選項 1" }, { label: "選項 2" }, { label: "選項 3" }], isFromAnswer: false })
+			setDefaultQuestion: () => ({
+				type: "RANKING",
+				title: "",
+				description: "",
+				required: false,
+				options: [
+					{ id: uuidv4(), label: "選項 1" },
+					{ id: uuidv4(), label: "選項 2" },
+					{ id: uuidv4(), label: "選項 3" }
+				],
+				isFromAnswer: false
+			})
 		},
 		{
 			icon: <Calendar />,
@@ -601,16 +615,17 @@ export const AdminSectionEditPage = () => {
 			updatedQuestions[questionIndex].options = [];
 		}
 
+		const optionWithId: Option = { id: uuidv4(), ...newOption };
 		const otherOptionIndex = updatedQuestions[questionIndex].options!.findIndex(option => option.isOther);
-		if (newOption.isOther) {
+		if (optionWithId.isOther) {
 			if (otherOptionIndex === -1) {
-				updatedQuestions[questionIndex].options!.push(newOption);
+				updatedQuestions[questionIndex].options!.push(optionWithId);
 			}
 		} else {
 			if (otherOptionIndex !== -1) {
-				updatedQuestions[questionIndex].options!.splice(otherOptionIndex, 0, newOption);
+				updatedQuestions[questionIndex].options!.splice(otherOptionIndex, 0, optionWithId);
 			} else {
-				updatedQuestions[questionIndex].options!.push(newOption);
+				updatedQuestions[questionIndex].options!.push(optionWithId);
 			}
 		}
 
@@ -623,7 +638,7 @@ export const AdminSectionEditPage = () => {
 		if (!updatedQuestions[questionIndex].detailOptions) {
 			updatedQuestions[questionIndex].detailOptions = [];
 		}
-		updatedQuestions[questionIndex].detailOptions!.push(newDetailOption);
+		updatedQuestions[questionIndex].detailOptions!.push({ id: uuidv4(), ...newDetailOption });
 		setQuestions(updatedQuestions);
 		markQuestionDirty(questionIndex);
 	};
