@@ -1,5 +1,5 @@
 import { UserLayout } from "@/layouts";
-import { LoadingSpinner } from "@/shared/components";
+import { ErrorBoundary, LoadingSpinner } from "@/shared/components";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { CrossEntryCurrentRedirect } from "./CrossEntryRedirect";
