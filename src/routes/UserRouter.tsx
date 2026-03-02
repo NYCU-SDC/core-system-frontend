@@ -18,52 +18,54 @@ const OAuthConnectCallbackPage = lazy(() => import("@/features/form/components")
 export const UserRouter = () => {
 	return (
 		<BrowserRouter>
-			<Suspense fallback={<LoadingSpinner />}>
-				<Routes>
-					{/* Public routes */}
-					<Route path="/" element={<HomePage />} />
-					<Route path="/callback" element={<CallbackPage />} />
-					<Route path="/forms/oauth-callback" element={<OAuthConnectCallbackPage />} />
-					<Route path="/welcome" element={<WelcomePage />} />
-					<Route path="/logout" element={<LogoutPage />} />
+			<ErrorBoundary>
+				<Suspense fallback={<LoadingSpinner />}>
+					<Routes>
+						{/* Public routes */}
+						<Route path="/" element={<HomePage />} />
+						<Route path="/callback" element={<CallbackPage />} />
+						<Route path="/forms/oauth-callback" element={<OAuthConnectCallbackPage />} />
+						<Route path="/welcome" element={<WelcomePage />} />
+						<Route path="/logout" element={<LogoutPage />} />
 
-					{/* User form routes */}
-					<Route element={<RequireLogin />}>
-						<Route
-							path="/forms"
-							element={
-								<UserLayout>
-									<FormsListPage />
-								</UserLayout>
-							}
-						/>
-						<Route
-							path="/forms/:formId"
-							element={
-								<UserLayout>
-									<FormEntryPage />
-								</UserLayout>
-							}
-						/>
-						<Route
-							path="/forms/:formId/:responseId"
-							element={
-								<UserLayout disablePadding>
-									<FormDetailPage />
-								</UserLayout>
-							}
-						/>
-					</Route>
+						{/* User form routes */}
+						<Route element={<RequireLogin />}>
+							<Route
+								path="/forms"
+								element={
+									<UserLayout>
+										<FormsListPage />
+									</UserLayout>
+								}
+							/>
+							<Route
+								path="/forms/:formId"
+								element={
+									<UserLayout>
+										<FormEntryPage />
+									</UserLayout>
+								}
+							/>
+							<Route
+								path="/forms/:formId/:responseId"
+								element={
+									<UserLayout disablePadding>
+										<FormDetailPage />
+									</UserLayout>
+								}
+							/>
+						</Route>
 
-					{/* Cross-entry: force a hard navigation so the server can serve admin.html */}
-					<Route path="/demo" element={<CrossEntryCurrentRedirect />} />
-					<Route path="/orgs" element={<CrossEntryCurrentRedirect />} />
-					<Route path="/orgs/*" element={<CrossEntryCurrentRedirect />} />
+						{/* Cross-entry: force a hard navigation so the server can serve admin.html */}
+						<Route path="/demo" element={<CrossEntryCurrentRedirect />} />
+						<Route path="/orgs" element={<CrossEntryCurrentRedirect />} />
+						<Route path="/orgs/*" element={<CrossEntryCurrentRedirect />} />
 
-					{/* 404 */}
-					<Route path="*" element={<NotFoundPage />} />
-				</Routes>
-			</Suspense>
+						{/* 404 */}
+						<Route path="*" element={<NotFoundPage />} />
+					</Routes>
+				</Suspense>
+			</ErrorBoundary>
 		</BrowserRouter>
 	);
 };
