@@ -2,7 +2,7 @@ import { useActiveOrgSlug, useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgM
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, ErrorMessage, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, Dialog, ErrorMessage, Input, Label, LoadingSpinner, useToast } from "@/shared/components";
 import { LogOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./AdminSettingsPage.module.css";
@@ -56,6 +56,7 @@ export const AdminSettingsPage = () => {
 
 	const [orgNameDraft, setOrgNameDraft] = useState<string | null>(null);
 	const [email, setEmail] = useState("");
+	const [kickTarget, setKickTarget] = useState<MemberRow | null>(null);
 
 	const orgNameValue = orgNameDraft ?? orgQuery.data?.name ?? "";
 
@@ -112,13 +113,19 @@ export const AdminSettingsPage = () => {
 		);
 	};
 
-	const handleKickMember = (memberId: string) => {
-		if (confirm("Are you sure you want to remove this member?")) {
-			removeMemberMutation.mutate(memberId, {
-				onSuccess: () => pushToast({ title: "已移除成員", variant: "success" }),
-				onError: e => pushToast({ title: "移除失敗", description: (e as Error).message, variant: "error" })
-			});
-		}
+	const handleKickMember = (member: MemberRow) => {
+		setKickTarget(member);
+	};
+
+	const handleConfirmKick = () => {
+		if (!kickTarget) return;
+		removeMemberMutation.mutate(kickTarget.id, {
+			onSuccess: () => {
+				pushToast({ title: "已移除成員", variant: "success" });
+				setKickTarget(null);
+			},
+			onError: e => pushToast({ title: "移除失敗", description: (e as Error).message, variant: "error" })
+		});
 	};
 	return (
 		<AdminLayout>
@@ -167,13 +174,33 @@ export const AdminSettingsPage = () => {
 								</div>
 								<div className={styles.memberActions}>
 									{/* <span className={styles.memberRole}>{member.roleLabel}</span> */}
-									<Button themeColor="var(--purple)" icon={LogOut} onClick={() => handleKickMember(member.id)} disabled={removeMemberMutation.isPending}></Button>
+									<Button themeColor="var(--purple)" icon={LogOut} onClick={() => handleKickMember(member)} disabled={removeMemberMutation.isPending}></Button>
 								</div>
 							</div>
 						))
 					)}
 				</div>
 			</div>
+			<Dialog
+				open={kickTarget !== null}
+				onOpenChange={open => {
+					if (!open) setKickTarget(null);
+				}}
+				title="移除成員"
+				description={kickTarget ? `確定要移除 ${kickTarget.name}（${kickTarget.email}）嗎？` : ""}
+				footer={
+					<>
+						<Button onClick={() => setKickTarget(null)} disabled={removeMemberMutation.isPending}>
+							取消
+						</Button>
+						<Button themeColor="var(--purple)" onClick={handleConfirmKick} processing={removeMemberMutation.isPending}>
+							確認移除
+						</Button>
+					</>
+				}
+			>
+				<span />
+			</Dialog>
 		</AdminLayout>
 	);
 };
