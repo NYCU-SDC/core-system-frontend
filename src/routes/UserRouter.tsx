@@ -1,62 +1,69 @@
-import { CallbackPage } from "@/features/auth/components/CallbackPage";
-import { HomePage } from "@/features/auth/components/HomePage";
-import { LogoutPage } from "@/features/auth/components/LogoutPage";
-import { NotFoundPage } from "@/features/auth/components/NotFoundPage";
-import { WelcomePage } from "@/features/auth/components/WelcomePage";
-import { FormDetailPage, FormEntryPage, FormsListPage, OAuthConnectCallbackPage } from "@/features/form/components";
-// ⚠️ 這裡先沿用你現有的 import；下一步我會教你怎麼避免 barrel 拉到 admin
 import { UserLayout } from "@/layouts";
+import { LoadingSpinner } from "@/shared/components";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { CrossEntryCurrentRedirect } from "./CrossEntryRedirect";
 import RequireLogin from "./RequireLogin";
 
+const CallbackPage = lazy(() => import("@/features/auth/components/CallbackPage").then(m => ({ default: m.CallbackPage })));
+const HomePage = lazy(() => import("@/features/auth/components/HomePage").then(m => ({ default: m.HomePage })));
+const LogoutPage = lazy(() => import("@/features/auth/components/LogoutPage").then(m => ({ default: m.LogoutPage })));
+const NotFoundPage = lazy(() => import("@/features/auth/components/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
+const WelcomePage = lazy(() => import("@/features/auth/components/WelcomePage").then(m => ({ default: m.WelcomePage })));
+const FormDetailPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormDetailPage })));
+const FormEntryPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormEntryPage })));
+const FormsListPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormsListPage })));
+const OAuthConnectCallbackPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.OAuthConnectCallbackPage })));
+
 export const UserRouter = () => {
 	return (
 		<BrowserRouter>
-			<Routes>
-				{/* Public routes */}
-				<Route path="/" element={<HomePage />} />
-				<Route path="/callback" element={<CallbackPage />} />
-				<Route path="/forms/oauth-callback" element={<OAuthConnectCallbackPage />} />
-				<Route path="/welcome" element={<WelcomePage />} />
-				<Route path="/logout" element={<LogoutPage />} />
+			<Suspense fallback={<LoadingSpinner />}>
+				<Routes>
+					{/* Public routes */}
+					<Route path="/" element={<HomePage />} />
+					<Route path="/callback" element={<CallbackPage />} />
+					<Route path="/forms/oauth-callback" element={<OAuthConnectCallbackPage />} />
+					<Route path="/welcome" element={<WelcomePage />} />
+					<Route path="/logout" element={<LogoutPage />} />
 
-				{/* User form routes（把 SmartLayout 換成 UserLayout，避免把 Admin 牽進來） */}
-				<Route element={<RequireLogin />}>
-					<Route
-						path="/forms"
-						element={
-							<UserLayout>
-								<FormsListPage />
-							</UserLayout>
-						}
-					/>
-					<Route
-						path="/forms/:formId"
-						element={
-							<UserLayout>
-								<FormEntryPage />
-							</UserLayout>
-						}
-					/>
-					<Route
-						path="/forms/:formId/:responseId"
-						element={
-							<UserLayout disablePadding>
-								<FormDetailPage />
-							</UserLayout>
-						}
-					/>
-				</Route>
+					{/* User form routes */}
+					<Route element={<RequireLogin />}>
+						<Route
+							path="/forms"
+							element={
+								<UserLayout>
+									<FormsListPage />
+								</UserLayout>
+							}
+						/>
+						<Route
+							path="/forms/:formId"
+							element={
+								<UserLayout>
+									<FormEntryPage />
+								</UserLayout>
+							}
+						/>
+						<Route
+							path="/forms/:formId/:responseId"
+							element={
+								<UserLayout disablePadding>
+									<FormDetailPage />
+								</UserLayout>
+							}
+						/>
+					</Route>
 
-				{/* Cross-entry: force a hard navigation so the server can serve admin.html */}
-				<Route path="/demo" element={<CrossEntryCurrentRedirect />} />
-				<Route path="/orgs" element={<CrossEntryCurrentRedirect />} />
-				<Route path="/orgs/*" element={<CrossEntryCurrentRedirect />} />
+					{/* Cross-entry: force a hard navigation so the server can serve admin.html */}
+					<Route path="/demo" element={<CrossEntryCurrentRedirect />} />
+					<Route path="/orgs" element={<CrossEntryCurrentRedirect />} />
+					<Route path="/orgs/*" element={<CrossEntryCurrentRedirect />} />
 
-				{/* 404 */}
-				<Route path="*" element={<NotFoundPage />} />
-			</Routes>
+					{/* 404 */}
+					<Route path="*" element={<NotFoundPage />} />
+				</Routes>
+			</Suspense>
 		</BrowserRouter>
 	);
 };
