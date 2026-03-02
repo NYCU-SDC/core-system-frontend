@@ -52,16 +52,14 @@ export const FlowRenderer = ({
 		);
 	}, [nodes]);
 
-	const renderedIds = new Set<string>();
-
-	const renderNode = (id: string, stopId: string | null = null): React.ReactNode => {
+	const renderNode = (id: string, stopId: string | null = null, seen: Set<string> = new Set()): React.ReactNode => {
 		const node = nodeMap[id];
 
-		if (!node || renderedIds.has(id) || (stopId && id === stopId)) {
+		if (!node || seen.has(id) || (stopId && id === stopId)) {
 			return null;
 		}
 
-		renderedIds.add(id);
+		seen.add(id);
 
 		return (
 			<div className={styles.conditionWrapper}>
@@ -86,20 +84,20 @@ export const FlowRenderer = ({
 						<div className={styles.branchContainer}>
 							<div className={styles.branchColumn}>
 								<Arrow type="fail" className={`${styles.arrow} ${styles.falseArrow}`} line={node.type !== "CONDITION" ? "dashed" : "solid"} />
-								{node.nextFalse && renderNode(node.nextFalse, node.mergeId)}
+								{node.nextFalse && renderNode(node.nextFalse, node.mergeId, seen)}
 							</div>
 							<div className={styles.branchColumn}>
 								<Arrow type="success" className={styles.arrow} line={node.type !== "CONDITION" ? "dashed" : "solid"} />
-								{node.nextTrue && renderNode(node.nextTrue, node.mergeId)}
+								{node.nextTrue && renderNode(node.nextTrue, node.mergeId, seen)}
 							</div>
 						</div>
-						{node.mergeId && renderNode(node.mergeId, stopId)}
+						{node.mergeId && renderNode(node.mergeId, stopId, seen)}
 					</>
 				)}
 				{node.next && (
 					<>
 						<Arrow className={styles.arrow} />
-						{node.next !== stopId && renderNode(node.next, stopId)}
+						{node.next !== stopId && renderNode(node.next, stopId, seen)}
 					</>
 				)}
 			</div>
