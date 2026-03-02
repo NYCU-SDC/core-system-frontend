@@ -1,5 +1,5 @@
 import * as api from "@/features/dashboard/services/api";
-import { orgKeys } from "@/shared/queryKeys/org";
+import { orgKeys, slugKeys } from "@/shared/queryKeys/org";
 import type { SlugGetSlugHistory200, SlugStatus, UnitOrganization, UnitOrgMemberRequest, UnitOrgMemberResponse, UnitUpdateOrgRequest } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -8,7 +8,7 @@ import { useParams } from "react-router-dom";
 
 export const useMyOrgs = () =>
 	useQuery<UnitOrganization[]>({
-		queryKey: ["orgs", "me"],
+		queryKey: orgKeys.myOrgs,
 		queryFn: () => api.listMyOrgs(),
 		staleTime: 1000 * 60 * 5
 	});
@@ -28,14 +28,14 @@ export const useOrg = (slug: string) =>
 
 export const useSlugStatus = (slug: string, enabled = true) =>
 	useQuery<SlugStatus>({
-		queryKey: ["slug", slug, "status"],
+		queryKey: slugKeys.status(slug),
 		queryFn: () => api.getSlugStatus(slug),
 		enabled: enabled && !!slug
 	});
 
 export const useSlugHistory = (slug: string, enabled = true) =>
 	useQuery<SlugGetSlugHistory200>({
-		queryKey: ["slug", slug, "history"],
+		queryKey: slugKeys.history(slug),
 		queryFn: () => api.getSlugHistory(slug),
 		enabled: enabled && !!slug
 	});

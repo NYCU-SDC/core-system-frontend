@@ -101,7 +101,7 @@ export const useFormFonts = () =>
 
 export const useGoogleSheetEmail = () =>
 	useQuery<FormsGoogleSheetEmailResponse>({
-		queryKey: ["forms", "google-sheet-email"],
+		queryKey: formKeys.googleSheetEmail,
 		queryFn: () => api.getGoogleSheetEmail(),
 		staleTime: 1000 * 60 * 60 // email rarely changes
 	});

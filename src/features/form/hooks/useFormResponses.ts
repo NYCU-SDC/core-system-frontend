@@ -34,7 +34,7 @@ export const useDeleteFormResponse = (formId: string) => {
 
 export const useGetQuestionResponse = (responseId: string | undefined, questionId: string | undefined, enabled = true) =>
 	useQuery<ResponsesGetQuestionResponse>({
-		queryKey: ["response", responseId ?? "", "question", questionId ?? ""],
+		queryKey: formKeys.questionResponse(responseId ?? "", questionId ?? ""),
 		queryFn: () => api.getQuestionResponse(responseId!, questionId!),
 		enabled: enabled && !!responseId && !!questionId
 	});
@@ -49,7 +49,7 @@ export const useSubmitFormResponse = (formId: string) => {
 	return useMutation<void, Error, { responseId: string; answers: ResponsesAnswersRequest }>({
 		mutationFn: ({ responseId, answers }) => api.submitFormResponse(responseId, answers),
 		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["forms", "me"] });
+			qc.invalidateQueries({ queryKey: formKeys.myForms });
 			qc.invalidateQueries({ queryKey: formKeys.responses(formId) });
 		}
 	});
