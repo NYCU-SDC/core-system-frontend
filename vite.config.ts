@@ -26,7 +26,6 @@ const mpaFallback: Plugin = {
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "VITE_");
-	console.log("Loaded environment variables:", env);
 	return {
 		build: {
 			chunkSizeWarningLimit: 1000,
