@@ -2,22 +2,15 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
-import type { FormsAllowedFileTypes, FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
+import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/SectionEditor/QuestionCard";
-import type { Option, Question } from "./types/option";
-
-type NewQuestion = {
-	icon: React.ReactNode;
-	text: string;
-	type: Question["type"];
-	setDefaultQuestion: () => Question;
-};
+import { QUESTION_FEATURES, QUESTION_STRATEGIES } from "./components/SectionEditor/QuestionConfig";
+import type { Option, Question } from "./types/question";
 
 export const AdminSectionEditPage = () => {
 	const { formid, sectionId } = useParams<{ formid: string; sectionId: string }>();
@@ -36,6 +29,7 @@ export const AdminSectionEditPage = () => {
 	const workflowQuery = useWorkflow(formid);
 	const updateWorkflowMutation = useUpdateWorkflow(formid!);
 
+	// States
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
 	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
@@ -48,7 +42,9 @@ export const AdminSectionEditPage = () => {
 	const autosaveTimerRef = useRef<number | null>(null);
 	const isFlushingDirtyQuestionsRef = useRef(false);
 	const [dirtyQuestionVersion, setDirtyQuestionVersion] = useState(0);
+	const [newlyAddedIndex, setNewlyAddedIndex] = useState<number | null>(null);
 
+	// Callbacks
 	const setQuestionIdsAndRef = useCallback((nextQuestionIds: (string | undefined)[]) => {
 		questionIdsRef.current = nextQuestionIds;
 		setQuestionIds(nextQuestionIds);
@@ -81,59 +77,6 @@ export const AdminSectionEditPage = () => {
 		},
 		[markQuestionsDirty]
 	);
-
-	// Sync from API on first load
-	useEffect(() => {
-		if (apiQuestions.length > 0 && questions.length === 0) {
-			const mapped: Question[] = apiQuestions.map(q => ({
-				type: q.type as Question["type"],
-				title: q.title,
-				description: q.description ?? "",
-				required: q.required ?? false,
-				isFromAnswer: Boolean(q.sourceId),
-				sourceQuestionId: q.sourceId,
-				options: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", isOther: c.isOther ?? false })),
-				detailOptions: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", description: c.description ?? "" })),
-				start: q.scale?.minVal,
-				end: q.scale?.maxVal,
-				startLabel: q.scale?.minValueLabel ?? "",
-				endLabel: q.scale?.maxValueLabel ?? "",
-				icon: q.scale?.icon as Question["icon"],
-				uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
-				uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
-				uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
-				dateHasYear: q.date?.hasYear ?? true,
-				dateHasMonth: q.date?.hasMonth ?? true,
-				dateHasDay: q.date?.hasDay ?? true,
-				dateHasMinDate: Boolean(q.date?.minDate),
-				dateHasMaxDate: Boolean(q.date?.maxDate),
-				dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
-				dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				url: (q as any).url ?? "",
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				oauthProvider: (q as any).oauthConnect as Question["oauthProvider"] | undefined
-			}));
-			setQuestions(mapped);
-			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [apiQuestions.length]);
-
-	useEffect(() => {
-		questionsRef.current = questions;
-	}, [questions]);
-
-	useEffect(() => {
-		questionIdsRef.current = questionIds;
-	}, [questionIds]);
-
-	useEffect(() => {
-		setSectionTitleDraft(section?.title ?? "");
-		setSectionDescriptionDraft(section?.description ?? "");
-		setSavedSectionTitle(section?.title ?? "");
-		setSavedSectionDescription(section?.description ?? "");
-	}, [section?.id, section?.title, section?.description]);
 
 	const saveSectionIfChanged = useCallback(
 		(nextSectionTitle: string, nextSectionDescription: string) => {
@@ -173,81 +116,6 @@ export const AdminSectionEditPage = () => {
 		if (!sectionId) return;
 		saveSectionIfChanged(sectionTitleDraft, sectionDescriptionDraft);
 	}, [sectionId, saveSectionIfChanged, sectionTitleDraft, sectionDescriptionDraft]);
-
-	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
-		const normalizeDateToUtc = (dateInput: string, endOfDay = false) => {
-			if (!dateInput) return undefined;
-			const suffix = endOfDay ? "T23:59:59Z" : "T00:00:00Z";
-			return `${dateInput}${suffix}`;
-		};
-
-		const base: FormsQuestionRequest = {
-			type: q.type as FormsQuestionRequest["type"],
-			title: q.title,
-			description: q.description ? (marked.parse(q.description) as string) : q.description,
-			required: q.required ?? false,
-			order
-		};
-		if (q.options && q.type !== "DETAILED_MULTIPLE_CHOICE") {
-			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
-		}
-		if (q.type === "DETAILED_MULTIPLE_CHOICE" && q.detailOptions) {
-			base.choices = q.detailOptions.map(o => ({ name: o.label, description: o.description ? (marked.parse(o.description) as string) : o.description }));
-		}
-		if (q.start !== undefined) {
-			base.scale = {
-				minVal: q.start,
-				maxVal: q.end ?? 5,
-				icon: q.icon
-			};
-			if (q.startLabel !== undefined) base.scale.minValueLabel = q.startLabel;
-			if (q.endLabel !== undefined) base.scale.maxValueLabel = q.endLabel;
-		}
-		if (q.type === "UPLOAD_FILE") {
-			base.uploadFile = {
-				allowedFileTypes: (q.uploadAllowedFileTypes?.length ? q.uploadAllowedFileTypes : ["PDF"]) as FormsAllowedFileTypes[],
-				maxFileAmount: q.uploadMaxFileAmount ?? 1,
-				maxFileSizeLimit: q.uploadMaxFileSizeLimit ?? 10485760
-			};
-		}
-		if (q.type === "DATE") {
-			base.date = {
-				hasYear: q.dateHasYear ?? true,
-				hasMonth: q.dateHasMonth ?? true,
-				hasDay: q.dateHasDay ?? true,
-				...(q.dateHasMinDate ? { minDate: normalizeDateToUtc(q.dateMinDate ?? "") } : {}),
-				...(q.dateHasMaxDate ? { maxDate: normalizeDateToUtc(q.dateMaxDate ?? "", true) } : {})
-			};
-		}
-		// HYPERLINK url field
-		if (q.type === "HYPERLINK" && q.url !== undefined) {
-			(base as unknown as Record<string, unknown>).url = q.url;
-		}
-		// OAUTH_CONNECT provider field
-		if (q.type === "OAUTH_CONNECT") {
-			base.oauthConnect = (q.oauthProvider ?? "GITHUB") as FormsQuestionRequest["oauthConnect"];
-		}
-		if (q.isFromAnswer && q.sourceQuestionId) {
-			base.sourceId = q.sourceQuestionId;
-			delete base.choices;
-		}
-		return base;
-	};
-
-	const sourceQuestionOptions = useMemo(
-		() =>
-			(sectionsQuery.data ?? [])
-				.flatMap(sectionRes => sectionRes.sections ?? [])
-				.flatMap(sectionItem =>
-					(sectionItem.questions ?? [])
-						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
-						.map(question => ({
-							value: question.id,
-							label: `${sectionItem.title} / ${question.title}`
-						}))
-				),
-		[sectionsQuery.data]
-	);
 
 	const flushDirtyQuestions = useCallback(async () => {
 		if (!formid || !sectionId) return;
@@ -333,77 +201,59 @@ export const AdminSectionEditPage = () => {
 		}
 	}, [formid, sectionId, updateQuestion, createQuestion, pushToast, setQuestionIdsAndRef]);
 
-	const handleQuestionTypeChange = (index: number, nextType: Question["type"]) => {
-		const updatedQuestions = [...questions];
-		const prev = updatedQuestions[index];
-		if (!prev || prev.type === nextType) return;
-
-		const template = newQuestionOptions.find(option => option.type === nextType)?.setDefaultQuestion();
-		if (!template) return;
-
-		const nextQuestion: Question = {
-			...template,
-			title: prev.title,
-			description: prev.description,
-			required: prev.required,
-			isFromAnswer: prev.isFromAnswer
-		};
-
-		const choicesTypeSet: Question["type"][] = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "RANKING"];
-		const scaleTypeSet: Question["type"][] = ["LINEAR_SCALE", "RATING"];
-
-		if (choicesTypeSet.includes(nextType)) {
-			nextQuestion.options = prev.options ? [...prev.options] : nextQuestion.options;
+	// Effects
+	// Sync from API on first load
+	useEffect(() => {
+		if (apiQuestions.length > 0 && questions.length === 0) {
+			const mapped: Question[] = apiQuestions.map(q => ({
+				type: q.type as Question["type"],
+				title: q.title,
+				description: q.description ?? "",
+				required: q.required ?? false,
+				isFromAnswer: Boolean(q.sourceId),
+				sourceQuestionId: q.sourceId,
+				options: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", isOther: c.isOther ?? false })),
+				detailOptions: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", description: c.description ?? "" })),
+				start: q.scale?.minVal,
+				end: q.scale?.maxVal,
+				startLabel: q.scale?.minValueLabel ?? "",
+				endLabel: q.scale?.maxValueLabel ?? "",
+				icon: q.scale?.icon as Question["icon"],
+				uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
+				uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
+				uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
+				dateHasYear: q.date?.hasYear ?? true,
+				dateHasMonth: q.date?.hasMonth ?? true,
+				dateHasDay: q.date?.hasDay ?? true,
+				dateHasMinDate: Boolean(q.date?.minDate),
+				dateHasMaxDate: Boolean(q.date?.maxDate),
+				dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
+				dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				url: (q as any).url ?? "",
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				oauthProvider: (q as any).oauthConnect as Question["oauthProvider"] | undefined
+			}));
+			setQuestions(mapped);
+			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [apiQuestions.length]);
 
-		if (nextType === "DETAILED_MULTIPLE_CHOICE") {
-			nextQuestion.detailOptions = prev.detailOptions ? [...prev.detailOptions] : (prev.options ?? []).map(option => ({ label: option.label, description: "" }));
-		}
+	useEffect(() => {
+		questionsRef.current = questions;
+	}, [questions]);
 
-		if (scaleTypeSet.includes(nextType)) {
-			nextQuestion.start = prev.start ?? nextQuestion.start;
-			nextQuestion.end = prev.end ?? nextQuestion.end;
-			nextQuestion.startLabel = prev.startLabel ?? nextQuestion.startLabel;
-			nextQuestion.endLabel = prev.endLabel ?? nextQuestion.endLabel;
-		}
+	useEffect(() => {
+		questionIdsRef.current = questionIds;
+	}, [questionIds]);
 
-		if (nextType === "RATING") {
-			nextQuestion.icon = prev.icon ?? nextQuestion.icon ?? "star";
-		}
-
-		if (nextType === "UPLOAD_FILE") {
-			nextQuestion.uploadAllowedFileTypes = prev.uploadAllowedFileTypes ?? nextQuestion.uploadAllowedFileTypes ?? ["PDF"];
-			nextQuestion.uploadMaxFileAmount = prev.uploadMaxFileAmount ?? nextQuestion.uploadMaxFileAmount ?? 1;
-			nextQuestion.uploadMaxFileSizeLimit = prev.uploadMaxFileSizeLimit ?? nextQuestion.uploadMaxFileSizeLimit ?? 10485760;
-		}
-
-		if (nextType === "DATE") {
-			nextQuestion.dateHasYear = prev.dateHasYear ?? nextQuestion.dateHasYear ?? true;
-			nextQuestion.dateHasMonth = prev.dateHasMonth ?? nextQuestion.dateHasMonth ?? true;
-			nextQuestion.dateHasDay = prev.dateHasDay ?? nextQuestion.dateHasDay ?? true;
-			nextQuestion.dateHasMinDate = prev.dateHasMinDate ?? nextQuestion.dateHasMinDate ?? false;
-			nextQuestion.dateHasMaxDate = prev.dateHasMaxDate ?? nextQuestion.dateHasMaxDate ?? false;
-			nextQuestion.dateMinDate = prev.dateMinDate ?? nextQuestion.dateMinDate ?? "";
-			nextQuestion.dateMaxDate = prev.dateMaxDate ?? nextQuestion.dateMaxDate ?? "";
-		}
-
-		if (nextType === "HYPERLINK") {
-			nextQuestion.url = prev.url ?? nextQuestion.url ?? "";
-		}
-
-		if (nextType === "OAUTH_CONNECT") {
-			nextQuestion.oauthProvider = prev.oauthProvider ?? nextQuestion.oauthProvider ?? "GITHUB";
-		}
-
-		if (nextType === "RANKING") {
-			nextQuestion.isFromAnswer = prev.isFromAnswer;
-			nextQuestion.sourceQuestionId = prev.sourceQuestionId;
-		}
-
-		updatedQuestions[index] = nextQuestion;
-		setQuestions(updatedQuestions);
-		markQuestionDirty(index);
-	};
+	useEffect(() => {
+		setSectionTitleDraft(section?.title ?? "");
+		setSectionDescriptionDraft(section?.description ?? "");
+		setSavedSectionTitle(section?.title ?? "");
+		setSavedSectionDescription(section?.description ?? "");
+	}, [section?.id, section?.title, section?.description]);
 
 	useEffect(() => {
 		if (dirtyQuestionVersion === 0) return;
@@ -431,6 +281,81 @@ export const AdminSectionEditPage = () => {
 		[flushDirtyQuestions]
 	);
 
+	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
+		const base: FormsQuestionRequest = {
+			type: q.type as FormsQuestionRequest["type"],
+			title: q.title,
+			description: q.description ? (marked.parse(q.description) as string) : q.description,
+			required: q.required ?? false,
+			order
+		};
+
+		if (q.isFromAnswer && q.sourceQuestionId) {
+			base.sourceId = q.sourceQuestionId;
+			delete base.choices;
+		}
+
+		if (QUESTION_STRATEGIES[q.type].features.includes("HAS_OPTIONS") && q.options) {
+			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
+		}
+
+		QUESTION_STRATEGIES[q.type].toApiPayload?.(q, base);
+		return base;
+	};
+
+	const sourceQuestionOptions = useMemo(
+		() =>
+			(sectionsQuery.data ?? [])
+				.flatMap(sectionRes => sectionRes.sections ?? [])
+				.flatMap(sectionItem =>
+					(sectionItem.questions ?? [])
+						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
+						.map(question => ({
+							value: question.id,
+							label: `${sectionItem.title} / ${question.title}`
+						}))
+				),
+		[sectionsQuery.data]
+	);
+
+	const handleQuestionTypeChange = (index: number, nextType: Question["type"]) => {
+		const updatedQuestions = [...questions];
+		const prev = updatedQuestions[index];
+		if (!prev || prev.type === nextType) return;
+
+		const strategy = QUESTION_STRATEGIES[nextType];
+		const next = strategy.initialState();
+
+		const nextQuestion: Question = {
+			type: nextType,
+			title: prev.title,
+			description: prev.description,
+			required: prev.required,
+			isFromAnswer: prev.isFromAnswer,
+			sourceQuestionId: prev.sourceQuestionId,
+			...next
+		};
+
+		strategy.features.forEach(field => {
+			const keepFields = QUESTION_FEATURES[field];
+			keepFields.forEach(keepField => {
+				if (prev[keepField] !== undefined) {
+					(nextQuestion as any)[keepField] = prev[keepField];
+				}
+			});
+		});
+
+		if (nextQuestion.type === "DETAILED_MULTIPLE_CHOICE" && prev.options) {
+			nextQuestion.detailOptions = prev.options.map(o => ({ id: o.id, label: o.label, description: "" }));
+			delete nextQuestion.options;
+		}
+
+		updatedQuestions[index] = nextQuestion;
+
+		setQuestions(updatedQuestions);
+		markQuestionDirty(index);
+	};
+
 	const handleDeleteQuestionWithApi = async (index: number) => {
 		const existingId = questionIds[index];
 		if (existingId) {
@@ -444,131 +369,24 @@ export const AdminSectionEditPage = () => {
 		handleRemoveQuestion(index);
 	};
 
-	const newQuestionOptions: NewQuestion[] = [
-		{
-			icon: <CaseSensitive />,
-			text: "文字簡答",
-			type: "SHORT_TEXT",
-			setDefaultQuestion: () => {
-				return { type: "SHORT_TEXT", title: "", description: "", required: false, isFromAnswer: false };
-			}
-		},
-		{ icon: <TextAlignStart />, text: "文字詳答", type: "LONG_TEXT", setDefaultQuestion: () => ({ type: "LONG_TEXT", title: "", description: "", required: false, isFromAnswer: false }) },
-		{
-			icon: <List />,
-			text: "單選選擇題",
-			type: "SINGLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "SINGLE_CHOICE", title: "", description: "", required: false, options: [{ id: uuidv4(), label: "選項 1" }], isFromAnswer: false })
-		},
-		{
-			icon: <SquareCheckBig />,
-			text: "核取方塊",
-			type: "MULTIPLE_CHOICE",
-			setDefaultQuestion: () => ({ type: "MULTIPLE_CHOICE", title: "", description: "", required: false, options: [{ id: uuidv4(), label: "選項 1" }], isFromAnswer: false })
-		},
-		{
-			icon: <Rows3 />,
-			text: "下拉選單",
-			type: "DROPDOWN",
-			setDefaultQuestion: () => ({ type: "DROPDOWN", title: "", description: "", required: false, options: [{ id: uuidv4(), label: "選項 1" }], isFromAnswer: false })
-		},
-		{
-			icon: <LayoutList />,
-			text: "詳細核取方塊",
-			type: "DETAILED_MULTIPLE_CHOICE",
-			setDefaultQuestion: () => ({
-				type: "DETAILED_MULTIPLE_CHOICE",
-				title: "",
-				description: "",
-				required: false,
-				options: [],
-				isFromAnswer: false,
-				detailOptions: [{ id: uuidv4(), label: "選項 1", description: "" }]
-			})
-		},
-		{
-			icon: <CloudUpload />,
-			text: "檔案上傳",
-			type: "UPLOAD_FILE",
-			setDefaultQuestion: () => ({
-				type: "UPLOAD_FILE",
-				title: "",
-				description: "",
-				required: false,
-				isFromAnswer: false,
-				uploadAllowedFileTypes: ["PDF"],
-				uploadMaxFileAmount: 1,
-				uploadMaxFileSizeLimit: 10485760
-			})
-		},
-		{
-			icon: <Ellipsis />,
-			text: "線性刻度",
-			type: "LINEAR_SCALE",
-			setDefaultQuestion: () => ({ type: "LINEAR_SCALE", title: "", description: "", required: false, isFromAnswer: false, start: 1, end: 5, startLabel: "", endLabel: "" })
-		},
-		{
-			icon: <Star />,
-			text: "評分",
-			type: "RATING",
-			setDefaultQuestion: () => ({ type: "RATING", title: "", description: "", required: false, isFromAnswer: false, start: 1, end: 5, startLabel: "", endLabel: "", icon: "star" })
-		},
-		{
-			icon: <ListOrdered />,
-			text: "排序",
-			type: "RANKING",
-			setDefaultQuestion: () => ({
-				type: "RANKING",
-				title: "",
-				description: "",
-				required: false,
-				options: [
-					{ id: uuidv4(), label: "選項 1" },
-					{ id: uuidv4(), label: "選項 2" },
-					{ id: uuidv4(), label: "選項 3" }
-				],
-				isFromAnswer: false
-			})
-		},
-		{
-			icon: <Calendar />,
-			text: "日期選擇",
-			type: "DATE",
-			setDefaultQuestion: () => ({
-				type: "DATE",
-				title: "",
-				description: "",
-				required: false,
-				isFromAnswer: false,
-				dateHasYear: true,
-				dateHasMonth: true,
-				dateHasDay: true,
-				dateHasMinDate: false,
-				dateHasMaxDate: false,
-				dateMinDate: "",
-				dateMaxDate: ""
-			})
-		},
-		{ icon: <Link2 />, text: "超連結", type: "HYPERLINK", setDefaultQuestion: () => ({ type: "HYPERLINK", title: "", description: "", required: false, url: "", isFromAnswer: false }) },
-		{
-			icon: <ShieldCheck />,
-			text: "OAuth 驗證",
-			type: "OAUTH_CONNECT",
-			setDefaultQuestion: () => ({ type: "OAUTH_CONNECT", title: "", description: "", required: false, isFromAnswer: false, oauthProvider: "GITHUB" as const })
-		}
-	];
-
 	const handleBack = () => {
 		navigate(`/orgs/${orgSlug}/forms/${formid}/edit`);
 	};
 
-	const [newlyAddedIndex, setNewlyAddedIndex] = useState<number | null>(null);
-
-	const handleAddQuestion = (setQuestion: () => Question) => {
+	const handleAddQuestion = (type: Question["type"]) => {
 		const newIndex = questions.length;
-		const q = setQuestion();
-		q.title = `問題${newIndex + 1}`;
-		const updatedQuestions = [...questions, q];
+		const strategy = QUESTION_STRATEGIES[type];
+
+		const newQuestion: Question = {
+			type,
+			title: "問題標題",
+			description: "",
+			required: false,
+			isFromAnswer: false,
+			...strategy.initialState()
+		};
+
+		const updatedQuestions = [...questions, newQuestion];
 		setQuestions(updatedQuestions);
 		setNewlyAddedIndex(newIndex);
 		markQuestionDirty(newIndex);
@@ -893,8 +711,8 @@ export const AdminSectionEditPage = () => {
 				<div className={styles.sidebarContainer}>
 					<div className={styles.sidebar}>
 						<p>新增</p>
-						{newQuestionOptions.map((option, index) => (
-							<button key={index} className={styles.newQuestion} onClick={() => handleAddQuestion(option.setDefaultQuestion)}>
+						{Object.values(QUESTION_STRATEGIES).map((option, index) => (
+							<button key={index} className={styles.newQuestion} onClick={() => handleAddQuestion(option.type)}>
 								{option.icon}
 								{option.text}
 							</button>
