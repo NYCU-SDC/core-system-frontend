@@ -47,11 +47,15 @@ export const FormDetailPage = () => {
 	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
+
+	// State
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
 	const [connectingOauthQuestionId, setConnectingOauthQuestionId] = useState<string | null>(null);
+
+	// Ref
 	const oauthPopupWatchTimerRef = useRef<number | null>(null);
 	const answersInitialized = useRef(false);
 
@@ -81,16 +85,6 @@ export const FormDetailPage = () => {
 		return data?.progress ?? "DRAFT";
 	}, [responseQuery.data]);
 
-	useEffect(() => {
-		[formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]
-			.filter((fontId): fontId is string => Boolean(fontId))
-			.forEach(ensureEmfontStylesheet);
-	}, [formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]);
-
-	useEffect(() => {
-		updateResponseMutateAsyncRef.current = updateResponseMutation.mutateAsync;
-	}, [updateResponseMutation.mutateAsync]);
-
 	const sections: Section[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
 		const loaded: Section[] = sectionsQuery.data.flatMap(item => {
@@ -113,49 +107,13 @@ export const FormDetailPage = () => {
 		});
 		return withPreview;
 	}, [sectionsQuery.data, workflowQuery.data, answers, formId]);
+
 	const questionsById = useMemo(() => {
 		return new Map(sections.flatMap(section => section.questions ?? []).map(question => [question.id, question]));
 	}, [sections]);
 
-	// Sync pre-filled answers from the existing response (once on first load)
-	useEffect(() => {
-		if (answersInitialized.current) return;
-		const data = responseQuery.data as unknown as FormResponseData | undefined;
-		if (!data?.sections) return;
-		const loaded: Record<string, string> = {};
-		const loadedOtherTexts: Record<string, string> = {};
-		data.sections.forEach(section => {
-			section.answerDetails?.forEach(detail => {
-				if (!detail.question.id) return;
-				const answerPayload = detail.payload?.answer;
-				if (answerPayload && Array.isArray((answerPayload as ResponsesStringArrayAnswer).value)) {
-					const arrayAnswer = answerPayload as ResponsesStringArrayAnswer;
-					loaded[detail.question.id] = arrayAnswer.value.join(",");
-					if (arrayAnswer.otherText) {
-						loadedOtherTexts[detail.question.id] = arrayAnswer.otherText;
-					}
-					return;
-				}
-				if (detail.payload?.displayValue) {
-					loaded[detail.question.id] = detail.payload.displayValue;
-				}
-			});
-		});
-		setAnswers(loaded);
-		setOtherTexts(loadedOtherTexts);
-		answersInitialized.current = true;
-	}, [responseQuery.data]);
-
 	// Refresh response data when navigating to the preview step
 	const isOnPreviewStep = sections.length > 0 && currentStep === sections.length - 1 && sections[currentStep]?.id === "preview";
-
-	useEffect(() => {
-		if (isOnPreviewStep && urlResponseId) {
-			responseQuery.refetch();
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isOnPreviewStep]);
-
 	const previewData: ResponsesResponseSections[] | null = useMemo(() => {
 		if (!isOnPreviewStep) return null;
 		const data = responseQuery.data as unknown as FormResponseData | undefined;
@@ -200,6 +158,53 @@ export const FormDetailPage = () => {
 		} satisfies ResponsesAnswersRequestUpdate;
 	}, [answers, otherTexts, sections]);
 
+	// Effects
+	useEffect(() => {
+		[formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]
+			.filter((fontId): fontId is string => Boolean(fontId))
+			.forEach(ensureEmfontStylesheet);
+	}, [formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]);
+
+	useEffect(() => {
+		updateResponseMutateAsyncRef.current = updateResponseMutation.mutateAsync;
+	}, [updateResponseMutation.mutateAsync]);
+
+	// Sync pre-filled answers from the existing response (once on first load)
+	useEffect(() => {
+		if (answersInitialized.current) return;
+		const data = responseQuery.data as unknown as FormResponseData | undefined;
+		if (!data?.sections) return;
+		const loaded: Record<string, string> = {};
+		const loadedOtherTexts: Record<string, string> = {};
+		data.sections.forEach(section => {
+			section.answerDetails?.forEach(detail => {
+				if (!detail.question.id) return;
+				const answerPayload = detail.payload?.answer;
+				if (answerPayload && Array.isArray((answerPayload as ResponsesStringArrayAnswer).value)) {
+					const arrayAnswer = answerPayload as ResponsesStringArrayAnswer;
+					loaded[detail.question.id] = arrayAnswer.value.join(",");
+					if (arrayAnswer.otherText) {
+						loadedOtherTexts[detail.question.id] = arrayAnswer.otherText;
+					}
+					return;
+				}
+				if (detail.payload?.displayValue) {
+					loaded[detail.question.id] = detail.payload.displayValue;
+				}
+			});
+		});
+		setAnswers(loaded);
+		setOtherTexts(loadedOtherTexts);
+		answersInitialized.current = true;
+	}, [responseQuery.data]);
+
+	useEffect(() => {
+		if (isOnPreviewStep && urlResponseId) {
+			responseQuery.refetch();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOnPreviewStep]);
+
 	useEffect(() => {
 		if (!urlResponseId || !autoSavePayload) return;
 
@@ -224,6 +229,78 @@ export const FormDetailPage = () => {
 		return () => clearTimeout(timer);
 	}, [urlResponseId, autoSavePayload, pushToast]);
 
+	// Clamp currentStep to the valid range whenever sections data changes
+	useEffect(() => {
+		if (sections.length > 0 && currentStep >= sections.length) {
+			setCurrentStep(sections.length - 1);
+		}
+	}, [sections.length, currentStep]);
+
+	useEffect(() => {
+		const handleMessage = async (event: MessageEvent) => {
+			if (event.origin !== window.location.origin) return;
+
+			const payload = event.data as {
+				type?: string;
+				questionId?: string;
+				responseId?: string;
+				params?: Record<string, string>;
+			};
+
+			if (payload?.type !== "FORM_OAUTH_CONNECTED" || !payload.questionId) return;
+			if (payload.responseId !== urlResponseId) return;
+			if (oauthPopupWatchTimerRef.current) {
+				window.clearInterval(oauthPopupWatchTimerRef.current);
+				oauthPopupWatchTimerRef.current = null;
+			}
+
+			setConnectingOauthQuestionId(prev => (prev === payload.questionId ? null : prev));
+
+			if (payload.params?.error) {
+				pushToast({ title: "綁定失敗", description: payload.params.error, variant: "error" });
+				return;
+			}
+
+			try {
+				const questionResponse = await formApi.getQuestionResponse(urlResponseId!, payload.questionId);
+				const answerPayload = questionResponse.answer;
+				const answerValue = answerPayload.answer as { value?: { username?: string } };
+				const oauthUsername = answerValue?.value?.username ?? "";
+				const displayValue = answerPayload.displayValue ?? "";
+				const finalValue = oauthUsername || displayValue;
+
+				if (finalValue) {
+					setAnswers(prev => ({
+						...prev,
+						[payload.questionId!]: finalValue
+					}));
+					pushToast({ title: "綁定成功", description: `已綁定帳號：${finalValue}`, variant: "success" });
+				} else {
+					pushToast({ title: "綁定完成", description: "已完成授權，但尚未取得帳號資訊", variant: "warning" });
+				}
+			} catch (error) {
+				pushToast({ title: "讀取綁定結果失敗", description: (error as Error).message, variant: "error" });
+			}
+		};
+
+		window.addEventListener("message", handleMessage);
+		return () => {
+			if (oauthPopupWatchTimerRef.current) {
+				window.clearInterval(oauthPopupWatchTimerRef.current);
+				oauthPopupWatchTimerRef.current = null;
+			}
+			window.removeEventListener("message", handleMessage);
+		};
+	}, [urlResponseId, pushToast]);
+
+	// Colors and fonts from form dressing, applied as CSS variables for easy theming in child components
+	const themedContainerStyle = {
+		["--form-theme-color" as string]: primaryThemeColor,
+		["--form-header-font" as string]: form?.dressing?.headerFont || undefined,
+		["--form-question-font" as string]: form?.dressing?.questionFont || undefined,
+		["--form-text-font" as string]: form?.dressing?.textFont || undefined
+	} as CSSProperties;
+
 	// ── Loading / Error ──────────────────────────────────────────────────────
 	const isLoading = formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading;
 	const error: string | null = formQuery.error
@@ -237,13 +314,6 @@ export const FormDetailPage = () => {
 	const isLastStep = sections.length === 0 || currentStep === sections.length - 1;
 	const isFirstStep = currentStep === 0;
 	const currentSection = sections[currentStep];
-
-	// Clamp currentStep to the valid range whenever sections data changes
-	useEffect(() => {
-		if (sections.length > 0 && currentStep >= sections.length) {
-			setCurrentStep(sections.length - 1);
-		}
-	}, [sections.length, currentStep]);
 
 	const scrollToTop = () => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
@@ -338,63 +408,6 @@ export const FormDetailPage = () => {
 		}, 500);
 		popup.focus();
 	};
-
-	useEffect(() => {
-		const handleMessage = async (event: MessageEvent) => {
-			if (event.origin !== window.location.origin) return;
-
-			const payload = event.data as {
-				type?: string;
-				questionId?: string;
-				responseId?: string;
-				params?: Record<string, string>;
-			};
-
-			if (payload?.type !== "FORM_OAUTH_CONNECTED" || !payload.questionId) return;
-			if (payload.responseId !== urlResponseId) return;
-			if (oauthPopupWatchTimerRef.current) {
-				window.clearInterval(oauthPopupWatchTimerRef.current);
-				oauthPopupWatchTimerRef.current = null;
-			}
-
-			setConnectingOauthQuestionId(prev => (prev === payload.questionId ? null : prev));
-
-			if (payload.params?.error) {
-				pushToast({ title: "綁定失敗", description: payload.params.error, variant: "error" });
-				return;
-			}
-
-			try {
-				const questionResponse = await formApi.getQuestionResponse(urlResponseId!, payload.questionId);
-				const answerPayload = questionResponse.answer;
-				const answerValue = answerPayload.answer as { value?: { username?: string } };
-				const oauthUsername = answerValue?.value?.username ?? "";
-				const displayValue = answerPayload.displayValue ?? "";
-				const finalValue = oauthUsername || displayValue;
-
-				if (finalValue) {
-					setAnswers(prev => ({
-						...prev,
-						[payload.questionId!]: finalValue
-					}));
-					pushToast({ title: "綁定成功", description: `已綁定帳號：${finalValue}`, variant: "success" });
-				} else {
-					pushToast({ title: "綁定完成", description: "已完成授權，但尚未取得帳號資訊", variant: "warning" });
-				}
-			} catch (error) {
-				pushToast({ title: "讀取綁定結果失敗", description: (error as Error).message, variant: "error" });
-			}
-		};
-
-		window.addEventListener("message", handleMessage);
-		return () => {
-			if (oauthPopupWatchTimerRef.current) {
-				window.clearInterval(oauthPopupWatchTimerRef.current);
-				oauthPopupWatchTimerRef.current = null;
-			}
-			window.removeEventListener("message", handleMessage);
-		};
-	}, [urlResponseId, pushToast]);
 
 	const renderPreviewSection = () => {
 		if (!previewData || previewData.length === 0) {
@@ -564,13 +577,6 @@ export const FormDetailPage = () => {
 			</>
 		);
 	}
-
-	const themedContainerStyle = {
-		["--form-theme-color" as string]: primaryThemeColor,
-		["--form-header-font" as string]: form?.dressing?.headerFont || undefined,
-		["--form-question-font" as string]: form?.dressing?.questionFont || undefined,
-		["--form-text-font" as string]: form?.dressing?.textFont || undefined
-	} as CSSProperties;
 
 	return (
 		<>
