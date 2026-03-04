@@ -1,4 +1,4 @@
-import type { Question } from "@/features/form/components/AdminFormDetailPages/types/option";
+import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { Button, Checkbox, Input, Select, Switch, TextArea } from "@/shared/components";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import {

@@ -1,4 +1,4 @@
-import type { Question } from "@/features/form/components/AdminFormDetailPages/types/option";
+import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { InlineSvg, Input } from "@/shared/components";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

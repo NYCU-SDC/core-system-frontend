@@ -1,4 +1,4 @@
-import type { Option } from "@/features/form/components/AdminFormDetailPages/types/option";
+import type { Option } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { Select, Switch } from "@/shared/components";
 import { X } from "lucide-react";
 import { useState } from "react";
@@ -24,13 +24,12 @@ interface OptionRowProps {
 	option: Option;
 	index: number;
 	type: "radio" | "checkbox" | "list";
-	isAutoFocus: boolean;
 	canRemove: boolean;
 	onCommit: (index: number, value: string) => void;
 	onRemove: (index: number) => void;
 }
 
-const OptionRow = ({ option, index, type, isAutoFocus, canRemove, onCommit, onRemove }: OptionRowProps) => {
+const OptionRow = ({ option, index, type, canRemove, onCommit, onRemove }: OptionRowProps) => {
 	const [localLabel, setLocalLabel] = useState(option.label);
 	return (
 		<div className={styles.optionWrapper}>
@@ -41,7 +40,6 @@ const OptionRow = ({ option, index, type, isAutoFocus, canRemove, onCommit, onRe
 				variant="flushed"
 				listLabel={`${index + 1}.`}
 				className={styles.optionInput}
-				autoFocus={isAutoFocus}
 				onFocus={e => e.target.select()}
 				onChange={e => setLocalLabel(e.target.value)}
 				onBlur={() => onCommit(index, localLabel)}
@@ -58,19 +56,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 				<>
 					{props.options.map((option, index) => {
 						if (!option.isOther) {
-							const isLastNonOther = index === props.options.length - 1 - props.options.filter(o => o.isOther).length;
-							return (
-								<OptionRow
-									key={option.id ?? index}
-									option={option}
-									index={index}
-									type={props.type}
-									isAutoFocus={isLastNonOther}
-									canRemove={props.options.length > 1}
-									onCommit={props.onChange}
-									onRemove={props.onRemove}
-								/>
-							);
+							return <OptionRow key={option.id ?? index} option={option} index={index} type={props.type} canRemove={props.options.length > 1} onCommit={props.onChange} onRemove={props.onRemove} />;
 						}
 						if (option.isOther) {
 							return (
