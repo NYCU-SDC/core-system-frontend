@@ -7,7 +7,7 @@ import type {
 	FormsQuestionResponse,
 	FormsSection,
 	FormsSectionRequest,
-	ResponsesAnswersRequestUpdate,
+	ResponsesAnswersRequest,
 	ResponsesDateAnswer,
 	ResponsesScaleAnswer,
 	ResponsesStringAnswer,
@@ -65,7 +65,7 @@ export const useUpdateSection = (formId: string, sectionId: string) => {
 	});
 };
 
-export const buildAnswersPayload = (sections: FormsSection[], answers: Record<string, string>, otherTexts: Record<string, string>): ResponsesAnswersRequestUpdate | null => {
+export const buildAnswersPayload = (sections: FormsSection[], answers: Record<string, string>, otherTexts: Record<string, string>): ResponsesAnswersRequest | null => {
 	const questionTypeMap: Record<string, string> = {};
 	sections.forEach(section => {
 		section.questions?.forEach(question => {
@@ -99,5 +99,5 @@ export const buildAnswersPayload = (sections: FormsSection[], answers: Record<st
 	if (answersArray.length === 0) return null;
 	return {
 		answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[]
-	} satisfies ResponsesAnswersRequestUpdate;
+	} satisfies ResponsesAnswersRequest;
 };

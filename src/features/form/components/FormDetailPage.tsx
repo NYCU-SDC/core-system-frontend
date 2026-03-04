@@ -12,10 +12,7 @@ import {
 	ResponsesSectionProgress,
 	type FormsQuestionResponse,
 	type FormsSection,
-	type ResponsesDateAnswer,
 	type ResponsesResponseSections,
-	type ResponsesScaleAnswer,
-	type ResponsesStringAnswer,
 	type ResponsesStringArrayAnswer
 } from "@nycu-sdc/core-system-sdk";
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
@@ -458,7 +455,7 @@ export const FormDetailPage = () => {
 			submitResponseMutation.mutate(
 				{
 					responseId: urlResponseId,
-					answers: { answers: payload as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[] }
+					answers: payload
 				},
 				{
 					onSuccess: () => setIsSubmitted(true),
