@@ -294,9 +294,7 @@ export const AdminSectionEditPage = () => {
 		if (q.isFromAnswer && q.sourceQuestionId) {
 			base.sourceId = q.sourceQuestionId;
 			delete base.choices;
-		}
-
-		if (QUESTION_STRATEGIES[q.type].features.includes("HAS_OPTIONS") && q.options) {
+		} else if (QUESTION_STRATEGIES[q.type].features.includes("HAS_OPTIONS") && q.options) {
 			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
 		}
 
