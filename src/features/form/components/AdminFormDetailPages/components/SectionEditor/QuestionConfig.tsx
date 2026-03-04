@@ -101,14 +101,14 @@ export const QUESTION_STRATEGIES: Record<Question["type"], QuestionTemplate> = {
 		type: "UPLOAD_FILE",
 		features: ["HAS_UPLOAD"],
 		initialState: () => ({
-			uploadAllowedFileTypes: ["image/png", "image/jpeg"],
+			uploadAllowedFileTypes: [FormsAllowedFileTypes.PNG, FormsAllowedFileTypes.JPEG],
 			uploadMaxFileAmount: 5,
 			uploadMaxFileSizeLimit: 10485760
 		}),
 		toApiPayload: (question, base) => {
 			if (question.uploadAllowedFileTypes) {
 				base.uploadFile = {
-					allowedFileTypes: (question.uploadAllowedFileTypes?.length ? question.uploadAllowedFileTypes : ["PDF"]) as FormsAllowedFileTypes[],
+					allowedFileTypes: (question.uploadAllowedFileTypes?.length ? question.uploadAllowedFileTypes : [FormsAllowedFileTypes.PDF]) as FormsAllowedFileTypes[],
 					maxFileAmount: question.uploadMaxFileAmount ?? 1,
 					maxFileSizeLimit: question.uploadMaxFileSizeLimit ?? 10485760
 				};
