@@ -1,6 +1,18 @@
 import * as api from "@/features/form/services/api";
 import { formKeys } from "@/shared/queryKeys/org";
-import type { FormsFont, FormsListSectionsResponse, FormsQuestionRequest, FormsQuestionResponse, FormsSection, FormsSectionRequest } from "@nycu-sdc/core-system-sdk";
+import type {
+	FormsFont,
+	FormsListSectionsResponse,
+	FormsQuestionRequest,
+	FormsQuestionResponse,
+	FormsSection,
+	FormsSectionRequest,
+	ResponsesAnswersRequestUpdate,
+	ResponsesDateAnswer,
+	ResponsesScaleAnswer,
+	ResponsesStringAnswer,
+	ResponsesStringArrayAnswer
+} from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useSections = (formId: string | undefined, enabled = true) =>
@@ -51,4 +63,41 @@ export const useUpdateSection = (formId: string, sectionId: string) => {
 		mutationFn: req => api.updateSection(formId, sectionId, req),
 		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.sections(formId) })
 	});
+};
+
+export const buildAnswersPayload = (sections: FormsSection[], answers: Record<string, string>, otherTexts: Record<string, string>): ResponsesAnswersRequestUpdate | null => {
+	const questionTypeMap: Record<string, string> = {};
+	sections.forEach(section => {
+		section.questions?.forEach(question => {
+			questionTypeMap[question.id] = question.type;
+		});
+	});
+
+	const answersArray = Object.entries(answers)
+		.filter(([questionId]) => sections.some(section => section.questions?.some(q => q.id === questionId)))
+		.filter(([questionId, value]) => value !== "" && !["UPLOAD_FILE", "OAUTH_CONNECT"].includes(questionTypeMap[questionId]))
+		.map(([questionId, value]) => {
+			const questionType = questionTypeMap[questionId];
+			const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
+			const dateTypes = ["DATE"];
+			const scaleTypes = ["LINEAR_SCALE", "RATING"];
+
+			if (dateTypes.includes(questionType)) {
+				return { questionId, questionType: "DATE" as const, value } as ResponsesDateAnswer;
+			}
+			if (scaleTypes.includes(questionType)) {
+				return { questionId, questionType: questionType as ResponsesScaleAnswer["questionType"], value: parseInt(value, 10) } as ResponsesScaleAnswer;
+			}
+			if (stringArrayTypes.includes(questionType)) {
+				const valueArray = value.includes(",") ? value.split(",") : [value];
+				const otherText = otherTexts[questionId]?.trim();
+				return { questionId, questionType: questionType as ResponsesStringArrayAnswer["questionType"], value: valueArray, ...(otherText ? { otherText } : {}) } as ResponsesStringArrayAnswer;
+			}
+			return { questionId, questionType: questionType as ResponsesStringAnswer["questionType"], value } as ResponsesStringAnswer;
+		});
+
+	if (answersArray.length === 0) return null;
+	return {
+		answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[]
+	} satisfies ResponsesAnswersRequestUpdate;
 };

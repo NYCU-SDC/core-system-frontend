@@ -1,6 +1,6 @@
 import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
-import { useSections } from "@/features/form/hooks/useSections";
+import { buildAnswersPayload, useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
 import * as formApi from "@/features/form/services/api";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
@@ -12,7 +12,6 @@ import {
 	ResponsesSectionProgress,
 	type FormsQuestionResponse,
 	type FormsSection,
-	type ResponsesAnswersRequestUpdate,
 	type ResponsesDateAnswer,
 	type ResponsesResponseSections,
 	type ResponsesScaleAnswer,
@@ -58,6 +57,8 @@ export const FormDetailPage = () => {
 	// Ref
 	const oauthPopupWatchTimerRef = useRef<number | null>(null);
 	const answersInitialized = useRef(false);
+	const lastAutoSavePayloadRef = useRef<string>("");
+	const lastFailedAutoSavePayloadRef = useRef<string>("");
 
 	// ── React Query ──────────────────────────────────────────────────────────
 	const formQuery = useFormQuery(formId);
@@ -72,13 +73,29 @@ export const FormDetailPage = () => {
 	const updateResponseMutation = useUpdateFormResponse(urlResponseId ?? "");
 	const submitResponseMutation = useSubmitFormResponse(formId ?? "");
 	const updateResponseMutateAsyncRef = useRef(updateResponseMutation.mutateAsync);
-	const lastAutoSavePayloadRef = useRef<string>("");
-	const lastFailedAutoSavePayloadRef = useRef<string>("");
 	const coverImageUrl = formId ? `/api/forms/${formId}/cover` : null;
 
 	// ── Derived state ────────────────────────────────────────────────────────
 	const form = formQuery.data ?? null;
 	const primaryThemeColor = form?.dressing?.color ?? "var(--orange)";
+
+	// Colors and fonts from form dressing, applied as CSS variables for easy theming in child components
+	const themedContainerStyle = {
+		["--form-theme-color" as string]: primaryThemeColor,
+		["--form-header-font" as string]: form?.dressing?.headerFont || undefined,
+		["--form-question-font" as string]: form?.dressing?.questionFont || undefined,
+		["--form-text-font" as string]: form?.dressing?.textFont || undefined
+	} as CSSProperties;
+
+	// ── Loading / Error ──────────────────────────────────────────────────────
+	const isLoading = formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading;
+	const error: string | null = formQuery.error
+		? (formQuery.error as Error).message
+		: sectionsQuery.error
+			? (sectionsQuery.error as Error).message
+			: workflowQuery.error
+				? (workflowQuery.error as Error).message
+				: null;
 
 	const responseProgress: ResponsesResponseProgress = useMemo(() => {
 		const data = responseQuery.data as unknown as FormResponseData | undefined;
@@ -112,8 +129,12 @@ export const FormDetailPage = () => {
 		return new Map(sections.flatMap(section => section.questions ?? []).map(question => [question.id, question]));
 	}, [sections]);
 
-	// Refresh response data when navigating to the preview step
+	// Whether the form is currently being filled out (as opposed to just previewing)
 	const isOnPreviewStep = sections.length > 0 && currentStep === sections.length - 1 && sections[currentStep]?.id === "preview";
+	const isLastStep = sections.length === 0 || currentStep === sections.length - 1;
+	const isFirstStep = currentStep === 0;
+	const currentSection = sections[currentStep];
+
 	const previewData: ResponsesResponseSections[] | null = useMemo(() => {
 		if (!isOnPreviewStep) return null;
 		const data = responseQuery.data as unknown as FormResponseData | undefined;
@@ -122,40 +143,7 @@ export const FormDetailPage = () => {
 
 	// ── Auto-save (debounced 1 s) ────────────────────────────────────────────
 	const autoSavePayload = useMemo(() => {
-		const questionTypeMap: Record<string, string> = {};
-		sections.forEach(section => {
-			section.questions?.forEach(question => {
-				questionTypeMap[question.id] = question.type;
-			});
-		});
-
-		const answersArray = Object.entries(answers)
-			.filter(([questionId]) => sections.some(section => section.questions?.some(q => q.id === questionId)))
-			.filter(([questionId, value]) => value !== "" && !["UPLOAD_FILE", "OAUTH_CONNECT"].includes(questionTypeMap[questionId]))
-			.map(([questionId, value]) => {
-				const questionType = questionTypeMap[questionId];
-				const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
-				const dateTypes = ["DATE"];
-				const scaleTypes = ["LINEAR_SCALE", "RATING"];
-
-				if (dateTypes.includes(questionType)) {
-					return { questionId, questionType: "DATE" as const, value } as ResponsesDateAnswer;
-				}
-				if (scaleTypes.includes(questionType)) {
-					return { questionId, questionType: questionType as ResponsesScaleAnswer["questionType"], value: parseInt(value, 10) } as ResponsesScaleAnswer;
-				}
-				if (stringArrayTypes.includes(questionType)) {
-					const valueArray = value.includes(",") ? value.split(",") : [value];
-					const otherText = otherTexts[questionId]?.trim();
-					return { questionId, questionType: questionType as ResponsesStringArrayAnswer["questionType"], value: valueArray, ...(otherText ? { otherText } : {}) } as ResponsesStringArrayAnswer;
-				}
-				return { questionId, questionType: questionType as ResponsesStringAnswer["questionType"], value } as ResponsesStringAnswer;
-			});
-
-		if (answersArray.length === 0) return null;
-		return {
-			answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[]
-		} satisfies ResponsesAnswersRequestUpdate;
+		return buildAnswersPayload(sections, answers, otherTexts);
 	}, [answers, otherTexts, sections]);
 
 	// Effects
@@ -292,28 +280,6 @@ export const FormDetailPage = () => {
 			window.removeEventListener("message", handleMessage);
 		};
 	}, [urlResponseId, pushToast]);
-
-	// Colors and fonts from form dressing, applied as CSS variables for easy theming in child components
-	const themedContainerStyle = {
-		["--form-theme-color" as string]: primaryThemeColor,
-		["--form-header-font" as string]: form?.dressing?.headerFont || undefined,
-		["--form-question-font" as string]: form?.dressing?.questionFont || undefined,
-		["--form-text-font" as string]: form?.dressing?.textFont || undefined
-	} as CSSProperties;
-
-	// ── Loading / Error ──────────────────────────────────────────────────────
-	const isLoading = formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading;
-	const error: string | null = formQuery.error
-		? (formQuery.error as Error).message
-		: sectionsQuery.error
-			? (sectionsQuery.error as Error).message
-			: workflowQuery.error
-				? (workflowQuery.error as Error).message
-				: null;
-
-	const isLastStep = sections.length === 0 || currentStep === sections.length - 1;
-	const isFirstStep = currentStep === 0;
-	const currentSection = sections[currentStep];
 
 	const scrollToTop = () => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
@@ -482,39 +448,17 @@ export const FormDetailPage = () => {
 
 		try {
 			// Build answers payload (same logic as saveAnswers)
-			const questionTypeMap: Record<string, string> = {};
-			sections.forEach(section => {
-				section.questions?.forEach(question => {
-					questionTypeMap[question.id] = question.type;
-				});
-			});
+			const payload = buildAnswersPayload(sections, answers, otherTexts);
 
-			const answersArray = Object.entries(answers)
-				.filter(([questionId]) => sections.some(section => section.questions?.some(q => q.id === questionId)))
-				.filter(([questionId, value]) => value !== "" && !["UPLOAD_FILE", "OAUTH_CONNECT"].includes(questionTypeMap[questionId]))
-				.map(([questionId, value]) => {
-					const questionType = questionTypeMap[questionId];
-					const stringArrayTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"];
-					const dateTypes = ["DATE"];
-					const scaleTypes = ["LINEAR_SCALE", "RATING"];
-
-					if (dateTypes.includes(questionType)) {
-						return { questionId, questionType: "DATE" as const, value } as ResponsesDateAnswer;
-					} else if (scaleTypes.includes(questionType)) {
-						return { questionId, questionType: questionType as ResponsesScaleAnswer["questionType"], value: parseInt(value, 10) } as ResponsesScaleAnswer;
-					} else if (stringArrayTypes.includes(questionType)) {
-						const valueArray = value.includes(",") ? value.split(",") : [value];
-						const otherText = otherTexts[questionId]?.trim();
-						return { questionId, questionType: questionType as ResponsesStringArrayAnswer["questionType"], value: valueArray, ...(otherText ? { otherText } : {}) } as ResponsesStringArrayAnswer;
-					} else {
-						return { questionId, questionType: questionType as ResponsesStringAnswer["questionType"], value } as ResponsesStringAnswer;
-					}
-				});
+			if (!payload) {
+				pushToast({ title: "提交失敗", description: "無法取得填答資料，請稍後再試一次", variant: "error" });
+				return;
+			}
 
 			submitResponseMutation.mutate(
 				{
 					responseId: urlResponseId,
-					answers: { answers: answersArray as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[] }
+					answers: { answers: payload as (ResponsesStringAnswer | ResponsesStringArrayAnswer | ResponsesScaleAnswer | ResponsesDateAnswer)[] }
 				},
 				{
 					onSuccess: () => setIsSubmitted(true),
