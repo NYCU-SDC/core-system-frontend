@@ -1,31 +1,9 @@
-import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
+import type { Question, QuestionTemplate } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { NormalizeDateToUtc } from "@/shared/utils/date";
-import { FormsAllowedFileTypes, type FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
+import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
 import { marked } from "marked";
 import { v4 as uuidv4 } from "uuid";
-
-export const QUESTION_FEATURES = {
-	HAS_OPTIONS: ["options", "isFromAnswer", "sourceQuestionId"],
-	HAS_DETAIL_OPTIONS: ["detailOptions"],
-	HAS_SCALE: ["start", "end", "startLabel", "endLabel"],
-	HAS_RATING: ["icon"],
-	HAS_UPLOAD: ["uploadAllowedFileTypes", "uploadMaxFileAmount", "uploadMaxFileSizeLimit"],
-	HAS_DATE: ["dateHasYear", "dateHasMonth", "dateHasDay", "dateHasMinDate", "dateHasMaxDate", "dateMinDate", "dateMaxDate"],
-	HAS_URL: ["url"],
-	HAS_OAUTH: ["oauthProvider"]
-} as const;
-
-export type QuestionFeatureKey = keyof typeof QUESTION_FEATURES;
-
-export type QuestionTemplate = {
-	icon: React.ReactNode;
-	text: string;
-	type: Question["type"];
-	features: QuestionFeatureKey[];
-	initialState: () => Partial<Question>;
-	toApiPayload?: (question: Question, base: FormsQuestionRequest) => void;
-};
 
 export const QUESTION_STRATEGIES: Record<Question["type"], QuestionTemplate> = {
 	SHORT_TEXT: {

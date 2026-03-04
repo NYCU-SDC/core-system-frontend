@@ -9,8 +9,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import styles from "./SectionEditPage.module.css";
 import { QuestionCard } from "./components/SectionEditor/QuestionCard";
-import { QUESTION_FEATURES, QUESTION_STRATEGIES } from "./components/SectionEditor/QuestionConfig";
+import { QUESTION_STRATEGIES } from "./components/SectionEditor/QuestionConfig";
 import type { Option, Question } from "./types/question";
+import { QUESTION_FEATURES } from "./types/question";
 
 export const AdminSectionEditPage = () => {
 	const { formid, sectionId } = useParams<{ formid: string; sectionId: string }>();
@@ -340,6 +341,7 @@ export const AdminSectionEditPage = () => {
 			const keepFields = QUESTION_FEATURES[field];
 			keepFields.forEach(keepField => {
 				if (prev[keepField] !== undefined) {
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 					(nextQuestion as any)[keepField] = prev[keepField];
 				}
 			});

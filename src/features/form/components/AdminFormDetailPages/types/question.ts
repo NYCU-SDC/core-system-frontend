@@ -1,3 +1,5 @@
+import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
+
 export type Question = {
 	type:
 		| "SHORT_TEXT"
@@ -37,6 +39,28 @@ export type Question = {
 	dateMaxDate?: string;
 	url?: string;
 	oauthProvider?: "GOOGLE" | "GITHUB";
+};
+
+export const QUESTION_FEATURES = {
+	HAS_OPTIONS: ["options", "isFromAnswer", "sourceQuestionId"],
+	HAS_DETAIL_OPTIONS: ["detailOptions"],
+	HAS_SCALE: ["start", "end", "startLabel", "endLabel"],
+	HAS_RATING: ["icon"],
+	HAS_UPLOAD: ["uploadAllowedFileTypes", "uploadMaxFileAmount", "uploadMaxFileSizeLimit"],
+	HAS_DATE: ["dateHasYear", "dateHasMonth", "dateHasDay", "dateHasMinDate", "dateHasMaxDate", "dateMinDate", "dateMaxDate"],
+	HAS_URL: ["url"],
+	HAS_OAUTH: ["oauthProvider"]
+} as const;
+
+export type QuestionFeatureKey = keyof typeof QUESTION_FEATURES;
+
+export type QuestionTemplate = {
+	icon: React.ReactNode;
+	text: string;
+	type: Question["type"];
+	features: QuestionFeatureKey[];
+	initialState: () => Partial<Question>;
+	toApiPayload?: (question: Question, base: FormsQuestionRequest) => void;
 };
 
 export type Option = {
