@@ -8,9 +8,9 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import { ResponsesResponseProgress, type FormsQuestionResponse, type FormsSection, type ResponsesResponseSections, type ResponsesStringArrayAnswer } from "@nycu-sdc/core-system-sdk";
-import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
 import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
 import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import styles from "./FormFilloutPage.module.css";
@@ -473,38 +473,14 @@ export const FormFilloutPage = () => {
 			{meta}
 			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 			<div className={styles.container} style={themedContainerStyle}>
-				<div className={styles.header}>
-					<div className={styles.topBar}>
-						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--foreground)">
-							<ChevronLeft size={16} />
-							返回表單列表
-						</Button>
-						{urlResponseId && (
-							<div className={styles.saveStatus} aria-live="polite">
-								{updateResponseMutation.isPending ? (
-									<>
-										<LoaderCircle size={16} className={styles.spinningIcon} />
-										<span>儲存中</span>
-									</>
-								) : updateResponseMutation.isError ? (
-									<>
-										<AlertCircle size={16} />
-										<span>有問題</span>
-									</>
-								) : (
-									<>
-										<Check size={16} />
-										<span>已儲存</span>
-									</>
-								)}
-							</div>
-						)}
-					</div>
-					<h1 className={styles.title}>{form.title}</h1>
-					{currentStep === 0 && form.description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
-					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
-					{currentSection.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
-				</div>
+				<FormHeader
+					title={form.title}
+					formDescription={form.description}
+					currentStep={currentStep}
+					currentSection={currentSection}
+					onBack={() => navigate("/forms")}
+					saveStatus={urlResponseId ? (updateResponseMutation.isPending ? "saving" : updateResponseMutation.isError ? "error" : "saved") : undefined}
+				/>
 
 				<FormStructure sections={sections} currentStep={currentStep} onSectionClick={handleSectionClick} />
 

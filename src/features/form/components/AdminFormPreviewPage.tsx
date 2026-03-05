@@ -7,6 +7,7 @@ import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
+import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
 import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
 import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import formStyles from "./FormFilloutPage.module.css";
@@ -131,12 +132,7 @@ export const AdminFormPreviewPage = () => {
 			<div className={styles.content}>
 				{coverImageUrl && <img src={coverImageUrl} className={formStyles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 				<div className={formStyles.container} style={themedContainerStyle}>
-					<div className={formStyles.header}>
-						<h1 className={formStyles.title}>{form.title}</h1>
-						{safeCurrentStep === 0 && form.description && <div className={formStyles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
-						<h2 className={formStyles.sectionHeader}>{currentSection?.title}</h2>
-						{currentSection?.description && <div className={formStyles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
-					</div>
+					<FormHeader title={form.title} formDescription={form.description} currentStep={safeCurrentStep} currentSection={currentSection} />
 
 					<FormStructure sections={sections} currentStep={safeCurrentStep} onSectionClick={goToStep} />
 
