@@ -1,29 +1,12 @@
 import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { Button, Checkbox, Input, Select, Switch, TextArea } from "@/shared/components";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
-import {
-	Calendar,
-	CaseSensitive,
-	Chrome,
-	CloudUpload,
-	Copy,
-	Ellipsis,
-	Github,
-	LayoutList,
-	Link2,
-	List,
-	ListOrdered,
-	Rows3,
-	ShieldCheck,
-	SquareCheckBig,
-	Star,
-	TextAlignStart,
-	Trash2
-} from "lucide-react";
+import { Chrome, Copy, Github, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DetailOptionsQuestion } from "./DetailOptionsQuestion";
 import { OptionsQuestion } from "./OptionsQuestion";
 import styles from "./QuestionCard.module.css";
+import { QUESTION_STRATEGIES } from "./QuestionConfig";
 import { RangeQuestion } from "./RangeQuestion";
 
 export interface QuestionCardProps {
@@ -64,72 +47,6 @@ export interface QuestionCardProps {
 	onTypeChange?: (nextType: Question["type"]) => void;
 }
 
-type typeInfo = {
-	icon: React.ReactNode;
-	label: string;
-	optionType?: "radio" | "checkbox" | "list";
-};
-
-const typeMap: Record<Question["type"], typeInfo> = {
-	SHORT_TEXT: {
-		icon: <CaseSensitive />,
-		label: "文字簡答"
-	},
-	LONG_TEXT: {
-		icon: <TextAlignStart />,
-		label: "文字詳答"
-	},
-	SINGLE_CHOICE: {
-		icon: <List />,
-		label: "單選選擇題",
-		optionType: "radio"
-	},
-	MULTIPLE_CHOICE: {
-		icon: <SquareCheckBig />,
-		label: "核取方塊",
-		optionType: "checkbox"
-	},
-	DROPDOWN: {
-		icon: <Rows3 />,
-		label: "下拉選單",
-		optionType: "list"
-	},
-	DETAILED_MULTIPLE_CHOICE: {
-		icon: <LayoutList />,
-		label: "詳細核取方塊"
-	},
-	UPLOAD_FILE: {
-		icon: <CloudUpload />,
-		label: "檔案上傳"
-	},
-	LINEAR_SCALE: {
-		icon: <Ellipsis />,
-		label: "線性刻度"
-	},
-	RATING: {
-		icon: <Star />,
-		label: "評分"
-	},
-	RANKING: {
-		icon: <ListOrdered />,
-		label: "排序",
-		optionType: "list"
-	},
-	DATE: {
-		icon: <Calendar />,
-		label: "日期選擇"
-	},
-	HYPERLINK: {
-		icon: <Link2 />,
-		label: "超連結"
-	},
-	OAUTH_CONNECT: {
-		icon: <ShieldCheck />,
-		label: "OAuth 驗證"
-	}
-};
-
-const questionTypes = Object.keys(typeMap) as Question["type"][];
 const uploadFileTypeCategoryMap: Record<string, FormsAllowedFileTypes[]> = {
 	圖片: [
 		FormsAllowedFileTypes.JPG,
@@ -156,6 +73,7 @@ const uploadFileTypeCategoryMap: Record<string, FormsAllowedFileTypes[]> = {
 export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const { question, removeQuestion, duplicateQuestion } = props;
 
+	// State
 	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? false);
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const [isDuplicating, setIsDuplicating] = useState(false);
@@ -170,21 +88,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
-	const runWithIndicator = async (action: () => void | Promise<void>, setPending: (pending: boolean) => void) => {
-		setPending(true);
-		const startedAt = Date.now();
-		try {
-			await Promise.resolve(action());
-		} finally {
-			const elapsedMs = Date.now() - startedAt;
-			const minVisibleMs = 250;
-			if (elapsedMs < minVisibleMs) {
-				await new Promise(resolve => window.setTimeout(resolve, minVisibleMs - elapsedMs));
-			}
-			setPending(false);
-		}
-	};
 
+	// Effect
 	useEffect(() => {
 		setLocalDesc(question.description);
 	}, [question.description]);
@@ -222,6 +127,21 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 		document.addEventListener("mousedown", handleOutsideClick);
 		return () => document.removeEventListener("mousedown", handleOutsideClick);
 	}, [isExpanded, props]);
+
+	const runWithIndicator = async (action: () => void | Promise<void>, setPending: (pending: boolean) => void) => {
+		setPending(true);
+		const startedAt = Date.now();
+		try {
+			await Promise.resolve(action());
+		} finally {
+			const elapsedMs = Date.now() - startedAt;
+			const minVisibleMs = 250;
+			if (elapsedMs < minVisibleMs) {
+				await new Promise(resolve => window.setTimeout(resolve, minVisibleMs - elapsedMs));
+			}
+			setPending(false);
+		}
+	};
 
 	const handleDuplicateClick = () => {
 		if (isDuplicating || isDeleting) return;
@@ -284,31 +204,31 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 						</div>
 						<div className={styles.typeWrapper}>
 							<Button variant="secondary" className={styles.typeButton} onClick={() => setIsTypeMenuOpen(prev => !prev)}>
-								{typeMap[question.type].icon} {typeMap[question.type].label}
+								{QUESTION_STRATEGIES[question.type].icon} {QUESTION_STRATEGIES[question.type].text}
 							</Button>
 							{isTypeMenuOpen && (
 								<div className={styles.typeMenu}>
-									{questionTypes.map(type => (
+									{Object.keys(QUESTION_STRATEGIES).map(type => (
 										<button
 											key={type}
 											type="button"
 											className={styles.typeMenuItem}
 											onClick={() => {
-												props.onTypeChange?.(type);
+												props.onTypeChange?.(type as Question["type"]);
 												setIsTypeMenuOpen(false);
 											}}
 										>
-											{typeMap[type].icon}
-											<span>{typeMap[type].label}</span>
+											{QUESTION_STRATEGIES[type as Question["type"]].icon}
+											<span>{QUESTION_STRATEGIES[type as Question["type"]].text}</span>
 										</button>
 									))}
 								</div>
 							)}
 						</div>
 					</div>
-					{["SINGLE_CHOICE", "MULTIPLE_CHOICE", "RANKING", "DROPDOWN"].some(type => type === question.type) && (
+					{QUESTION_STRATEGIES[question.type].features.includes("HAS_OPTIONS") && (
 						<OptionsQuestion
-							type={typeMap[question.type].optionType || "radio"}
+							type={QUESTION_STRATEGIES[question.type].optionType || "radio"}
 							options={question.options || []}
 							isFromAnswer={question.isFromAnswer}
 							sourceOptions={props.sourceQuestionOptions ?? []}
@@ -533,7 +453,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 				</div>
 			) : (
 				<div className={styles.preview}>
-					{typeMap[question.type].icon}
+					{QUESTION_STRATEGIES[question.type].icon}
 					<p>
 						{props.questionNumber !== undefined ? `Q${props.questionNumber}. ` : ""}
 						{props.question.title || "問題標題"}

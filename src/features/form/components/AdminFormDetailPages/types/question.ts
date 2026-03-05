@@ -41,6 +41,12 @@ export type Question = {
 	oauthProvider?: "GOOGLE" | "GITHUB";
 };
 
+type typeInfo = {
+	icon: React.ReactNode;
+	label: string;
+	optionType?: "radio" | "checkbox" | "list";
+};
+
 export const QUESTION_FEATURES = {
 	HAS_OPTIONS: ["options", "isFromAnswer", "sourceQuestionId"],
 	HAS_DETAIL_OPTIONS: ["detailOptions"],
@@ -58,6 +64,7 @@ export type QuestionTemplate = {
 	icon: React.ReactNode;
 	text: string;
 	type: Question["type"];
+	optionType?: typeInfo["optionType"];
 	features: QuestionFeatureKey[];
 	initialState: () => Partial<Question>;
 	toApiPayload?: (question: Question, base: FormsQuestionRequest) => void;
