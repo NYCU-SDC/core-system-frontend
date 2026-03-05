@@ -34,6 +34,8 @@ export const authService = {
 			params.set("r", options.redirectUrl);
 		}
 
+		params.set("base", window.location.origin);
+
 		window.location.href = `/api/auth/login/oauth/${normalizedProvider}?${params.toString()}`;
 	},
 
