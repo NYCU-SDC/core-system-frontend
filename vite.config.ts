@@ -78,7 +78,7 @@ export default defineConfig(({ mode }) => {
 					changeOrigin: true,
 					secure: false, // HTTPS
 					cookieDomainRewrite: {
-						"dev.core-system.sdc.nycu.club": "localhost"
+						"*": ""
 					}
 				}
 			}
