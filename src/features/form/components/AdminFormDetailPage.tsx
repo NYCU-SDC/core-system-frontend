@@ -64,7 +64,7 @@ export const AdminFormDetailPage = () => {
 		try {
 			await navigator.clipboard.writeText(formUrl);
 			pushToast({ title: "已複製填寫連結", variant: "success" });
-		} catch (error) {
+		} catch {
 			pushToast({ title: "複製失敗", variant: "error" });
 		}
 	};
