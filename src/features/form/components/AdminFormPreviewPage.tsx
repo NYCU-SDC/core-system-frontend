@@ -7,6 +7,7 @@ import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
+import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
 import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import formStyles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
@@ -144,50 +145,7 @@ export const AdminFormPreviewPage = () => {
 							<div className={formStyles.section}>
 								<div className={formStyles.fields}>
 									{isOnPreviewStep ? (
-										<div className={formStyles.previewSection}>
-											{sections
-												.filter(s => s.id !== "preview")
-												.map(section => (
-													<div key={section.id} className={formStyles.previewBlock}>
-														<div className={formStyles.previewHeader}>
-															<h3 className={formStyles.previewSectionTitle}>{section.title}</h3>
-															<Button
-																type="button"
-																variant="secondary"
-																onClick={() => {
-																	const idx = sections.findIndex(s => s.id === section.id);
-																	if (idx >= 0) goToStep(idx);
-																}}
-															>
-																修改
-															</Button>
-														</div>
-														<ul className={formStyles.previewList}>
-															{section.questions?.map((q, qi) => {
-																const raw = answers[q.id] ?? "";
-																const displayValue = raw
-																	? q.choices
-																		? raw
-																				.split(",")
-																				.map(id => q.choices?.find(c => c.id === id)?.name ?? id)
-																				.join("、")
-																		: raw
-																	: "";
-																return (
-																	<li key={qi}>
-																		<span className={formStyles.previewAnswerLabel}>
-																			{q.title}
-																			{q.required && <span className={formStyles.requiredAsterisk}> *</span>}
-																		</span>
-																		<span>：</span>
-																		<span className={!displayValue && q.required ? formStyles.previewAnswerEmpty : ""}>{displayValue || "未填寫"}</span>
-																	</li>
-																);
-															})}
-														</ul>
-													</div>
-												))}
-										</div>
+										<FormPreviewSection mode="local" localSections={sections} localAnswers={answers} sections={sections} onSectionClick={goToStep} />
 									) : (
 										<>
 											{sections[safeCurrentStep].questions?.map(question => (
