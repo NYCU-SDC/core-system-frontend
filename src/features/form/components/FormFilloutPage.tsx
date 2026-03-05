@@ -7,17 +7,11 @@ import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workfl
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
-import {
-	ResponsesResponseProgress,
-	ResponsesSectionProgress,
-	type FormsQuestionResponse,
-	type FormsSection,
-	type ResponsesResponseSections,
-	type ResponsesStringArrayAnswer
-} from "@nycu-sdc/core-system-sdk";
+import { ResponsesResponseProgress, type FormsQuestionResponse, type FormsSection, type ResponsesResponseSections, type ResponsesStringArrayAnswer } from "@nycu-sdc/core-system-sdk";
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
 import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import styles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
@@ -373,52 +367,6 @@ export const FormFilloutPage = () => {
 		popup.focus();
 	};
 
-	const renderPreviewSection = () => {
-		if (!previewData || previewData.length === 0) {
-			return <p className={styles.caption}>尚無填答資料</p>;
-		}
-
-		return (
-			<div className={styles.previewSection}>
-				{previewData
-					.filter(section => section.progress !== ResponsesSectionProgress.SKIPPED)
-					.map(section => (
-						<div key={section.id} className={styles.previewBlock}>
-							<div className={styles.previewHeader}>
-								<h3 className={styles.previewSectionTitle}>{section.title}</h3>
-								<Button
-									type="button"
-									variant="secondary"
-									onClick={() => {
-										const targetIndex = sections.findIndex(s => s.id === section.id);
-										if (targetIndex >= 0) handleSectionClick(targetIndex);
-									}}
-								>
-									修改
-								</Button>
-							</div>
-							<ul className={styles.previewList}>
-								{section.answerDetails?.map((detail, questionIndex: number) => {
-									const isEmpty = !detail.payload?.displayValue;
-									const isRequiredAndEmpty = isEmpty && detail.question.required;
-									return (
-										<li key={questionIndex}>
-											<span className={styles.previewAnswerLabel}>
-												{detail.question.title}
-												{detail.question.required && <span className={styles.requiredAsterisk}> *</span>}
-											</span>
-											<span>：</span>
-											<span className={isRequiredAndEmpty ? styles.previewAnswerEmpty : ""}>{detail.payload?.displayValue || "未填寫"}</span>
-										</li>
-									);
-								}) || []}
-							</ul>
-						</div>
-					))}
-			</div>
-		);
-	};
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -570,7 +518,7 @@ export const FormFilloutPage = () => {
 											<LoadingSpinner />
 										</div>
 									) : (
-										renderPreviewSection()
+										<FormPreviewSection mode="response" previewData={previewData} sections={sections} onSectionClick={handleSectionClick} />
 									)
 								) : (
 									<>
