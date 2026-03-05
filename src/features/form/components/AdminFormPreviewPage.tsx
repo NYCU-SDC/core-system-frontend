@@ -7,7 +7,7 @@ import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
-import formStyles from "./FormDetailPage.module.css";
+import formStyles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
 const ensureEmfontStylesheet = (fontId: string) => {

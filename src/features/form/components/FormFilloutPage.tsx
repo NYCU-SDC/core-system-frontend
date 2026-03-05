@@ -18,7 +18,7 @@ import {
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import styles from "./FormDetailPage.module.css";
+import styles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
 type Section = FormsSection;
@@ -39,7 +39,7 @@ const ensureEmfontStylesheet = (fontId: string) => {
 	document.head.appendChild(link);
 };
 
-export const FormDetailPage = () => {
+export const FormFilloutPage = () => {
 	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
