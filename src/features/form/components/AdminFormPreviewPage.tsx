@@ -7,6 +7,7 @@ import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
+import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import formStyles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
@@ -60,6 +61,7 @@ export const AdminFormPreviewPage = () => {
 	}, [sections]);
 
 	const safeCurrentStep = sections.length > 0 ? Math.min(currentStep, sections.length - 1) : currentStep;
+	const currentSection = sections[safeCurrentStep];
 	const isFirstStep = safeCurrentStep === 0;
 	const isLastStep = sections.length === 0 || safeCurrentStep === sections.length - 1;
 	const isOnPreviewStep = isLastStep && sections[safeCurrentStep]?.id === "preview";
@@ -130,21 +132,12 @@ export const AdminFormPreviewPage = () => {
 				<div className={formStyles.container} style={themedContainerStyle}>
 					<div className={formStyles.header}>
 						<h1 className={formStyles.title}>{form.title}</h1>
-						{safeCurrentStep === 0 ? <p className={formStyles.description}>{form.description}</p> : <h2 className={formStyles.sectionHeader}>{sections[safeCurrentStep]?.title}</h2>}
+						{safeCurrentStep === 0 && form.description && <div className={formStyles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
+						<h2 className={formStyles.sectionHeader}>{currentSection?.title}</h2>
+						{currentSection?.description && <div className={formStyles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
 					</div>
 
-					<div className={formStyles.structure}>
-						<div className={formStyles.structureTitle}>
-							<h2>表單結構</h2>
-						</div>
-						<div className={formStyles.workflow}>
-							{sections.map((section, index) => (
-								<button key={section.id} type="button" className={`${formStyles.workflowButton} ${index === safeCurrentStep ? formStyles.active : ""}`} onClick={() => goToStep(index)}>
-									{section.title}
-								</button>
-							))}
-						</div>
-					</div>
+					<FormStructure sections={sections} currentStep={safeCurrentStep} onSectionClick={goToStep} />
 
 					<div className={formStyles.form}>
 						{sections[safeCurrentStep] && (

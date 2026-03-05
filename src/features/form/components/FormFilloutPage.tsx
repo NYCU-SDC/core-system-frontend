@@ -18,6 +18,7 @@ import {
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import styles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
@@ -557,33 +558,7 @@ export const FormFilloutPage = () => {
 					{currentSection.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
 				</div>
 
-				<div className={styles.structure}>
-					<div className={styles.structureTitle}>
-						<h2>表單結構</h2>
-						<p>（可點擊項目返回編輯）</p>
-					</div>
-					<div className={styles.structureLegendRow}>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotCompleted}></span>
-							<p>完成填寫</p>
-						</div>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotPending}></span>
-							<p>待填寫</p>
-						</div>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotCurrent}></span>
-							<p>目前位置</p>
-						</div>
-					</div>
-					<div className={styles.workflow}>
-						{sections.map((section, index) => (
-							<button key={section.id} type="button" className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""}`} onClick={() => handleSectionClick(index)}>
-								{section.title}
-							</button>
-						))}
-					</div>
-				</div>
+				<FormStructure sections={sections} currentStep={currentStep} onSectionClick={handleSectionClick} />
 
 				<form className={styles.form}>
 					{sections[currentStep] && (
