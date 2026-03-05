@@ -7,18 +7,13 @@ import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workfl
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
-import {
-	ResponsesResponseProgress,
-	ResponsesSectionProgress,
-	type FormsQuestionResponse,
-	type FormsSection,
-	type ResponsesResponseSections,
-	type ResponsesStringArrayAnswer
-} from "@nycu-sdc/core-system-sdk";
-import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
+import { ResponsesResponseProgress, type FormsQuestionResponse, type FormsSection, type ResponsesResponseSections, type ResponsesStringArrayAnswer } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import styles from "./FormDetailPage.module.css";
+import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
+import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
+import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
+import styles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
 type Section = FormsSection;
@@ -39,7 +34,7 @@ const ensureEmfontStylesheet = (fontId: string) => {
 	document.head.appendChild(link);
 };
 
-export const FormDetailPage = () => {
+export const FormFilloutPage = () => {
 	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
@@ -372,52 +367,6 @@ export const FormDetailPage = () => {
 		popup.focus();
 	};
 
-	const renderPreviewSection = () => {
-		if (!previewData || previewData.length === 0) {
-			return <p className={styles.caption}>尚無填答資料</p>;
-		}
-
-		return (
-			<div className={styles.previewSection}>
-				{previewData
-					.filter(section => section.progress !== ResponsesSectionProgress.SKIPPED)
-					.map(section => (
-						<div key={section.id} className={styles.previewBlock}>
-							<div className={styles.previewHeader}>
-								<h3 className={styles.previewSectionTitle}>{section.title}</h3>
-								<Button
-									type="button"
-									variant="secondary"
-									onClick={() => {
-										const targetIndex = sections.findIndex(s => s.id === section.id);
-										if (targetIndex >= 0) handleSectionClick(targetIndex);
-									}}
-								>
-									修改
-								</Button>
-							</div>
-							<ul className={styles.previewList}>
-								{section.answerDetails?.map((detail, questionIndex: number) => {
-									const isEmpty = !detail.payload?.displayValue;
-									const isRequiredAndEmpty = isEmpty && detail.question.required;
-									return (
-										<li key={questionIndex}>
-											<span className={styles.previewAnswerLabel}>
-												{detail.question.title}
-												{detail.question.required && <span className={styles.requiredAsterisk}> *</span>}
-											</span>
-											<span>：</span>
-											<span className={isRequiredAndEmpty ? styles.previewAnswerEmpty : ""}>{detail.payload?.displayValue || "未填寫"}</span>
-										</li>
-									);
-								}) || []}
-							</ul>
-						</div>
-					))}
-			</div>
-		);
-	};
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -524,66 +473,16 @@ export const FormDetailPage = () => {
 			{meta}
 			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 			<div className={styles.container} style={themedContainerStyle}>
-				<div className={styles.header}>
-					<div className={styles.topBar}>
-						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--foreground)">
-							<ChevronLeft size={16} />
-							返回表單列表
-						</Button>
-						{urlResponseId && (
-							<div className={styles.saveStatus} aria-live="polite">
-								{updateResponseMutation.isPending ? (
-									<>
-										<LoaderCircle size={16} className={styles.spinningIcon} />
-										<span>儲存中</span>
-									</>
-								) : updateResponseMutation.isError ? (
-									<>
-										<AlertCircle size={16} />
-										<span>有問題</span>
-									</>
-								) : (
-									<>
-										<Check size={16} />
-										<span>已儲存</span>
-									</>
-								)}
-							</div>
-						)}
-					</div>
-					<h1 className={styles.title}>{form.title}</h1>
-					{currentStep === 0 && form.description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
-					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
-					{currentSection.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
-				</div>
+				<FormHeader
+					title={form.title}
+					formDescription={form.description}
+					currentStep={currentStep}
+					currentSection={currentSection}
+					onBack={() => navigate("/forms")}
+					saveStatus={urlResponseId ? (updateResponseMutation.isPending ? "saving" : updateResponseMutation.isError ? "error" : "saved") : undefined}
+				/>
 
-				<div className={styles.structure}>
-					<div className={styles.structureTitle}>
-						<h2>表單結構</h2>
-						<p>（可點擊項目返回編輯）</p>
-					</div>
-					<div className={styles.structureLegendRow}>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotCompleted}></span>
-							<p>完成填寫</p>
-						</div>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotPending}></span>
-							<p>待填寫</p>
-						</div>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotCurrent}></span>
-							<p>目前位置</p>
-						</div>
-					</div>
-					<div className={styles.workflow}>
-						{sections.map((section, index) => (
-							<button key={section.id} type="button" className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""}`} onClick={() => handleSectionClick(index)}>
-								{section.title}
-							</button>
-						))}
-					</div>
-				</div>
+				<FormStructure sections={sections} currentStep={currentStep} onSectionClick={handleSectionClick} />
 
 				<form className={styles.form}>
 					{sections[currentStep] && (
@@ -595,7 +494,7 @@ export const FormDetailPage = () => {
 											<LoadingSpinner />
 										</div>
 									) : (
-										renderPreviewSection()
+										<FormPreviewSection mode="response" previewData={previewData} sections={sections} onSectionClick={handleSectionClick} />
 									)
 								) : (
 									<>

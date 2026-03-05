@@ -3,7 +3,7 @@ import { AccountButton, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Inpu
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { Chrome, Github, RefreshCw, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import styles from "./FormDetailPage.module.css";
+import styles from "./FormFilloutPage.module.css";
 
 const isValidUrl = (url: string): boolean => {
 	try {
