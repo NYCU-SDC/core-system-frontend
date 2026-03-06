@@ -3,7 +3,7 @@ import { AccountButton, Checkbox, DateInput, DetailedCheckbox, DragToOrder, Inpu
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { Chrome, Github, RefreshCw, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import styles from "./FormDetailPage.module.css";
+import styles from "./FormFilloutPage.module.css";
 
 const isValidUrl = (url: string): boolean => {
 	try {
@@ -16,9 +16,17 @@ const isValidUrl = (url: string): boolean => {
 
 interface FileItem {
 	id: string;
-	file: File;
-	status: "uploading" | "success" | "error";
+	file?: File;
+	filename: string;
+	serverInfo?: ServerFileInfo;
+	status: "loading" | "uploading" | "success" | "error";
 	error?: string;
+}
+
+export interface ServerFileInfo {
+	fileId: string;
+	originalFilename: string;
+	contentType: string;
 }
 
 interface FileUploadQuestionProps {
@@ -27,31 +35,93 @@ interface FileUploadQuestionProps {
 	maxFileAmount: number;
 	allowedFileTypes: string;
 	onFilesChange: (fileNames: string) => void;
+	onFileMetadataChange?: (files: ServerFileInfo[]) => void;
 	disabled?: boolean;
+	initialFiles?: ServerFileInfo[];
 }
 
-const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFileTypes, onFilesChange, disabled = false }: FileUploadQuestionProps) => {
+const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFileTypes, onFilesChange, onFileMetadataChange, disabled = false, initialFiles }: FileUploadQuestionProps) => {
 	const [items, setItems] = useState<FileItem[]>([]);
+	const itemsRef = useRef<FileItem[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const initialized = useRef(false);
 
-	const doUpload = async (item: FileItem) => {
-		if (!responseId) return;
-		setItems(prev => prev.map(i => (i.id === item.id ? { ...i, status: "uploading" as const, error: undefined } : i)));
+	useEffect(() => {
+		itemsRef.current = items;
+	}, [items]);
+
+	useEffect(() => {
+		if (initialized.current) return;
+		if (initialFiles === undefined) return; // data not yet loaded, wait
+		initialized.current = true;
+		if (initialFiles.length === 0) return;
+
+		const placeholders: FileItem[] = initialFiles.map(f => ({
+			id: crypto.randomUUID(),
+			filename: f.originalFilename,
+			serverInfo: f,
+			status: "loading" as const
+		}));
+		setItems(placeholders);
+
+		placeholders.forEach(async (placeholder, index) => {
+			const info = initialFiles[index];
+			try {
+				const res = await fetch(`/api/files/${info.fileId}`, { credentials: "include" });
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				const blob = await res.blob();
+				const file = new File([blob], info.originalFilename, { type: info.contentType || blob.type });
+				setItems(prev => {
+					const next = prev.map(i => (i.id === placeholder.id ? { ...i, file, status: "success" as const } : i));
+					onFilesChange(
+						next
+							.filter(i => i.status === "success")
+							.map(i => i.filename)
+							.join(",")
+					);
+					return next;
+				});
+			} catch {
+				setItems(prev => prev.map(i => (i.id === placeholder.id ? { ...i, status: "error" as const, error: "下載失敗，請重新上傳" } : i)));
+			}
+		});
+	}, [initialFiles]);
+
+	const doUploadBatch = async (batch: FileItem[]) => {
+		if (!responseId || batch.length === 0) return;
+		const batchIds = new Set(batch.map(i => i.id));
+		const existingFiles = itemsRef.current.filter(i => !batchIds.has(i.id) && i.file).map(i => i.file as File);
+		const newFiles = batch.map(i => i.file).filter((f): f is File => f !== undefined);
+		const allFiles = [...existingFiles, ...newFiles];
+		if (allFiles.length === 0) return;
+
+		setItems(prev => prev.map(i => (batchIds.has(i.id) ? { ...i, status: "uploading" as const, error: undefined } : i)));
 		try {
-			await formApi.uploadQuestionFiles(responseId, questionId, [item.file]);
+			const uploadResult = await formApi.uploadQuestionFiles(responseId, questionId, allFiles);
+			const serverInfoMap = new Map(uploadResult.files.map(f => [f.originalFilename, { fileId: f.fileId, originalFilename: f.originalFilename, contentType: f.contentType } as ServerFileInfo]));
 			setItems(prev => {
-				const next = prev.map(i => (i.id === item.id ? { ...i, status: "success" as const } : i));
+				const next = prev.map(i => ({
+					...i,
+					...(batchIds.has(i.id) ? { status: "success" as const } : {}),
+					serverInfo: serverInfoMap.get(i.filename) ?? i.serverInfo
+				}));
 				onFilesChange(
 					next
 						.filter(i => i.status === "success")
-						.map(i => i.file.name)
+						.map(i => i.filename)
 						.join(",")
 				);
+				const updatedServerInfos = next.filter(i => i.status === "success" && i.serverInfo).map(i => i.serverInfo as ServerFileInfo);
+				onFileMetadataChange?.(updatedServerInfos);
 				return next;
 			});
 		} catch (err) {
-			setItems(prev => prev.map(i => (i.id === item.id ? { ...i, status: "error" as const, error: (err as Error).message } : i)));
+			setItems(prev => prev.map(i => (batchIds.has(i.id) ? { ...i, status: "error" as const, error: (err as Error).message } : i)));
 		}
+	};
+
+	const doUpload = async (item: FileItem) => {
+		await doUploadBatch([item]);
 	};
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,34 +132,68 @@ const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFile
 		const toAdd: FileItem[] = newFiles.slice(0, canAdd).map(file => ({
 			id: crypto.randomUUID(),
 			file,
+			filename: file.name,
 			status: "uploading" as const
 		}));
 		if (inputRef.current) inputRef.current.value = "";
 		setItems(prev => [...prev, ...toAdd]);
-		toAdd.forEach(doUpload);
+		doUploadBatch(toAdd);
 	};
 
-	const removeItem = (id: string) => {
-		setItems(prev => {
-			const next = prev.filter(i => i.id !== id);
+	const removeItem = async (id: string) => {
+		const originalItems = itemsRef.current;
+		const itemToRemove = originalItems.find(i => i.id === id);
+		const remaining = originalItems.filter(i => i.id !== id);
+		setItems(remaining);
+		onFilesChange(
+			remaining
+				.filter(i => i.status === "success")
+				.map(i => i.filename)
+				.join(",")
+		);
+		const remainingServerInfos = remaining.filter(i => i.status === "success" && i.serverInfo).map(i => i.serverInfo as ServerFileInfo);
+		onFileMetadataChange?.(remainingServerInfos);
+
+		if (!responseId || itemToRemove?.status !== "success") return;
+
+		try {
+			const remainingFiles = remaining.filter(i => i.status === "success" && i.file).map(i => i.file as File);
+			if (remainingFiles.length > 0) {
+				const uploadResult = await formApi.uploadQuestionFiles(responseId, questionId, remainingFiles);
+				const serverInfoMap = new Map(uploadResult.files.map(f => [f.originalFilename, { fileId: f.fileId, originalFilename: f.originalFilename, contentType: f.contentType } as ServerFileInfo]));
+				setItems(prev => {
+					const next = prev.map(i => ({ ...i, serverInfo: serverInfoMap.get(i.filename) ?? i.serverInfo }));
+					onFileMetadataChange?.(next.filter(i => i.status === "success" && i.serverInfo).map(i => i.serverInfo as ServerFileInfo));
+					return next;
+				});
+			} else {
+				await formApi.clearQuestionFiles(responseId, questionId);
+			}
+		} catch {
+			setItems(originalItems);
 			onFilesChange(
-				next
+				originalItems
 					.filter(i => i.status === "success")
-					.map(i => i.file.name)
+					.map(i => i.filename)
 					.join(",")
 			);
-			return next;
-		});
+			onFileMetadataChange?.(originalItems.filter(i => i.status === "success" && i.serverInfo).map(i => i.serverInfo as ServerFileInfo));
+		}
 	};
 
 	const activeCount = items.filter(i => i.status !== "error").length;
-	const canAddMore = !disabled && Boolean(responseId) && activeCount < maxFileAmount;
+	const isLoadingFromServer = items.some(i => i.status === "loading");
+	const canAddMore = !disabled && Boolean(responseId) && activeCount < maxFileAmount && !isLoadingFromServer;
 
 	return (
 		<div className={styles.fileUploadList}>
 			{items.map(item => (
-				<div key={item.id} className={`${styles.fileItem} ${item.status === "error" ? styles.fileItemError : item.status === "uploading" ? styles.fileItemUploading : ""}`}>
-					<span className={styles.fileItemName}>{item.file.name}</span>
+				<div
+					key={item.id}
+					className={`${styles.fileItem} ${item.status === "error" ? styles.fileItemError : item.status === "uploading" || item.status === "loading" ? styles.fileItemUploading : ""}`}
+				>
+					<span className={styles.fileItemName}>{item.filename}</span>
+					{item.status === "loading" && <span className={styles.fileItemHint}>載入中…</span>}
 					{item.status === "uploading" && <span className={styles.fileItemHint}>上傳中…</span>}
 					{item.status === "error" && <span className={styles.fileItemHint}>{item.error || "上傳失敗"}</span>}
 					<div className={styles.fileItemActions}>
@@ -99,7 +203,7 @@ const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFile
 								重新上傳
 							</button>
 						)}
-						{item.status !== "uploading" && (
+						{item.status !== "uploading" && item.status !== "loading" && (
 							<button type="button" className={styles.fileRemoveBtn} onClick={() => removeItem(item.id)} aria-label="移除" disabled={disabled}>
 								<X size={14} />
 							</button>
@@ -125,11 +229,11 @@ type FormQuestionRendererProps = {
 	sourceQuestion?: FormsQuestionResponse;
 	sourceAnswerValue?: string;
 	responseId?: string;
-	connectingOauthQuestionId?: string | null;
 	disableFileUpload?: boolean;
+	initialFiles?: ServerFileInfo[];
+	onFileMetadataChange?: (files: ServerFileInfo[]) => void;
 	onAnswerChange: (questionId: string, value: string) => void;
 	onOtherTextChange: (questionId: string, value: string) => void;
-	onOauthConnect?: (question: FormsQuestionResponse) => void;
 };
 
 const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
@@ -141,11 +245,11 @@ export const FormQuestionRenderer = ({
 	sourceQuestion,
 	sourceAnswerValue = "",
 	responseId,
-	connectingOauthQuestionId = null,
 	disableFileUpload = false,
+	initialFiles,
+	onFileMetadataChange,
 	onAnswerChange,
-	onOtherTextChange,
-	onOauthConnect
+	onOtherTextChange
 }: FormQuestionRendererProps) => {
 	useEffect(() => {
 		if (question.type !== "RANKING") return;
@@ -370,7 +474,9 @@ export const FormQuestionRenderer = ({
 						maxFileAmount={question.uploadFile?.maxFileAmount || 1}
 						allowedFileTypes={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
 						onFilesChange={fileNames => onAnswerChange(question.id, fileNames)}
+						onFileMetadataChange={onFileMetadataChange}
 						disabled={disableFileUpload}
+						initialFiles={initialFiles}
 					/>
 					<p className={styles.uploadHint}>
 						最多 {question.uploadFile?.maxFileAmount || 1} 個檔案，每個檔案最大 {((question.uploadFile?.maxFileSizeLimit || 10485760) / 1024 / 1024).toFixed(0)} MB
@@ -396,10 +502,12 @@ export const FormQuestionRenderer = ({
 							type="button"
 							logo={question.oauthConnect === "GOOGLE" ? <Chrome size={20} /> : <Github size={20} />}
 							connected={Boolean(value)}
-							onClick={() => onOauthConnect?.(question)}
-							disabled={!responseId || !onOauthConnect || connectingOauthQuestionId === question.id}
+							connectedLabel={value || undefined}
+							responseId={responseId}
+							questionId={question.id}
+							onConnect={username => onAnswerChange(question.id, username)}
 						>
-							{connectingOauthQuestionId === question.id ? "綁定中" : value ? "重新綁定帳號" : "綁定帳號"}
+							{value ? "重新綁定帳號" : "綁定帳號"}
 						</AccountButton>
 						<p className={styles.uploadHint}>{value ? `已綁定帳號：${value}` : "尚未綁定，點擊上方按鈕開始 OAuth 綁定流程。"}</p>
 					</div>
