@@ -2,23 +2,17 @@ import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { buildAnswersPayload, useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
-import * as formApi from "@/features/form/services/api";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
-import {
-	ResponsesResponseProgress,
-	ResponsesSectionProgress,
-	type FormsQuestionResponse,
-	type FormsSection,
-	type ResponsesResponseSections,
-	type ResponsesStringArrayAnswer
-} from "@nycu-sdc/core-system-sdk";
-import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
+import { ResponsesResponseProgress, type FormsSection, type ResponsesResponseSections, type ResponsesStringArrayAnswer } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import styles from "./FormDetailPage.module.css";
+import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
+import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
+import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
+import styles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
 type Section = FormsSection;
@@ -39,7 +33,7 @@ const ensureEmfontStylesheet = (fontId: string) => {
 	document.head.appendChild(link);
 };
 
-export const FormDetailPage = () => {
+export const FormFilloutPage = () => {
 	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
@@ -49,10 +43,8 @@ export const FormDetailPage = () => {
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
-	const [connectingOauthQuestionId, setConnectingOauthQuestionId] = useState<string | null>(null);
 
 	// Ref
-	const oauthPopupWatchTimerRef = useRef<number | null>(null);
 	const answersInitialized = useRef(false);
 	const lastAutoSavePayloadRef = useRef<string>("");
 	const lastFailedAutoSavePayloadRef = useRef<string>("");
@@ -221,63 +213,6 @@ export const FormDetailPage = () => {
 		}
 	}, [sections.length, currentStep]);
 
-	useEffect(() => {
-		const handleMessage = async (event: MessageEvent) => {
-			if (event.origin !== window.location.origin) return;
-
-			const payload = event.data as {
-				type?: string;
-				questionId?: string;
-				responseId?: string;
-				params?: Record<string, string>;
-			};
-
-			if (payload?.type !== "FORM_OAUTH_CONNECTED" || !payload.questionId) return;
-			if (payload.responseId !== urlResponseId) return;
-			if (oauthPopupWatchTimerRef.current) {
-				window.clearInterval(oauthPopupWatchTimerRef.current);
-				oauthPopupWatchTimerRef.current = null;
-			}
-
-			setConnectingOauthQuestionId(prev => (prev === payload.questionId ? null : prev));
-
-			if (payload.params?.error) {
-				pushToast({ title: "綁定失敗", description: payload.params.error, variant: "error" });
-				return;
-			}
-
-			try {
-				const questionResponse = await formApi.getQuestionResponse(urlResponseId!, payload.questionId);
-				const answerPayload = questionResponse.answer;
-				const answerValue = answerPayload.answer as { value?: { username?: string } };
-				const oauthUsername = answerValue?.value?.username ?? "";
-				const displayValue = answerPayload.displayValue ?? "";
-				const finalValue = oauthUsername || displayValue;
-
-				if (finalValue) {
-					setAnswers(prev => ({
-						...prev,
-						[payload.questionId!]: finalValue
-					}));
-					pushToast({ title: "綁定成功", description: `已綁定帳號：${finalValue}`, variant: "success" });
-				} else {
-					pushToast({ title: "綁定完成", description: "已完成授權，但尚未取得帳號資訊", variant: "warning" });
-				}
-			} catch (error) {
-				pushToast({ title: "讀取綁定結果失敗", description: (error as Error).message, variant: "error" });
-			}
-		};
-
-		window.addEventListener("message", handleMessage);
-		return () => {
-			if (oauthPopupWatchTimerRef.current) {
-				window.clearInterval(oauthPopupWatchTimerRef.current);
-				oauthPopupWatchTimerRef.current = null;
-			}
-			window.removeEventListener("message", handleMessage);
-		};
-	}, [urlResponseId, pushToast]);
-
 	const scrollToTop = () => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	};
@@ -336,86 +271,6 @@ export const FormDetailPage = () => {
 			...prev,
 			[questionId]: value
 		}));
-	};
-
-	const handleOauthConnect = (question: FormsQuestionResponse) => {
-		if (!urlResponseId) {
-			pushToast({ title: "尚未建立填答", description: "請稍後再試一次", variant: "error" });
-			return;
-		}
-
-		const callbackUrl = new URL("/forms/oauth-callback", window.location.origin);
-		callbackUrl.searchParams.set("questionId", question.id);
-		callbackUrl.searchParams.set("responseId", urlResponseId);
-
-		const connectUrl = formApi.getConnectOauthAccountUrl(urlResponseId, question.id, callbackUrl.toString());
-		const popup = window.open(connectUrl, "form-oauth-connect", "popup=yes,width=520,height=760");
-
-		if (!popup) {
-			pushToast({ title: "無法開啟綁定視窗", description: "請確認瀏覽器未封鎖彈出視窗", variant: "error" });
-			return;
-		}
-
-		setConnectingOauthQuestionId(question.id);
-		if (oauthPopupWatchTimerRef.current) {
-			window.clearInterval(oauthPopupWatchTimerRef.current);
-		}
-		oauthPopupWatchTimerRef.current = window.setInterval(() => {
-			if (popup.closed) {
-				setConnectingOauthQuestionId(prev => (prev === question.id ? null : prev));
-				if (oauthPopupWatchTimerRef.current) {
-					window.clearInterval(oauthPopupWatchTimerRef.current);
-					oauthPopupWatchTimerRef.current = null;
-				}
-			}
-		}, 500);
-		popup.focus();
-	};
-
-	const renderPreviewSection = () => {
-		if (!previewData || previewData.length === 0) {
-			return <p className={styles.caption}>尚無填答資料</p>;
-		}
-
-		return (
-			<div className={styles.previewSection}>
-				{previewData
-					.filter(section => section.progress !== ResponsesSectionProgress.SKIPPED)
-					.map(section => (
-						<div key={section.id} className={styles.previewBlock}>
-							<div className={styles.previewHeader}>
-								<h3 className={styles.previewSectionTitle}>{section.title}</h3>
-								<Button
-									type="button"
-									variant="secondary"
-									onClick={() => {
-										const targetIndex = sections.findIndex(s => s.id === section.id);
-										if (targetIndex >= 0) handleSectionClick(targetIndex);
-									}}
-								>
-									修改
-								</Button>
-							</div>
-							<ul className={styles.previewList}>
-								{section.answerDetails?.map((detail, questionIndex: number) => {
-									const isEmpty = !detail.payload?.displayValue;
-									const isRequiredAndEmpty = isEmpty && detail.question.required;
-									return (
-										<li key={questionIndex}>
-											<span className={styles.previewAnswerLabel}>
-												{detail.question.title}
-												{detail.question.required && <span className={styles.requiredAsterisk}> *</span>}
-											</span>
-											<span>：</span>
-											<span className={isRequiredAndEmpty ? styles.previewAnswerEmpty : ""}>{detail.payload?.displayValue || "未填寫"}</span>
-										</li>
-									);
-								}) || []}
-							</ul>
-						</div>
-					))}
-			</div>
-		);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -524,66 +379,16 @@ export const FormDetailPage = () => {
 			{meta}
 			{coverImageUrl && <img src={coverImageUrl} className={styles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 			<div className={styles.container} style={themedContainerStyle}>
-				<div className={styles.header}>
-					<div className={styles.topBar}>
-						<Button type="button" onClick={() => navigate("/forms")} themeColor="var(--foreground)">
-							<ChevronLeft size={16} />
-							返回表單列表
-						</Button>
-						{urlResponseId && (
-							<div className={styles.saveStatus} aria-live="polite">
-								{updateResponseMutation.isPending ? (
-									<>
-										<LoaderCircle size={16} className={styles.spinningIcon} />
-										<span>儲存中</span>
-									</>
-								) : updateResponseMutation.isError ? (
-									<>
-										<AlertCircle size={16} />
-										<span>有問題</span>
-									</>
-								) : (
-									<>
-										<Check size={16} />
-										<span>已儲存</span>
-									</>
-								)}
-							</div>
-						)}
-					</div>
-					<h1 className={styles.title}>{form.title}</h1>
-					{currentStep === 0 && form.description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: form.description }} />}
-					<h2 className={styles.sectionHeader}>{currentSection.title}</h2>
-					{currentSection.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
-				</div>
+				<FormHeader
+					title={form.title}
+					formDescription={form.description}
+					currentStep={currentStep}
+					currentSection={currentSection}
+					onBack={() => navigate("/forms")}
+					saveStatus={urlResponseId ? (updateResponseMutation.isPending ? "saving" : updateResponseMutation.isError ? "error" : "saved") : undefined}
+				/>
 
-				<div className={styles.structure}>
-					<div className={styles.structureTitle}>
-						<h2>表單結構</h2>
-						<p>（可點擊項目返回編輯）</p>
-					</div>
-					<div className={styles.structureLegendRow}>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotCompleted}></span>
-							<p>完成填寫</p>
-						</div>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotPending}></span>
-							<p>待填寫</p>
-						</div>
-						<div className={styles.structureLegend}>
-							<span className={styles.structureLegendDotCurrent}></span>
-							<p>目前位置</p>
-						</div>
-					</div>
-					<div className={styles.workflow}>
-						{sections.map((section, index) => (
-							<button key={section.id} type="button" className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""}`} onClick={() => handleSectionClick(index)}>
-								{section.title}
-							</button>
-						))}
-					</div>
-				</div>
+				<FormStructure sections={sections} currentStep={currentStep} onSectionClick={handleSectionClick} />
 
 				<form className={styles.form}>
 					{sections[currentStep] && (
@@ -595,7 +400,7 @@ export const FormDetailPage = () => {
 											<LoadingSpinner />
 										</div>
 									) : (
-										renderPreviewSection()
+										<FormPreviewSection mode="response" previewData={previewData} sections={sections} onSectionClick={handleSectionClick} />
 									)
 								) : (
 									<>
@@ -608,10 +413,8 @@ export const FormDetailPage = () => {
 												sourceQuestion={question.sourceId ? questionsById.get(question.sourceId) : undefined}
 												sourceAnswerValue={question.sourceId ? answers[question.sourceId] || "" : ""}
 												responseId={urlResponseId}
-												connectingOauthQuestionId={connectingOauthQuestionId}
 												onAnswerChange={updateAnswer}
 												onOtherTextChange={updateOtherText}
-												onOauthConnect={handleOauthConnect}
 											/>
 										))}
 										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p className={styles.caption}>此區段目前沒有問題</p>}

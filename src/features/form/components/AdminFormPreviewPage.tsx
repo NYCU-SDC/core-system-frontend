@@ -7,7 +7,10 @@ import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
-import formStyles from "./FormDetailPage.module.css";
+import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
+import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
+import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
+import formStyles from "./FormFilloutPage.module.css";
 import { FormQuestionRenderer } from "./FormQuestionRenderer";
 
 const ensureEmfontStylesheet = (fontId: string) => {
@@ -60,6 +63,7 @@ export const AdminFormPreviewPage = () => {
 	}, [sections]);
 
 	const safeCurrentStep = sections.length > 0 ? Math.min(currentStep, sections.length - 1) : currentStep;
+	const currentSection = sections[safeCurrentStep];
 	const isFirstStep = safeCurrentStep === 0;
 	const isLastStep = sections.length === 0 || safeCurrentStep === sections.length - 1;
 	const isOnPreviewStep = isLastStep && sections[safeCurrentStep]?.id === "preview";
@@ -128,73 +132,16 @@ export const AdminFormPreviewPage = () => {
 			<div className={styles.content}>
 				{coverImageUrl && <img src={coverImageUrl} className={formStyles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 				<div className={formStyles.container} style={themedContainerStyle}>
-					<div className={formStyles.header}>
-						<h1 className={formStyles.title}>{form.title}</h1>
-						{safeCurrentStep === 0 ? <p className={formStyles.description}>{form.description}</p> : <h2 className={formStyles.sectionHeader}>{sections[safeCurrentStep]?.title}</h2>}
-					</div>
+					<FormHeader title={form.title} formDescription={form.description} currentStep={safeCurrentStep} currentSection={currentSection} />
 
-					<div className={formStyles.structure}>
-						<div className={formStyles.structureTitle}>
-							<h2>表單結構</h2>
-						</div>
-						<div className={formStyles.workflow}>
-							{sections.map((section, index) => (
-								<button key={section.id} type="button" className={`${formStyles.workflowButton} ${index === safeCurrentStep ? formStyles.active : ""}`} onClick={() => goToStep(index)}>
-									{section.title}
-								</button>
-							))}
-						</div>
-					</div>
+					<FormStructure sections={sections} currentStep={safeCurrentStep} onSectionClick={goToStep} />
 
 					<div className={formStyles.form}>
 						{sections[safeCurrentStep] && (
 							<div className={formStyles.section}>
 								<div className={formStyles.fields}>
 									{isOnPreviewStep ? (
-										<div className={formStyles.previewSection}>
-											{sections
-												.filter(s => s.id !== "preview")
-												.map(section => (
-													<div key={section.id} className={formStyles.previewBlock}>
-														<div className={formStyles.previewHeader}>
-															<h3 className={formStyles.previewSectionTitle}>{section.title}</h3>
-															<Button
-																type="button"
-																variant="secondary"
-																onClick={() => {
-																	const idx = sections.findIndex(s => s.id === section.id);
-																	if (idx >= 0) goToStep(idx);
-																}}
-															>
-																修改
-															</Button>
-														</div>
-														<ul className={formStyles.previewList}>
-															{section.questions?.map((q, qi) => {
-																const raw = answers[q.id] ?? "";
-																const displayValue = raw
-																	? q.choices
-																		? raw
-																				.split(",")
-																				.map(id => q.choices?.find(c => c.id === id)?.name ?? id)
-																				.join("、")
-																		: raw
-																	: "";
-																return (
-																	<li key={qi}>
-																		<span className={formStyles.previewAnswerLabel}>
-																			{q.title}
-																			{q.required && <span className={formStyles.requiredAsterisk}> *</span>}
-																		</span>
-																		<span>：</span>
-																		<span className={!displayValue && q.required ? formStyles.previewAnswerEmpty : ""}>{displayValue || "未填寫"}</span>
-																	</li>
-																);
-															})}
-														</ul>
-													</div>
-												))}
-										</div>
+										<FormPreviewSection mode="local" localSections={sections} localAnswers={answers} sections={sections} onSectionClick={goToStep} />
 									) : (
 										<>
 											{sections[safeCurrentStep].questions?.map(question => (
