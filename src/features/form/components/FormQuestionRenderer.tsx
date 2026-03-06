@@ -81,7 +81,7 @@ const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFile
 					);
 					return next;
 				});
-			} catch (err) {
+			} catch {
 				setItems(prev => prev.map(i => (i.id === placeholder.id ? { ...i, status: "error" as const, error: "下載失敗，請重新上傳" } : i)));
 			}
 		});
@@ -169,7 +169,7 @@ const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFile
 			} else {
 				await formApi.clearQuestionFiles(responseId, questionId);
 			}
-		} catch (err) {
+		} catch {
 			setItems(originalItems);
 			onFilesChange(
 				originalItems
