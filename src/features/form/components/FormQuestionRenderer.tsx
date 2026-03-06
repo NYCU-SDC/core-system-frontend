@@ -125,11 +125,9 @@ type FormQuestionRendererProps = {
 	sourceQuestion?: FormsQuestionResponse;
 	sourceAnswerValue?: string;
 	responseId?: string;
-	connectingOauthQuestionId?: string | null;
 	disableFileUpload?: boolean;
 	onAnswerChange: (questionId: string, value: string) => void;
 	onOtherTextChange: (questionId: string, value: string) => void;
-	onOauthConnect?: (question: FormsQuestionResponse) => void;
 };
 
 const getSelectedChoiceIds = (rawValue: string) => (rawValue ? rawValue.split(",").filter(Boolean) : []);
@@ -141,11 +139,9 @@ export const FormQuestionRenderer = ({
 	sourceQuestion,
 	sourceAnswerValue = "",
 	responseId,
-	connectingOauthQuestionId = null,
 	disableFileUpload = false,
 	onAnswerChange,
-	onOtherTextChange,
-	onOauthConnect
+	onOtherTextChange
 }: FormQuestionRendererProps) => {
 	useEffect(() => {
 		if (question.type !== "RANKING") return;
@@ -396,10 +392,12 @@ export const FormQuestionRenderer = ({
 							type="button"
 							logo={question.oauthConnect === "GOOGLE" ? <Chrome size={20} /> : <Github size={20} />}
 							connected={Boolean(value)}
-							onClick={() => onOauthConnect?.(question)}
-							disabled={!responseId || !onOauthConnect || connectingOauthQuestionId === question.id}
+							connectedLabel={value || undefined}
+							responseId={responseId}
+							questionId={question.id}
+							onConnect={username => onAnswerChange(question.id, username)}
 						>
-							{connectingOauthQuestionId === question.id ? "綁定中" : value ? "重新綁定帳號" : "綁定帳號"}
+							{value ? "重新綁定帳號" : "綁定帳號"}
 						</AccountButton>
 						<p className={styles.uploadHint}>{value ? `已綁定帳號：${value}` : "尚未綁定，點擊上方按鈕開始 OAuth 綁定流程。"}</p>
 					</div>
