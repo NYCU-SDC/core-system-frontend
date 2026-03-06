@@ -12,7 +12,8 @@ import {
 	OAuthConnectRenderer,
 	RankingRenderer,
 	ShortTextRenderer,
-	SingleChoiceRenderer
+	SingleChoiceRenderer,
+	type ServerFileInfo
 } from "./QuestionRenderers";
 
 type FormQuestionRendererProps = {
@@ -23,6 +24,8 @@ type FormQuestionRendererProps = {
 	sourceAnswerValue?: string;
 	responseId?: string;
 	disableFileUpload?: boolean;
+	initialFiles?: ServerFileInfo[];
+	onFileMetadataChange?: (files: ServerFileInfo[]) => void;
 	onAnswerChange: (questionId: string, value: string) => void;
 	onOtherTextChange: (questionId: string, value: string) => void;
 };
@@ -35,6 +38,8 @@ export const FormQuestionRenderer = ({
 	sourceAnswerValue = "",
 	responseId,
 	disableFileUpload = false,
+	initialFiles,
+	onFileMetadataChange,
 	onAnswerChange,
 	onOtherTextChange
 }: FormQuestionRendererProps) => {
