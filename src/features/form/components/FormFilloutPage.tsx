@@ -13,7 +13,7 @@ import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
 import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
 import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import styles from "./FormFilloutPage.module.css";
-import { FormQuestionRenderer } from "./FormQuestionRenderer";
+import { FormQuestionRenderer, type ServerFileInfo } from "./FormQuestionRenderer";
 
 type Section = FormsSection;
 
@@ -43,6 +43,7 @@ export const FormFilloutPage = () => {
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
+	const [fileMetadata, setFileMetadata] = useState<Record<string, ServerFileInfo[]>>({});
 
 	// Ref
 	const answersInitialized = useRef(false);
@@ -151,12 +152,24 @@ export const FormFilloutPage = () => {
 		if (answersInitialized.current) return;
 		const data = responseQuery.data as unknown as FormResponseData | undefined;
 		if (!data?.sections) return;
+		const loadedFileMetadata: Record<string, ServerFileInfo[]> = {};
 		const loaded: Record<string, string> = {};
 		const loadedOtherTexts: Record<string, string> = {};
 		data.sections.forEach(section => {
 			section.answerDetails?.forEach(detail => {
 				if (!detail.question.id) return;
 				const answerPayload = detail.payload?.answer;
+				if (detail.question.type === "UPLOAD_FILE") {
+					const fileValue = answerPayload as { value?: { originalFilename?: string; fileId?: string; contentType?: string }[] } | undefined;
+					const fileInfos: ServerFileInfo[] = (fileValue?.value ?? [])
+						.filter(f => f.fileId && f.originalFilename)
+						.map(f => ({ fileId: f.fileId!, originalFilename: f.originalFilename!, contentType: f.contentType ?? "application/octet-stream" }));
+					loadedFileMetadata[detail.question.id] = fileInfos;
+					if (fileInfos.length > 0) {
+						loaded[detail.question.id] = fileInfos.map(f => f.originalFilename).join(",");
+					}
+					return;
+				}
 				if (answerPayload && Array.isArray((answerPayload as ResponsesStringArrayAnswer).value)) {
 					const arrayAnswer = answerPayload as ResponsesStringArrayAnswer;
 					loaded[detail.question.id] = arrayAnswer.value.join(",");
@@ -172,6 +185,7 @@ export const FormFilloutPage = () => {
 		});
 		setAnswers(loaded);
 		setOtherTexts(loadedOtherTexts);
+		setFileMetadata(loadedFileMetadata);
 		answersInitialized.current = true;
 	}, [responseQuery.data]);
 
@@ -413,6 +427,8 @@ export const FormFilloutPage = () => {
 												sourceQuestion={question.sourceId ? questionsById.get(question.sourceId) : undefined}
 												sourceAnswerValue={question.sourceId ? answers[question.sourceId] || "" : ""}
 												responseId={urlResponseId}
+												initialFiles={fileMetadata[question.id]}
+												onFileMetadataChange={files => setFileMetadata(prev => ({ ...prev, [question.id]: files }))}
 												onAnswerChange={updateAnswer}
 												onOtherTextChange={updateOtherText}
 											/>

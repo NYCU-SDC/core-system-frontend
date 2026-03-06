@@ -18,6 +18,8 @@ import type {
 	FormsQuestionResponse,
 	FormsSection,
 	FormsSectionRequest,
+	ResponsesAnswersRequest,
+	ResponsesAnswersRequestUpdate,
 	ResponsesCreateResponse,
 	ResponsesGetFormResponse,
 	ResponsesGetQuestionResponse,
@@ -218,20 +220,30 @@ export const deleteFormResponse = async (formId: string, responseId: string): Pr
 	assertOk(res.status, "Failed to delete response", res.data);
 };
 
-export const updateFormResponse = async (responseId: string, answers: import("@nycu-sdc/core-system-sdk").ResponsesAnswersRequestUpdate): Promise<void> => {
+export const updateFormResponse = async (responseId: string, answers: ResponsesAnswersRequestUpdate): Promise<void> => {
 	const res = await responsesUpdateFormResponse(responseId, answers, defaultRequestOptions);
 	assertOk(res.status, "Failed to save answers", res.data);
 };
 
-export const submitFormResponse = async (responseId: string, answers: import("@nycu-sdc/core-system-sdk").ResponsesAnswersRequest): Promise<void> => {
+export const submitFormResponse = async (responseId: string, answers: ResponsesAnswersRequest): Promise<void> => {
 	const res = await responsesSubmitFormResponse(responseId, answers, defaultRequestOptions);
 	assertOk(res.status, "Failed to submit form", res.data);
+};
+
+export const clearQuestionFiles = async (responseId: string, questionId: string): Promise<void> => {
+	const response = await fetch(`/api/responses/${responseId}/questions/${questionId}/files`, {
+		...defaultRequestOptions,
+		method: "DELETE"
+	});
+	if (!response.ok && response.status !== 404) {
+		throw new Error(`Failed to clear files: HTTP ${response.status}`);
+	}
 };
 
 export const uploadQuestionFiles = async (responseId: string, questionId: string, files: File[]): Promise<ResponsesQuestionFilesUploadResponse> => {
 	const res = await (async () => {
 		const formData = new FormData();
-		files.forEach(file => formData.append("file", file));
+		files.forEach(file => formData.append("files", file));
 		const response = await fetch(`/api/responses/${responseId}/questions/${questionId}/files`, {
 			...defaultRequestOptions,
 			method: "POST",
