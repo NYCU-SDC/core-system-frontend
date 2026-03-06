@@ -22,11 +22,9 @@ type FormQuestionRendererProps = {
 	sourceQuestion?: FormsQuestionResponse;
 	sourceAnswerValue?: string;
 	responseId?: string;
-	connectingOauthQuestionId?: string | null;
 	disableFileUpload?: boolean;
 	onAnswerChange: (questionId: string, value: string) => void;
 	onOtherTextChange: (questionId: string, value: string) => void;
-	onOauthConnect?: (question: FormsQuestionResponse) => void;
 };
 
 export const FormQuestionRenderer = ({
@@ -36,11 +34,9 @@ export const FormQuestionRenderer = ({
 	sourceQuestion,
 	sourceAnswerValue = "",
 	responseId,
-	connectingOauthQuestionId = null,
 	disableFileUpload = false,
 	onAnswerChange,
-	onOtherTextChange,
-	onOauthConnect
+	onOtherTextChange
 }: FormQuestionRendererProps) => {
 	useEffect(() => {
 		if (question.type !== "RANKING") return;

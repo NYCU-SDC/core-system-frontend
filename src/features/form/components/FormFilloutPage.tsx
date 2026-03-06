@@ -2,12 +2,11 @@ import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { buildAnswersPayload, useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
-import * as formApi from "@/features/form/services/api";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
-import { ResponsesResponseProgress, type FormsQuestionResponse, type FormsSection, type ResponsesResponseSections, type ResponsesStringArrayAnswer } from "@nycu-sdc/core-system-sdk";
+import { ResponsesResponseProgress, type FormsSection, type ResponsesResponseSections, type ResponsesStringArrayAnswer } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
@@ -44,10 +43,8 @@ export const FormFilloutPage = () => {
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
-	const [connectingOauthQuestionId, setConnectingOauthQuestionId] = useState<string | null>(null);
 
 	// Ref
-	const oauthPopupWatchTimerRef = useRef<number | null>(null);
 	const answersInitialized = useRef(false);
 	const lastAutoSavePayloadRef = useRef<string>("");
 	const lastFailedAutoSavePayloadRef = useRef<string>("");
@@ -216,63 +213,6 @@ export const FormFilloutPage = () => {
 		}
 	}, [sections.length, currentStep]);
 
-	useEffect(() => {
-		const handleMessage = async (event: MessageEvent) => {
-			if (event.origin !== window.location.origin) return;
-
-			const payload = event.data as {
-				type?: string;
-				questionId?: string;
-				responseId?: string;
-				params?: Record<string, string>;
-			};
-
-			if (payload?.type !== "FORM_OAUTH_CONNECTED" || !payload.questionId) return;
-			if (payload.responseId !== urlResponseId) return;
-			if (oauthPopupWatchTimerRef.current) {
-				window.clearInterval(oauthPopupWatchTimerRef.current);
-				oauthPopupWatchTimerRef.current = null;
-			}
-
-			setConnectingOauthQuestionId(prev => (prev === payload.questionId ? null : prev));
-
-			if (payload.params?.error) {
-				pushToast({ title: "綁定失敗", description: payload.params.error, variant: "error" });
-				return;
-			}
-
-			try {
-				const questionResponse = await formApi.getQuestionResponse(urlResponseId!, payload.questionId);
-				const answerPayload = questionResponse.answer;
-				const answerValue = answerPayload.answer as { value?: { username?: string } };
-				const oauthUsername = answerValue?.value?.username ?? "";
-				const displayValue = answerPayload.displayValue ?? "";
-				const finalValue = oauthUsername || displayValue;
-
-				if (finalValue) {
-					setAnswers(prev => ({
-						...prev,
-						[payload.questionId!]: finalValue
-					}));
-					pushToast({ title: "綁定成功", description: `已綁定帳號：${finalValue}`, variant: "success" });
-				} else {
-					pushToast({ title: "綁定完成", description: "已完成授權，但尚未取得帳號資訊", variant: "warning" });
-				}
-			} catch (error) {
-				pushToast({ title: "讀取綁定結果失敗", description: (error as Error).message, variant: "error" });
-			}
-		};
-
-		window.addEventListener("message", handleMessage);
-		return () => {
-			if (oauthPopupWatchTimerRef.current) {
-				window.clearInterval(oauthPopupWatchTimerRef.current);
-				oauthPopupWatchTimerRef.current = null;
-			}
-			window.removeEventListener("message", handleMessage);
-		};
-	}, [urlResponseId, pushToast]);
-
 	const scrollToTop = () => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	};
@@ -331,40 +271,6 @@ export const FormFilloutPage = () => {
 			...prev,
 			[questionId]: value
 		}));
-	};
-
-	const handleOauthConnect = (question: FormsQuestionResponse) => {
-		if (!urlResponseId) {
-			pushToast({ title: "尚未建立填答", description: "請稍後再試一次", variant: "error" });
-			return;
-		}
-
-		const callbackUrl = new URL("/forms/oauth-callback", window.location.origin);
-		callbackUrl.searchParams.set("questionId", question.id);
-		callbackUrl.searchParams.set("responseId", urlResponseId);
-
-		const connectUrl = formApi.getConnectOauthAccountUrl(urlResponseId, question.id, callbackUrl.toString());
-		const popup = window.open(connectUrl, "form-oauth-connect", "popup=yes,width=520,height=760");
-
-		if (!popup) {
-			pushToast({ title: "無法開啟綁定視窗", description: "請確認瀏覽器未封鎖彈出視窗", variant: "error" });
-			return;
-		}
-
-		setConnectingOauthQuestionId(question.id);
-		if (oauthPopupWatchTimerRef.current) {
-			window.clearInterval(oauthPopupWatchTimerRef.current);
-		}
-		oauthPopupWatchTimerRef.current = window.setInterval(() => {
-			if (popup.closed) {
-				setConnectingOauthQuestionId(prev => (prev === question.id ? null : prev));
-				if (oauthPopupWatchTimerRef.current) {
-					window.clearInterval(oauthPopupWatchTimerRef.current);
-					oauthPopupWatchTimerRef.current = null;
-				}
-			}
-		}, 500);
-		popup.focus();
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -507,10 +413,8 @@ export const FormFilloutPage = () => {
 												sourceQuestion={question.sourceId ? questionsById.get(question.sourceId) : undefined}
 												sourceAnswerValue={question.sourceId ? answers[question.sourceId] || "" : ""}
 												responseId={urlResponseId}
-												connectingOauthQuestionId={connectingOauthQuestionId}
 												onAnswerChange={updateAnswer}
 												onOtherTextChange={updateOtherText}
-												onOauthConnect={handleOauthConnect}
 											/>
 										))}
 										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p className={styles.caption}>此區段目前沒有問題</p>}
