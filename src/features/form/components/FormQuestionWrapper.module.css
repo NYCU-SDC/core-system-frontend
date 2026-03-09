@@ -1,0 +1,19 @@
+.questionField {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.questionLabel {
+	font-weight: 500;
+}
+
+.requiredAsterisk {
+	color: var(--red);
+}
+
+.questionDescription {
+	color: var(--color-caption);
+	font-size: 0.875rem;
+	margin-block: 0.2rem 0.5rem;
+}
