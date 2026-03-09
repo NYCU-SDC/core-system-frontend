@@ -30,21 +30,6 @@
 	color: var(--comment);
 	font-size: 0.9rem;
 }
-
-.spinningIcon {
-	animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-	from {
-		transform: rotate(0deg);
-	}
-
-	to {
-		transform: rotate(360deg);
-	}
-}
-
 .tabs {
 	display: flex;
 	gap: 1rem;
