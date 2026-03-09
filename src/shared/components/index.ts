@@ -75,6 +75,8 @@ export { ErrorMessage } from "./ErrorMessage/ErrorMessage";
 
 export { LoadingSpinner } from "./LoadingSpinner/LoadingSpinner";
 
+export { SpinningIcon } from "./SpinningIcon/SpinningIcon";
+
 export { ErrorBoundary } from "./ErrorBoundary/ErrorBoundary";
 
 export { Markdown } from "./Markdown/Markdown";

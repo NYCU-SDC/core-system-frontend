@@ -3,7 +3,7 @@ import { useFormById, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, SpinningIcon, useToast } from "@/shared/components";
 import { useIsMutating } from "@tanstack/react-query";
 import { Check, Link, LoaderCircle } from "lucide-react";
 import { useState } from "react";
@@ -99,7 +99,7 @@ export const AdminFormDetailPage = () => {
 					<h1 className={styles.title}>{formQuery.data.title}</h1>
 					<div className={styles.headerActions}>
 						<div className={styles.saveStatus} aria-live="polite">
-							{isSaving ? <LoaderCircle size={16} className={styles.spinningIcon} /> : <Check size={16} />}
+							{isSaving ? <SpinningIcon icon={LoaderCircle} size={16} /> : <Check size={16} />}
 							<span>{isSaving ? "儲存中" : "已儲存"}</span>
 						</div>
 						<Button onClick={handlePublish} disabled={publishFormMutation.isPending || formQuery.data.status !== "DRAFT"}>

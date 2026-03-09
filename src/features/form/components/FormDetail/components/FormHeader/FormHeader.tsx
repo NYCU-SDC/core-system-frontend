@@ -1,4 +1,4 @@
-import { Button } from "@/shared/components";
+import { Button, SpinningIcon } from "@/shared/components";
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import styles from "./FormHeader.module.css";
 
@@ -26,7 +26,7 @@ export const FormHeader = ({ title, formDescription, currentStep, currentSection
 						<div className={styles.saveStatus} aria-live="polite">
 							{saveStatus === "saving" ? (
 								<>
-									<LoaderCircle size={16} className={styles.spinningIcon} />
+									<SpinningIcon icon={LoaderCircle} size={16} />
 									<span>儲存中</span>
 								</>
 							) : saveStatus === "error" ? (
