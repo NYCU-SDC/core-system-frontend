@@ -246,6 +246,7 @@ export const FileUploadRenderer = ({
 					>
 						<span className={styles.fileItemName}>{item.filename}</span>
 						{item.status === "uploading" && <span className={styles.fileItemHint}>上傳中…</span>}
+						{item.status === "loading" && <span className={styles.fileItemHint}>載入中…</span>}
 						{item.status === "error" && <span className={styles.fileItemHint}>{item.error || "上傳失敗"}</span>}
 						<div className={styles.fileItemActions}>
 							{item.status === "error" && responseId && !disabled && (
@@ -270,10 +271,10 @@ export const FileUploadRenderer = ({
 					</label>
 				)}
 			</div>
-			<p className={styles.uploadHint}>
+			<p className={styles.fileItemHint}>
 				最多 {question.uploadFile?.maxFileAmount || 1} 個檔案，每個檔案最大 {((question.uploadFile?.maxFileSizeLimit || 10485760) / 1024 / 1024).toFixed(0)} MB
 			</p>
-			{(!responseId || disabled) && <p className={styles.uploadHint}>預覽模式不會上傳檔案。</p>}
+			{(!responseId || disabled) && <p className={styles.fileItemHint}>預覽模式不會上傳檔案。</p>}
 		</>
 	);
 };
