@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "../Toast/useToast";
 import styles from "./AccountButton.module.css";
 
@@ -49,51 +49,54 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 			}
 		};
 	}, []);
-	const fetchAndApply = async (opts: { showToast: boolean }): Promise<boolean> => {
-		if (!responseId || !questionId) return false;
-		try {
-			const resp = await fetch(`/api/responses/${responseId}/questions/${questionId}`, {
-				credentials: "include"
-			});
-			if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-			const data = (await resp.json()) as {
-				answer?: {
-					value?: { username?: string; avatarUrl?: string };
+	const fetchAndApply = useCallback(
+		async (opts: { showToast: boolean }): Promise<boolean> => {
+			if (!responseId || !questionId) return false;
+			try {
+				const resp = await fetch(`/api/responses/${responseId}/questions/${questionId}`, {
+					credentials: "include"
+				});
+				if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+				const data = (await resp.json()) as {
+					answer?: {
+						value?: { username?: string; avatarUrl?: string };
+					};
+					displayValue?: string;
 				};
-				displayValue?: string;
-			};
 
-			const oauthUsername = data?.answer?.value?.username ?? "";
-			const fetchedAvatarUrl = data?.answer?.value?.avatarUrl ?? "";
-			const displayValue = data?.displayValue ?? "";
-			const finalValue = oauthUsername || displayValue;
+				const oauthUsername = data?.answer?.value?.username ?? "";
+				const fetchedAvatarUrl = data?.answer?.value?.avatarUrl ?? "";
+				const displayValue = data?.displayValue ?? "";
+				const finalValue = oauthUsername || displayValue;
 
-			if (finalValue) {
-				setResolvedLabel(finalValue);
-				setAvatarUrl(fetchedAvatarUrl);
-				onConnectRef.current?.(finalValue);
-				if (opts.showToast) {
-					pushToast({ title: "綁定成功", description: `已綁定帳號：${finalValue}`, variant: "success" });
+				if (finalValue) {
+					setResolvedLabel(finalValue);
+					setAvatarUrl(fetchedAvatarUrl);
+					onConnectRef.current?.(finalValue);
+					if (opts.showToast) {
+						pushToast({ title: "綁定成功", description: `已綁定帳號：${finalValue}`, variant: "success" });
+					}
+					return true;
+				} else if (opts.showToast) {
+					pushToast({ title: "綁定完成", description: "已完成授權，但尚未取得帳號資訊", variant: "warning" });
+					onConnectRef.current?.("");
 				}
-				return true;
-			} else if (opts.showToast) {
-				pushToast({ title: "綁定完成", description: "已完成授權，但尚未取得帳號資訊", variant: "warning" });
-				onConnectRef.current?.("");
+			} catch (error) {
+				const errMsg = (error as Error).message;
+				if (opts.showToast) {
+					pushToast({ title: "讀取綁定結果失敗", description: errMsg, variant: "error" });
+					onConnectErrorRef.current?.(errMsg);
+				}
 			}
-		} catch (error) {
-			const errMsg = (error as Error).message;
-			if (opts.showToast) {
-				pushToast({ title: "讀取綁定結果失敗", description: errMsg, variant: "error" });
-				onConnectErrorRef.current?.(errMsg);
-			}
-		}
-		return false;
-	};
+			return false;
+		},
+		[responseId, questionId, pushToast]
+	);
 
 	useEffect(() => {
 		if (!connected || !responseId || !questionId) return;
 		fetchAndApply({ showToast: false });
-	}, [connected, responseId, questionId]);
+	}, [connected, responseId, questionId, fetchAndApply]);
 
 	const handleClick = () => {
 		if (!responseId || !questionId) return;
@@ -121,12 +124,12 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 			if (event.source !== popup) return;
 			if (event.origin !== window.location.origin) return;
 
-			const data: any = event.data;
+			const data = event.data as { type?: string; questionId?: string; responseId?: string; error?: string | unknown };
 			if (!data || data.type !== "FORM_OAUTH_CONNECTED") return;
 			if (data.questionId !== questionId || data.responseId !== responseId) return;
 
 			// Mark this popup as handled so the interval callback does not re-fetch
-			(popup as any).__oauthHandled = true;
+			(popup as Window & { __oauthHandled?: boolean }).__oauthHandled = true;
 
 			clearTimer();
 			window.removeEventListener("message", handleMessage);
@@ -156,7 +159,7 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 				clearTimer();
 				window.removeEventListener("message", handleMessage);
 				// If no FORM_OAUTH_CONNECTED message was handled, fall back to fetching
-				if (!(popup as any).__oauthHandled) {
+				if (!(popup as Window & { __oauthHandled?: boolean }).__oauthHandled) {
 					await fetchAndApply({ showToast: true });
 				}
 				setIsConnecting(false);
