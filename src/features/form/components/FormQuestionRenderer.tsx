@@ -126,7 +126,7 @@ export const FormQuestionRenderer = ({
 	return (
 		<>
 			{RENDER_MAP[question.type] || (
-				<div key={question.id} className={styles.questionField}>
+				<div key={question.id}>
 					<p>不支援的問題類型: {question.type}</p>
 					<p className={styles.caption}>{question.title}</p>
 				</div>
