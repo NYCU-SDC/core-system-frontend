@@ -41,6 +41,14 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 		}
 	};
 
+	useEffect(() => {
+		return () => {
+			clearTimer();
+			if (popupRef.current && !popupRef.current.closed) {
+				popupRef.current.close();
+			}
+		};
+	}, []);
 	const fetchAndApply = async (opts: { showToast: boolean }): Promise<boolean> => {
 		if (!responseId || !questionId) return false;
 		try {
@@ -108,10 +116,49 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 		setIsConnecting(true);
 		clearTimer();
 
+		const handleMessage = async (event: MessageEvent) => {
+			// Only handle messages from this popup and same origin
+			if (event.source !== popup) return;
+			if (event.origin !== window.location.origin) return;
+
+			const data: any = event.data;
+			if (!data || data.type !== "FORM_OAUTH_CONNECTED") return;
+			if (data.questionId !== questionId || data.responseId !== responseId) return;
+
+			// Mark this popup as handled so the interval callback does not re-fetch
+			(popup as any).__oauthHandled = true;
+
+			clearTimer();
+			window.removeEventListener("message", handleMessage);
+
+			try {
+				if (data.error) {
+					const errorMessage = typeof data.error === "string" ? data.error : "綁定失敗，請再試一次";
+					pushToast({ title: "綁定失敗", description: errorMessage, variant: "error" });
+					onConnectErrorRef.current?.(errorMessage);
+				} else {
+					await fetchAndApply({ showToast: true });
+				}
+			} finally {
+				setIsConnecting(false);
+				try {
+					popup.close();
+				} catch {
+					// ignore
+				}
+			}
+		};
+
+		window.addEventListener("message", handleMessage);
+
 		timerRef.current = window.setInterval(async () => {
 			if (popup.closed) {
 				clearTimer();
-				await fetchAndApply({ showToast: true });
+				window.removeEventListener("message", handleMessage);
+				// If no FORM_OAUTH_CONNECTED message was handled, fall back to fetching
+				if (!(popup as any).__oauthHandled) {
+					await fetchAndApply({ showToast: true });
+				}
 				setIsConnecting(false);
 			}
 		}, 500);
