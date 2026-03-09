@@ -1,6 +1,6 @@
 import { Checkbox, Input } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import styles from "../FormDetailPage.module.css";
+import styles from "../FormFilloutPage.module.css";
 
 export const MultipleChoiceRenderer = ({
 	question,

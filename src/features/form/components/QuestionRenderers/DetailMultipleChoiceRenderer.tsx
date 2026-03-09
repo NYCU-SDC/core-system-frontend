@@ -1,6 +1,6 @@
 import { DetailedCheckbox } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import styles from "../FormDetailPage.module.css";
+import styles from "../FormFilloutPage.module.css";
 
 export const DetailMultipleChoiceRenderer = ({ question, value, onAnswerChange }: { question: FormsQuestionResponse; value: string; onAnswerChange: (questionId: string, value: string) => void }) => {
 	return (

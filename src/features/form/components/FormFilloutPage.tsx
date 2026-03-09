@@ -13,7 +13,8 @@ import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
 import { FormPreviewSection } from "./FormDetail/components/FormPreviewSection/FormPreviewSection";
 import { FormStructure } from "./FormDetail/components/FormStructure/FormStructure";
 import styles from "./FormFilloutPage.module.css";
-import { FormQuestionRenderer, type ServerFileInfo } from "./FormQuestionRenderer";
+import { FormQuestionRenderer } from "./FormQuestionRenderer";
+import { type ServerFileInfo } from "./QuestionRenderers";
 
 type Section = FormsSection;
 

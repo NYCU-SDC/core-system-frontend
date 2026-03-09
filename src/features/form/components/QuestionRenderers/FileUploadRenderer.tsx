@@ -2,7 +2,7 @@ import * as formApi from "@/features/form/services/api";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { RefreshCw, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import styles from "./FileUploadQuestion.module.css";
+import styles from "./FileUploadRenderer.module.css";
 
 interface FileItem {
 	id: string;
@@ -19,7 +19,7 @@ export interface ServerFileInfo {
 	contentType: string;
 }
 
-interface FileUploadQuestionProps {
+interface FileUploadRendererProps {
 	responseId?: string;
 	questionId: string;
 	question: FormsQuestionResponse;
@@ -31,7 +31,7 @@ interface FileUploadQuestionProps {
 	initialFiles?: ServerFileInfo[];
 }
 
-export const FileUploadQuestion = ({
+export const FileUploadRenderer = ({
 	responseId,
 	question,
 	questionId,
@@ -41,7 +41,7 @@ export const FileUploadQuestion = ({
 	onFileMetadataChange,
 	disabled = false,
 	initialFiles
-}: FileUploadQuestionProps) => {
+}: FileUploadRendererProps) => {
 	const [items, setItems] = useState<FileItem[]>([]);
 	const itemsRef = useRef<FileItem[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);

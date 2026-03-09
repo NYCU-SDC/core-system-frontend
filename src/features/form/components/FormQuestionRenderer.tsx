@@ -1,7 +1,7 @@
 import { DateInput, ScaleInput } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { useEffect } from "react";
-import styles from "./FormDetailPage.module.css";
+import styles from "./FormFilloutPage.module.css";
 import {
 	DetailMultipleChoiceRenderer,
 	DropdownRenderer,
@@ -105,6 +105,8 @@ export const FormQuestionRenderer = ({
 				question={question}
 				maxFileAmount={question.uploadFile?.maxFileAmount || 1}
 				allowedFileTypes={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
+				initialFiles={initialFiles}
+				onFileMetadataChange={onFileMetadataChange}
 				onFilesChange={fileNames => onAnswerChange(question.id, fileNames)}
 				disabled={disableFileUpload}
 			/>

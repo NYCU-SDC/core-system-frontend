@@ -1,7 +1,7 @@
 import { AccountButton } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { Chrome, Github } from "lucide-react";
-import styles from "../FormDetailPage.module.css";
+import styles from "../FormFilloutPage.module.css";
 
 export const OAuthConnectRenderer = ({
 	question,
