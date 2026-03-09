@@ -1,12 +1,14 @@
 FROM node:23-alpine AS builder
 WORKDIR /app
 
+ARG BUILD_MODE=dev
+
 RUN npm i -g pnpm
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm run build --mode=dev
+RUN pnpm run build --mode=${BUILD_MODE}
 
 FROM node:23-alpine
 WORKDIR /app

@@ -130,6 +130,8 @@ jobs:
             nycusdc/core-system-frontend:pr-${{ github.event.number }}
             nycusdc/core-system-frontend:${{ github.sha }}
           context: .
+          build-args: |
+            BUILD_MODE=dev
 
   Deploy:
     needs: Push-Image
