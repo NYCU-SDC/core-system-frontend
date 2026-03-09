@@ -59,7 +59,7 @@ export const FileUpload = ({ label, onChange, error, accept = "image/*", ...prop
 						</button>
 					</div>
 				) : fileName ? (
-					<>
+					<div className={styles.preview}>
 						<div className={styles.icon}>
 							<File size={48} />
 						</div>
@@ -67,7 +67,7 @@ export const FileUpload = ({ label, onChange, error, accept = "image/*", ...prop
 						<button type="button" className={styles.removeBtn} onClick={handleRemove} aria-label="移除檔案">
 							<X size={16} />
 						</button>
-					</>
+					</div>
 				) : (
 					<>
 						<div className={styles.icon}>

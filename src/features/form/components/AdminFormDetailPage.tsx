@@ -3,9 +3,9 @@ import { useFormById, usePublishForm } from "@/features/form/hooks/useOrgForms";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, SpinningIcon, useToast } from "@/shared/components";
 import { useIsMutating } from "@tanstack/react-query";
-import { Check, LoaderCircle } from "lucide-react";
+import { Check, Link, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./AdminFormDetailPage.module.css";
@@ -58,6 +58,17 @@ export const AdminFormDetailPage = () => {
 		window.open(`/forms/${formid}`, "_blank", "noopener,noreferrer");
 	};
 
+	const handleCopyFormLink = async () => {
+		if (!formid) return;
+		const formUrl = `${window.location.origin}/forms/${formid}`;
+		try {
+			await navigator.clipboard.writeText(formUrl);
+			pushToast({ title: "已複製填寫連結", variant: "success" });
+		} catch {
+			pushToast({ title: "複製失敗", variant: "error" });
+		}
+	};
+
 	if (formQuery.isLoading) {
 		return (
 			<AdminLayout>
@@ -88,18 +99,26 @@ export const AdminFormDetailPage = () => {
 					<h1 className={styles.title}>{formQuery.data.title}</h1>
 					<div className={styles.headerActions}>
 						<div className={styles.saveStatus} aria-live="polite">
-							{isSaving ? <LoaderCircle size={16} className={styles.spinningIcon} /> : <Check size={16} />}
+							{isSaving ? <SpinningIcon icon={LoaderCircle} size={16} /> : <Check size={16} />}
 							<span>{isSaving ? "儲存中" : "已儲存"}</span>
 						</div>
 						<Button onClick={handlePublish} disabled={publishFormMutation.isPending || formQuery.data.status !== "DRAFT"}>
 							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
 						</Button>
-						<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
-							預覽表單（beta）
-						</Button>
-						<Button variant="secondary" onClick={handleViewForm} disabled={formQuery.data.status === "DRAFT"}>
-							檢視表單
-						</Button>
+						{formQuery.data.status === "DRAFT" ? (
+							<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
+								預覽表單（beta）
+							</Button>
+						) : (
+							<>
+								<Button variant="secondary" onClick={handleViewForm}>
+									檢視表單
+								</Button>
+								<Button variant="secondary" onClick={handleCopyFormLink} title="點擊按鈕以複製表單連結">
+									<Link size={16} />
+								</Button>
+							</>
+						)}
 					</div>
 				</div>
 

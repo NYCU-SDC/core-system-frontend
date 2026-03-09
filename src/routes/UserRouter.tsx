@@ -10,7 +10,7 @@ const HomePage = lazy(() => import("@/features/auth/components/HomePage").then(m
 const LogoutPage = lazy(() => import("@/features/auth/components/LogoutPage").then(m => ({ default: m.LogoutPage })));
 const NotFoundPage = lazy(() => import("@/features/auth/components/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 const WelcomePage = lazy(() => import("@/features/auth/components/WelcomePage").then(m => ({ default: m.WelcomePage })));
-const FormDetailPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormDetailPage })));
+const FormFilloutPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormFilloutPage })));
 const FormEntryPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormEntryPage })));
 const FormsListPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormsListPage })));
 const OAuthConnectCallbackPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.OAuthConnectCallbackPage })));
@@ -50,7 +50,7 @@ export const UserRouter = () => {
 								path="/forms/:formId/:responseId"
 								element={
 									<UserLayout disablePadding>
-										<FormDetailPage />
+										<FormFilloutPage />
 									</UserLayout>
 								}
 							/>
