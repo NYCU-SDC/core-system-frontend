@@ -104,9 +104,7 @@ export const FormQuestionRenderer = ({
 				disabled={disableFileUpload}
 			/>
 		),
-		OAUTH_CONNECT: (
-			<OAuthConnectRenderer question={question} value={value} responseId={responseId} onOauthConnect={() => onOauthConnect?.(question)} connectingOauthQuestionId={connectingOauthQuestionId} />
-		),
+		OAUTH_CONNECT: <OAuthConnectRenderer question={question} value={value} responseId={responseId} onAnswerChange={onAnswerChange} />,
 		HYPERLINK: <HyperlinkRenderer question={question} value={value} onAnswerChange={onAnswerChange} />
 	};
 
