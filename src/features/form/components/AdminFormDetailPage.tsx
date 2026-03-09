@@ -114,7 +114,7 @@ export const AdminFormDetailPage = () => {
 								<Button variant="secondary" onClick={handleViewForm}>
 									檢視表單
 								</Button>
-								<Button variant="secondary" onClick={handleCopyFormLink} title="點按以複製連結">
+								<Button variant="secondary" onClick={handleCopyFormLink} title="點擊按鈕以複製表單連結">
 									<Link size={16} />
 								</Button>
 							</>
