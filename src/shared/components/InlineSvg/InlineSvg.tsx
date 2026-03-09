@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { Heart, Smile, Star, ThumbsUp, Trophy } from "lucide-react";
 import styles from "./InlineSvg.module.css";
 
-const svgCache = new Map<string, string>();
+const iconComponentCache = new Map<string, LucideIcon | null>();
 
 interface InlineSvgProps {
 	name: string;
@@ -10,32 +11,31 @@ interface InlineSvgProps {
 	className?: string;
 }
 
+const ICON_MAP = {
+	star: Star,
+	heart: Heart,
+	"thumbs-up": ThumbsUp,
+	smile: Smile,
+	trophy: Trophy
+} as const;
+
+const resolveIconComponent = (name: string): LucideIcon | null => {
+	if (iconComponentCache.has(name)) {
+		return iconComponentCache.get(name) ?? null;
+	}
+
+	const component = (ICON_MAP as Record<string, LucideIcon | undefined>)[name] ?? null;
+	iconComponentCache.set(name, component);
+	return component;
+};
+
 export const InlineSvg = ({ name, filled, size = 24, className }: InlineSvgProps) => {
-	const [svg, setSvg] = useState<string>(() => svgCache.get(name) || "");
+	const Icon = resolveIconComponent(name);
+	if (!Icon) return null;
 
-	useEffect(() => {
-		if (svgCache.has(name)) {
-			return;
-		}
-
-		let mounted = true;
-
-		fetch(`/icons/lucide/${name}.svg`)
-			.then(res => res.text())
-			.then(data => {
-				if (!mounted) return;
-				svgCache.set(name, data);
-				setSvg(data);
-			});
-
-		return () => {
-			mounted = false;
-		};
-	}, [name]);
-
-	if (!svg) return null;
-
-	const processed = svg.replace("<svg", `<svg width="${size}" height="${size}" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" class="${className ?? ""}"`);
-
-	return <span dangerouslySetInnerHTML={{ __html: processed }} className={styles.wrapper} />;
+	return (
+		<span className={styles.wrapper}>
+			<Icon size={size} fill={filled ? "currentColor" : "none"} stroke="currentColor" className={className} />
+		</span>
+	);
 };

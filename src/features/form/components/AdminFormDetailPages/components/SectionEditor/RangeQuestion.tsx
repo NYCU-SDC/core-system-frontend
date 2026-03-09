@@ -1,9 +1,9 @@
 import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { InlineSvg, Input } from "@/shared/components";
-import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./RangeQuestion.module.css";
+
+const ADMIN_RATING_ICON_OPTIONS = ["star", "heart", "thumbs-up", "smile", "trophy"] as const;
 
 export interface RangeQuestionProps {
 	start: number;
@@ -20,36 +20,10 @@ export interface RangeQuestionProps {
 }
 
 export const RangeQuestion = (props: RangeQuestionProps) => {
-	const [iconKeyword, setIconKeyword] = useState("");
-	const [iconNames, setIconNames] = useState<string[]>([]);
-
-	useEffect(() => {
-		let isMounted = true;
-		fetch("/icons/lucide/names.json")
-			.then(res => (res.ok ? res.json() : []))
-			.then((names: unknown) => {
-				if (!isMounted) return;
-				if (Array.isArray(names)) {
-					setIconNames(names.filter((name): name is string => typeof name === "string"));
-				}
-			})
-			.catch(() => {
-				if (isMounted) setIconNames([]);
-			});
-
-		return () => {
-			isMounted = false;
-		};
-	}, []);
-
-	const filteredIcons = useMemo(() => {
-		const keyword = iconKeyword.trim().toLowerCase();
-		if (!keyword) return iconNames;
-		return iconNames.filter(icon => icon.includes(keyword));
-	}, [iconKeyword, iconNames]);
 	const rangeWarning = props.start >= props.end ? "開始值必須小於結束值" : null;
 	const startWarning = props.start < 0 || props.start > 1 ? "開始值需為 0 或 1" : null;
 	const endWarning = props.end < 2 || props.end > 10 ? "結束值需介於 2 到 10" : null;
+	const selectedIconName = props.icon ?? ADMIN_RATING_ICON_OPTIONS[0];
 
 	return (
 		<>
@@ -61,12 +35,13 @@ export const RangeQuestion = (props: RangeQuestionProps) => {
 			{(rangeWarning || startWarning || endWarning) && <p className={styles.warning}>{rangeWarning ?? startWarning ?? endWarning}</p>}
 			{props.hasIcon && (
 				<div className={styles.iconPickerSection}>
-					<div className={styles.iconSearchWrapper}>
-						<Search size={16} className={styles.iconSearchIcon} />
-						<Input value={iconKeyword} onChange={event => setIconKeyword(event.target.value)} placeholder="搜尋圖示" variant="flushed" themeColor="--comment" />
+					<div className={styles.iconSelected}>
+						<span>選擇圖示：</span>
+						<InlineSvg name={selectedIconName} filled size={18} className={styles.iconSelectedPreview} />
+						<code className={styles.iconSelectedName}>{selectedIconName}</code>
 					</div>
 					<div className={styles.iconGrid}>
-						{filteredIcons.map(iconName => (
+						{ADMIN_RATING_ICON_OPTIONS.map(iconName => (
 							<button
 								key={iconName}
 								type="button"

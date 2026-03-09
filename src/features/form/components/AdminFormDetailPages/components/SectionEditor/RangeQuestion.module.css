@@ -22,14 +22,26 @@
 	max-height: 14rem;
 }
 
-.iconSearchWrapper {
+.iconSelected {
+	margin-top: 0.75rem;
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
+	font-size: 0.875rem;
+	color: var(--color-caption);
 }
 
-.iconSearchIcon {
-	color: var(--color-caption);
+.iconSelectedPreview {
+	max-width: 1rem;
+	max-height: 1rem;
+}
+
+.iconSelectedName {
+	font-size: 0.75rem;
+	padding: 0.0625rem 0.25rem;
+	border-radius: 0.25rem;
+	background-color: var(--background-color-secondary);
+	color: var(--foreground);
 }
 
 .iconGrid {
