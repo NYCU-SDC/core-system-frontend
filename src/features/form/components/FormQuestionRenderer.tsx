@@ -61,7 +61,15 @@ export const FormQuestionRenderer = ({
 		DROPDOWN: <DropdownRenderer question={question} value={value} onAnswerChange={onAnswerChange} />,
 		MULTIPLE_CHOICE: <MultipleChoiceRenderer question={question} value={value} onAnswerChange={onAnswerChange} onOtherTextChange={onOtherTextChange} otherTextValue={otherTextValue} />,
 		DETAILED_MULTIPLE_CHOICE: <DetailMultipleChoiceRenderer question={question} value={value} onAnswerChange={onAnswerChange} />,
-		RANKING: <RankingRenderer question={question} value={value} onAnswerChange={onAnswerChange} />,
+		RANKING: (
+			<RankingRenderer
+				question={question}
+				value={value}
+				onAnswerChange={onAnswerChange}
+				sourceQuestion={sourceQuestion}
+				sourceAnswerValue={sourceAnswerValue}
+			/>
+		),
 		DATE: (
 			<DateInput
 				key={question.id}
