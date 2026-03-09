@@ -121,7 +121,57 @@ const FileUploadQuestion = ({ responseId, questionId, maxFileAmount, allowedFile
 	};
 
 	const doUpload = async (item: FileItem) => {
-		await doUploadBatch([item]);
+		// If we already have a local File, just delegate to the batch uploader.
+		if (item.file) {
+			await doUploadBatch([item]);
+			return;
+		}
+
+		// For initially-loaded items where the download failed, try re-downloading
+		// the file from the server before uploading.
+		if (!item.serverInfo) {
+			// Nothing we can do without either a local file or server metadata.
+			return;
+		}
+
+		// Mark the item as loading while we re-fetch the file content.
+		setItems(prev => prev.map(i => (i.id === item.id ? { ...i, status: "loading" as const, error: undefined } : i)));
+
+		try {
+			const { fileId, originalFilename, contentType } = item.serverInfo;
+			const response = await fetch(`/api/files/${fileId}`);
+			if (!response.ok) {
+				throw new Error("下載失敗，請重新上傳");
+			}
+
+			const blob = await response.blob();
+			const downloadedFile = new File([blob], originalFilename, { type: contentType });
+
+			// Update the item in state with the newly created File.
+			let updatedItem: FileItem | null = null;
+			setItems(prev =>
+				prev.map(i => {
+					if (i.id !== item.id) return i;
+					updatedItem = {
+						...i,
+						file: downloadedFile,
+						filename: originalFilename
+					};
+					return updatedItem;
+				})
+			);
+
+			// If for some reason the item was not found in state, abort gracefully.
+			if (!updatedItem) {
+				throw new Error("找不到要重新上傳的檔案項目");
+			}
+
+			// Now that we have a local File, reuse the batch upload logic.
+			await doUploadBatch([updatedItem]);
+		} catch (err) {
+			const message = (err instanceof Error && err.message) || "下載失敗，請重新上傳";
+			setItems(prev => prev.map(i => (i.id === item.id ? { ...i, status: "error" as const, error: message } : i)));
+		}
 	};
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
