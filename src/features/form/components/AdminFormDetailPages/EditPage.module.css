@@ -1,54 +1,13 @@
-.header {
+.container {
+	position: relative;
+	overflow: hidden;
+}
+
+.toolbar {
+	position: absolute;
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	margin-bottom: 0.5rem;
-}
-
-.description {
-	padding: 0;
-	padding-left: 1rem;
-	line-height: 1.5;
-}
-
-.flowContainer {
-	display: flex;
-	justify-content: center;
-}
-
-.warnings {
-	margin-top: 1.5rem;
-	padding: 0.75rem 1rem;
+	top: 1rem;
+	left: 1rem;
 	border-radius: 0.5rem;
-	background: color-mix(in srgb, var(--orange) 10%, transparent);
-	border: 1px solid color-mix(in srgb, var(--orange) 40%, transparent);
-}
-
-.warningsTitle {
-	margin: 0 0 0.5rem;
-	font-weight: 600;
-	color: var(--orange);
-}
-
-.warnings ul {
-	margin: 0;
-	padding-left: 1.25rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-}
-
-.warningItem {
-	font-size: 0.85rem;
-	color: var(--foreground);
-	display: flex;
-	gap: 0.5rem;
-	align-items: baseline;
-}
-
-.warningNode {
-	font-weight: 600;
-	white-space: nowrap;
-	color: var(--orange);
+	background-color: var(--background-color-tertiary);
 }

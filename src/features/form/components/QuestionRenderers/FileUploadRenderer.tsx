@@ -86,7 +86,7 @@ export const FileUploadRenderer = ({
 				setItems(prev => prev.map(i => (i.id === placeholder.id ? { ...i, status: "error" as const, error: "下載失敗，請重新上傳" } : i)));
 			}
 		});
-	}, [initialFiles]);
+	}, [initialFiles, onFilesChange]);
 
 	const doUploadBatch = async (batch: FileItem[]) => {
 		if (!responseId || batch.length === 0) return;

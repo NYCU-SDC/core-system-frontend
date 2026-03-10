@@ -145,7 +145,7 @@ export const AdminFormDetailPage = () => {
 					)}
 					{activeTab === "edit" && !sectionId && (
 						<div className={styles.edit}>
-							<AdminFormEditPage formData={formQuery.data} />
+							<AdminFormEditPage />
 						</div>
 					)}
 					{activeTab === "edit" && sectionId && (
