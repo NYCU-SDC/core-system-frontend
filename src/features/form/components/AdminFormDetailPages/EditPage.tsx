@@ -259,7 +259,7 @@ const InteractiveStage = ({ shapes, setShapes, arrows }: InteractiveStageProps) 
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, []);
+	}, [app.screen.width, app.screen.height, setShapes]);
 
 	useEffect(() => {
 		const canvas = app.canvas;
@@ -281,7 +281,7 @@ const InteractiveStage = ({ shapes, setShapes, arrows }: InteractiveStageProps) 
 			g.fill({ color: 0x0088ff, alpha: 0.2 });
 			g.stroke({ width: 2, color: 0x0088ff, alpha: 0.8 });
 		},
-		[stageScale, startPos, currentPos, isSelecting]
+		[startPos, currentPos, isSelecting]
 	);
 
 	const handleLinkStart = (e: FederatedMouseEvent, shape: Shape) => {
@@ -350,8 +350,8 @@ const InteractiveStage = ({ shapes, setShapes, arrows }: InteractiveStageProps) 
 		const dx = e.global.x - lastPos.current.x;
 		const dy = e.global.y - lastPos.current.y;
 
-		let newX = c.x + dx;
-		let newY = c.y + dy;
+		const newX = c.x + dx;
+		const newY = c.y + dy;
 		const minX = app.screen.width - c.width;
 		const minY = app.screen.height - c.height;
 
