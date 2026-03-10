@@ -49,6 +49,36 @@ const OptionRow = ({ option, index, type, canRemove, onCommit, onRemove }: Optio
 	);
 };
 
+interface OtherOptionRowProps {
+	option: Option;
+	index: number;
+	type: "radio" | "checkbox" | "list";
+	canRemove: boolean;
+	onCommit: (index: number, value: string) => void;
+	onRemoveOther: () => void;
+}
+
+const OtherOptionRow = ({ option, index, type, canRemove, onCommit, onRemoveOther }: OtherOptionRowProps) => {
+	const [localLabel, setLocalLabel] = useState(option.label);
+	return (
+		<div className={styles.optionWrapper}>
+			<OptionsInput
+				value={localLabel}
+				type={type}
+				themeColor="--comment"
+				variant="flushed"
+				listLabel={`${index + 1}.`}
+				className={styles.optionInput}
+				placeholder="其他（使用者填寫）"
+				onFocus={e => e.target.select()}
+				onChange={e => setLocalLabel(e.target.value)}
+				onBlur={() => onCommit(index, localLabel)}
+			/>
+			{canRemove && <X onClick={onRemoveOther} />}
+		</div>
+	);
+};
+
 export const OptionsQuestion = (props: OptionsQuestionProps) => {
 	return (
 		<div className={styles.container}>
@@ -60,10 +90,15 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 						}
 						if (option.isOther) {
 							return (
-								<div className={styles.optionWrapper}>
-									<OptionsInput key="other" value="其他（使用者填寫）" type={props.type} variant="none" readOnly />
-									{props.options.length > 1 && <X onClick={props.onRemoveOther} />}
-								</div>
+								<OtherOptionRow
+									key={option.id ?? index}
+									option={option}
+									index={index}
+									type={props.type}
+									canRemove={props.options.length > 1}
+									onCommit={props.onChange}
+									onRemoveOther={props.onRemoveOther}
+								/>
 							);
 						}
 					})}
