@@ -171,7 +171,7 @@ export const AdminSectionEditPage = () => {
 							const updated: Question = {
 								...old,
 								title: apiQuestion.title ?? old.title,
-								description: proseMirrorToPlainText(apiQuestion.description) || old.description,
+								description: apiQuestion.description ?? old.description,
 								required: apiQuestion.required ?? old.required,
 								...(apiQuestion.sourceId !== undefined && {
 									sourceQuestionId: apiQuestion.sourceId ?? undefined,
@@ -197,6 +197,7 @@ export const AdminSectionEditPage = () => {
 							};
 
 							const next = [...prev];
+							next[index] = updated;
 							next[index] = updated;
 							return next;
 						});
