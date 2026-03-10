@@ -68,9 +68,7 @@ export const FileUploadRenderer = ({
 		placeholders.forEach(async (placeholder, index) => {
 			const info = initialFiles[index];
 			try {
-				const res = await fetch(`/api/files/${info.fileId}`, { credentials: "include" });
-				if (!res.ok) throw new Error(`HTTP ${res.status}`);
-				const blob = await res.blob();
+				const blob = await formApi.downloadFile(info.fileId);
 				const file = new File([blob], info.originalFilename, { type: info.contentType || blob.type });
 				setItems(prev => {
 					const next = prev.map(i => (i.id === placeholder.id ? { ...i, file, status: "success" as const } : i));
@@ -140,12 +138,7 @@ export const FileUploadRenderer = ({
 
 		try {
 			const { fileId, originalFilename, contentType } = item.serverInfo;
-			const response = await fetch(`/api/files/${fileId}`);
-			if (!response.ok) {
-				throw new Error("下載失敗，請重新上傳");
-			}
-
-			const blob = await response.blob();
+			const blob = await formApi.downloadFile(fileId);
 			const downloadedFile = new File([blob], originalFilename, { type: contentType });
 
 			// Update the item in state with the newly created File.
