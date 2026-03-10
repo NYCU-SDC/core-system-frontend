@@ -138,48 +138,41 @@ export const AdminSectionEditPage = () => {
 					const syncQuestionFromApi = (apiQuestion: FormsQuestionResponse) => {
 						setQuestions(prev => {
 							if (!prev[index]) return prev;
+							const old = prev[index];
+
+							const nextOptions = old.isFromAnswer ? [] : old.options;
+							const nextDetailOptions = old.detailOptions;
+
+							const updated: Question = {
+								...old,
+								title: apiQuestion.title ?? old.title,
+								description: apiQuestion.description ?? old.description,
+								required: apiQuestion.required ?? old.required,
+								...(apiQuestion.sourceId !== undefined && {
+									sourceQuestionId: apiQuestion.sourceId ?? undefined,
+									isFromAnswer: Boolean(apiQuestion.sourceId)
+								}),
+								icon: (apiQuestion.scale?.icon ?? old.icon) as Question["icon"],
+								start: apiQuestion.scale?.minVal ?? old.start,
+								end: apiQuestion.scale?.maxVal ?? old.end,
+								startLabel: apiQuestion.scale?.minValueLabel ?? old.startLabel,
+								endLabel: apiQuestion.scale?.maxValueLabel ?? old.endLabel,
+								uploadAllowedFileTypes: apiQuestion.uploadFile?.allowedFileTypes ? [...apiQuestion.uploadFile.allowedFileTypes] : old.uploadAllowedFileTypes,
+								uploadMaxFileAmount: apiQuestion.uploadFile?.maxFileAmount ?? old.uploadMaxFileAmount,
+								uploadMaxFileSizeLimit: apiQuestion.uploadFile?.maxFileSizeLimit ?? old.uploadMaxFileSizeLimit,
+								dateHasYear: apiQuestion.date?.hasYear ?? old.dateHasYear,
+								dateHasMonth: apiQuestion.date?.hasMonth ?? old.dateHasMonth,
+								dateHasDay: apiQuestion.date?.hasDay ?? old.dateHasDay,
+								dateHasMinDate: Boolean(apiQuestion.date?.minDate),
+								dateHasMaxDate: Boolean(apiQuestion.date?.maxDate),
+								dateMinDate: apiQuestion.date?.minDate ? apiQuestion.date.minDate.slice(0, 10) : "",
+								dateMaxDate: apiQuestion.date?.maxDate ? apiQuestion.date.maxDate.slice(0, 10) : "",
+								options: nextOptions,
+								detailOptions: nextDetailOptions
+							};
+
 							const next = [...prev];
-							const target = next[index];
-							target.title = apiQuestion.title ?? target.title;
-							target.description = apiQuestion.description ?? target.description;
-							target.required = apiQuestion.required ?? target.required;
-							if (apiQuestion.sourceId !== undefined) {
-								target.sourceQuestionId = apiQuestion.sourceId ?? undefined;
-								target.isFromAnswer = Boolean(apiQuestion.sourceId);
-							}
-							target.icon = apiQuestion.scale?.icon ?? target.icon;
-							target.start = apiQuestion.scale?.minVal ?? target.start;
-							target.end = apiQuestion.scale?.maxVal ?? target.end;
-							target.startLabel = apiQuestion.scale?.minValueLabel ?? target.startLabel;
-							target.endLabel = apiQuestion.scale?.maxValueLabel ?? target.endLabel;
-							target.uploadAllowedFileTypes = apiQuestion.uploadFile?.allowedFileTypes ? [...apiQuestion.uploadFile.allowedFileTypes] : target.uploadAllowedFileTypes;
-							target.uploadMaxFileAmount = apiQuestion.uploadFile?.maxFileAmount ?? target.uploadMaxFileAmount;
-							target.uploadMaxFileSizeLimit = apiQuestion.uploadFile?.maxFileSizeLimit ?? target.uploadMaxFileSizeLimit;
-							target.dateHasYear = apiQuestion.date?.hasYear ?? target.dateHasYear;
-							target.dateHasMonth = apiQuestion.date?.hasMonth ?? target.dateHasMonth;
-							target.dateHasDay = apiQuestion.date?.hasDay ?? target.dateHasDay;
-							target.dateHasMinDate = Boolean(apiQuestion.date?.minDate);
-							target.dateHasMaxDate = Boolean(apiQuestion.date?.maxDate);
-							target.dateMinDate = apiQuestion.date?.minDate ? apiQuestion.date.minDate.slice(0, 10) : "";
-							target.dateMaxDate = apiQuestion.date?.maxDate ? apiQuestion.date.maxDate.slice(0, 10) : "";
-
-							if (target.type === "DETAILED_MULTIPLE_CHOICE" && apiQuestion.choices) {
-								target.detailOptions = apiQuestion.choices.map(choice => ({
-									id: choice.id,
-									label: choice.name ?? "",
-									description: choice.description ?? ""
-								}));
-							} else if (apiQuestion.choices) {
-								target.options = apiQuestion.choices.map(choice => ({
-									id: choice.id,
-									label: choice.name ?? "",
-									isOther: choice.isOther ?? false
-								}));
-							} else if (target.isFromAnswer) {
-								target.options = [];
-							}
-
-							questionsRef.current = next;
+							next[index] = updated;
 							return next;
 						});
 					};
