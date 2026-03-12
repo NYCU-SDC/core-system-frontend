@@ -1,5 +1,4 @@
 import { Heart, Smile, Star, ThumbsUp, Trophy } from "lucide-react";
-import type { ReactNode } from "react";
 import styles from "./InlineSvg.module.css";
 
 interface InlineSvgProps {
@@ -9,34 +8,22 @@ interface InlineSvgProps {
 	className?: string;
 }
 
+const iconMap = {
+	star: Star,
+	heart: Heart,
+	"thumbs-up": ThumbsUp,
+	smile: Smile,
+	trophy: Trophy
+} as const;
+
 export const InlineSvg = ({ name, filled, size = 24, className }: InlineSvgProps) => {
-	const iconProps = {
-		size,
-		fill: filled ? "currentColor" : "none",
-		stroke: "currentColor",
-		className
-	};
+	const Icon = iconMap[name as keyof typeof iconMap];
 
-	let iconNode: ReactNode = null;
-	switch (name) {
-		case "star":
-			iconNode = <Star {...iconProps} />;
-			break;
-		case "heart":
-			iconNode = <Heart {...iconProps} />;
-			break;
-		case "thumbs-up":
-			iconNode = <ThumbsUp {...iconProps} />;
-			break;
-		case "smile":
-			iconNode = <Smile {...iconProps} />;
-			break;
-		case "trophy":
-			iconNode = <Trophy {...iconProps} />;
-			break;
-		default:
-			return null;
-	}
+	if (!Icon) return null;
 
-	return <span className={styles.wrapper}>{iconNode}</span>;
+	return (
+		<span className={styles.wrapper}>
+			<Icon size={size} fill={filled ? "currentColor" : "none"} stroke="currentColor" className={className} />
+		</span>
+	);
 };

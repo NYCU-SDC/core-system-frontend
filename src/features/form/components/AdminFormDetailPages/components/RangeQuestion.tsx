@@ -11,7 +11,7 @@ export interface RangeQuestionProps {
 	startLabel?: string;
 	endLabel?: string;
 	hasIcon: boolean;
-	icon?: string;
+	icon?: Question["icon"];
 	onStartChange?: (newStart: number) => void;
 	onEndChange?: (newEnd: number) => void;
 	onChangeIcon?: (newIcon: Question["icon"]) => void;
@@ -34,25 +34,20 @@ export const RangeQuestion = (props: RangeQuestionProps) => {
 			</div>
 			{(rangeWarning || startWarning || endWarning) && <p className={styles.warning}>{rangeWarning ?? startWarning ?? endWarning}</p>}
 			{props.hasIcon && (
-				<div className={styles.iconPickerSection}>
-					<div className={styles.iconSelected}>
-						<span>選擇圖示：</span>
-						<InlineSvg name={selectedIconName} filled size={18} className={styles.iconSelectedPreview} />
-						<code className={styles.iconSelectedName}>{selectedIconName}</code>
-					</div>
-					<div className={styles.iconGrid}>
-						{ADMIN_RATING_ICON_OPTIONS.map(iconName => (
-							<button
-								key={iconName}
-								type="button"
-								className={`${styles.iconGridItem} ${props.icon === iconName ? styles.iconGridItemActive : ""}`}
-								onClick={() => props.onChangeIcon?.(iconName as Question["icon"])}
-								title={iconName}
-							>
-								<InlineSvg name={iconName} filled size={18} className={styles.icon} />
-							</button>
-						))}
-					</div>
+				<div className={styles.iconGrid}>
+					{ADMIN_RATING_ICON_OPTIONS.map(iconName => (
+						<button
+							key={iconName}
+							type="button"
+							className={`${styles.iconButton} ${selectedIconName === iconName ? styles.selected : ""}`}
+							onClick={() => props.onChangeIcon?.(iconName)}
+							title={iconName}
+							aria-pressed={selectedIconName === iconName}
+						>
+							<InlineSvg name={iconName} filled size={18} className={styles.icon} />
+							<span className={styles.iconName}>{iconName}</span>
+						</button>
+					))}
 				</div>
 			)}
 			<OptionsInput
