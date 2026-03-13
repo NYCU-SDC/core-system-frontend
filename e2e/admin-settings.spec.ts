@@ -1,26 +1,14 @@
-/**
- * AdminSettingsPage E2E tests (AS-INT-001 to AS-INT-008)
- *
- * Navigate to /orgs/SDC/settings (served by admin.html).
- * The withAuth fixture auto-stubs /api/unit/users/me and /api/unit/orgs.
- */
 import { expect, mockOrg, mockRoute, test } from "./fixtures";
 
 const ORG_SLUG = "SDC";
 const BASE_URL = `/orgs/${ORG_SLUG}/settings`;
 
-// ---------------------------------------------------------------------------
-// Shared mock data
-// ---------------------------------------------------------------------------
 const orgData = { ...mockOrg, name: "原始名稱" };
 
 const memberAlice = { id: "m1", name: "Alice", emails: ["alice@example.com"], avatarUrl: "" };
 const memberBob = { id: "m2", name: "Bob", emails: ["bob@example.com"], avatarUrl: "" };
 const memberCarol = { id: "m3", name: "Carol", emails: ["carol@example.com"], avatarUrl: "" };
 
-// ---------------------------------------------------------------------------
-// AS-INT-001: Update org name → Enter → PUT success → toast
-// ---------------------------------------------------------------------------
 test("AS-INT-001: updating org name and pressing Enter sends PUT and shows success toast", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/members`, []);
@@ -51,22 +39,16 @@ test("AS-INT-001: updating org name and pressing Enter sends PUT and shows succe
 
 	await page.goto(BASE_URL);
 
-	// Wait for org name to be loaded
 	const orgInput = page.locator("#orgName");
 	await expect(orgInput).toHaveValue("原始名稱", { timeout: 5000 });
 
-	// Triple-click to select all → type new name
 	await orgInput.click({ clickCount: 3 });
 	await orgInput.type("新名稱");
 	await orgInput.press("Enter");
 
-	// Success toast should appear
 	await expect(page.locator("text=編輯成功")).toBeVisible({ timeout: 5000 });
 });
 
-// ---------------------------------------------------------------------------
-// AS-INT-002: Update org name → PUT fails → error toast
-// ---------------------------------------------------------------------------
 test("AS-INT-002: org name PUT failure shows error toast", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/members`, []);
@@ -98,9 +80,6 @@ test("AS-INT-002: org name PUT failure shows error toast", async ({ page }) => {
 	await expect(page.locator("text=儲存失敗")).toBeVisible({ timeout: 5000 });
 });
 
-// ---------------------------------------------------------------------------
-// AS-INT-003: Add member → POST success → toast + input cleared + list updated
-// ---------------------------------------------------------------------------
 test("AS-INT-003: adding a member successfully shows toast, clears input, and updates list", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 
@@ -126,24 +105,17 @@ test("AS-INT-003: adding a member successfully shows toast, clears input, and up
 	await page.goto(BASE_URL);
 	await page.waitForSelector("text=Alice");
 
-	// Type email and click add
 	const emailInput = page.locator('input[placeholder="member@example.com"]');
 	await emailInput.fill("new@example.com");
 	await page.click("button:has-text('新增成員')");
 
-	// Success toast
 	await expect(page.locator("text=邀請成功")).toBeVisible({ timeout: 5000 });
 
-	// Email input cleared
 	await expect(emailInput).toHaveValue("");
 
-	// Member list updated (re-fetched)
 	await expect(page.locator("text=New Member")).toBeVisible({ timeout: 5000 });
 });
 
-// ---------------------------------------------------------------------------
-// AS-INT-004: Add member → POST fails → error toast, input not cleared
-// ---------------------------------------------------------------------------
 test("AS-INT-004: add member failure shows error toast and keeps email in input", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 	await page.route(`**/api/unit/orgs/${ORG_SLUG}/members`, route => {
@@ -171,9 +143,6 @@ test("AS-INT-004: add member failure shows error toast and keeps email in input"
 	await expect(emailInput).toHaveValue("existing@example.com");
 });
 
-// ---------------------------------------------------------------------------
-// AS-INT-005: Empty email → click add → no POST sent
-// ---------------------------------------------------------------------------
 test("AS-INT-005: clicking 新增成員 with empty email does not send POST", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/members`, []);
@@ -196,14 +165,10 @@ test("AS-INT-005: clicking 新增成員 with empty email does not send POST", as
 	await page.waitForSelector("button:has-text('新增成員')");
 	await page.click("button:has-text('新增成員')");
 
-	// Small delay to ensure no async POST fires
 	await page.waitForTimeout(200);
 	expect(postCalled).toBe(false);
 });
 
-// ---------------------------------------------------------------------------
-// AS-INT-006: Remove member → confirm → DELETE success → dialog gone + list updated
-// ---------------------------------------------------------------------------
 test("AS-INT-006: remove member dialog confirms, calls DELETE, and updates list", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 
@@ -217,7 +182,6 @@ test("AS-INT-006: remove member dialog confirms, calls DELETE, and updates list"
 				body: JSON.stringify([memberAlice, memberBob, memberCarol])
 			});
 		} else {
-			// After Bob is removed
 			route.fulfill({
 				status: 200,
 				contentType: "application/json",
@@ -240,33 +204,24 @@ test("AS-INT-006: remove member dialog confirms, calls DELETE, and updates list"
 	await page.waitForSelector("text=Alice");
 	await page.waitForSelector("text=Bob");
 
-	// Click Bob's remove button — icon-only buttons (no text) in each member row
-	// We find Bob's row and click its button
 	const bobRow = page.locator("[class*='memberCard']").filter({ hasText: "Bob" });
 	await bobRow.locator("button").click();
 
-	// Dialog appears with Bob's name
 	await expect(page.getByRole("dialog")).toBeVisible();
 	await expect(page.getByRole("dialog")).toContainText("Bob");
 
-	// Confirm removal
 	await page.click("button:has-text('確認移除')");
 
 	expect(deleteCalled).toBe(true);
 
-	// Toast and dialog dismissed
 	await expect(page.locator("text=已移除成員")).toBeVisible({ timeout: 5000 });
 	await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 3000 });
 
-	// Bob no longer in list
 	await expect(page.locator("text=Bob")).not.toBeVisible({ timeout: 5000 });
 	await expect(page.locator("text=Alice")).toBeVisible();
 	await expect(page.locator("text=Carol")).toBeVisible();
 });
 
-// ---------------------------------------------------------------------------
-// AS-INT-007: Remove member → DELETE fails → error toast → list unchanged
-// ---------------------------------------------------------------------------
 test("AS-INT-007: DELETE failure shows error toast and member list remains unchanged", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/members`, [memberAlice, memberBob, memberCarol]);
@@ -291,13 +246,9 @@ test("AS-INT-007: DELETE failure shows error toast and member list remains uncha
 	await page.click("button:has-text('確認移除')");
 
 	await expect(page.locator("text=移除失敗")).toBeVisible({ timeout: 5000 });
-	// Members should be unchanged
 	await expect(page.locator("text=Bob")).toBeVisible();
 });
 
-// ---------------------------------------------------------------------------
-// AS-INT-008: Remove member → cancel → dialog gone → no DELETE sent
-// ---------------------------------------------------------------------------
 test("AS-INT-008: clicking cancel in remove dialog dismisses it without sending DELETE", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}`, orgData);
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/members`, [memberAlice, memberBob]);
@@ -320,7 +271,6 @@ test("AS-INT-008: clicking cancel in remove dialog dismisses it without sending 
 
 	await expect(page.getByRole("dialog")).toBeVisible();
 
-	// Cancel
 	await page.click("button:has-text('取消')");
 
 	await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 3000 });
