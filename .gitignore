@@ -20,7 +20,6 @@ dist-ssr
 .gitconfig-temp
 
 # Test artifacts
-playwright/.auth/
 playwright-report/
 test-results/
 

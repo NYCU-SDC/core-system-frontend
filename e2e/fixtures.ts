@@ -1,5 +1,8 @@
 import { test as base, type Page } from "@playwright/test";
 
+// ---------------------------------------------------------------------------
+// Shared mock data
+// ---------------------------------------------------------------------------
 export const mockUser = {
 	id: "user-1",
 	name: "小明",
@@ -15,49 +18,48 @@ export const mockOrg = {
 	metadata: {}
 };
 
+// ---------------------------------------------------------------------------
+// Fixture extensions
+// ---------------------------------------------------------------------------
 interface Fixtures {
+	/** Stubs the two auth-related endpoints so route guards pass. */
 	withAuth: void;
 }
 
 export const test = base.extend<Fixtures>({
 	withAuth: [
 		async ({ page }, use) => {
-			await page.context().addCookies([
-				{
-					name: "access_token",
-					value: "mock-access-token",
-					domain: "localhost",
-					path: "/",
-					httpOnly: true,
-					sameSite: "Lax"
-				}
-			]);
-
-			await page.route("**/api/users/me", route =>
+			await page.route("**/api/unit/users/me", route =>
 				route.fulfill({
 					status: 200,
 					contentType: "application/json",
 					body: JSON.stringify(mockUser)
 				})
 			);
-			await page.route("**/api/orgs/me", route =>
+			await page.route("**/api/unit/orgs", route =>
 				route.fulfill({
 					status: 200,
 					contentType: "application/json",
 					body: JSON.stringify([mockOrg])
 				})
 			);
-			await page.route("**/api/auth/refresh", route => route.fulfill({ status: 204 }));
-
 			await use();
 		},
-		{ auto: true }
+		{ auto: true } // applied to every test automatically
 	]
 });
 
 export { expect } from "@playwright/test";
 
-export async function mockRoute(page: Page, pattern: string | RegExp, body: unknown, options: { status?: number; method?: string } = {}) {
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Stubs a single API route with a JSON response.
+ * Supports method filtering via the `method` option.
+ */
+export async function mockRoute(page: Page, pattern: string, body: unknown, options: { status?: number; method?: string } = {}) {
 	const { status = 200, method } = options;
 	await page.route(pattern, route => {
 		if (method && route.request().method() !== method.toUpperCase()) {
