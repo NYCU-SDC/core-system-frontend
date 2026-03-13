@@ -2,16 +2,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ------------------------------------------------------------------
-// Hoisted values – must be defined before vi.mock factories run
-// ------------------------------------------------------------------
 const { mockPushToast } = vi.hoisted(() => ({
 	mockPushToast: vi.fn()
 }));
 
-// ------------------------------------------------------------------
-// Module mocks
-// ------------------------------------------------------------------
 vi.mock("@/features/dashboard/hooks/useOrgSettings", () => ({
 	useActiveOrgSlug: vi.fn(),
 	useOrg: vi.fn(),
@@ -27,9 +21,6 @@ vi.mock("@/layouts", () => ({
 
 vi.mock("@/seo/useSeo", () => ({ useSeo: () => null }));
 
-// Stub all shared components to control the test environment.
-// Dialog renders conditionally on `open` and exposes role="dialog".
-// Input renders a real <input> so we can check value/placeholder.
 vi.mock("@/shared/components", () => ({
 	Button: ({ children, onClick, processing, disabled }: any) => (
 		<button onClick={onClick} disabled={!!processing || !!disabled}>
@@ -57,15 +48,9 @@ vi.mock("@/shared/components", () => ({
 	useToast: () => ({ pushToast: mockPushToast })
 }));
 
-// ------------------------------------------------------------------
-// Imports (after mocks)
-// ------------------------------------------------------------------
 import { useActiveOrgSlug, useAddOrgMember, useOrg, useOrgMembers, useRemoveOrgMember, useUpdateOrg } from "@/features/dashboard/hooks/useOrgSettings";
 import { AdminSettingsPage } from "../AdminSettingsPage";
 
-// ------------------------------------------------------------------
-// Typed mock aliases
-// ------------------------------------------------------------------
 const mockUseActiveOrgSlug = vi.mocked(useActiveOrgSlug);
 const mockUseOrg = vi.mocked(useOrg);
 const mockUseOrgMembers = vi.mocked(useOrgMembers);
@@ -73,9 +58,6 @@ const mockUseUpdateOrg = vi.mocked(useUpdateOrg);
 const mockUseAddOrgMember = vi.mocked(useAddOrgMember);
 const mockUseRemoveOrgMember = vi.mocked(useRemoveOrgMember);
 
-// ------------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------------
 const makeMember = (overrides: Record<string, any> = {}): any => ({
 	id: "m1",
 	name: "Alice",
@@ -95,21 +77,16 @@ function setupDefaults() {
 	mockUseRemoveOrgMember.mockReturnValue({ mutate: vi.fn(), isPending: false } as any);
 }
 
-// Helper: find the remove button for a member (icon-only = empty text content)
 function getRemoveButtons() {
 	return screen.getAllByRole("button").filter(btn => btn.textContent === "");
 }
 
-// ------------------------------------------------------------------
-// Tests
-// ------------------------------------------------------------------
 describe("AdminSettingsPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		setupDefaults();
 	});
 
-	// --- AS-UI-001: Loading placeholder ---
 	it("AS-UI-001: org name input shows Loading… placeholder when org is loading", () => {
 		mockUseOrg.mockReturnValue({ data: undefined, isLoading: true, isError: false, error: null } as any);
 		render(<AdminSettingsPage />);
@@ -117,7 +94,6 @@ describe("AdminSettingsPage", () => {
 		expect(orgInput).toHaveAttribute("placeholder", "Loading…");
 	});
 
-	// --- AS-UI-002: orgQuery error toast ---
 	it("AS-UI-002: pushes error toast when org query fails", async () => {
 		mockUseOrg.mockReturnValue({
 			data: undefined,
@@ -131,7 +107,6 @@ describe("AdminSettingsPage", () => {
 		});
 	});
 
-	// --- AS-UI-003: membersQuery error toast ---
 	it("AS-UI-003: pushes error toast when members query fails", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: undefined,
@@ -145,19 +120,16 @@ describe("AdminSettingsPage", () => {
 		});
 	});
 
-	// --- AS-UI-004: org name input value ---
 	it("AS-UI-004: org name input shows the org name from API", () => {
 		render(<AdminSettingsPage />);
 		expect(document.getElementById("orgName")).toHaveValue("NYCU SDC");
 	});
 
-	// --- AS-UI-005: page title ---
 	it("AS-UI-005: page title is 組織管理", () => {
 		render(<AdminSettingsPage />);
 		expect(screen.getByRole("heading", { name: "組織管理" })).toBeInTheDocument();
 	});
 
-	// --- AS-UI-006: member name and email ---
 	it("AS-UI-006: displays member name and email correctly", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
@@ -170,7 +142,6 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByText("alice@example.com")).toBeInTheDocument();
 	});
 
-	// --- AS-UI-007: multiple members ---
 	it("AS-UI-007: renders all members when multiple exist", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [
@@ -188,7 +159,6 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByText("Carol")).toBeInTheDocument();
 	});
 
-	// --- AS-UI-008: malformed member (null name) filtered ---
 	it("AS-UI-008: member with null name is filtered out", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: "m2", name: null, emails: ["ghost@example.com"] }],
@@ -201,7 +171,6 @@ describe("AdminSettingsPage", () => {
 		expect(screen.queryByText("ghost@example.com")).not.toBeInTheDocument();
 	});
 
-	// --- AS-UI-009: malformed member (null id) filtered ---
 	it("AS-UI-009: member with null id is filtered out", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: null, name: "Ghost", emails: ["ghost@example.com"] }],
@@ -213,13 +182,11 @@ describe("AdminSettingsPage", () => {
 		expect(screen.queryByText("Ghost")).not.toBeInTheDocument();
 	});
 
-	// --- AS-UI-010: dialog not visible initially ---
 	it("AS-UI-010: confirm-kick dialog is not in DOM on initial render", () => {
 		render(<AdminSettingsPage />);
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	// --- AS-UI-011: remove button opens dialog ---
 	it("AS-UI-011: clicking the remove button opens the confirmation dialog", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
@@ -233,7 +200,6 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
 	});
 
-	// --- AS-UI-012: dialog shows correct member name ---
 	it("AS-UI-012: confirmation dialog shows the target member's name", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
@@ -246,7 +212,6 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByRole("dialog")).toHaveTextContent("Alice");
 	});
 
-	// --- AS-UI-013: cancel closes dialog ---
 	it("AS-UI-013: clicking 取消 inside dialog closes it", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
@@ -261,14 +226,12 @@ describe("AdminSettingsPage", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	// --- AS-UI-014: email input initially empty ---
 	it("AS-UI-014: email input is initially empty", () => {
 		render(<AdminSettingsPage />);
 		const emailInput = screen.getByPlaceholderText("member@example.com") as HTMLInputElement;
 		expect(emailInput.value).toBe("");
 	});
 
-	// --- Interaction: save org name ---
 	describe("save org name interaction", () => {
 		it("calls updateOrgMutation.mutate when Enter is pressed in the org name input", async () => {
 			const mockMutate = vi.fn();
@@ -307,7 +270,6 @@ describe("AdminSettingsPage", () => {
 		});
 	});
 
-	// --- Interaction: add member ---
 	describe("add member interaction", () => {
 		it("calls addMemberMutation.mutate with trimmed email when 新增成員 is clicked", async () => {
 			const mockMutate = vi.fn();
@@ -355,7 +317,6 @@ describe("AdminSettingsPage", () => {
 		});
 	});
 
-	// --- Interaction: remove member ---
 	describe("remove member interaction", () => {
 		const threeMemberSetup = () => {
 			mockUseOrgMembers.mockReturnValue({
@@ -375,7 +336,6 @@ describe("AdminSettingsPage", () => {
 			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
 			threeMemberSetup();
 			render(<AdminSettingsPage />);
-			// Click Alice's remove button (first icon-only button = index 0)
 			await userEvent.click(getRemoveButtons()[0]);
 			await userEvent.click(screen.getByRole("button", { name: "確認移除" }));
 			expect(mockMutate).toHaveBeenCalledWith("m1", expect.any(Object));
