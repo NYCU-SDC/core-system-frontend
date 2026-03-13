@@ -1,18 +1,8 @@
-/**
- * AdminFormsPage E2E tests (AF-INT-001 to AF-INT-004)
- *
- * These tests navigate to /orgs/SDC/forms (served by admin.html).
- * The withAuth fixture (auto-enabled) stubs /api/unit/users/me and /api/unit/orgs
- * so that RequireOrgAdminAccess passes.
- */
 import { expect, mockRoute, test } from "./fixtures";
 
 const ORG_SLUG = "SDC";
 const BASE_URL = `/orgs/${ORG_SLUG}/forms`;
 
-// ---------------------------------------------------------------------------
-// Shared mock forms data (FormsForm shape)
-// ---------------------------------------------------------------------------
 const draftForm1 = {
 	id: "f1",
 	title: "草稿表單一",
@@ -58,9 +48,6 @@ const draftForm3 = {
 	visibility: "PUBLIC"
 };
 
-// ---------------------------------------------------------------------------
-// AF-INT-001: Create form → POST success → navigate to info page
-// ---------------------------------------------------------------------------
 test("AF-INT-001: clicking 建立表單 POSTs to API and navigates to new form info page", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, []);
 
@@ -98,9 +85,6 @@ test("AF-INT-001: clicking 建立表單 POSTs to API and navigates to new form i
 	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/new-f1/info`);
 });
 
-// ---------------------------------------------------------------------------
-// AF-INT-002: Create form → POST fails → toast error visible
-// ---------------------------------------------------------------------------
 test("AF-INT-002: create form failure shows error toast and stays on forms page", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, []);
 
@@ -124,18 +108,13 @@ test("AF-INT-002: create form failure shows error toast and stays on forms page"
 	await page.waitForSelector("button:has-text('建立表單')");
 	await page.click("button:has-text('建立表單')");
 
-	// Toast should appear with error
 	const toast = page.locator('[role="alert"], [data-sonner-toast], .toast, [class*="toast"]').first();
 	await expect(toast).toBeVisible({ timeout: 5000 });
 
-	// Should still be on forms page
 	expect(page.url()).toContain(`/orgs/${ORG_SLUG}/forms`);
 	expect(page.url()).not.toContain("/info");
 });
 
-// ---------------------------------------------------------------------------
-// AF-INT-003: Click form card → navigate to /orgs/SDC/forms/:formId/info
-// ---------------------------------------------------------------------------
 test("AF-INT-003: clicking a form card navigates to its info page", async ({ page }) => {
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, [publishedForm]);
 
@@ -147,26 +126,20 @@ test("AF-INT-003: clicking a form card navigates to its info page", async ({ pag
 	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/${publishedForm.id}/info`);
 });
 
-// ---------------------------------------------------------------------------
-// AF-INT-004: Tab filtering → click card → navigate correctly
-// ---------------------------------------------------------------------------
 test("AF-INT-004: tab filtering works and filtered cards are still clickable", async ({ page }) => {
 	const allForms = [draftForm1, publishedForm, draftForm2, doneForm, draftForm3];
 	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, allForms);
 
 	await page.goto(BASE_URL);
 
-	// Verify initial load: all 5 cards visible
 	await page.waitForSelector(`text=${draftForm1.title}`);
 	const initialCards = page.locator("h4");
 	await expect(initialCards).toHaveCount(5);
 
-	// Switch to 草稿 tab
 	await page.click("button:has-text('草稿')");
 	const draftCards = page.locator("h4");
 	await expect(draftCards).toHaveCount(3);
 
-	// Click the first draft card and verify navigation
 	await page.click(`text=${draftForm1.title}`);
 	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/${draftForm1.id}/info`);
 });
