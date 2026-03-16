@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockPushToast } = vi.hoisted(() => ({
@@ -16,29 +17,43 @@ vi.mock("@/features/dashboard/hooks/useOrgSettings", () => ({
 }));
 
 vi.mock("@/layouts", () => ({
-	AdminLayout: ({ children }: any) => <div>{children}</div>
+	AdminLayout: ({ children }: { children: ReactNode }) => <div>{children}</div>
 }));
 
 vi.mock("@/seo/useSeo", () => ({ useSeo: () => null }));
 
 vi.mock("@/shared/components", () => ({
-	Button: ({ children, onClick, processing, disabled }: any) => (
+	Button: ({ children, onClick, processing, disabled }: { children?: ReactNode; onClick?: () => void; processing?: boolean; disabled?: boolean }) => (
 		<button onClick={onClick} disabled={!!processing || !!disabled}>
 			{children}
 		</button>
 	),
-	Dialog: ({ open, description, children, footer, onOpenChange }: any) =>
+	Dialog: ({ open, description, children, footer, onOpenChange }: { open?: boolean; description?: string; children?: ReactNode; footer?: ReactNode; onOpenChange?: (open: boolean) => void }) =>
 		open ? (
 			<div role="dialog">
 				{description && <p>{description}</p>}
 				{children}
 				<div>{footer}</div>
-				<button onClick={() => onOpenChange(false)}>__close__</button>
+				<button onClick={() => onOpenChange?.(false)}>__close__</button>
 			</div>
 		) : null,
-	ErrorMessage: ({ message }: any) => <p role="alert">{message}</p>,
-	Input: ({ value, onChange, onKeyDown, placeholder, type, id }: any) => <input id={id} type={type} value={value} onChange={onChange} onKeyDown={onKeyDown} placeholder={placeholder} />,
-	Label: ({ children, htmlFor, required }: any) => (
+	ErrorMessage: ({ message }: { message: string }) => <p role="alert">{message}</p>,
+	Input: ({
+		value,
+		onChange,
+		onKeyDown,
+		placeholder,
+		type,
+		id
+	}: {
+		value?: string;
+		onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+		onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
+		placeholder?: string;
+		type?: string;
+		id?: string;
+	}) => <input id={id} type={type} value={value} onChange={onChange} onKeyDown={onKeyDown} placeholder={placeholder} />,
+	Label: ({ children, htmlFor, required }: { children?: ReactNode; htmlFor?: string; required?: boolean }) => (
 		<label htmlFor={htmlFor}>
 			{children}
 			{required ? " *" : ""}
@@ -58,7 +73,9 @@ const mockUseUpdateOrg = vi.mocked(useUpdateOrg);
 const mockUseAddOrgMember = vi.mocked(useAddOrgMember);
 const mockUseRemoveOrgMember = vi.mocked(useRemoveOrgMember);
 
-const makeMember = (overrides: Record<string, any> = {}): any => ({
+type RawMember = { id: string | null; name: string | null; emails: string[]; avatarUrl: string | null };
+
+const makeMember = (overrides: Partial<RawMember> = {}): RawMember => ({
 	id: "m1",
 	name: "Alice",
 	emails: ["alice@example.com"],
@@ -70,11 +87,11 @@ const mockOrg = { name: "NYCU SDC", slug: "SDC", description: "", metadata: {} }
 
 function setupDefaults() {
 	mockUseActiveOrgSlug.mockReturnValue("SDC");
-	mockUseOrg.mockReturnValue({ data: mockOrg, isLoading: false, isError: false, error: null } as any);
-	mockUseOrgMembers.mockReturnValue({ data: [], isLoading: false, isError: false, error: null } as any);
-	mockUseUpdateOrg.mockReturnValue({ mutate: vi.fn(), isPending: false } as any);
-	mockUseAddOrgMember.mockReturnValue({ mutate: vi.fn(), isPending: false } as any);
-	mockUseRemoveOrgMember.mockReturnValue({ mutate: vi.fn(), isPending: false } as any);
+	mockUseOrg.mockReturnValue({ data: mockOrg, isLoading: false, isError: false, error: null } as unknown as ReturnType<typeof useOrg>);
+	mockUseOrgMembers.mockReturnValue({ data: [], isLoading: false, isError: false, error: null } as unknown as ReturnType<typeof useOrgMembers>);
+	mockUseUpdateOrg.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUpdateOrg>);
+	mockUseAddOrgMember.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof useAddOrgMember>);
+	mockUseRemoveOrgMember.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof useRemoveOrgMember>);
 }
 
 function getRemoveButtons() {
@@ -88,7 +105,7 @@ describe("AdminSettingsPage", () => {
 	});
 
 	it("org name input shows Loading… placeholder when org is loading", () => {
-		mockUseOrg.mockReturnValue({ data: undefined, isLoading: true, isError: false, error: null } as any);
+		mockUseOrg.mockReturnValue({ data: undefined, isLoading: true, isError: false, error: null } as unknown as ReturnType<typeof useOrg>);
 		render(<AdminSettingsPage />);
 		const orgInput = document.getElementById("orgName");
 		expect(orgInput).toHaveAttribute("placeholder", "Loading…");
@@ -100,7 +117,7 @@ describe("AdminSettingsPage", () => {
 			isLoading: false,
 			isError: true,
 			error: new Error("org fetch failed")
-		} as any);
+		} as unknown as ReturnType<typeof useOrg>);
 		render(<AdminSettingsPage />);
 		await waitFor(() => {
 			expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({ title: "無法載入組織資訊" }));
@@ -113,7 +130,7 @@ describe("AdminSettingsPage", () => {
 			isLoading: false,
 			isError: true,
 			error: new Error("members fetch failed")
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		await waitFor(() => {
 			expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({ title: "無法載入成員列表" }));
@@ -136,7 +153,7 @@ describe("AdminSettingsPage", () => {
 			isLoading: false,
 			isError: false,
 			error: null
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		expect(screen.getByText("Alice")).toBeInTheDocument();
 		expect(screen.getByText("alice@example.com")).toBeInTheDocument();
@@ -152,7 +169,7 @@ describe("AdminSettingsPage", () => {
 			isLoading: false,
 			isError: false,
 			error: null
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		expect(screen.getByText("Alice")).toBeInTheDocument();
 		expect(screen.getByText("Bob")).toBeInTheDocument();
@@ -161,11 +178,11 @@ describe("AdminSettingsPage", () => {
 
 	it("member with null name is filtered out", () => {
 		mockUseOrgMembers.mockReturnValue({
-			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: "m2", name: null, emails: ["ghost@example.com"] }],
+			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: "m2", name: null, emails: ["ghost@example.com"], avatarUrl: null }],
 			isLoading: false,
 			isError: false,
 			error: null
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		expect(screen.getByText("Alice")).toBeInTheDocument();
 		expect(screen.queryByText("ghost@example.com")).not.toBeInTheDocument();
@@ -173,11 +190,11 @@ describe("AdminSettingsPage", () => {
 
 	it("member with null id is filtered out", () => {
 		mockUseOrgMembers.mockReturnValue({
-			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: null, name: "Ghost", emails: ["ghost@example.com"] }],
+			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: null, name: "Ghost", emails: ["ghost@example.com"], avatarUrl: null }],
 			isLoading: false,
 			isError: false,
 			error: null
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		expect(screen.queryByText("Ghost")).not.toBeInTheDocument();
 	});
@@ -193,7 +210,7 @@ describe("AdminSettingsPage", () => {
 			isLoading: false,
 			isError: false,
 			error: null
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		const [removeBtn] = getRemoveButtons();
 		await userEvent.click(removeBtn);
@@ -206,7 +223,7 @@ describe("AdminSettingsPage", () => {
 			isLoading: false,
 			isError: false,
 			error: null
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		await userEvent.click(getRemoveButtons()[0]);
 		expect(screen.getByRole("dialog")).toHaveTextContent("Alice");
@@ -218,7 +235,7 @@ describe("AdminSettingsPage", () => {
 			isLoading: false,
 			isError: false,
 			error: null
-		} as any);
+		} as unknown as ReturnType<typeof useOrgMembers>);
 		render(<AdminSettingsPage />);
 		await userEvent.click(getRemoveButtons()[0]);
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -235,7 +252,7 @@ describe("AdminSettingsPage", () => {
 	describe("save org name interaction", () => {
 		it("calls updateOrgMutation.mutate when Enter is pressed in the org name input", async () => {
 			const mockMutate = vi.fn();
-			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useUpdateOrg>);
 			render(<AdminSettingsPage />);
 			const orgInput = document.getElementById("orgName")!;
 			orgInput.focus();
@@ -248,7 +265,7 @@ describe("AdminSettingsPage", () => {
 			const mockMutate = vi.fn((_, { onSuccess }) => {
 				capturedOnSuccess = onSuccess;
 			});
-			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useUpdateOrg>);
 			render(<AdminSettingsPage />);
 			document.getElementById("orgName")!.focus();
 			await userEvent.keyboard("{Enter}");
@@ -261,7 +278,7 @@ describe("AdminSettingsPage", () => {
 			const mockMutate = vi.fn((_, { onError }) => {
 				capturedOnError = onError;
 			});
-			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useUpdateOrg>);
 			render(<AdminSettingsPage />);
 			document.getElementById("orgName")!.focus();
 			await userEvent.keyboard("{Enter}");
@@ -273,7 +290,7 @@ describe("AdminSettingsPage", () => {
 	describe("add member interaction", () => {
 		it("calls addMemberMutation.mutate with trimmed email when 新增成員 is clicked", async () => {
 			const mockMutate = vi.fn();
-			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useAddOrgMember>);
 			render(<AdminSettingsPage />);
 			await userEvent.type(screen.getByPlaceholderText("member@example.com"), "new@example.com");
 			await userEvent.click(screen.getByRole("button", { name: "新增成員" }));
@@ -282,7 +299,7 @@ describe("AdminSettingsPage", () => {
 
 		it("does not call addMemberMutation when email is empty", async () => {
 			const mockMutate = vi.fn();
-			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useAddOrgMember>);
 			render(<AdminSettingsPage />);
 			await userEvent.click(screen.getByRole("button", { name: "新增成員" }));
 			expect(mockMutate).not.toHaveBeenCalled();
@@ -293,7 +310,7 @@ describe("AdminSettingsPage", () => {
 			const mockMutate = vi.fn((_, { onSuccess }) => {
 				capturedOnSuccess = onSuccess;
 			});
-			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useAddOrgMember>);
 			render(<AdminSettingsPage />);
 			const emailInput = screen.getByPlaceholderText("member@example.com") as HTMLInputElement;
 			await userEvent.type(emailInput, "new@example.com");
@@ -310,7 +327,7 @@ describe("AdminSettingsPage", () => {
 			const mockMutate = vi.fn((_, { onError }) => {
 				capturedOnError = onError;
 			});
-			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useAddOrgMember>);
 			render(<AdminSettingsPage />);
 			await userEvent.type(screen.getByPlaceholderText("member@example.com"), "bad@example.com");
 			await userEvent.click(screen.getByRole("button", { name: "新增成員" }));
@@ -330,12 +347,12 @@ describe("AdminSettingsPage", () => {
 				isLoading: false,
 				isError: false,
 				error: null
-			} as any);
+			} as unknown as ReturnType<typeof useOrgMembers>);
 		};
 
 		it("calls removeMemberMutation.mutate with member id when 確認移除 is clicked", async () => {
 			const mockMutate = vi.fn();
-			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useRemoveOrgMember>);
 			threeMemberSetup();
 			render(<AdminSettingsPage />);
 			await userEvent.click(getRemoveButtons()[0]);
@@ -348,7 +365,7 @@ describe("AdminSettingsPage", () => {
 			const mockMutate = vi.fn((_, { onSuccess }) => {
 				capturedOnSuccess = onSuccess;
 			});
-			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useRemoveOrgMember>);
 			threeMemberSetup();
 			render(<AdminSettingsPage />);
 			await userEvent.click(getRemoveButtons()[0]);
@@ -365,7 +382,7 @@ describe("AdminSettingsPage", () => {
 			const mockMutate = vi.fn((_, { onError }) => {
 				capturedOnError = onError;
 			});
-			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as unknown as ReturnType<typeof useRemoveOrgMember>);
 			threeMemberSetup();
 			render(<AdminSettingsPage />);
 			await userEvent.click(getRemoveButtons()[0]);
