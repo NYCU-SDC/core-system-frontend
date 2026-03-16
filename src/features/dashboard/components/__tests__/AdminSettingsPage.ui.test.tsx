@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -62,7 +62,7 @@ const makeMember = (overrides: Record<string, any> = {}): any => ({
 	id: "m1",
 	name: "Alice",
 	emails: ["alice@example.com"],
-	avatarUrl: "",
+	avatarUrl: null,
 	...overrides
 });
 
@@ -87,14 +87,14 @@ describe("AdminSettingsPage", () => {
 		setupDefaults();
 	});
 
-	it("AS-UI-001: org name input shows Loading… placeholder when org is loading", () => {
+	it("org name input shows Loading… placeholder when org is loading", () => {
 		mockUseOrg.mockReturnValue({ data: undefined, isLoading: true, isError: false, error: null } as any);
 		render(<AdminSettingsPage />);
 		const orgInput = document.getElementById("orgName");
 		expect(orgInput).toHaveAttribute("placeholder", "Loading…");
 	});
 
-	it("AS-UI-002: pushes error toast when org query fails", async () => {
+	it("pushes error toast when org query fails", async () => {
 		mockUseOrg.mockReturnValue({
 			data: undefined,
 			isLoading: false,
@@ -107,7 +107,7 @@ describe("AdminSettingsPage", () => {
 		});
 	});
 
-	it("AS-UI-003: pushes error toast when members query fails", async () => {
+	it("pushes error toast when members query fails", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: undefined,
 			isLoading: false,
@@ -120,17 +120,17 @@ describe("AdminSettingsPage", () => {
 		});
 	});
 
-	it("AS-UI-004: org name input shows the org name from API", () => {
+	it("org name input shows the org name from API", () => {
 		render(<AdminSettingsPage />);
 		expect(document.getElementById("orgName")).toHaveValue("NYCU SDC");
 	});
 
-	it("AS-UI-005: page title is 組織管理", () => {
+	it("page title is 組織管理", () => {
 		render(<AdminSettingsPage />);
 		expect(screen.getByRole("heading", { name: "組織管理" })).toBeInTheDocument();
 	});
 
-	it("AS-UI-006: displays member name and email correctly", () => {
+	it("displays member name and email correctly", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
 			isLoading: false,
@@ -142,7 +142,7 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByText("alice@example.com")).toBeInTheDocument();
 	});
 
-	it("AS-UI-007: renders all members when multiple exist", () => {
+	it("renders all members when multiple exist", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [
 				makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }),
@@ -159,7 +159,7 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByText("Carol")).toBeInTheDocument();
 	});
 
-	it("AS-UI-008: member with null name is filtered out", () => {
+	it("member with null name is filtered out", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: "m2", name: null, emails: ["ghost@example.com"] }],
 			isLoading: false,
@@ -171,7 +171,7 @@ describe("AdminSettingsPage", () => {
 		expect(screen.queryByText("ghost@example.com")).not.toBeInTheDocument();
 	});
 
-	it("AS-UI-009: member with null id is filtered out", () => {
+	it("member with null id is filtered out", () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] }), { id: null, name: "Ghost", emails: ["ghost@example.com"] }],
 			isLoading: false,
@@ -182,12 +182,12 @@ describe("AdminSettingsPage", () => {
 		expect(screen.queryByText("Ghost")).not.toBeInTheDocument();
 	});
 
-	it("AS-UI-010: confirm-kick dialog is not in DOM on initial render", () => {
+	it("confirm-kick dialog is not in DOM on initial render", () => {
 		render(<AdminSettingsPage />);
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it("AS-UI-011: clicking the remove button opens the confirmation dialog", async () => {
+	it("clicking the remove button opens the confirmation dialog", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
 			isLoading: false,
@@ -200,7 +200,7 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
 	});
 
-	it("AS-UI-012: confirmation dialog shows the target member's name", async () => {
+	it("confirmation dialog shows the target member's name", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
 			isLoading: false,
@@ -212,7 +212,7 @@ describe("AdminSettingsPage", () => {
 		expect(screen.getByRole("dialog")).toHaveTextContent("Alice");
 	});
 
-	it("AS-UI-013: clicking 取消 inside dialog closes it", async () => {
+	it("clicking 取消 inside dialog closes it", async () => {
 		mockUseOrgMembers.mockReturnValue({
 			data: [makeMember({ id: "m1", name: "Alice", emails: ["alice@example.com"] })],
 			isLoading: false,
@@ -226,7 +226,7 @@ describe("AdminSettingsPage", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it("AS-UI-014: email input is initially empty", () => {
+	it("email input is initially empty", () => {
 		render(<AdminSettingsPage />);
 		const emailInput = screen.getByPlaceholderText("member@example.com") as HTMLInputElement;
 		expect(emailInput.value).toBe("");
@@ -298,7 +298,9 @@ describe("AdminSettingsPage", () => {
 			const emailInput = screen.getByPlaceholderText("member@example.com") as HTMLInputElement;
 			await userEvent.type(emailInput, "new@example.com");
 			await userEvent.click(screen.getByRole("button", { name: "新增成員" }));
-			capturedOnSuccess!();
+			act(() => {
+				capturedOnSuccess!();
+			});
 			await waitFor(() => expect(emailInput.value).toBe(""));
 			expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({ title: "邀請成功", variant: "success" }));
 		});
@@ -351,7 +353,9 @@ describe("AdminSettingsPage", () => {
 			render(<AdminSettingsPage />);
 			await userEvent.click(getRemoveButtons()[0]);
 			await userEvent.click(screen.getByRole("button", { name: "確認移除" }));
-			capturedOnSuccess!();
+			act(() => {
+				capturedOnSuccess!();
+			});
 			expect(mockPushToast).toHaveBeenCalledWith(expect.objectContaining({ title: "已移除成員", variant: "success" }));
 			await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 		});

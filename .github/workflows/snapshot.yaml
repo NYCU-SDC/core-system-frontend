@@ -48,9 +48,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install
-
       - name: Run tests
         run: pnpm test:all
   Format:
@@ -99,6 +96,7 @@ jobs:
   Push-Image:
     name: Build Docker image
     runs-on: ubuntu-latest
+    needs: [Lint, Format, Build, Test]
     needs: [Lint, Format, Build, Test]
     steps:
       - name: Checkout code
