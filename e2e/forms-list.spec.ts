@@ -16,20 +16,12 @@ const formInProgress = {
 	responseIds: ["resp-2"]
 };
 
-const formCompleted = {
-	id: "f3",
-	title: "課程回饋",
-	deadline: "2025-03-01T00:00:00Z",
-	status: "COMPLETED",
-	responseIds: ["resp-3"]
-};
-
-test("FL-INT-001: clicking NOT_STARTED form creates a response and navigates", async ({ page }) => {
-	await mockRoute(page, "**/api/unit/users/me/forms", [formNotStarted]);
-	await mockRoute(page, "**/api/responses/forms/f1", { id: "resp-1" }, { method: "POST" });
+test("clicking NOT_STARTED form creates a response and navigates", async ({ page }) => {
+	await mockRoute(page, "**/api/forms/me", [formNotStarted]);
+	await mockRoute(page, "**/api/forms/f1/responses", { id: "resp-1" }, { method: "POST" });
 
 	let postCalled = false;
-	await page.route("**/api/responses/forms/f1", route => {
+	await page.route("**/api/forms/f1/responses", route => {
 		if (route.request().method() === "POST") {
 			postCalled = true;
 			route.fulfill({
@@ -51,11 +43,11 @@ test("FL-INT-001: clicking NOT_STARTED form creates a response and navigates", a
 	await page.waitForURL("**/forms/f1/resp-1");
 });
 
-test("FL-INT-002: clicking IN_PROGRESS form with responseIds navigates directly without POST", async ({ page }) => {
-	await mockRoute(page, "**/api/unit/users/me/forms", [formInProgress]);
+test("clicking IN_PROGRESS form with responseIds navigates directly without POST", async ({ page }) => {
+	await mockRoute(page, "**/api/forms/me", [formInProgress]);
 
 	let postCalled = false;
-	await page.route("**/api/responses/forms/f2", route => {
+	await page.route("**/api/forms/f2/responses", route => {
 		if (route.request().method() === "POST") {
 			postCalled = true;
 			route.continue();
@@ -74,12 +66,12 @@ test("FL-INT-002: clicking IN_PROGRESS form with responseIds navigates directly 
 	expect(postCalled).toBe(false);
 });
 
-test("FL-INT-003: IN_PROGRESS form without responseIds fetches existing response then navigates", async ({ page }) => {
+test("IN_PROGRESS form without responseIds fetches existing response then navigates", async ({ page }) => {
 	const formNoIds = { ...formInProgress, id: "f3", title: "無ID問卷", responseIds: undefined };
-	await mockRoute(page, "**/api/unit/users/me/forms", [formNoIds]);
+	await mockRoute(page, "**/api/forms/me", [formNoIds]);
 
 	let getCalled = false;
-	await page.route("**/api/responses/forms/f3", route => {
+	await page.route("**/api/forms/f3/responses", route => {
 		if (route.request().method() === "GET") {
 			getCalled = true;
 			route.fulfill({
@@ -102,9 +94,9 @@ test("FL-INT-003: IN_PROGRESS form without responseIds fetches existing response
 	await page.waitForURL("**/forms/f3/resp-3");
 });
 
-test("FL-INT-004: create response failure shows error toast and keeps button enabled", async ({ page }) => {
-	await mockRoute(page, "**/api/unit/users/me/forms", [formNotStarted]);
-	await page.route("**/api/responses/forms/f1", route => {
+test("create response failure shows error toast and keeps button enabled", async ({ page }) => {
+	await mockRoute(page, "**/api/forms/me", [formNotStarted]);
+	await page.route("**/api/forms/f1/responses", route => {
 		if (route.request().method() === "POST") {
 			route.fulfill({
 				status: 500,
@@ -121,16 +113,15 @@ test("FL-INT-004: create response failure shows error toast and keeps button ena
 
 	await page.click("text=開始填寫");
 
-	const toast = page.locator('[role="alert"], [data-sonner-toast], .toast, [class*="toast"]').first();
-	await expect(toast).toBeVisible({ timeout: 5000 });
+	await expect(page.getByText("錯誤", { exact: true }).first()).toBeVisible({ timeout: 5000 });
 
 	const btn = page.locator("button:has-text('開始填寫')").first();
 	await expect(btn).toBeVisible();
 	await expect(btn).not.toBeDisabled();
 });
 
-test("FL-INT-005: admin button navigates to org admin forms page", async ({ page }) => {
-	await mockRoute(page, "**/api/unit/users/me/forms", []);
+test("admin button navigates to org admin forms page", async ({ page }) => {
+	await mockRoute(page, "**/api/forms/me", []);
 
 	await page.goto("/forms");
 

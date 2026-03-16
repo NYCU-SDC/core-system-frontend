@@ -48,28 +48,20 @@ const draftForm3 = {
 	visibility: "PUBLIC"
 };
 
-test("AF-INT-001: clicking 建立表單 POSTs to API and navigates to new form info page", async ({ page }) => {
-	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, []);
+test("clicking 建立表單 POSTs to API and navigates to new form info page", async ({ page }) => {
+	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, []);
 
 	const newForm = { id: "new-f1", title: "未命名表單", status: "DRAFT" };
-	let postBody: unknown = null;
 
-	await page.route(`**/api/unit/orgs/${ORG_SLUG}/forms`, route => {
+	await page.route(`**/api/orgs/${ORG_SLUG}/forms`, async route => {
 		if (route.request().method() === "POST") {
-			route
-				.request()
-				.postDataJSON()
-				.then((body: unknown) => {
-					postBody = body;
-				})
-				.catch(() => {});
-			route.fulfill({
+			await route.fulfill({
 				status: 200,
 				contentType: "application/json",
 				body: JSON.stringify(newForm)
 			});
 		} else {
-			route.fulfill({
+			await route.fulfill({
 				status: 200,
 				contentType: "application/json",
 				body: JSON.stringify([])
@@ -85,10 +77,10 @@ test("AF-INT-001: clicking 建立表單 POSTs to API and navigates to new form i
 	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/new-f1/info`);
 });
 
-test("AF-INT-002: create form failure shows error toast and stays on forms page", async ({ page }) => {
-	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, []);
+test("create form failure shows error toast and stays on forms page", async ({ page }) => {
+	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, []);
 
-	await page.route(`**/api/unit/orgs/${ORG_SLUG}/forms`, route => {
+	await page.route(`**/api/orgs/${ORG_SLUG}/forms`, route => {
 		if (route.request().method() === "POST") {
 			route.fulfill({
 				status: 500,
@@ -108,15 +100,14 @@ test("AF-INT-002: create form failure shows error toast and stays on forms page"
 	await page.waitForSelector("button:has-text('建立表單')");
 	await page.click("button:has-text('建立表單')");
 
-	const toast = page.locator('[role="alert"], [data-sonner-toast], .toast, [class*="toast"]').first();
-	await expect(toast).toBeVisible({ timeout: 5000 });
+	await expect(page.getByText("錯誤", { exact: true }).first()).toBeVisible({ timeout: 5000 });
 
 	expect(page.url()).toContain(`/orgs/${ORG_SLUG}/forms`);
 	expect(page.url()).not.toContain("/info");
 });
 
-test("AF-INT-003: clicking a form card navigates to its info page", async ({ page }) => {
-	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, [publishedForm]);
+test("clicking a form card navigates to its info page", async ({ page }) => {
+	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, [publishedForm]);
 
 	await page.goto(BASE_URL);
 	await page.waitForSelector(`text=${publishedForm.title}`);
@@ -126,18 +117,18 @@ test("AF-INT-003: clicking a form card navigates to its info page", async ({ pag
 	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/${publishedForm.id}/info`);
 });
 
-test("AF-INT-004: tab filtering works and filtered cards are still clickable", async ({ page }) => {
+test("tab filtering works and filtered cards are still clickable", async ({ page }) => {
 	const allForms = [draftForm1, publishedForm, draftForm2, doneForm, draftForm3];
-	await mockRoute(page, `**/api/unit/orgs/${ORG_SLUG}/forms`, allForms);
+	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, allForms);
 
 	await page.goto(BASE_URL);
 
 	await page.waitForSelector(`text=${draftForm1.title}`);
-	const initialCards = page.locator("h4");
+	const initialCards = page.locator("[class*=cardTitle]");
 	await expect(initialCards).toHaveCount(5);
 
 	await page.click("button:has-text('草稿')");
-	const draftCards = page.locator("h4");
+	const draftCards = page.locator("[class*=cardTitle]");
 	await expect(draftCards).toHaveCount(3);
 
 	await page.click(`text=${draftForm1.title}`);
