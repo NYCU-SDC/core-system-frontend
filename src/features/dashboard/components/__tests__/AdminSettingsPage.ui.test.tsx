@@ -245,7 +245,7 @@ describe("AdminSettingsPage", () => {
 
 		it("shows success toast when org name is saved", async () => {
 			let capturedOnSuccess: () => void;
-			const mockMutate = vi.fn((data, { onSuccess }) => {
+			const mockMutate = vi.fn((_, { onSuccess }) => {
 				capturedOnSuccess = onSuccess;
 			});
 			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
@@ -258,7 +258,7 @@ describe("AdminSettingsPage", () => {
 
 		it("shows error toast when org name save fails", async () => {
 			let capturedOnError: (e: Error) => void;
-			const mockMutate = vi.fn((data, { onError }) => {
+			const mockMutate = vi.fn((_, { onError }) => {
 				capturedOnError = onError;
 			});
 			mockUseUpdateOrg.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
@@ -290,7 +290,7 @@ describe("AdminSettingsPage", () => {
 
 		it("clears the email input and shows success toast on successful add", async () => {
 			let capturedOnSuccess: () => void;
-			const mockMutate = vi.fn((data, { onSuccess }) => {
+			const mockMutate = vi.fn((_, { onSuccess }) => {
 				capturedOnSuccess = onSuccess;
 			});
 			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
@@ -307,7 +307,7 @@ describe("AdminSettingsPage", () => {
 
 		it("shows error toast when adding member fails", async () => {
 			let capturedOnError: (e: Error) => void;
-			const mockMutate = vi.fn((data, { onError }) => {
+			const mockMutate = vi.fn((_, { onError }) => {
 				capturedOnError = onError;
 			});
 			mockUseAddOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
@@ -345,7 +345,7 @@ describe("AdminSettingsPage", () => {
 
 		it("closes dialog and shows success toast after successful removal", async () => {
 			let capturedOnSuccess: () => void;
-			const mockMutate = vi.fn((id, { onSuccess }) => {
+			const mockMutate = vi.fn((_, { onSuccess }) => {
 				capturedOnSuccess = onSuccess;
 			});
 			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
@@ -362,7 +362,7 @@ describe("AdminSettingsPage", () => {
 
 		it("shows error toast when removal fails, dialog stays open", async () => {
 			let capturedOnError: (e: Error) => void;
-			const mockMutate = vi.fn((id, { onError }) => {
+			const mockMutate = vi.fn((_, { onError }) => {
 				capturedOnError = onError;
 			});
 			mockUseRemoveOrgMember.mockReturnValue({ mutate: mockMutate, isPending: false } as any);
