@@ -1,6 +1,6 @@
 import { assertOk } from "@/shared/utils/apiError";
-import type { UserOnboardingRequest, UserUser } from "@nycu-sdc/core-system-sdk";
-import { authLogout, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
+import type { AuthLoginGoogleParams, AuthOAuthLoginProviders, UserOnboardingRequest, UserUser } from "@nycu-sdc/core-system-sdk";
+import { authLogout, getAuthLoginGoogleUrl, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
 
 export type OAuthProvider = "google" | "nycu";
 
@@ -22,21 +22,22 @@ export const authService = {
 			redirectUrl?: string;
 		}
 	) {
-		const normalizedProvider = normalizeProvider(provider);
-		const params = new URLSearchParams({
-			c: options.callbackUrl
-		});
+		const normalizedProvider = normalizeProvider(provider) as AuthOAuthLoginProviders;
 
-		//callback url, get from PUBLIC_ORIGIN, go to /api/auth/login/oauth/:provider/callback, then redirect to redirectUrl or PUBLIC_ORIGIN
-		params.set("c", options.callbackUrl);
+		const params: AuthLoginGoogleParams = {
+			c: options.callbackUrl
+		};
 
 		if (options.redirectUrl) {
-			params.set("r", options.redirectUrl);
+			params.r = options.redirectUrl;
 		}
 
-		params.set("base", window.location.origin);
+		let url = getAuthLoginGoogleUrl(normalizedProvider, params);
+		const base = window.location.origin;
+		const separator = url.includes("?") ? "&" : "?";
+		url = `${url}${separator}base=${encodeURIComponent(base)}`;
 
-		window.location.href = `/api/auth/login/oauth/${normalizedProvider}?${params.toString()}`;
+		window.location.href = url;
 	},
 
 	async logout(): Promise<void> {
