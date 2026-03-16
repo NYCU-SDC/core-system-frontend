@@ -4,6 +4,7 @@ import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { useEffect } from "react";
 import styles from "./FormFilloutPage.module.css";
 import { FormQuestionWrapper } from "./FormQuestionWrapper";
+import { FormQuestionWrapper } from "./FormQuestionWrapper";
 import {
 	DetailMultipleChoiceRenderer,
 	DropdownRenderer,
@@ -86,7 +87,7 @@ export const FormQuestionRenderer = ({
 					key={question.id}
 					id={question.id}
 					label={question.title}
-					description={description || undefined}
+					description={question.description || undefined}
 					value={value}
 					options={question.date || { hasYear: true, hasMonth: true, hasDay: true }}
 					required={question.required}
@@ -100,7 +101,7 @@ export const FormQuestionRenderer = ({
 					key={question.id}
 					id={question.id}
 					label={question.title}
-					description={description || undefined}
+					description={question.description || undefined}
 					value={value}
 					options={question.scale || { minVal: 1, maxVal: 5 }}
 					required={question.required}
@@ -114,7 +115,7 @@ export const FormQuestionRenderer = ({
 					key={question.id}
 					id={question.id}
 					label={question.title}
-					description={description || undefined}
+					description={question.description || undefined}
 					value={value}
 					options={question.scale || { minVal: 1, maxVal: 5 }}
 					required={question.required}
