@@ -12,7 +12,7 @@ type MemberRow = {
 	name: string;
 	email: string;
 	// roleLabel: string;
-	avatarUrl: string;
+	avatarUrl: string | null;
 };
 
 /* ---------- API 資料轉 UI Model ---------- */
@@ -38,7 +38,7 @@ const toMemberRow = (value: unknown): MemberRow | null => {
 	// const roles = getStringArray(member.roles);
 	// const roleLabel = roles.includes("admin") ? "Admin" : "Member";
 
-	const avatarUrl = getString(member.avatarUrl) ?? ""; // TEMP : add fallback value
+	const avatarUrl = getString(member.avatarUrl);
 	return { id, name, email, avatarUrl };
 };
 
@@ -167,7 +167,11 @@ export const AdminSettingsPage = () => {
 					) : (
 						members.map(member => (
 							<div key={member.id} className={styles.memberCard}>
-								<img src={member.avatarUrl} alt={member.name} referrerPolicy="no-referrer" className={styles.memberImg} />
+								{member.avatarUrl ? (
+									<img src={member.avatarUrl} alt={member.name} referrerPolicy="no-referrer" className={styles.memberImg} />
+								) : (
+									<div className={styles.memberImgFallback}>{member.name?.[0] ?? "?"}</div>
+								)}
 								<div className={styles.memberInfo}>
 									<div className={styles.memberName}>{member.name}</div>
 									<div className={styles.memberEmail}>{member.email}</div>
