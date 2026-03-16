@@ -21,14 +21,14 @@ export interface RangeQuestionProps {
 
 export const RangeQuestion = (props: RangeQuestionProps) => {
 	const rangeWarning = props.start >= props.end ? "開始值必須小於結束值" : null;
-	const startWarning = props.start < 0 || props.start > 1 ? "開始值需為 0 或 1" : null;
+	const startWarning = props.start < 0 || props.start > 1 ? "開始值需為 1" : null;
 	const endWarning = props.end < 2 || props.end > 10 ? "結束值需介於 2 到 10" : null;
 	const selectedIconName = props.icon ?? ADMIN_RATING_ICON_OPTIONS[0];
 
 	return (
 		<>
 			<div className={styles.wrapper}>
-				<Input type="number" min={0} max={1} value={props.start} onChange={event => props.onStartChange?.(Number(event.target.value))} placeholder="開始" />
+				<Input type="number" min={1} max={1} value={props.start} onChange={event => props.onStartChange?.(Number(event.target.value))} placeholder="開始" />
 				<span>到</span>
 				<Input type="number" min={2} max={10} value={props.end} onChange={event => props.onEndChange?.(Number(event.target.value))} placeholder="結束" />
 			</div>

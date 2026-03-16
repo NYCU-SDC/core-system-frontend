@@ -349,8 +349,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					{question.type === "LINEAR_SCALE" && (
 						<div className={styles.linearScale}>
 							<RangeQuestion
-								start={question.start ?? 1}
-								end={question.end ?? 5}
+								start={question.start || 1}
+								end={question.end || 5}
 								startLabel={question.startLabel}
 								endLabel={question.endLabel}
 								hasIcon={false}
@@ -365,8 +365,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					{question.type === "RATING" && (
 						<div className={styles.linearScale}>
 							<RangeQuestion
-								start={question.start ?? 1}
-								end={question.end ?? 5}
+								start={question.start || 1}
+								end={question.end || 5}
 								startLabel={question.startLabel}
 								endLabel={question.endLabel}
 								hasIcon={true}
