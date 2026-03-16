@@ -293,7 +293,7 @@ export const FormFilloutPage = () => {
 
 		if (!urlResponseId) return;
 
-		const NO_ANSWER_REQUIRED_TYPES: string[] = ["OAUTH_CONNECT"];
+		const NO_ANSWER_REQUIRED_TYPES: string[] = ["OAUTH_CONNECT", "UPLOAD_FILE"];
 
 		// Validate required fields across all non-preview sections
 		const realSections = sections.filter(s => s.id !== "preview");
