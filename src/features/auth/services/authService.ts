@@ -25,19 +25,15 @@ export const authService = {
 		const normalizedProvider = normalizeProvider(provider) as AuthOAuthLoginProviders;
 
 		const params: AuthLoginGoogleParams = {
-			c: options.callbackUrl
+			c: options.callbackUrl,
+			base: window.location.origin
 		};
 
 		if (options.redirectUrl) {
 			params.r = options.redirectUrl;
 		}
 
-		let url = getAuthLoginGoogleUrl(normalizedProvider, params);
-		const base = window.location.origin;
-		const separator = url.includes("?") ? "&" : "?";
-		url = `${url}${separator}base=${encodeURIComponent(base)}`;
-
-		window.location.href = url;
+		window.location.href = getAuthLoginGoogleUrl(normalizedProvider, params);
 	},
 
 	async logout(): Promise<void> {
