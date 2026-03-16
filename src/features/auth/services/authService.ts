@@ -1,6 +1,6 @@
 import { assertOk } from "@/shared/utils/apiError";
 import type { AuthLoginGoogleParams, AuthOAuthLoginProviders, UserOnboardingRequest, UserUser } from "@nycu-sdc/core-system-sdk";
-import { authAbortLink, authLink, authLogout, getAuthLoginGoogleUrl, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
+import { authLogout, getAuthLoginGoogleUrl, userGetMe, userUpdateUsername } from "@nycu-sdc/core-system-sdk";
 
 export type OAuthProvider = "google" | "nycu";
 
@@ -30,15 +30,20 @@ export const authService = {
 		const normalizedProvider = normalizeProvider(provider) as AuthOAuthLoginProviders;
 
 		const params: AuthLoginGoogleParams = {
-			c: options.callbackUrl,
-			base: window.location.origin
+			c: options.callbackUrl
 		};
 
 		if (options.redirectUrl) {
 			params.r = options.redirectUrl;
+			params.r = options.redirectUrl;
 		}
 
-		window.location.href = getAuthLoginGoogleUrl(normalizedProvider, params);
+		let url = getAuthLoginGoogleUrl(normalizedProvider, params);
+		const base = window.location.origin;
+		const separator = url.includes("?") ? "&" : "?";
+		url = `${url}${separator}base=${encodeURIComponent(base)}`;
+
+		window.location.href = url;
 	},
 
 	async logout(): Promise<void> {
