@@ -15,49 +15,55 @@
 	color: var(--red);
 }
 
-.iconPickerSection {
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-	max-height: 14rem;
-}
-
-.iconSearchWrapper {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.iconSearchIcon {
-	color: var(--color-caption);
-}
-
 .iconGrid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
+	display: flex;
+	flex-wrap: wrap;
 	gap: 0.5rem;
+	margin-block: 0.75rem;
 	max-height: 10rem;
 	overflow: auto;
 	padding-right: 0.25rem;
 }
 
-.iconGridItem {
-	display: inline-flex;
+.iconButton {
+	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0.25rem;
-	border: 0.0625rem solid var(--background-color-secondary);
-	border-radius: 0.375rem;
-	background: transparent;
-	cursor: pointer;
+	gap: 0.5rem;
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--border);
+	border-radius: 0.5rem;
+	background: var(--background);
 	color: var(--foreground);
+	cursor: pointer;
+	transition: all 0.1s;
 }
 
-.iconGridItem:hover {
-	background-color: var(--background-color-secondary);
-}
-
-.iconGridItemActive {
+.iconButton:hover {
 	border-color: var(--orange);
-	background-color: var(--hero-background-color-primary);
+	background: color-mix(in srgb, var(--orange) 8%, var(--background));
+}
+
+.iconButton:active {
+	border-color: var(--orange);
+	background: color-mix(in srgb, var(--orange) 16%, var(--background));
+	color: var(--orange);
+}
+
+.selected {
+	border-color: var(--orange);
+	background: color-mix(in srgb, var(--orange) 12%, var(--background));
+	color: var(--orange);
+}
+
+.selected:hover {
+	border-color: var(--orange);
+	background: color-mix(in srgb, var(--orange) 12%, var(--background));
+	color: var(--orange);
+}
+
+.selected:active {
+	border-color: var(--orange);
+	background: color-mix(in srgb, var(--orange) 18%, var(--background));
+	color: var(--orange);
 }
