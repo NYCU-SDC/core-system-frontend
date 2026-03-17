@@ -1,9 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useLocation } from "react-router-dom";
-import { buildMeta } from "./buildMeta";
+import { buildMeta, SITE_NAME } from "./buildMeta";
 import type { SeoRule, SeoRuleContext } from "./seo.config";
-
-const SITE_NAME = "Core System";
 
 interface UseSeoOptions {
 	rule: SeoRule;

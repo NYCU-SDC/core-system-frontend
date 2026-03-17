@@ -1,27 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 import { visualizer } from "rollup-plugin-visualizer";
-import type { Plugin } from "vite";
 import { defineConfig, loadEnv } from "vite";
-
-const mpaFallback: Plugin = {
-	name: "mpa-fallback",
-	configureServer(server) {
-		const isAssetLike = (p: string) =>
-			p.startsWith("/@") || p.startsWith("/src/") || p.startsWith("/node_modules/") || p.startsWith("/assets/") || p.startsWith("/api/") || p === "/favicon.ico" || p.includes(".");
-
-		const isAdminPath = (p: string) => p === "/demo" || p.startsWith("/orgs");
-
-		server.middlewares.use((req, _res, next) => {
-			const original = req.url || "/";
-			const [pathname, query] = original.split("?");
-			if (isAssetLike(pathname)) return next();
-
-			req.url = (isAdminPath(pathname) ? "/admin.html" : "/forms.html") + (query ? `?${query}` : "");
-			next();
-		});
-	}
-};
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "VITE_");
@@ -42,10 +22,6 @@ export default defineConfig(({ mode }) => {
 		build: {
 			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
-				input: {
-					admin: resolve(__dirname, "admin.html"),
-					forms: resolve(__dirname, "forms.html")
-				},
 				onwarn(warning, warn) {
 					// Many modern React libraries ship `"use client"` to support
 					// React Server Components (Next.js App Router).
@@ -62,7 +38,7 @@ export default defineConfig(({ mode }) => {
 				"@": resolve(__dirname, "src")
 			}
 		},
-		plugins: [react(), mpaFallback, injectGA, visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })],
+		plugins: [react(), injectGA, visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })],
 		server: {
 			proxy: {
 				"/api": {

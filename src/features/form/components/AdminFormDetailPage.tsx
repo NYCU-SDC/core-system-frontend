@@ -33,7 +33,7 @@ export const AdminFormDetailPage = () => {
 	// Fetch form data
 	const formQuery = useFormById(formid);
 	const publishFormMutation = usePublishForm(orgSlug);
-	const meta = useSeo({ rule: SEO_CONFIG.adminForms });
+	const meta = useSeo({ rule: SEO_CONFIG.adminFormDetail, data: formQuery.data });
 	const activeEditorMutations = useIsMutating({ mutationKey: ["form-editor", formid ?? ""] });
 	const isSaving = activeEditorMutations > 0;
 
