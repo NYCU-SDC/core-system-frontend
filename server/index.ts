@@ -231,7 +231,8 @@ async function handleFormSeoRoute(req: FormSeoRouteRequest, reply: FastifyReply)
 		description = cached.description;
 	} else if (!breaker.isOpen()) {
 		try {
-			const res = await formsGetFormById(formId);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const res: any = await formsGetFormById(formId);
 
 			if (res.status >= 200 && res.status < 300) {
 				title = res.data.title || title;
