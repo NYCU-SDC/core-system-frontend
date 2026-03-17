@@ -1,8 +1,27 @@
-import type { BuildMetaOptions, BuildMetaResult } from "./buildMeta.shared.js";
-import { buildMeta as buildMetaShared } from "./buildMeta.shared.js";
+export const SITE_NAME = "Core System";
 
-export type { BuildMetaOptions, BuildMetaResult };
+export interface BuildMetaOptions {
+	title: string;
+	description?: string;
+	noIndex?: boolean;
+	canonicalUrl?: string;
+	siteName: string;
+}
 
-export function buildMeta(options: BuildMetaOptions): BuildMetaResult {
-	return buildMetaShared(options);
+export interface BuildMetaResult {
+	fullTitle: string;
+	description?: string;
+	noIndex?: boolean;
+	canonicalUrl?: string;
+}
+
+export function buildMeta({ title, description, noIndex, canonicalUrl, siteName }: BuildMetaOptions): BuildMetaResult {
+	const fullTitle = title === siteName ? title : `${title} - ${siteName}`;
+
+	return {
+		fullTitle,
+		description,
+		noIndex,
+		canonicalUrl
+	};
 }

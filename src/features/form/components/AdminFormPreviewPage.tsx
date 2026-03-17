@@ -2,6 +2,8 @@ import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
+import { SEO_CONFIG } from "@/seo/seo.config";
+import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner } from "@/shared/components";
 import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
@@ -34,6 +36,7 @@ export const AdminFormPreviewPage = () => {
 	const sectionsQuery = useSections(formid);
 	const workflowQuery = useWorkflow(formid);
 	const coverImageUrl = formid ? `/api/forms/${formid}/cover` : null;
+	const meta = useSeo({ rule: SEO_CONFIG.adminFormPreview, data: formQuery.data });
 
 	useEffect(() => {
 		[formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]
@@ -83,6 +86,7 @@ export const AdminFormPreviewPage = () => {
 	if (formQuery.isLoading || sectionsQuery.isLoading || workflowQuery.isLoading) {
 		return (
 			<div className={styles.page}>
+				{meta}
 				<div className={styles.banner}>
 					<span className={styles.bannerLabel}>預覽模式</span>
 					<span className={styles.bannerDesc}>此為管理員預覽，表單尚未發布，填答內容不會被儲存</span>
@@ -97,6 +101,7 @@ export const AdminFormPreviewPage = () => {
 	if (formQuery.isError || !formQuery.data) {
 		return (
 			<div className={styles.page}>
+				{meta}
 				<div className={styles.banner}>
 					<span className={styles.bannerLabel}>預覽模式</span>
 					<span className={styles.bannerDesc}>此為管理員預覽，表單尚未發布，填答內容不會被儲存</span>
@@ -119,6 +124,7 @@ export const AdminFormPreviewPage = () => {
 
 	return (
 		<div className={styles.page}>
+			{meta}
 			{/* Fixed admin preview banner */}
 			<div className={styles.banner}>
 				<span className={styles.bannerLabel}>預覽模式</span>
