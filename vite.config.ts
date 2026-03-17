@@ -1,7 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 import { visualizer } from "rollup-plugin-visualizer";
-import { defineConfig, loadEnv, type Plugin } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "VITE_");
@@ -38,28 +38,7 @@ export default defineConfig(({ mode }) => {
 				"@": resolve(__dirname, "src")
 			}
 		},
-		plugins: [
-			react(),
-			mpaFallback,
-			injectGA,
-
-			visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true }),
-
-			{
-				name: "copy-lucide-static",
-				configResolved() {
-					const srcDir = resolve(process.cwd(), "node_modules/lucide-static/icons");
-					const destDir = resolve(process.cwd(), "public/icons/lucide");
-					fs.cpSync(srcDir, destDir, { recursive: true });
-					const iconNames = fs
-						.readdirSync(destDir)
-						.filter(fileName => fileName.endsWith(".svg"))
-						.map(fileName => fileName.slice(0, -4))
-						.sort();
-					fs.writeFileSync(resolve(destDir, "names.json"), JSON.stringify(iconNames));
-				}
-			}
-		],
+		plugins: [react(), injectGA, visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })],
 		server: {
 			proxy: {
 				"/api": {
