@@ -30,7 +30,12 @@ export const FormStructure = ({ sections, currentStep, onSectionClick }: FormStr
 			</div>
 			<div className={styles.workflow}>
 				{sections.map((section, index) => (
-					<button key={section.id} type="button" className={`${styles.workflowButton} ${index === currentStep ? styles.active : ""}`} onClick={() => onSectionClick(index)}>
+					<button
+						key={section.id}
+						type="button"
+						className={[styles.workflowButton, index < currentStep ? styles.completed : "", index === currentStep ? styles.active : ""].join(" ")}
+						onClick={() => onSectionClick(index)}
+					>
 						{section.title}
 					</button>
 				))}

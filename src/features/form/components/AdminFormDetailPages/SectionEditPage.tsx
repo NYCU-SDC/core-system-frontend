@@ -7,9 +7,9 @@ import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
+import { QuestionCard } from "./components/QuestionCard";
+import { QUESTION_STRATEGIES } from "./QuestionConfig";
 import styles from "./SectionEditPage.module.css";
-import { QuestionCard } from "./components/SectionEditor/QuestionCard";
-import { QUESTION_STRATEGIES } from "./components/SectionEditor/QuestionConfig";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
 

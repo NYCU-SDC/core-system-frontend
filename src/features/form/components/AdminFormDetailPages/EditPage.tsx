@@ -6,7 +6,7 @@ import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-s
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
-import { FlowRenderer } from "./components/FormEditor/FlowRenderer";
+import { FlowRenderer } from "./components/FlowRenderer";
 import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
 

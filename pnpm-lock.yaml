@@ -71,9 +71,7 @@ importers:
       lucide-react:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.4)
-      lucide-static:
-        specifier: ^0.574.0
-        version: 0.574.0
+
       marked:
         specifier: ^17.0.3
         version: 17.0.3
