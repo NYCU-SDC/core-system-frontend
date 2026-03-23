@@ -110,6 +110,8 @@ jobs:
             nycusdc/core-system-frontend:dev
             nycusdc/core-system-frontend:${{ github.sha }}
           context: .
+          build-args: |
+            BUILD_MODE=dev
 
       - name: Build and Push Docker image
         uses: docker/build-push-action@v6
@@ -122,6 +124,8 @@ jobs:
             nycusdc/core-system-frontend:stage
             nycusdc/core-system-frontend:${{ github.sha }}
           context: .
+          build-args: |
+            BUILD_MODE=stage
 
   Deploy-Dev:
     if: ${{ contains(github.ref, 'refs/heads/main') }}

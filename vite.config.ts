@@ -25,6 +25,19 @@ const mpaFallback: Plugin = {
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "VITE_");
+	const gaId = env.VITE_GA_ID ?? "";
+
+	const injectGA: Plugin = {
+		name: "inject-ga",
+		transformIndexHtml(html) {
+			if (!gaId) {
+				// Remove the GA block entirely when no ID is provided
+				return html.replace(/<!--\s*Google tag[\s\S]*?<\/script>\s*/g, "");
+			}
+			return html.replaceAll("%VITE_GA_ID%", gaId);
+		}
+	};
+
 	return {
 		build: {
 			chunkSizeWarningLimit: 1000,
@@ -49,7 +62,7 @@ export default defineConfig(({ mode }) => {
 				"@": resolve(__dirname, "src")
 			}
 		},
-		plugins: [react(), mpaFallback, visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })],
+		plugins: [react(), mpaFallback, injectGA, visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })],
 		server: {
 			proxy: {
 				"/api": {
