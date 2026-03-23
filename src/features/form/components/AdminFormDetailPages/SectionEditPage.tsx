@@ -18,6 +18,11 @@ type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
 	oauthConnect?: Question["oauthProvider"];
 };
 
+type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
+	url?: string;
+	oauthConnect?: Question["oauthProvider"];
+};
+
 export const AdminSectionEditPage = () => {
 	const { formid, sectionId } = useParams<{ formid: string; sectionId: string }>();
 	const navigate = useNavigate();
@@ -34,6 +39,13 @@ export const AdminSectionEditPage = () => {
 	const updateSectionMutation = useUpdateSection(formid!, sectionId!);
 	const workflowQuery = useWorkflow(formid);
 	const updateWorkflowMutation = useUpdateWorkflow(formid!);
+
+	const copyQuestionField = <K extends keyof Question>(target: Question, source: Question, key: K) => {
+		const value = source[key];
+		if (value !== undefined) {
+			target[key] = value;
+		}
+	};
 
 	const copyQuestionField = <K extends keyof Question>(target: Question, source: Question, key: K) => {
 		const value = source[key];
@@ -218,7 +230,7 @@ export const AdminSectionEditPage = () => {
 				return {
 					type: q.type as Question["type"],
 					title: q.title,
-					description: proseMirrorToPlainText(q.description),
+					description: q.description ?? "",
 					required: q.required ?? false,
 					isFromAnswer: Boolean(q.sourceId),
 					sourceQuestionId: q.sourceId,
@@ -346,6 +358,7 @@ export const AdminSectionEditPage = () => {
 		strategy.features.forEach(field => {
 			const keepFields = QUESTION_FEATURES[field];
 			keepFields.forEach(keepField => {
+				copyQuestionField(nextQuestion, prev, keepField);
 				copyQuestionField(nextQuestion, prev, keepField);
 			});
 		});
