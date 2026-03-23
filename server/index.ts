@@ -1,7 +1,7 @@
 import fastifyHttpProxy from "@fastify/http-proxy";
 import fastifyStatic from "@fastify/static";
 import { formsGetFormById } from "@nycu-sdc/core-system-sdk/dist/generated/index.js";
-import Fastify from "fastify";
+import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,8 +36,9 @@ setGlobalDispatcher(
 
 const originalFetch = globalThis.fetch.bind(globalThis);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function absolutify(input: any): any {
+type FetchInput = string | URL | Request;
+
+function absolutify(input: FetchInput): FetchInput {
 	const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
 	if (typeof url === "string" && url.startsWith("/")) {
@@ -66,8 +67,7 @@ function combineSignals(a?: AbortSignal | null, b?: AbortSignal | null): AbortSi
 	return controller.signal;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchWithTimeout(input: any, init: RequestInit = {}): Promise<Response> {
+async function fetchWithTimeout(input: FetchInput, init: RequestInit = {}): Promise<Response> {
 	const controller = new AbortController();
 	const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -79,8 +79,7 @@ async function fetchWithTimeout(input: any, init: RequestInit = {}): Promise<Res
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-globalThis.fetch = (input: any, init?: any) => {
+globalThis.fetch = (input: FetchInput, init?: RequestInit) => {
 	return fetchWithTimeout(absolutify(input), init);
 };
 
@@ -217,8 +216,9 @@ const breaker = new CircuitBreaker();
 
 const TEMPLATE = await fs.readFile(path.join(DIST_DIR, "index.html"), "utf8");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleFormSeoRoute(req: any, reply: any) {
+type FormSeoRouteRequest = FastifyRequest<{ Params: { formId: string } }>;
+
+async function handleFormSeoRoute(req: FormSeoRouteRequest, reply: FastifyReply) {
 	const { formId } = req.params;
 
 	let title = "Form";
@@ -231,8 +231,7 @@ async function handleFormSeoRoute(req: any, reply: any) {
 		description = cached.description;
 	} else if (!breaker.isOpen()) {
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const res: any = await formsGetFormById(formId);
+			const res = await formsGetFormById(formId);
 
 			if (res.status >= 200 && res.status < 300) {
 				title = res.data.title || title;
