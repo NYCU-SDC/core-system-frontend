@@ -1,100 +1,204 @@
 .container {
 	display: flex;
 	flex-direction: column;
-	gap: 1rem;
+	gap: 1.5rem;
 }
 
-.wrapper {
+.topHeader {
 	display: flex;
+	justify-content: space-between;
 	align-items: center;
 	gap: 1rem;
-	margin-bottom: 4rem;
+	flex-wrap: wrap;
 }
 
-.statusLinked {
-	color: var(--green);
-	background-color: var(--green-subtle);
-	border-radius: 0;
-	clip-path: polygon(0.25rem 0, 100% 0, 100% 0, calc(100% - 0.25rem) 100%, 0 100%, 0 100%);
+.totalText {
+	margin: 0;
+	font-size: 1.5rem;
+	font-weight: 600;
 }
 
-.statusUnlinked {
+.sheetButton {
+	background-color: var(--foreground);
+	color: var(--background-color-primary);
+	border: 0.0625rem solid var(--foreground);
+}
+
+.sheetButton:hover:not(:disabled) {
+	opacity: 0.9;
+}
+
+.modeTabs {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 4rem;
+	width: 100%;
+	margin: 0.5rem 0 1rem;
+	padding-bottom: 0.25rem;
+	border-bottom: 0.0625rem solid var(--background-color-tertiary);
+}
+
+.modeTab {
+	background: none;
+	border: none;
+	padding: 0.5rem 0.5rem;
+	font-size: 1rem;
+	color: var(--color-caption);
+	cursor: pointer;
+	border-bottom: 0.125rem solid transparent;
+}
+
+.modeTab:hover {
 	color: var(--foreground);
-	background-color: var(--background-color-tertiary);
-	border-radius: 0;
-	clip-path: polygon(0.25rem 0, 100% 0, 100% 0, calc(100% - 0.25rem) 100%, 0 100%, 0 100%);
 }
 
-.checkButton {
-	background-color: var(--background-color-tertiary);
+.modeTabActive {
+	color: var(--foreground);
+	border-bottom-color: var(--foreground);
 }
 
-.formGroup {
+.contentStack {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.selectorBlock {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.selectorControls {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.selectorArrowButton {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	min-width: auto;
+	background: transparent;
+	border: none;
+	color: var(--foreground);
+	cursor: pointer;
+	line-height: 1;
+}
+
+.selectorArrowButton:hover:not(:disabled) {
+	color: var(--orange);
+}
+
+.selectorArrowButton:disabled {
+	color: var(--comment);
+	cursor: not-allowed;
+}
+
+.selectorArrowButton:focus-visible {
+	outline: 0.125rem solid var(--cyan);
+	outline-offset: 0.125rem;
+	border-radius: 0.25rem;
+}
+
+.selectorLabel {
+	font-weight: 500;
+	color: var(--color-heading);
+}
+
+.questionBlock {
+	background-color: var(--background-color-tertiary);
+	border-radius: 1rem;
+	padding: 2rem;
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
 }
 
-.table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.875rem;
+.questionMeta {
+	display: grid;
+	gap: 0.25rem;
 }
 
-.table th,
-.table td {
-	padding: 0.5rem 0.75rem;
-	text-align: left;
-	border-bottom: 1px solid var(--background-color-tertiary);
+.questionTitle {
+	margin: 0 0 0.5rem 0;
+	font-size: 1rem;
+	font-weight: 700;
 }
 
-.table th {
-	font-weight: 600;
-	color: var(--color-caption);
-	background-color: var(--background-color-secondary);
-}
-
-.table td {
-	background-color: var(--background-color-secondary);
-}
-
-.detailCell {
-	background-color: var(--background-color-primary) !important;
-	padding: 0.75rem 1rem;
-}
-
-.detailInnerTable {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.875rem;
-}
-
-.detailInnerTable th {
-	text-align: left;
-	padding-bottom: 0.25rem;
-	color: var(--color-caption);
-	background: none;
-}
-
-.detailInnerTable td {
-	background: none;
-	padding: 0.25rem 0;
-	vertical-align: top;
-}
-
-.detailInnerTable td:first-child {
-	padding-right: 1rem;
-}
-
-.stateCell {
-	padding: 0.75rem 1rem;
-}
-
-.noMargin {
+.questionDescription {
 	margin: 0;
+	color: var(--color-caption);
 }
 
-.actionsCell {
+.questionCount {
+	margin: 0;
+	font-size: 0.875rem;
+	color: var(--comment);
+}
+
+.questionContent {
 	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.readonlyQuestionContent {
+	pointer-events: none;
+	opacity: 0.85;
+}
+
+.chart {
+	width: 100%;
+	height: 18rem;
+}
+
+.textSummaryList {
+	display: flex;
+	flex-direction: column;
 	gap: 0.5rem;
+}
+
+.textSummaryItem {
+	padding: 1rem;
+	background-color: var(--selection);
+	border-radius: 1rem;
+}
+
+.responseHeader {
+	display: grid;
+	gap: 0.25rem;
+}
+
+.responseTitle {
+	margin: 0 0 0.5rem 0;
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+.responseMeta {
+	margin: 0;
+	font-size: 0.875rem;
+	color: var(--comment);
+}
+
+.answerText {
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.answerLink {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	word-break: break-all;
+}
+
+.emptyState {
+	margin: 0;
+	color: var(--comment);
 }
