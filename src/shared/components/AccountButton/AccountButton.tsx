@@ -150,6 +150,7 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 				}
 			} finally {
 				setIsConnecting(false);
+				popupRef.current = null;
 				try {
 					popup.close();
 				} catch {
@@ -160,15 +161,17 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 
 		window.addEventListener("message", handleMessage);
 
-		timerRef.current = window.setInterval(async () => {
+		timerRef.current = window.setInterval(() => {
 			if (popup.closed) {
 				clearTimer();
 				window.removeEventListener("message", handleMessage);
-				// If no FORM_OAUTH_CONNECTED message was handled, fall back to fetching
-				if (!(popup as Window & { __oauthHandled?: boolean }).__oauthHandled) {
-					await fetchAndApply({ showToast: true });
-				}
 				setIsConnecting(false);
+				popupRef.current = null;
+				// If no FORM_OAUTH_CONNECTED message was handled, do a silent refresh in background.
+				// This preserves immediate UI sync when callback message is missed, while still allowing instant retry.
+				if (!(popup as Window & { __oauthHandled?: boolean }).__oauthHandled) {
+					void fetchAndApply({ showToast: false });
+				}
 			}
 		}, 500);
 
