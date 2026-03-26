@@ -202,3 +202,140 @@
 	margin: 0;
 	color: var(--comment);
 }
+
+.popupOverlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9998;
+	background: rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+}
+
+.popup {
+	width: min(42rem, 100%);
+	background: var(--background-color-secondary);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 2rem;
+	padding: 2rem;
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+.popupHeader {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.popupHeaderLeft {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.popupTitle {
+	margin: 0;
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: var(--color-heading);
+}
+
+.popupCloseButton {
+	background: transparent;
+	border: none;
+	color: var(--color-caption);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.25rem;
+	border-radius: 0.25rem;
+}
+
+.popupCloseButton:hover {
+	background: transparent;
+	color: var(--foreground);
+}
+
+.popupHint {
+	margin: 0;
+	font-size: 0.9375rem;
+	color: var(--color-body);
+}
+
+.serviceAccountBox {
+	background: var(--background-color-tertiary);
+	border: 0.0625rem solid var(--selection);
+	border-radius: 0.625rem;
+	padding: 0.625rem 0.75rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	font-family: FiraCode, "Courier New", Courier, monospace;
+	font-size: 0.875rem;
+	word-break: break-all;
+}
+
+.copyButton {
+	padding: 0.375rem;
+	min-width: auto;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.copyButton:hover:not(:disabled) {
+	background: var(--background-color-tertiary);
+	opacity: 1;
+	transform: translateY(-0.0625rem);
+}
+
+.sheetUrlInput {
+	width: 100%;
+	border: 0.0625rem solid var(--background-color-tertiary);
+	background: var(--selection);
+	border-radius: 0.625rem;
+	padding: 0.75rem;
+	color: var(--foreground);
+	font-size: 0.9375rem;
+}
+
+.sheetUrlInput:focus-visible {
+	outline: 0.125rem solid var(--cyan);
+	outline-offset: 0.125rem;
+}
+
+.popupActions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.checkStatusButton {
+	background: var(--foreground);
+	color: var(--background-color-primary);
+	border: 0.0625rem solid var(--foreground);
+}
+
+.checkStatusButton:hover:not(:disabled) {
+	background: var(--foreground);
+	opacity: 0.9;
+}
+
+.statusLinked {
+	background: var(--green-subtle);
+	color: var(--green);
+	border-color: var(--green);
+}
+
+.statusUnlinked {
+	background: var(--background-color-tertiary);
+	color: var(--color-caption);
+	border-color: var(--selection);
+}

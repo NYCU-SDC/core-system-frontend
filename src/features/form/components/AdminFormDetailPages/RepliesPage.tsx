@@ -1,15 +1,17 @@
 import { useActiveOrgSlug, useOrgMembers } from "@/features/dashboard/hooks/useOrgSettings";
 import { useFormResponses } from "@/features/form/hooks/useFormResponses";
+import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, ErrorMessage, LoadingSpinner, Select } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, Select, useToast } from "@/shared/components";
 import type { FormsForm, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { ChevronLeft, ChevronRight, SquareArrowOutUpRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormQuestionRenderer } from "../FormQuestionRenderer";
+import { StatusTag } from "../StatusTag";
 import styles from "./RepliesPage.module.css";
 
 type RepliesMode = "summary" | "individual";
@@ -180,13 +182,27 @@ interface AdminFormRepliesPageProps {
 }
 
 export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) => {
+	const { pushToast } = useToast();
 	const [mode, setMode] = useState<RepliesMode>("summary");
 	const [selectedResponseId, setSelectedResponseId] = useState<string>("");
+	const [isSheetPopupOpen, setIsSheetPopupOpen] = useState(false);
+	const [sheetUrl, setSheetUrl] = useState(formData.googleSheetUrl ?? "");
+	const [isSheetLinked, setIsSheetLinked] = useState(Boolean(formData.googleSheetUrl));
+	const [prevGoogleSheetUrl, setPrevGoogleSheetUrl] = useState(formData.googleSheetUrl);
 	const orgSlug = useActiveOrgSlug();
 
 	const responsesQuery = useFormResponses(formData.id);
 	const sectionsQuery = useSections(formData.id);
 	const membersQuery = useOrgMembers(orgSlug, !!orgSlug);
+	const emailQuery = useGoogleSheetEmail();
+	const verifyMutation = useVerifyGoogleSheet(formData.id);
+	const updateFormMutation = useUpdateForm(formData.id);
+
+	if (formData.googleSheetUrl !== prevGoogleSheetUrl) {
+		setSheetUrl(formData.googleSheetUrl ?? "");
+		setIsSheetLinked(Boolean(formData.googleSheetUrl));
+		setPrevGoogleSheetUrl(formData.googleSheetUrl);
+	}
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
 	const allQuestions = useMemo(() => {
@@ -297,9 +313,61 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		return next;
 	}, [membersQuery.data]);
 
-	const handleOpenSheet = () => {
-		if (!formData.googleSheetUrl?.trim()) return;
-		window.open(formData.googleSheetUrl, "_blank", "noopener,noreferrer");
+	const isCheckingSheet = verifyMutation.isPending || updateFormMutation.isPending;
+	const serviceAccountEmail = emailQuery.data?.email ?? "tickets@sitcon-324316.iam.gserviceaccount.com";
+
+	const handleCopyServiceAccount = async () => {
+		try {
+			await navigator.clipboard.writeText(serviceAccountEmail);
+			pushToast({ title: "已複製服務帳號", variant: "success" });
+		} catch {
+			pushToast({ title: "複製失敗", variant: "error" });
+		}
+	};
+
+	const handleVerifySheet = () => {
+		if (!sheetUrl.trim()) {
+			pushToast({ title: "請先貼上 Google Sheets URL", variant: "warning" });
+			return;
+		}
+
+		verifyMutation.mutate(
+			{ googleSheetUrl: sheetUrl.trim() },
+			{
+				onSuccess: verifyResult => {
+					if (!verifyResult.isValid) {
+						setIsSheetLinked(false);
+						pushToast({
+							title: "尚未完成連結",
+							description: "請確認服務帳號已被授予 Google Sheets 編輯權限。",
+							variant: "error"
+						});
+						return;
+					}
+
+					updateFormMutation.mutate(
+						{ googleSheetUrl: sheetUrl.trim() },
+						{
+							onSuccess: () => {
+								setIsSheetLinked(true);
+								pushToast({ title: "已連結至試算表", variant: "success" });
+							},
+							onError: error => {
+								pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" });
+							}
+						}
+					);
+				},
+				onError: error => {
+					setIsSheetLinked(false);
+					pushToast({ title: "檢查失敗", description: (error as Error).message, variant: "error" });
+				}
+			}
+		);
+	};
+
+	const handleViewForm = () => {
+		window.open(`/forms/${formData.id}`, "_blank", "noopener,noreferrer");
 	};
 
 	const handleSelectPreviousResponse = () => {
@@ -330,116 +398,161 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	}
 
 	return (
-		<div className={styles.container}>
-			<div className={styles.topHeader}>
-				<h2 className={styles.totalText}>{responseCountText}</h2>
-				<Button className={styles.sheetButton} variant="secondary" onClick={handleOpenSheet} disabled={!formData.googleSheetUrl?.trim()}>
-					<SquareArrowOutUpRight size={16} />
-					連結至試算表
-				</Button>
-			</div>
-
-			<div className={styles.modeTabs}>
-				<button className={`${styles.modeTab} ${mode === "summary" ? styles.modeTabActive : ""}`} onClick={() => setMode("summary")}>
-					摘要
-				</button>
-				<button className={`${styles.modeTab} ${mode === "individual" ? styles.modeTabActive : ""}`} onClick={() => setMode("individual")}>
-					個別
-				</button>
-			</div>
-
-			{mode === "summary" && (
-				<div className={styles.contentStack}>
-					{detailsError && <ErrorMessage message={detailsError.message ?? "無法載入回覆詳情"} />}
-					{detailsLoading && <LoadingSpinner />}
-					{responses.length === 0 && <p className={styles.emptyState}>尚無回覆。</p>}
-					{responses.length > 0 &&
-						allQuestions.map(question => {
-							const details = answerDetailsByQuestionId.get(question.id) ?? [];
-							const hasDescription = Boolean(question.description?.trim());
-							return (
-								<section key={question.id} className={styles.questionBlock}>
-									<div className={styles.questionMeta}>
-										<p className={styles.questionTitle}>{question.title}</p>
-										{hasDescription && <p className={styles.questionDescription}>{question.description}</p>}
-										<p className={styles.questionCount}>{responseCountText}</p>
-									</div>
-									<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartTextColor)}</div>
-								</section>
-							);
-						})}
+		<>
+			<div className={styles.container}>
+				<div className={styles.topHeader}>
+					<h2 className={styles.totalText}>{responseCountText}</h2>
+					<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)}>
+						<SquareArrowOutUpRight size={16} />
+						連結試算表
+					</Button>
 				</div>
-			)}
 
-			{mode === "individual" && (
-				<div className={styles.contentStack}>
-					<div className={styles.selectorBlock}>
-						<span className={styles.selectorLabel}>選擇回覆</span>
-						<div className={styles.selectorControls}>
-							<button className={styles.selectorArrowButton} onClick={handleSelectPreviousResponse} disabled={!hasPreviousResponse} aria-label="上一則回覆" type="button">
-								<ChevronLeft size={16} />
-							</button>
-							<Select
-								value={effectiveSelectedResponseId}
-								onValueChange={setSelectedResponseId}
-								variant="text"
-								options={responses.map((response, index) => ({
-									value: response.id,
-									label: `回覆 ${index + 1}`
-								}))}
-								placeholder="請選擇回覆"
-							/>
-							<button className={styles.selectorArrowButton} onClick={handleSelectNextResponse} disabled={!hasNextResponse} aria-label="下一則回覆" type="button">
-								<ChevronRight size={16} />
+				<div className={styles.modeTabs}>
+					<button className={`${styles.modeTab} ${mode === "summary" ? styles.modeTabActive : ""}`} onClick={() => setMode("summary")}>
+						摘要
+					</button>
+					<button className={`${styles.modeTab} ${mode === "individual" ? styles.modeTabActive : ""}`} onClick={() => setMode("individual")}>
+						個別
+					</button>
+				</div>
+
+				{mode === "summary" && (
+					<div className={styles.contentStack}>
+						{detailsError && <ErrorMessage message={detailsError.message ?? "無法載入回覆詳情"} />}
+						{detailsLoading && <LoadingSpinner />}
+						{responses.length === 0 && <p className={styles.emptyState}>尚無回覆。</p>}
+						{responses.length > 0 &&
+							allQuestions.map(question => {
+								const details = answerDetailsByQuestionId.get(question.id) ?? [];
+								const hasDescription = Boolean(question.description?.trim());
+								return (
+									<section key={question.id} className={styles.questionBlock}>
+										<div className={styles.questionMeta}>
+											<p className={styles.questionTitle}>{question.title}</p>
+											{hasDescription && <p className={styles.questionDescription}>{question.description}</p>}
+											<p className={styles.questionCount}>{responseCountText}</p>
+										</div>
+										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartTextColor)}</div>
+									</section>
+								);
+							})}
+					</div>
+				)}
+
+				{mode === "individual" && (
+					<div className={styles.contentStack}>
+						<div className={styles.selectorBlock}>
+							<span className={styles.selectorLabel}>選擇回覆</span>
+							<div className={styles.selectorControls}>
+								<button className={styles.selectorArrowButton} onClick={handleSelectPreviousResponse} disabled={!hasPreviousResponse} aria-label="上一則回覆" type="button">
+									<ChevronLeft size={16} />
+								</button>
+								<Select
+									value={effectiveSelectedResponseId}
+									onValueChange={setSelectedResponseId}
+									variant="text"
+									options={responses.map((response, index) => ({
+										value: response.id,
+										label: `回覆 ${index + 1}`
+									}))}
+									placeholder="請選擇回覆"
+								/>
+								<button className={styles.selectorArrowButton} onClick={handleSelectNextResponse} disabled={!hasNextResponse} aria-label="下一則回覆" type="button">
+									<ChevronRight size={16} />
+								</button>
+							</div>
+						</div>
+
+						{detailsError && <ErrorMessage message={detailsError.message ?? "無法載入回覆詳情"} />}
+						{detailsLoading && <LoadingSpinner />}
+						{!selectedResponse && responses.length === 0 && <p className={styles.emptyState}>尚無回覆。</p>}
+
+						{selectedResponse && (
+							<section className={styles.questionBlock}>
+								<div className={styles.responseHeader}>
+									<p className={styles.responseTitle}>回覆 {selectedResponseIndex}</p>
+									<p className={styles.responseMeta}>提交時間：{new Date(selectedResponse.createdAt).toLocaleString("zh-TW")}</p>
+									<p className={styles.responseMeta}>填答者：{selectedResponderDisplay}</p>
+								</div>
+							</section>
+						)}
+
+						{selectedResponse &&
+							allQuestions.map(question => {
+								const hasDescription = Boolean(question.description?.trim());
+								const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
+								const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
+								const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
+								const sourceAnswerValue = question.sourceId ? (selectedRendererValues.valueByQuestionId.get(question.sourceId) ?? "") : "";
+
+								return (
+									<section key={question.id} className={styles.questionBlock}>
+										<div className={styles.questionMeta}>
+											<p className={styles.questionTitle}>{question.title}</p>
+											{hasDescription && <p className={styles.questionDescription}>{question.description}</p>}
+										</div>
+										<div className={styles.readonlyQuestionContent}>
+											<FormQuestionRenderer
+												question={question}
+												value={value}
+												otherTextValue={otherTextValue}
+												sourceQuestion={sourceQuestion}
+												sourceAnswerValue={sourceAnswerValue}
+												disableFileUpload
+												onAnswerChange={() => {}}
+												onOtherTextChange={() => {}}
+											/>
+										</div>
+									</section>
+								);
+							})}
+					</div>
+				)}
+			</div>
+
+			{isSheetPopupOpen && (
+				<div className={styles.popupOverlay} onClick={() => setIsSheetPopupOpen(false)}>
+					<div className={styles.popup} onClick={event => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="連結試算表">
+						<div className={styles.popupHeader}>
+							<div className={styles.popupHeaderLeft}>
+								<p className={styles.popupTitle}>回覆搜集</p>
+								<StatusTag
+									variant={isSheetLinked ? "published" : "draft"}
+									label={isSheetLinked ? "已連結至試算表" : "尚未連結至試算表"}
+									showDot={isSheetLinked}
+									className={isSheetLinked ? styles.statusLinked : styles.statusUnlinked}
+								/>
+							</div>
+							<button className={styles.popupCloseButton} type="button" onClick={() => setIsSheetPopupOpen(false)} aria-label="關閉">
+								<X size={18} />
 							</button>
 						</div>
+
+						<p className={styles.popupHint}>請將以下服務帳號加入您的 Google Sheets 編輯權限：</p>
+
+						<div className={styles.serviceAccountBox}>
+							{emailQuery.isLoading ? <LoadingSpinner /> : <span>{serviceAccountEmail}</span>}
+							<Button className={styles.copyButton} variant="secondary" onClick={handleCopyServiceAccount} title="複製服務帳號">
+								<Copy size={16} />
+							</Button>
+						</div>
+
+						<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." />
+
+						<div className={styles.popupActions}>
+							<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet}>
+								<Repeat2 size={16} />
+								{isCheckingSheet ? "檢查中..." : "檢查狀態"}
+							</Button>
+							<Button onClick={handleViewForm}>
+								<SquareArrowOutUpRight size={16} />
+								檢視表單
+							</Button>
+						</div>
 					</div>
-
-					{detailsError && <ErrorMessage message={detailsError.message ?? "無法載入回覆詳情"} />}
-					{detailsLoading && <LoadingSpinner />}
-					{!selectedResponse && responses.length === 0 && <p className={styles.emptyState}>尚無回覆。</p>}
-
-					{selectedResponse && (
-						<section className={styles.questionBlock}>
-							<div className={styles.responseHeader}>
-								<p className={styles.responseTitle}>回覆 {selectedResponseIndex}</p>
-								<p className={styles.responseMeta}>提交時間：{new Date(selectedResponse.createdAt).toLocaleString("zh-TW")}</p>
-								<p className={styles.responseMeta}>填答者：{selectedResponderDisplay}</p>
-							</div>
-						</section>
-					)}
-
-					{selectedResponse &&
-						allQuestions.map(question => {
-							const hasDescription = Boolean(question.description?.trim());
-							const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
-							const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
-							const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
-							const sourceAnswerValue = question.sourceId ? (selectedRendererValues.valueByQuestionId.get(question.sourceId) ?? "") : "";
-
-							return (
-								<section key={question.id} className={styles.questionBlock}>
-									<div className={styles.questionMeta}>
-										<p className={styles.questionTitle}>{question.title}</p>
-										{hasDescription && <p className={styles.questionDescription}>{question.description}</p>}
-									</div>
-									<div className={styles.readonlyQuestionContent}>
-										<FormQuestionRenderer
-											question={question}
-											value={value}
-											otherTextValue={otherTextValue}
-											sourceQuestion={sourceQuestion}
-											sourceAnswerValue={sourceAnswerValue}
-											disableFileUpload
-											onAnswerChange={() => {}}
-											onOtherTextChange={() => {}}
-										/>
-									</div>
-								</section>
-							);
-						})}
 				</div>
 			)}
-		</div>
+		</>
 	);
 };
