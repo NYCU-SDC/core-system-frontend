@@ -1,0 +1,117 @@
+.wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.label {
+	color: var(--color-heading);
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.editorShell {
+	--editor-border-color: var(--background-color-tertiary);
+	--editor-focus-color: var(--form-theme-color, var(--orange));
+	border: 0.0625rem solid var(--editor-border-color);
+	border-radius: 0.5rem;
+	background-color: var(--background-color-secondary);
+	transition:
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.flushed {
+	border: none;
+	border-bottom: 0.0625rem solid var(--editor-border-color);
+	border-radius: 0;
+	background-color: transparent;
+}
+
+.focused {
+	border-color: var(--editor-focus-color);
+	box-shadow: 0 0 0 1px var(--editor-focus-color, transparent);
+}
+
+.flushed.focused {
+	border-color: transparent;
+	border-bottom-color: var(--editor-focus-color);
+	box-shadow: none;
+}
+
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	padding: 0.4rem 0.6rem;
+	border-bottom: 1px solid var(--editor-border-color);
+	background: var(--background-color-tertiary);
+}
+
+.toolbarButton {
+	align-items: center;
+	background: transparent;
+	border: none;
+	border-radius: 0.45rem;
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 0.85rem;
+	font-weight: 500;
+	gap: 0.2rem;
+	padding: 0.3rem 0.55rem;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.toolbarButton:focus-visible {
+	outline: 2px solid var(--editor-focus-color);
+	outline-offset: 2px;
+}
+
+.toolbarButtonActive {
+	background: var(--editor-focus-color);
+	color: #fff;
+}
+
+.toolbarButton:disabled {
+	cursor: not-allowed;
+	opacity: 0.4;
+}
+
+.editorArea {
+	padding: 0.75rem 1rem;
+	min-height: 8rem;
+}
+
+.flushedContent {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.editorArea :global(.ProseMirror) {
+	outline: none;
+	min-height: 6rem;
+	color: inherit;
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+.editorArea :global(.ProseMirror li > p) {
+	margin: 0;
+	display: inline;
+}
+
+.editorArea :global(.ProseMirror p.is-editor-empty:first-child::before) {
+	content: attr(data-placeholder);
+	color: var(--gray-400, #9ca3af);
+	float: left;
+	height: 0;
+	pointer-events: none;
+}
+
+.errorMessage {
+	color: var(--red);
+	font-size: 0.875rem;
+}

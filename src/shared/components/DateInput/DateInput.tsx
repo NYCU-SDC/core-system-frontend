@@ -1,5 +1,7 @@
+import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
 import type { FormsDateOption } from "@nycu-sdc/core-system-sdk";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Markdown } from "../Markdown/Markdown";
 import styles from "./DateInput.module.css";
 
 interface DateInputProps {
@@ -14,6 +16,7 @@ interface DateInputProps {
 
 export const DateInput = ({ id, label, description, value, options, required, onChange }: DateInputProps) => {
 	const { hasYear, hasMonth, hasDay, minDate, maxDate } = options;
+	const markdownDescription = useMemo(() => (description ? htmlToMarkdown(description) : ""), [description]);
 
 	// Parse the value into year, month, day
 	const parseValue = (val: string) => {
@@ -120,7 +123,7 @@ export const DateInput = ({ id, label, description, value, options, required, on
 				{label}
 				{required && <span className={styles.required}> *</span>}
 			</label>
-			{description && <p className={styles.description} dangerouslySetInnerHTML={{ __html: description }} />}
+			{description && <Markdown className={styles.description} content={markdownDescription} />}
 
 			<div className={styles.inputGroup}>
 				{hasYear && (
