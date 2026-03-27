@@ -90,6 +90,50 @@ const buildBarChartOption = (items: SummaryDataItem[], barColor: string, textCol
 	};
 };
 
+const buildPieChartOption = (items: SummaryDataItem[], pieColors: string[], textColor: string): EChartsOption => {
+	const nonZeroItems = items.filter(item => item.value > 0);
+	const data = nonZeroItems.length > 0 ? nonZeroItems : items;
+
+	return {
+		color: pieColors,
+		tooltip: {
+			trigger: "item",
+			formatter: "{b}: {c} ({d}%)"
+		},
+		legend: {
+			bottom: 0,
+			left: "center",
+			textStyle: {
+				color: textColor
+			}
+		},
+		series: [
+			{
+				type: "pie",
+				radius: ["40%", "68%"],
+				center: ["50%", "42%"],
+				avoidLabelOverlap: true,
+				label: {
+					show: true,
+					formatter: "{c}",
+					color: textColor
+				},
+				emphasis: {
+					label: {
+						show: true,
+						fontWeight: 700,
+						color: textColor
+					}
+				},
+				labelLine: {
+					show: true
+				},
+				data
+			}
+		]
+	};
+};
+
 const toAnswerValues = (answerDetail: ResponsesAnswersDetail): string[] => {
 	const rawAnswer = answerDetail.payload?.answer as { value?: unknown; otherText?: string } | undefined;
 	if (!rawAnswer) return [];
@@ -113,7 +157,7 @@ const toAnswerValues = (answerDetail: ResponsesAnswersDetail): string[] => {
 	return [];
 };
 
-const renderSummaryVisualization = (question: FormsQuestionResponse, details: ResponsesAnswersDetail[], barColor: string, textColor: string) => {
+const renderSummaryVisualization = (question: FormsQuestionResponse, details: ResponsesAnswersDetail[], barColor: string, pieColors: string[], textColor: string) => {
 	if (details.length === 0) {
 		return <p className={styles.emptyState}>尚無可統計的回答。</p>;
 	}
@@ -136,6 +180,10 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 		}
 
 		const data = [...countMap.entries()].map(([name, value]) => ({ name, value }));
+		if (question.type === "SINGLE_CHOICE") {
+			return <ReactECharts className={styles.chart} option={buildPieChartOption(data, pieColors, textColor)} notMerge lazyUpdate />;
+		}
+
 		return <ReactECharts className={styles.chart} option={buildBarChartOption(data, barColor, textColor)} notMerge lazyUpdate />;
 	}
 
@@ -382,6 +430,18 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 	const responseCountText = `${responses.length} 則回應`;
 	const chartBarColor = useMemo(() => getCssVarColor("--orange", "#ffb86c"), []);
+	const chartPieColors = useMemo(
+		() => [
+			getCssVarColor("--orange", "#ffb86c"),
+			getCssVarColor("--cyan", "#8be9fd"),
+			getCssVarColor("--purple", "#bd93f9"),
+			getCssVarColor("--green", "#50fa7b"),
+			getCssVarColor("--pink", "#ff79c6"),
+			getCssVarColor("--yellow", "#f1fa8c"),
+			getCssVarColor("--red", "#ff5555")
+		],
+		[]
+	);
 	const chartTextColor = useMemo(() => getCssVarColor("--foreground", "#f8f8f2"), []);
 	const selectedResponderDisplay = selectedResponse ? (memberDisplayById.get(selectedResponse.submittedBy) ?? selectedResponse.submittedBy) : "";
 
@@ -433,7 +493,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 											{hasDescription && <p className={styles.questionDescription}>{question.description}</p>}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
-										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartTextColor)}</div>
+										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
 									</section>
 								);
 							})}
