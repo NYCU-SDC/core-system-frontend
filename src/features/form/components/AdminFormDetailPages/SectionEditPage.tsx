@@ -1,9 +1,9 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
+import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
+import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
 import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -97,7 +97,7 @@ export const AdminSectionEditPage = () => {
 			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
-				{ title: nextSectionTitle, description: nextSectionDescription ? (marked.parse(nextSectionDescription) as string) : nextSectionDescription },
+				{ title: nextSectionTitle, description: nextSectionDescription },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
@@ -257,10 +257,11 @@ export const AdminSectionEditPage = () => {
 	}, [questionIds]);
 
 	useEffect(() => {
+		const markdownDescription = htmlToMarkdown(section?.description ?? "");
 		setSectionTitleDraft(section?.title ?? "");
-		setSectionDescriptionDraft(section?.description ?? "");
+		setSectionDescriptionDraft(markdownDescription);
 		setSavedSectionTitle(section?.title ?? "");
-		setSavedSectionDescription(section?.description ?? "");
+		setSavedSectionDescription(markdownDescription);
 	}, [section?.id, section?.title, section?.description]);
 
 	useEffect(() => {
@@ -293,7 +294,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: q.description ? (marked.parse(q.description) as string) : q.description,
+			description: q.description,
 			required: q.required ?? false,
 			order
 		};
@@ -653,14 +654,13 @@ export const AdminSectionEditPage = () => {
 								onChange={event => setSectionTitleDraft(event.target.value)}
 								onBlur={handleSectionBlurSave}
 							/>
-							<TextArea
+							<MarkdownEditor
 								placeholder="區段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
 								value={sectionDescriptionDraft}
-								onChange={event => setSectionDescriptionDraft(event.target.value)}
+								onChange={setSectionDescriptionDraft}
 								onBlur={handleSectionBlurSave}
-								rows={1}
 							/>
 						</section>
 						{questions.map((question, index) => (

@@ -1,6 +1,8 @@
 import { InlineSvg } from "@/shared/components/InlineSvg/InlineSvg";
+import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
 import type { FormsScaleOption } from "@nycu-sdc/core-system-sdk";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Markdown } from "../Markdown/Markdown";
 import styles from "./ScaleInput.module.css";
 
 interface ScaleInputProps {
@@ -16,6 +18,7 @@ interface ScaleInputProps {
 export const ScaleInput = ({ id, label, description, value, options, required, onChange }: ScaleInputProps) => {
 	const { minVal, maxVal, minValueLabel, maxValueLabel, icon } = options;
 	const [hoverValue, setHoverValue] = useState<number | null>(null);
+	const markdownDescription = useMemo(() => (description ? htmlToMarkdown(description) : ""), [description]);
 
 	const currentValue = value ? parseInt(value, 10) : null;
 	const scaleValues = Array.from({ length: maxVal - minVal + 1 }, (_, i) => minVal + i);
@@ -40,7 +43,7 @@ export const ScaleInput = ({ id, label, description, value, options, required, o
 				{label}
 				{required && <span className={styles.required}> *</span>}
 			</label>
-			{description && <p className={styles.description} dangerouslySetInnerHTML={{ __html: description }} />}
+			{description && <Markdown className={styles.description} content={markdownDescription} />}
 
 			<div className={styles.scaleWrapper}>
 				{minValueLabel && <span className={styles.minLabel}>{minValueLabel}</span>}

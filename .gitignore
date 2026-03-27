@@ -15,9 +15,10 @@ dist
 dist-ssr
 *.local
 
-# Claude Code
-.claude/settings.local.json
+# Claude Code / Codex
+.claude/
 .gitconfig-temp
+.codex-gitconfig
 
 # Test artifacts
 playwright-report/
