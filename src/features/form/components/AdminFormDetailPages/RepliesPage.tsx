@@ -3,7 +3,7 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, ErrorMessage, LoadingSpinner, Select, useToast } from "@/shared/components";
+import { Button, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
 import type { FormsForm, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
@@ -490,7 +490,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <p className={styles.questionDescription}>{question.description}</p>}
+											{hasDescription && <Markdown className={styles.questionDescription} content={question.description ?? ""} />}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
 										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
@@ -550,7 +550,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <p className={styles.questionDescription}>{question.description}</p>}
+											{hasDescription && <Markdown className={styles.questionDescription} content={question.description ?? ""} />}
 										</div>
 										<div className={styles.readonlyQuestionContent}>
 											<FormQuestionRenderer
