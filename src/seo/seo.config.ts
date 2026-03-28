@@ -48,6 +48,12 @@ export const SEO_CONFIG: Record<string, SeoRule> = {
 		description: "完成你的帳戶設定，開始使用 Core System 吧！",
 		noIndex: true
 	},
+	oauthLink: {
+		title: "帳號合併確認",
+		description: "請確認是否將兩個登入方式合併",
+		noIndex: true,
+		canonical: false
+	},
 
 	logout: {
 		title: "登出中...",
