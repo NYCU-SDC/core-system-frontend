@@ -50,5 +50,15 @@ export const authService = {
 	async updateOnboarding(data: UserOnboardingRequest): Promise<void> {
 		const res = await userUpdateUsername(data, defaultRequestOptions);
 		assertOk(res.status, "Failed to update onboarding", res.data);
+	},
+
+	// TODO: replace mocks with SDK-generated link/abort APIs
+	async linkOauthAccount(): Promise<void> {
+		console.log("mock: linkOauthAccount");
+		await new Promise(resolve => setTimeout(resolve, 500));
+	},
+	async abortLinkOauthAccount(): Promise<void> {
+		console.log("mock: abortLinkOauthAccount");
+		await new Promise(resolve => setTimeout(resolve, 500));
 	}
 };
