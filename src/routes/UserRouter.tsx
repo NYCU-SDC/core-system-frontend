@@ -14,6 +14,7 @@ const FormFilloutPage = lazy(() => import("@/features/form/components").then(m =
 const FormEntryPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormEntryPage })));
 const FormsListPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.FormsListPage })));
 const OAuthConnectCallbackPage = lazy(() => import("@/features/form/components").then(m => ({ default: m.OAuthConnectCallbackPage })));
+const OauthLinkPage = lazy(() => import("@/features/auth/components/OauthLinkPage").then(m => ({ default: m.OauthLinkPage })));
 
 export const UserRouter = () => {
 	return (
@@ -26,8 +27,8 @@ export const UserRouter = () => {
 						<Route path="/callback" element={<CallbackPage />} />
 						<Route path="/forms/oauth-callback" element={<OAuthConnectCallbackPage />} />
 						<Route path="/welcome" element={<WelcomePage />} />
+						<Route path="/link" element={<OauthLinkPage />} />
 						<Route path="/logout" element={<LogoutPage />} />
-
 						{/* User form routes */}
 						<Route element={<RequireLogin />}>
 							<Route
@@ -55,12 +56,10 @@ export const UserRouter = () => {
 								}
 							/>
 						</Route>
-
 						{/* Cross-entry: force a hard navigation so the server can serve admin.html */}
 						<Route path="/demo" element={<CrossEntryCurrentRedirect />} />
 						<Route path="/orgs" element={<CrossEntryCurrentRedirect />} />
 						<Route path="/orgs/*" element={<CrossEntryCurrentRedirect />} />
-
 						{/* 404 */}
 						<Route path="*" element={<NotFoundPage />} />
 					</Routes>
