@@ -18,11 +18,15 @@
 }
 
 .title {
+	text-align: center;
+	font-size: 2rem;
 	color: var(--color-display);
 }
 
 .description {
+	text-align: center;
 	color: var(--color-body);
+	opacity: 0.8;
 	font-size: 0.875rem;
 }
 
@@ -34,7 +38,7 @@
 	padding: 1.5rem 1.75rem;
 	border-radius: 1.5rem;
 	background: var(--color-tertiary);
-	border: 1px solid var(--background-color-tertiary);
+	border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .accountSide {
@@ -55,13 +59,14 @@
 }
 
 .googleIcon {
-	background: var(--color-display);
-	color: var(--background-color-overlay);
+	background: #fff;
+	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
 .portalIcon {
-	background: var(--background-color-overlay);
-	color: var(--color-display);
+	background: radial-gradient(circle at 30% 30%, #bc82ff52, #55448c38 55%, #ffffff0a 100%);
+	color: var(--comment-color);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .accountLabel {
@@ -81,14 +86,14 @@
 .bridgeLine {
 	flex: 1;
 	height: 1px;
-	background: var(--background-color-overlay);
+	background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
 }
 
 .bridgeSwap {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: var(--code-comment);
+	color: var(--purple);
 	flex: 0 0 auto;
 }
 

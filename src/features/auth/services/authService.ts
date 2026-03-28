@@ -58,19 +58,13 @@ export const authService = {
 		assertOk(res.status, "Failed to update onboarding", res.data);
 	},
 
-	async linkOauthAccount(params: { name: string; email: string; oauthProvider: OAuthProvider }): Promise<void> {
-		const res = await authLink(
-			{
-				name: params.name,
-				email: params.email,
-				oauthProvider: ProviderMap[params.oauthProvider]
-			},
-			defaultRequestOptions
-		);
-		assertOk(res.status, "Failed to link OAuth account", res.data);
+	// TODO: replace mocks with SDK-generated link/abort APIs
+	async linkOauthAccount(): Promise<void> {
+		console.log("mock: linkOauthAccount");
+		await new Promise(resolve => setTimeout(resolve, 500));
 	},
 	async abortLinkOauthAccount(): Promise<void> {
-		const res = await authAbortLink(defaultRequestOptions);
-		assertOk(res.status, "Failed to abort OAuth account link", res.data);
+		console.log("mock: abortLinkOauthAccount");
+		await new Promise(resolve => setTimeout(resolve, 500));
 	}
 };
