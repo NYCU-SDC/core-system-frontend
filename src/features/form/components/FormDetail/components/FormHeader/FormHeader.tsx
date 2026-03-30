@@ -1,4 +1,5 @@
-import { Button, SpinningIcon } from "@/shared/components";
+import { Button, Markdown, SpinningIcon } from "@/shared/components";
+import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import styles from "./FormHeader.module.css";
 
@@ -12,6 +13,9 @@ interface FormHeaderProps {
 }
 
 export const FormHeader = ({ title, formDescription, currentStep, currentSection, onBack, saveStatus }: FormHeaderProps) => {
+	const normalizedFormDescription = formDescription ? htmlToMarkdown(formDescription) : "";
+	const normalizedSectionDescription = currentSection?.description ? htmlToMarkdown(currentSection.description) : "";
+
 	return (
 		<div className={styles.header}>
 			{(onBack || saveStatus) && (
@@ -45,9 +49,9 @@ export const FormHeader = ({ title, formDescription, currentStep, currentSection
 				</div>
 			)}
 			<h1 className={styles.title}>{title}</h1>
-			{currentStep === 0 && formDescription && <div className={styles.description} dangerouslySetInnerHTML={{ __html: formDescription }} />}
+			{currentStep === 0 && formDescription && <Markdown className={styles.description} content={normalizedFormDescription} />}
 			<h2 className={styles.sectionHeader}>{currentSection?.title}</h2>
-			{currentSection?.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
+			{currentSection?.description && <Markdown className={styles.sectionDescription} content={normalizedSectionDescription} />}
 		</div>
 	);
 };

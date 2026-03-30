@@ -15,6 +15,10 @@ dist
 dist-ssr
 *.local
 
+# Claude Code / Codex
+.claude/
+.codex-gitconfig
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
