@@ -1,6 +1,5 @@
 import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
-import { Outlet } from "react-router-dom";
-import CrossEntryRedirect from "./CrossEntryRedirect";
+import { Navigate, Outlet } from "react-router-dom";
 
 const RequireOrgAdminAccess = () => {
 	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
@@ -10,11 +9,11 @@ const RequireOrgAdminAccess = () => {
 	}
 
 	if (!user) {
-		return <CrossEntryRedirect to="/" />;
+		return <Navigate to="/" replace />;
 	}
 
 	if (!canAccessOrgAdmin) {
-		return <CrossEntryRedirect to="/forms" />;
+		return <Navigate to="/forms" replace />;
 	}
 
 	return <Outlet />;

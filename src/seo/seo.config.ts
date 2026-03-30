@@ -31,6 +31,22 @@ export const SEO_CONFIG: Record<string, SeoRule> = {
 		noIndex: true
 	},
 
+	adminFormDetail: {
+		title: ({ data }) => {
+			const title = (data as FormSeoData | undefined)?.title;
+			return title ? `編輯 - ${title}` : "編輯表單";
+		},
+		noIndex: true
+	},
+
+	adminFormPreview: {
+		title: ({ data }) => {
+			const title = (data as FormSeoData | undefined)?.title;
+			return title ? `預覽 - ${title}` : "預覽表單";
+		},
+		noIndex: true
+	},
+
 	adminPage: {
 		title: "管理後台",
 		noIndex: true

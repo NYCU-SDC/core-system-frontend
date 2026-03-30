@@ -1,12 +1,12 @@
 import fastifyHttpProxy from "@fastify/http-proxy";
 import fastifyStatic from "@fastify/static";
 import { formsGetFormById } from "@nycu-sdc/core-system-sdk/dist/generated/index.js";
-import Fastify from "fastify";
+import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Agent, setGlobalDispatcher } from "undici";
-import { buildMeta } from "../dist/seo/buildMeta.js";
+import { buildMeta, SITE_NAME, type BuildMetaResult } from "../src/seo/buildMeta";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +16,6 @@ const DIST_DIR = path.resolve(__dirname, "../dist");
 
 const BACKEND_ORIGIN = process.env.BACKEND_ORIGIN || "http://backend:8080";
 const BACKEND_HOST_HEADER = process.env.BACKEND_HOST_HEADER || "dev.core-system.sdc.nycu.club";
-const SITE_NAME = "Core System";
 
 const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || 3000);
 const BREAKER_FAIL_THRESHOLD = Number(process.env.BREAKER_FAIL_THRESHOLD || 5);
@@ -37,7 +36,9 @@ setGlobalDispatcher(
 
 const originalFetch = globalThis.fetch.bind(globalThis);
 
-function absolutify(input) {
+type FetchInput = string | URL | Request;
+
+function absolutify(input: FetchInput): FetchInput {
 	const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
 	if (typeof url === "string" && url.startsWith("/")) {
@@ -53,8 +54,8 @@ function absolutify(input) {
 	return input;
 }
 
-function combineSignals(a, b) {
-	if (!a) return b;
+function combineSignals(a?: AbortSignal | null, b?: AbortSignal | null): AbortSignal | undefined {
+	if (!a) return b ?? undefined;
 	if (!b) return a;
 
 	if (AbortSignal.any) return AbortSignal.any([a, b]);
@@ -66,7 +67,7 @@ function combineSignals(a, b) {
 	return controller.signal;
 }
 
-async function fetchWithTimeout(input, init = {}) {
+async function fetchWithTimeout(input: FetchInput, init: RequestInit = {}): Promise<Response> {
 	const controller = new AbortController();
 	const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -78,7 +79,7 @@ async function fetchWithTimeout(input, init = {}) {
 	}
 }
 
-globalThis.fetch = (input, init) => {
+globalThis.fetch = (input: FetchInput, init?: RequestInit) => {
 	return fetchWithTimeout(absolutify(input), init);
 };
 
@@ -106,23 +107,23 @@ app.register(fastifyHttpProxy, {
 
 /* ================= HELPERS ================= */
 
-function escapeHtml(s) {
+function escapeHtml(s: string): string {
 	return String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
-function injectIntoHead(html, headTags) {
+function injectIntoHead(html: string, headTags: string): string {
 	if (html.includes("</head>")) {
 		return html.replace("</head>", `${headTags}\n</head>`);
 	}
 	return html;
 }
 
-function getCanonicalUrl(req) {
+function getCanonicalUrl(req: { protocol: string; headers: { host?: string }; url: string }): string {
 	return `${req.protocol}://${req.headers.host}${req.url}`;
 }
 
-function renderMetaHead(meta) {
-	const tags = [`<title>${escapeHtml(meta.fullTitle)}</title>`];
+function renderMetaHead(meta: BuildMetaResult): string {
+	const tags: string[] = [`<title>${escapeHtml(meta.fullTitle)}</title>`];
 
 	if (meta.description) tags.push(`<meta name="description" content="${escapeHtml(meta.description)}" />`);
 
@@ -130,19 +131,38 @@ function renderMetaHead(meta) {
 
 	if (meta.canonicalUrl) tags.push(`<link rel="canonical" href="${escapeHtml(meta.canonicalUrl)}" />`);
 
+	/* Open Graph */
+	tags.push(`<meta property="og:title" content="${escapeHtml(meta.fullTitle)}" />`);
+	if (meta.description) tags.push(`<meta property="og:description" content="${escapeHtml(meta.description)}" />`);
+	if (meta.canonicalUrl) tags.push(`<meta property="og:url" content="${escapeHtml(meta.canonicalUrl)}" />`);
+	tags.push(`<meta property="og:type" content="website" />`);
+
+	/* Twitter Card */
+	tags.push(`<meta name="twitter:card" content="summary_large_image" />`);
+	tags.push(`<meta name="twitter:title" content="${escapeHtml(meta.fullTitle)}" />`);
+	if (meta.description) tags.push(`<meta name="twitter:description" content="${escapeHtml(meta.description)}" />`);
+
 	return `\n    ${tags.join("\n    ")}\n  `;
 }
 
 /* ================= CACHE ================= */
 
-class LruTtlCache {
+interface CacheEntry<T> {
+	value: T;
+	expiresAt: number;
+}
+
+class LruTtlCache<T> {
+	private max: number;
+	private ttlMs: number;
+	private map = new Map<string, CacheEntry<T>>();
+
 	constructor({ max = 100, ttlMs = 30000 } = {}) {
 		this.max = max;
 		this.ttlMs = ttlMs;
-		this.map = new Map();
 	}
 
-	get(key) {
+	get(key: string): T | undefined {
 		const entry = this.map.get(key);
 		if (!entry) return;
 		if (Date.now() > entry.expiresAt) {
@@ -154,9 +174,9 @@ class LruTtlCache {
 		return entry.value;
 	}
 
-	set(key, value) {
+	set(key: string, value: T): void {
 		if (this.map.has(key)) this.map.delete(key);
-		else if (this.map.size >= this.max) this.map.delete(this.map.keys().next().value);
+		else if (this.map.size >= this.max) this.map.delete(this.map.keys().next().value!);
 
 		this.map.set(key, {
 			value,
@@ -165,26 +185,24 @@ class LruTtlCache {
 	}
 }
 
-const formMetaCache = new LruTtlCache({ max: 500, ttlMs: 30000 });
+const formMetaCache = new LruTtlCache<{ title: string; description: string }>({ max: 500, ttlMs: 30000 });
 
 /* ================= CIRCUIT BREAKER ================= */
 
 class CircuitBreaker {
-	constructor() {
-		this.failCount = 0;
-		this.openUntil = 0;
-	}
+	private failCount = 0;
+	private openUntil = 0;
 
-	isOpen() {
+	isOpen(): boolean {
 		return Date.now() < this.openUntil;
 	}
 
-	success() {
+	success(): void {
 		this.failCount = 0;
 		this.openUntil = 0;
 	}
 
-	fail() {
+	fail(): void {
 		this.failCount++;
 		if (this.failCount >= BREAKER_FAIL_THRESHOLD) {
 			this.openUntil = Date.now() + BREAKER_OPEN_MS;
@@ -196,12 +214,11 @@ const breaker = new CircuitBreaker();
 
 /* ================= ROUTES ================= */
 
-const TEMPLATES = {
-	forms: await fs.readFile(path.join(DIST_DIR, "forms.html"), "utf8"),
-	admin: await fs.readFile(path.join(DIST_DIR, "admin.html"), "utf8")
-};
+const TEMPLATE = await fs.readFile(path.join(DIST_DIR, "index.html"), "utf8");
 
-async function handleFormSeoRoute(req, reply) {
+type FormSeoRouteRequest = FastifyRequest<{ Params: { formId: string } }>;
+
+async function handleFormSeoRoute(req: FormSeoRouteRequest, reply: FastifyReply) {
 	const { formId } = req.params;
 
 	let title = "Form";
@@ -241,18 +258,14 @@ async function handleFormSeoRoute(req, reply) {
 		.header("content-type", "text/html; charset=utf-8")
 		.header("cache-control", "no-store")
 		.header("awesome-club", "NYCU SDC")
-		.send(injectIntoHead(TEMPLATES.forms, renderMetaHead(meta)));
+		.send(injectIntoHead(TEMPLATE, renderMetaHead(meta)));
 }
 
-app.get("/forms/:formId", handleFormSeoRoute);
-app.get("/forms/:formId/:responseId", handleFormSeoRoute);
+app.get("/forms/:formId", handleFormSeoRoute as never);
+app.get("/forms/:formId/:responseId", handleFormSeoRoute as never);
 
-const isAdminPath = pathname => pathname === "/demo" || pathname.startsWith("/orgs/") || pathname === "/orgs";
-
-app.get("/*", (req, reply) => {
-	const pathname = req.url.split("?")[0];
-	const template = isAdminPath(pathname) ? "admin" : "forms";
-	reply.header("content-type", "text/html; charset=utf-8").send(TEMPLATES[template]);
+app.get("/*", (_req, reply) => {
+	return reply.type("text/html; charset=utf-8").send(TEMPLATE);
 });
 
 const port = Number(process.env.PORT || 80);
