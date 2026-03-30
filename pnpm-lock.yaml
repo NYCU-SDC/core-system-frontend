@@ -22,6 +22,8 @@ importers:
         version: 1.0.1-snapshot-4f9e6ed
         specifier: 1.0.1-snapshot-ca0c714
         version: 1.0.1-snapshot-ca0c714
+        specifier: 1.0.1-snapshot-41ee862
+        version: 1.0.1-snapshot-41ee862
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -629,6 +631,8 @@ packages:
     resolution: {integrity: sha512-uWI+2Je8hfC/FycLBnxu24kttXY5OYmCCS3ka+3MDXjmAwvCmLv1k+TSdyx7zRgpcQ1mUNiPniextV+7xnNt4w==}
   '@nycu-sdc/core-system-sdk@1.0.1-snapshot-ca0c714':
     resolution: {integrity: sha512-IoXzDF7sfLwICvL9v2w/mpPnRXRJgLgf71ulN8EhA4MlwJhdOo4zXJVpMIySyZlCabpgYAzA2iEXfWPNUJNd3g==}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-41ee862':
+    resolution: {integrity: sha512-3TW3gTyDceno5+ndVjFc01dwmLuB4xUfLeGgcitoR0USP/6+jP38BUE9+QWNf2IyRaHj6bIOaGLnWFnP4VMPVg==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -3339,6 +3343,7 @@ snapshots:
 
   '@nycu-sdc/core-system-sdk@1.0.1-snapshot-4f9e6ed': {}
   '@nycu-sdc/core-system-sdk@1.0.1-snapshot-ca0c714': {}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-41ee862': {}
 
   '@pinojs/redact@0.4.0': {}
 
