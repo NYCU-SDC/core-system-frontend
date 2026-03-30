@@ -1,54 +1,38 @@
-.header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	margin-bottom: 0.5rem;
+.edge {
+	color: var(--white);
+	stroke-width: 2;
 }
 
-.description {
-	padding: 0;
-	padding-left: 1rem;
-	line-height: 1.5;
+.controls {
+	--xy-controls-button-background-color-default: var(--background-color-primary);
+	--xy-controls-button-background-color-hover-default: var(--selection);
+	--xy-controls-button-border-color-default: var(--background-color-overlay);
+	fill: var(--white);
 }
 
-.flowContainer {
-	display: flex;
-	justify-content: center;
+/* Custom Node Style */
+.flow {
+	background-color: var(--background-color-primary);
+	border-radius: 9999px;
 }
 
-.warnings {
-	margin-top: 1.5rem;
-	padding: 0.75rem 1rem;
-	border-radius: 0.5rem;
-	background: color-mix(in srgb, var(--orange) 10%, transparent);
-	border: 1px solid color-mix(in srgb, var(--orange) 40%, transparent);
+.section {
+	background-color: var(--background-color-tertiary);
 }
 
-.warningsTitle {
-	margin: 0 0 0.5rem;
-	font-weight: 600;
-	color: var(--orange);
+.condition {
+	background-color: var(--background-color-tertiary);
 }
 
-.warnings ul {
-	margin: 0;
-	padding-left: 1.25rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
+.node {
+	padding: 0.5rem 1rem;
 }
 
-.warningItem {
-	font-size: 0.85rem;
-	color: var(--foreground);
-	display: flex;
-	gap: 0.5rem;
-	align-items: baseline;
+.handler {
+	transition: opacity 0.2s;
+	opacity: 0;
 }
 
-.warningNode {
-	font-weight: 600;
-	white-space: nowrap;
-	color: var(--orange);
+.visible {
+	opacity: 1;
 }
