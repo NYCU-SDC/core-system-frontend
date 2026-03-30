@@ -1,6 +1,6 @@
 .markdown {
 	line-height: 1.6;
-	color: var(--color-text);
+	color: inherit;
 }
 
 .markdown h1,
@@ -16,13 +16,13 @@
 
 .markdown h1 {
 	font-size: 2em;
-	border-bottom: 1px solid var(--color-border);
+	border-bottom: 1px solid var(--background-color-tertiary);
 	padding-bottom: 0.3em;
 }
 
 .markdown h2 {
 	font-size: 1.5em;
-	border-bottom: 1px solid var(--color-border);
+	border-bottom: 1px solid var(--background-color-tertiary);
 	padding-bottom: 0.3em;
 }
 
@@ -39,8 +39,17 @@
 	margin-bottom: 1em;
 }
 
+.markdown em {
+	font-style: italic;
+	font-synthesis: style;
+}
+
+.markdown strong {
+	font-weight: 700;
+}
+
 .markdown a {
-	color: var(--color-primary);
+	color: var(--cyan);
 	text-decoration: none;
 }
 
@@ -53,21 +62,27 @@
 	margin-top: 0;
 	margin-bottom: 1em;
 	padding-left: 2em;
+	list-style-position: outside;
 }
 
 .markdown li {
 	margin-bottom: 0.25em;
 }
 
+.markdown li > p {
+	display: inline;
+	margin: 0;
+}
+
 .markdown blockquote {
 	margin: 1em 0;
 	padding-left: 1em;
-	border-left: 4px solid var(--color-border);
+	border-left: 4px solid var(--orange);
 	color: var(--color-caption);
 }
 
 .markdown code {
-	background-color: var(--color-background-secondary);
+	background-color: var(--background-color-secondary);
 	padding: 0.2em 0.4em;
 	border-radius: 3px;
 	font-family: "Courier New", Courier, monospace;
@@ -99,13 +114,13 @@
 
 .markdown th,
 .markdown td {
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--background-color-tertiary);
 	padding: 0.5em 1em;
 	text-align: left;
 }
 
 .markdown th {
-	background-color: var(--color-background-secondary);
+	background-color: var(--background-color-secondary);
 	font-weight: 600;
 }
 
@@ -116,6 +131,6 @@
 
 .markdown hr {
 	border: none;
-	border-top: 1px solid var(--color-border);
+	border-top: 1px solid var(--background-color-tertiary);
 	margin: 2em 0;
 }

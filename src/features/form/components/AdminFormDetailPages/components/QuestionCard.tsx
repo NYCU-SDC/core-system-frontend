@@ -1,5 +1,6 @@
 import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
-import { Button, Checkbox, Input, Select, Switch, TextArea } from "@/shared/components";
+import { Button, Checkbox, Input, Select, Switch } from "@/shared/components";
+import { MarkdownEditor } from "@/shared/components/MarkdownEditor/MarkdownEditor";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import {
 	Calendar,
@@ -272,14 +273,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								themeColor="--comment"
 								textSize="h2"
 							/>
-							<TextArea
+							<MarkdownEditor
 								value={localDesc}
-								onChange={e => setLocalDesc(e.target.value)}
+								onChange={nextValue => setLocalDesc(nextValue)}
 								onBlur={() => props.onDescriptionChange?.(localDesc)}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
-								rows={1}
 							/>
 						</div>
 						<div className={styles.typeWrapper}>
