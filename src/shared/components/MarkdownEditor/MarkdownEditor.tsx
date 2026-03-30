@@ -36,6 +36,17 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 	const [isFocused, setIsFocused] = useState(false);
 	const lastSyncedMarkdown = useRef(value ?? "");
 
+	// Heading dropdown state
+	const [headingDropdownOpen, setHeadingDropdownOpen] = useState(false);
+	const headingDropdownRef = useRef<HTMLDivElement>(null);
+
+	// Link dialog state
+	const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+	const [linkText, setLinkText] = useState("");
+	const [linkUrl, setLinkUrl] = useState("");
+	const linkDialogRef = useRef<HTMLDivElement>(null);
+	const linkUrlInputRef = useRef<HTMLInputElement>(null);
+
 	const placeholderText = useMemo(() => placeholder ?? "輸入 Markdown 內容…", [placeholder]);
 
 	const editor = useEditor({
@@ -111,48 +122,95 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 		editor.commands.setContent(html || "<p></p>", false);
 	}, [editor, value]);
 
-	const cycleHeading = () => {
+	// Close heading dropdown on click outside
+	useEffect(() => {
+		if (!headingDropdownOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (headingDropdownRef.current && !headingDropdownRef.current.contains(e.target as Node)) {
+				setHeadingDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [headingDropdownOpen]);
+
+	// Close link dialog on click outside
+	useEffect(() => {
+		if (!linkDialogOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (linkDialogRef.current && !linkDialogRef.current.contains(e.target as Node)) {
+				setLinkDialogOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [linkDialogOpen]);
+
+	const currentHeadingLevel = headingLevels.find(level => editor?.isActive("heading", { level })) ?? null;
+
+	const applyHeading = (level: 1 | 2 | 3 | null) => {
 		if (!editor) return;
-		const currentLevel = headingLevels.find(level => editor.isActive("heading", { level })) ?? null;
-		if (currentLevel === null) {
-			editor.chain().focus().toggleHeading({ level: headingLevels[0] }).run();
-			return;
-		}
-		const currentIndex = headingLevels.indexOf(currentLevel);
-		const nextIndex = currentIndex + 1;
-		if (nextIndex >= headingLevels.length) {
+		if (level === null) {
 			editor.chain().focus().setParagraph().run();
 		} else {
-			editor.chain().focus().toggleHeading({ level: headingLevels[nextIndex] }).run();
+			editor.chain().focus().setHeading({ level }).run();
 		}
+		setHeadingDropdownOpen(false);
 	};
 
-	const handleToggleLink = () => {
+	const openLinkDialog = () => {
 		if (!editor) return;
-		if (editor.isActive("link")) {
-			editor.chain().focus().unsetLink().run();
+		const { from, to } = editor.state.selection;
+		const selectedText = editor.state.doc.textBetween(from, to);
+		const existingHref = editor.isActive("link") ? (editor.getAttributes("link").href as string) : "";
+		setLinkText(selectedText || "");
+		setLinkUrl(existingHref || "");
+		setLinkDialogOpen(true);
+		// Focus URL input after state update
+		setTimeout(() => linkUrlInputRef.current?.focus(), 0);
+	};
+
+	const applyLink = () => {
+		if (!editor) return;
+		if (!linkUrl.trim()) {
+			editor.chain().focus().extendMarkRange("link").unsetLink().run();
+			setLinkDialogOpen(false);
 			return;
 		}
-		const url = window.prompt("請輸入連結網址");
-		if (!url) return;
-		editor.chain().focus().setLink({ href: url }).run();
+
+		if (linkText.trim()) {
+			editor
+				.chain()
+				.focus()
+				.extendMarkRange("link")
+				.command(({ tr, state }) => {
+					const { from, to } = state.selection;
+					const mark = state.schema.marks.link?.create({ href: linkUrl.trim(), target: "_blank", rel: "noopener noreferrer" });
+					if (!mark) return false;
+					tr.replaceWith(from, to, state.schema.text(linkText.trim(), [mark]));
+					return true;
+				})
+				.run();
+		} else {
+			editor.chain().focus().extendMarkRange("link").setLink({ href: linkUrl.trim() }).run();
+		}
+
+		setLinkDialogOpen(false);
+	};
+
+	const removeLink = () => {
+		if (!editor) return;
+		editor.chain().focus().extendMarkRange("link").unsetLink().run();
+		setLinkDialogOpen(false);
 	};
 
 	const toolbarButtons = [
-		{
-			key: "heading",
-			label: "H",
-			title: "標題",
-			active: headingLevels.some(level => editor?.isActive("heading", { level })),
-			disabled: !editor,
-			action: cycleHeading
-		},
 		{
 			key: "bold",
 			label: "B",
 			title: "粗體",
 			active: Boolean(editor?.isActive("bold")),
-			disabled: editor ? !editor.can().chain().focus().toggleBold().run() : true,
+			disabled: !editor,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleBold().run();
@@ -163,21 +221,10 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "I",
 			title: "斜體",
 			active: Boolean(editor?.isActive("italic")),
-			disabled: editor ? !editor.can().chain().focus().toggleItalic().run() : true,
+			disabled: !editor,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleItalic().run();
-			}
-		},
-		{
-			key: "strike",
-			label: "S",
-			title: "刪除線",
-			active: Boolean(editor?.isActive("strike")),
-			disabled: editor ? !editor.can().chain().focus().toggleStrike().run() : true,
-			action: () => {
-				if (!editor) return;
-				editor.chain().focus().toggleStrike().run();
 			}
 		},
 		{
@@ -185,7 +232,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "•",
 			title: "無序列表",
 			active: Boolean(editor?.isActive("bulletList")),
-			disabled: editor ? !editor.can().chain().focus().toggleBulletList().run() : true,
+			disabled: !editor,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleBulletList().run();
@@ -196,7 +243,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "1.",
 			title: "有序列表",
 			active: Boolean(editor?.isActive("orderedList")),
-			disabled: editor ? !editor.can().chain().focus().toggleOrderedList().run() : true,
+			disabled: !editor,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleOrderedList().run();
@@ -207,7 +254,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "❝",
 			title: "引用",
 			active: Boolean(editor?.isActive("blockquote")),
-			disabled: editor ? !editor.can().chain().focus().toggleBlockquote().run() : true,
+			disabled: !editor,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleBlockquote().run();
@@ -218,19 +265,11 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "</>",
 			title: "程式碼區塊",
 			active: Boolean(editor?.isActive("codeBlock")),
-			disabled: editor ? !editor.can().chain().focus().toggleCodeBlock().run() : true,
+			disabled: !editor,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleCodeBlock().run();
 			}
-		},
-		{
-			key: "link",
-			label: "🔗",
-			title: "連結",
-			active: Boolean(editor?.isActive("link")),
-			disabled: !editor,
-			action: handleToggleLink
 		}
 	];
 
@@ -245,18 +284,116 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			{label && <Label.Root className={styles.label}>{label}</Label.Root>}
 			<div className={shellClasses} style={shellStyle}>
 				<div className={styles.toolbar}>
+					{/* Heading dropdown */}
+					<div className={styles.headingWrapper} ref={headingDropdownRef}>
+						<button
+							type="button"
+							title="標題"
+							className={`${styles.toolbarButton} ${currentHeadingLevel ? styles.toolbarButtonActive : ""}`}
+							onMouseDown={e => {
+								e.preventDefault();
+								setHeadingDropdownOpen(prev => !prev);
+							}}
+							disabled={!editor}
+						>
+							{currentHeadingLevel ? `H${currentHeadingLevel}` : "H"}
+							<span className={styles.dropdownArrow}>▾</span>
+						</button>
+						{headingDropdownOpen && (
+							<div className={styles.dropdownMenu}>
+								<button
+									type="button"
+									className={`${styles.dropdownItem} ${currentHeadingLevel === null ? styles.dropdownItemActive : ""}`}
+									onMouseDown={e => {
+										e.preventDefault();
+										applyHeading(null);
+									}}
+								>
+									Normal
+								</button>
+								{headingLevels.map(level => (
+									<button
+										key={level}
+										type="button"
+										className={`${styles.dropdownItem} ${currentHeadingLevel === level ? styles.dropdownItemActive : ""}`}
+										onMouseDown={e => {
+											e.preventDefault();
+											applyHeading(level);
+										}}
+									>
+										H{level}
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+
+					{/* Flat toolbar buttons */}
 					{toolbarButtons.map(button => (
 						<button
 							key={button.key}
 							type="button"
 							title={button.title}
 							className={`${styles.toolbarButton} ${button.active ? styles.toolbarButtonActive : ""}`}
-							onClick={button.action}
+							onMouseDown={e => {
+								e.preventDefault();
+								button.action();
+							}}
 							disabled={button.disabled}
 						>
 							{button.label}
 						</button>
 					))}
+
+					{/* Link button with popover */}
+					<div className={styles.linkWrapper} ref={linkDialogRef}>
+						<button type="button" title="連結" className={`${styles.toolbarButton} ${editor?.isActive("link") ? styles.toolbarButtonActive : ""}`} onClick={openLinkDialog} disabled={!editor}>
+							🔗
+						</button>
+						{linkDialogOpen && (
+							<div className={styles.linkPopover}>
+								<div className={styles.linkPopoverField}>
+									<label className={styles.linkPopoverLabel}>顯示文字</label>
+									<input
+										type="text"
+										className={styles.linkPopoverInput}
+										placeholder="顯示文字（選填）"
+										value={linkText}
+										onChange={e => setLinkText(e.target.value)}
+										onKeyDown={e => {
+											if (e.key === "Enter") applyLink();
+											if (e.key === "Escape") setLinkDialogOpen(false);
+										}}
+									/>
+								</div>
+								<div className={styles.linkPopoverField}>
+									<label className={styles.linkPopoverLabel}>連結網址</label>
+									<input
+										ref={linkUrlInputRef}
+										type="url"
+										className={styles.linkPopoverInput}
+										placeholder="https://..."
+										value={linkUrl}
+										onChange={e => setLinkUrl(e.target.value)}
+										onKeyDown={e => {
+											if (e.key === "Enter") applyLink();
+											if (e.key === "Escape") setLinkDialogOpen(false);
+										}}
+									/>
+								</div>
+								<div className={styles.linkPopoverActions}>
+									{editor?.isActive("link") && (
+										<button type="button" className={styles.linkPopoverRemove} onClick={removeLink}>
+											移除連結
+										</button>
+									)}
+									<button type="button" className={styles.linkPopoverApply} onClick={applyLink}>
+										確認
+									</button>
+								</div>
+							</div>
+						)}
+					</div>
 				</div>
 				<div className={editorAreaClasses}>{editor && <EditorContent editor={editor} />}</div>
 			</div>
