@@ -4971,24 +4971,6 @@ snapshots:
 
   mdn-data@2.27.1: {}
 
-  magic-string@0.30.21:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
-
-  magicast@0.5.2:
-    dependencies:
-      '@babel/parser': 7.29.0
-      '@babel/types': 7.29.0
-      source-map-js: 1.2.1
-
-  make-dir@4.0.0:
-    dependencies:
-      semver: 7.7.4
-
-  marked@17.0.3: {}
-
-  mdn-data@2.27.1: {}
-
   mime@3.0.0: {}
 
   mimic-function@5.0.1: {}
@@ -5577,6 +5559,8 @@ snapshots:
 
   yallist@3.1.1: {}
 
+  yaml@2.8.2:
+    optional: true
   yaml@2.8.2:
     optional: true
 
