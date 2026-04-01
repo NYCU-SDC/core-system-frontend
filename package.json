@@ -10,7 +10,7 @@
 		"format": "prettier --write .",
 		"preinstall": "npx only-allow pnpm",
 		"lint": "eslint .",
-		"prepare": "git config core.hooksPath .githooks",
+		"prepare": "sh -c 'command -v git >/dev/null 2>&1 && [ -d .git ] && git config core.hooksPath .githooks || true'",
 		"preview": "vite preview",
 		"start": "node --env-file=.env server/index.js",
 		"test": "vitest run",
