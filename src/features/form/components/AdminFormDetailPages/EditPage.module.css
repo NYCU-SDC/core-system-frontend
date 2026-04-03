@@ -1,13 +1,21 @@
 .edge {
-	color: var(--white);
+	--xy-edge-stroke-default: var(--foreground);
 	stroke-width: 2;
+}
+
+.trueBranch {
+	--xy-edge-stroke-default: var(--green);
+}
+
+.falseBranch {
+	--xy-edge-stroke-default: var(--pink);
 }
 
 .controls {
 	--xy-controls-button-background-color-default: var(--background-color-primary);
 	--xy-controls-button-background-color-hover-default: var(--selection);
 	--xy-controls-button-border-color-default: var(--background-color-overlay);
-	fill: var(--white);
+	fill: var(--foreground);
 }
 
 /* Custom Node Style */
@@ -22,6 +30,7 @@
 
 .condition {
 	background-color: var(--background-color-tertiary);
+	clip-path: polygon(0.75rem 0, calc(100% - 0.75rem) 0, 100% 0.75rem, 100% calc(100% - 0.75rem), calc(100% - 0.75rem) 100%, 0.75rem 100%, 0 calc(100% - 0.75rem), 0 0.75rem);
 }
 
 .node {
@@ -33,6 +42,30 @@
 	opacity: 0;
 }
 
+.conditionHandler {
+	background: transparent;
+	border: none;
+	width: 1.5rem;
+	height: 1.5rem;
+	bottom: -0.75rem;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: crosshair;
+}
+
+.handlerTrue {
+	left: 40%;
+}
+
+.handlerFalse {
+	left: 60%;
+}
+
 .visible {
 	opacity: 1;
+}
+
+.selected {
+	border: 1px solid var(--selection);
 }
