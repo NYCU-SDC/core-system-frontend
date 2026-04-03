@@ -15,14 +15,13 @@ dist
 dist-ssr
 *.local
 
-# Claude Code / Codex
-.claude/
-.gitconfig-temp
-.codex-gitconfig
-
 # Test artifacts
 playwright-report/
 test-results/
+
+# Local tooling
+.claude/
+.codex-gitconfig
 
 # Editor directories and files
 .vscode/*
