@@ -20,20 +20,62 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import styles from "./EditPage.module.css";
-import { ConditionNode } from "./components/ConditionNode";
-import { EndNode } from "./components/EndNode";
-import { SectionNode } from "./components/SectionNode";
-import { StartNode } from "./components/StartNode";
-import { getIntersectionPoint } from "./services/nodeUtil";
+import type { NodeItem } from "./types/workflow";
 
-const CustomEdge = ({ id, source, target, markerEnd }: EdgeProps) => {
+interface AdminFormEditPageProps {
+	formData: FormsFormResponse;
+}
+
+const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
+	nodes.map(n => ({
+		id: n.id,
+		label: n.label,
+		payload: n.payload,
+		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
+		...(n.next !== undefined && { next: n.next }),
+		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+		...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+	}));
+
+const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
+	const path: string[] = [];
+	let currentId: string | undefined = startId;
+	while (currentId) {
+		path.push(currentId);
+		const nextNode = nodeMap.get(currentId);
+		if (!nextNode) break;
+		const mergeId = findMergeNodeId(nextNode, nodeMap);
+		currentId = nextNode?.next || mergeId || undefined;
+	}
+	return path;
+};
+
+const findMergeNodeId = (node: NodeItem, nodeMap: Map<string, NodeItem>): string | null => {
+	if (!node.nextTrue || !node.nextFalse) return null;
+
+	const truePath = getPath(node.nextTrue, nodeMap);
+	const falsePath = getPath(node.nextFalse, nodeMap);
+
+	for (const id of truePath) {
+		if (falsePath.includes(id)) {
+			return id;
+		}
+	}
+
+	return null;
+};
+
+const CustomEdge = ({ id, source, target, markerEnd, data }: EdgeProps) => {
 	const sourceNode = useInternalNode(source);
 	const targetNode = useInternalNode(target);
 
 	if (!sourceNode || !targetNode) {
 		return null;
 	}
+
+	const condition = data?.condition || "";
 
 	const { sx, sy, tx, ty } = getIntersectionPoint(sourceNode, targetNode);
 
@@ -44,7 +86,7 @@ const CustomEdge = ({ id, source, target, markerEnd }: EdgeProps) => {
 		targetY: ty
 	});
 
-	return <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} className={styles.edge} />;
+	return <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} className={`${styles.edge} ${condition === "true" ? styles.trueBranch : condition === "false" ? styles.falseBranch : ""}`} />;
 };
 
 const initNodes: Node[] = [
@@ -86,7 +128,8 @@ const initEdges: Edge[] = [
 		source: "1",
 		target: "2",
 		markerEnd: {
-			type: "arrow"
+			type: "arrow",
+			color: "var(--foreground)"
 		},
 		type: "custom-edge",
 		style: {
@@ -97,35 +140,46 @@ const initEdges: Edge[] = [
 	{
 		id: "e2-3",
 		source: "2",
+		sourceHandle: "true",
 		target: "3",
 		markerEnd: {
-			type: "arrow"
+			type: "arrow",
+			color: "var(--green)"
 		},
 		type: "custom-edge",
 		style: {
 			strokeWidth: 2
 		},
-		className: styles.edge
+		className: styles.edge,
+		data: {
+			condition: "true"
+		}
 	},
 	{
 		id: "e2-4",
 		source: "2",
+		sourceHandle: "false",
 		target: "4",
 		markerEnd: {
-			type: "arrow"
+			type: "arrow",
+			color: "var(--pink)"
 		},
 		type: "custom-edge",
 		style: {
 			strokeWidth: 2
 		},
-		className: styles.edge
+		className: styles.edge,
+		data: {
+			condition: "false"
+		}
 	},
 	{
 		id: "e3-5",
 		source: "3",
 		target: "5",
 		markerEnd: {
-			type: "arrow"
+			type: "arrow",
+			color: "var(--foreground)"
 		},
 		type: "custom-edge",
 		style: {
@@ -138,7 +192,8 @@ const initEdges: Edge[] = [
 		source: "4",
 		target: "5",
 		markerEnd: {
-			type: "arrow"
+			type: "arrow",
+			color: "var(--foreground)"
 		},
 		type: "custom-edge",
 		style: {
@@ -147,6 +202,7 @@ const initEdges: Edge[] = [
 		className: styles.edge
 	}
 ];
+
 const nodeTypes = {
 	Start: StartNode,
 	Section: SectionNode,
@@ -172,19 +228,41 @@ export const AdminFormEditPage = () => {
 	const onEdgesChange: OnEdgesChange = useCallback(changes => setEdges(edgesSnapshot => applyEdgeChanges(changes, edgesSnapshot)), []);
 	const onConnect: OnConnect = useCallback(
 		params => {
+			const edgeData = { condition: "" };
+			let arrowColor = "var(--foreground)";
+			if (params.sourceHandle === "true") {
+				edgeData.condition = "true";
+				arrowColor = "var(--green)";
+			}
+			if (params.sourceHandle === "false") {
+				edgeData.condition = "false";
+				arrowColor = "var(--pink)";
+			}
 			const newEdge: Edge = {
 				id: `e${params.source}-${params.target}`,
 				source: params.source,
+				sourceHandle: params.sourceHandle,
 				target: params.target,
-				markerEnd: { type: "arrow" },
+				markerEnd: { type: "arrow", color: arrowColor },
 				type: "custom-edge",
 				style: { strokeWidth: 2 },
-				className: styles.edge
+				className: styles.edge,
+				data: edgeData
 			};
 			return setEdges(edgesSnapshot => addEdge(newEdge, edgesSnapshot));
 		},
 		[setEdges]
 	);
+
+	const handleAddNode = (type: string) => {
+		const newNode: Node = {
+			id: uuidv4(),
+			position: { x: 0, y: 0 },
+			data: { label: `${type} ${nodes.length + 1}` },
+			type
+		};
+		setNodes(nds => [...nds, newNode]);
+	};
 
 	return (
 		<div style={{ width: "100%", height: "500px" }}>
@@ -200,8 +278,8 @@ export const AdminFormEditPage = () => {
 				fitView
 			>
 				<Panel position="top-right">
-					<Button onClick={() => console.log("Save")}>新增區域</Button>
-					<Button onClick={() => console.log("Load")}>新增條件</Button>
+					<Button onClick={() => handleAddNode("Section")}>新增區域</Button>
+					<Button onClick={() => handleAddNode("Condition")}>新增條件</Button>
 				</Panel>
 				<Background gap={12} size={1} />
 				<Controls className={styles.controls} />
