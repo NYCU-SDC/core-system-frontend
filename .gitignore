@@ -15,6 +15,14 @@ dist
 dist-ssr
 *.local
 
+# Test artifacts
+playwright-report/
+test-results/
+
+# Local tooling
+.claude/
+.codex-gitconfig
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
