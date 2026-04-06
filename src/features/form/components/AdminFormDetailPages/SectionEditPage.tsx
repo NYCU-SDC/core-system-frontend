@@ -7,7 +7,6 @@ import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from 
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { GripVertical } from "lucide-react";
 import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -18,14 +17,11 @@ import styles from "./SectionEditPage.module.css";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
 
-function SortableQuestionItem({ id, children }: { id: string; children: ReactNode }) {
+function SortableQuestionItem({ id, children }: { id: string; children: (listeners: React.HTMLAttributes<HTMLElement> | undefined) => ReactNode }) {
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 	return (
 		<div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes}>
-			<div className={styles.questionDragHandle} {...listeners}>
-				<GripVertical size={16} />
-			</div>
-			{children}
+			{children(listeners as React.HTMLAttributes<HTMLElement> | undefined)}
 		</div>
 	);
 }
@@ -738,50 +734,53 @@ export const AdminSectionEditPage = () => {
 							<SortableContext items={clientIds} strategy={verticalListSortingStrategy}>
 								{questions.map((question, index) => (
 									<SortableQuestionItem key={clientIds[index] ?? index} id={clientIds[index] ?? String(index)}>
-										<QuestionCard
-											question={question}
-											questionNumber={index + 1}
-											defaultExpanded={index === newlyAddedIndex}
-											autoFocusTitle={index === newlyAddedIndex}
-											duplicateQuestion={() => handleDuplicateQuestion(index)}
-											removeQuestion={() => handleDeleteQuestionWithApi(index)}
-											onTitleChange={newTitle => handleTitleChange(index, newTitle)}
-											onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
-											onAddOption={() => handleAddOption(index, { label: "新選項" })}
-											onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
-											onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
-											onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
-											onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
-											onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
-											onRemoveOtherOption={() =>
-												handleRemoveOption(
-													index,
-													question.options!.findIndex(option => option.isOther)
-												)
-											}
-											onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
-											onStartChange={newStart => handleStartChange(index, newStart)}
-											onEndChange={newEnd => handleEndChange(index, newEnd)}
-											onStartLabelChange={label => handleStartLabelChange(index, label)}
-											onEndLabelChange={label => handleEndLabelChange(index, label)}
-											onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
-											onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
-											onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
-											sourceQuestionOptions={sourceQuestionOptions}
-											sourceQuestionId={question.sourceQuestionId}
-											onRequiredChange={required => handleRequiredChange(index, required)}
-											onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
-											onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
-											onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
-											onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
-											onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
-											onUrlChange={url => handleUrlChange(index, url)}
-											onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
-											onFold={() => {
-												void flushDirtyQuestions();
-											}}
-											onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
-										/>
+										{dragHandleListeners => (
+											<QuestionCard
+												dragHandleListeners={dragHandleListeners}
+												question={question}
+												questionNumber={index + 1}
+												defaultExpanded={index === newlyAddedIndex}
+												autoFocusTitle={index === newlyAddedIndex}
+												duplicateQuestion={() => handleDuplicateQuestion(index)}
+												removeQuestion={() => handleDeleteQuestionWithApi(index)}
+												onTitleChange={newTitle => handleTitleChange(index, newTitle)}
+												onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
+												onAddOption={() => handleAddOption(index, { label: "新選項" })}
+												onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+												onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
+												onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
+												onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
+												onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
+												onRemoveOtherOption={() =>
+													handleRemoveOption(
+														index,
+														question.options!.findIndex(option => option.isOther)
+													)
+												}
+												onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
+												onStartChange={newStart => handleStartChange(index, newStart)}
+												onEndChange={newEnd => handleEndChange(index, newEnd)}
+												onStartLabelChange={label => handleStartLabelChange(index, label)}
+												onEndLabelChange={label => handleEndLabelChange(index, label)}
+												onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
+												onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+												onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
+												sourceQuestionOptions={sourceQuestionOptions}
+												sourceQuestionId={question.sourceQuestionId}
+												onRequiredChange={required => handleRequiredChange(index, required)}
+												onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
+												onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
+												onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
+												onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
+												onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
+												onUrlChange={url => handleUrlChange(index, url)}
+												onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
+												onFold={() => {
+													void flushDirtyQuestions();
+												}}
+												onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
+											/>
+										)}
 									</SortableQuestionItem>
 								))}
 							</SortableContext>

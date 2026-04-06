@@ -9,6 +9,7 @@ import {
 	Copy,
 	Ellipsis,
 	Github,
+	GripVertical,
 	LayoutList,
 	Link2,
 	List,
@@ -62,6 +63,7 @@ export interface QuestionCardProps {
 	onOauthProviderChange?: (provider: "GOOGLE" | "GITHUB") => void;
 	onFold?: () => void;
 	onTypeChange?: (nextType: Question["type"]) => void;
+	dragHandleListeners?: React.HTMLAttributes<HTMLElement>;
 }
 
 type typeInfo = {
@@ -242,7 +244,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const maxDateError = question.dateHasMaxDate && !question.dateMaxDate ? "請填結束日期" : "";
 
 	return (
-		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)}>
+		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)} {...(!isExpanded ? props.dragHandleListeners : {})}>
 			{isExpanded ? (
 				<div
 					onClick={e => {
@@ -260,6 +262,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					}}
 					className={styles.content}
 				>
+					<div className={styles.expandedGrip} {...props.dragHandleListeners}>
+						<GripVertical size={16} />
+					</div>
 					<div className={styles.header}>
 						<div className={styles.input}>
 							<Input
@@ -533,6 +538,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 				</div>
 			) : (
 				<div className={styles.preview}>
+					<GripVertical className={styles.previewGrip} size={18} />
 					{typeMap[question.type].icon}
 					<p>
 						{props.questionNumber !== undefined ? `Q${props.questionNumber}. ` : ""}
