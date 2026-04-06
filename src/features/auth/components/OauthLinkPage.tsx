@@ -96,10 +96,10 @@ export const OauthLinkPage = () => {
 		const message = error instanceof Error ? error.message : "";
 
 		if (message.includes("401")) {
-			return "?�入?�?�已失�??�逾�?，�??�新?�入?��??��??�中...";
+			return "登入資訊已失效或逾期，正在重新登入中...";
 		}
 
-		return "帳�????失�?，�??��??�中...";
+		return "帳號連結失敗，正在返回首頁...";
 	};
 
 	/** Confirms account linking. */
@@ -118,7 +118,7 @@ export const OauthLinkPage = () => {
 			window.location.href = "/";
 		} catch (error) {
 			pushToast({
-				title: "帳�????失�?",
+				title: "帳號連結失敗",
 				description: getLinkErrorMessage(error),
 				variant: "error"
 			});
@@ -141,8 +141,8 @@ export const OauthLinkPage = () => {
 			window.location.href = "/";
 		} catch {
 			pushToast({
-				title: "?��??��?帳�????",
-				description: "請�??��??��??��?返�?首�?�?..",
+				title: "取消帳號連結失敗",
+				description: "請重新操作或返回首頁。",
 				variant: "error"
 			});
 
@@ -155,13 +155,13 @@ export const OauthLinkPage = () => {
 	return (
 		<UserLayout>
 			{meta}
-			<NameMarquee name={`${name}?`} />
+			<NameMarquee name={`${name}？`} />
 
 			<div className={styles.content}>
 				<div className={styles.text}>
-					<h2 className={styles.title}>你是{name}??</h2>
+					<h2 className={styles.title}>你是 {name} 嗎？</h2>
 					<p className={styles.description}>
-						{`系統?�測?�您??${existingProvider} ?��??�件(${email})?�既?��? ${newProvider} 帳�??��??��?併帳?��?，您將能夠使??${newProvider} ??${existingProvider} 驗�??��??�入，並存�??��??�個人資�??�設定。`}
+						{`系統偵測到您使用 ${existingProvider} 信箱 (${email}) 的既有帳號與 ${newProvider} 帳號可以進行帳號合併。合併後，您將能夠使用 ${newProvider} 與 ${existingProvider} 驗證方式登入，並存取相同的個人資料與設定。`}
 					</p>
 				</div>
 
@@ -187,11 +187,11 @@ export const OauthLinkPage = () => {
 
 				<div className={styles.actions}>
 					<Button type="button" variant="secondary" onClick={handleAbort} disabled={isSubmitting}>
-						?��?並�??��???
+						取消並返回首頁
 					</Button>
 
 					<Button type="button" onClick={handleConfirm} disabled={isSubmitting}>
-						確�??�併
+						確認合併
 					</Button>
 				</div>
 			</div>
