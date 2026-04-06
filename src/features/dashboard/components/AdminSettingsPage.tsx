@@ -167,11 +167,7 @@ export const AdminSettingsPage = () => {
 					) : (
 						members.map(member => (
 							<div key={member.id} className={styles.memberCard}>
-								{member.avatarUrl ? (
-									<img src={member.avatarUrl} alt={member.name} referrerPolicy="no-referrer" className={styles.memberImg} />
-								) : (
-									<div className={styles.memberImgFallback}>{member.name?.[0] ?? "?"}</div>
-								)}
+								{member.avatarUrl ? <img src={member.avatarUrl} alt={member.name} className={styles.memberImg} /> : <div className={styles.memberImgFallback}>{member.name?.[0] ?? "?"}</div>}
 								<div className={styles.memberInfo}>
 									<div className={styles.memberName}>{member.name}</div>
 									<div className={styles.memberEmail}>{member.email}</div>
