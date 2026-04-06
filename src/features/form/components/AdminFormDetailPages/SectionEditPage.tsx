@@ -676,14 +676,34 @@ export const AdminSectionEditPage = () => {
 			const newIndex = clientIds.indexOf(over.id as string);
 			if (oldIndex === -1 || newIndex === -1) return;
 
+			// Capture before state update to avoid stale closure
+			const draggedQuestion = questionsRef.current[oldIndex];
+			const draggedQuestionId = questionIdsRef.current[oldIndex];
+
 			setQuestions(prev => arrayMove(prev, oldIndex, newIndex));
 			setQuestionIdsAndRef(arrayMove(questionIds, oldIndex, newIndex));
 			setClientIds(prev => arrayMove(prev, oldIndex, newIndex));
 
-			const minIndex = Math.min(oldIndex, newIndex);
-			markQuestionsDirtyFrom(minIndex, questions.length);
+			if (draggedQuestionId && draggedQuestion) {
+				// Only PUT the dragged question with its new order.
+				// The backend shifts all other questions automatically.
+				updateQuestion.mutate(
+					{ questionId: draggedQuestionId, req: toApiRequest(draggedQuestion, newIndex + 1) },
+					{
+						onError: err => {
+							pushToast({ title: "排序失敗", description: (err as Error).message, variant: "error" });
+							setQuestions(prev => arrayMove(prev, newIndex, oldIndex));
+							setQuestionIdsAndRef(arrayMove(questionIdsRef.current, newIndex, oldIndex));
+							setClientIds(prev => arrayMove(prev, newIndex, oldIndex));
+						}
+					}
+				);
+			} else if (draggedQuestion) {
+				// Question not yet persisted; auto-save will create it with the correct order
+				markQuestionDirty(newIndex);
+			}
 		},
-		[clientIds, questionIds, questions.length, setQuestionIdsAndRef, markQuestionsDirtyFrom]
+		[clientIds, questionIds, questionsRef, questionIdsRef, updateQuestion, pushToast, setQuestionIdsAndRef, markQuestionDirty]
 	);
 
 	return (
