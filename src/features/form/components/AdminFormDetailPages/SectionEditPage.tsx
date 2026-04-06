@@ -2,9 +2,13 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { marked } from "marked";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { QuestionCard } from "./components/QuestionCard";
@@ -12,6 +16,15 @@ import { QUESTION_STRATEGIES } from "./QuestionConfig";
 import styles from "./SectionEditPage.module.css";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
+
+function SortableQuestionItem({ id, children }: { id: string; children: (listeners: React.HTMLAttributes<HTMLElement> | undefined) => ReactNode }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+	return (
+		<div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes}>
+			{children(listeners as React.HTMLAttributes<HTMLElement> | undefined)}
+		</div>
+	);
+}
 
 type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
 	url?: string;
@@ -45,6 +58,7 @@ export const AdminSectionEditPage = () => {
 	// States
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
+	const [clientIds, setClientIds] = useState<string[]>([]);
 	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
 	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState("");
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
@@ -244,6 +258,7 @@ export const AdminSectionEditPage = () => {
 			});
 			setQuestions(mapped);
 			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
+			setClientIds(apiQuestions.map(q => q.id));
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [apiQuestions.length]);
@@ -392,6 +407,7 @@ export const AdminSectionEditPage = () => {
 
 		const updatedQuestions = [...questions, newQuestion];
 		setQuestions(updatedQuestions);
+		setClientIds(prev => [...prev, uuidv4()]);
 		setNewlyAddedIndex(newIndex);
 		markQuestionDirty(newIndex);
 	};
@@ -403,6 +419,11 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index, 1);
 		setQuestionIdsAndRef(updatedQuestionIds);
+		setClientIds(prev => {
+			const next = [...prev];
+			next.splice(index, 1);
+			return next;
+		});
 		markQuestionsDirtyFrom(index, updatedQuestions.length);
 	};
 
@@ -414,6 +435,11 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index + 1, 0, undefined);
 		setQuestionIdsAndRef(updatedQuestionIds);
+		setClientIds(prev => {
+			const next = [...prev];
+			next.splice(index + 1, 0, uuidv4());
+			return next;
+		});
 		markQuestionsDirtyFrom(index + 1, updatedQuestions.length);
 	};
 
@@ -635,6 +661,47 @@ export const AdminSectionEditPage = () => {
 		markQuestionDirty(questionIndex);
 	};
 
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			const { active, over } = event;
+			if (!over || active.id === over.id) return;
+
+			const oldIndex = clientIds.indexOf(active.id as string);
+			const newIndex = clientIds.indexOf(over.id as string);
+			if (oldIndex === -1 || newIndex === -1) return;
+
+			// Capture before state update to avoid stale closure
+			const draggedQuestion = questionsRef.current[oldIndex];
+			const draggedQuestionId = questionIdsRef.current[oldIndex];
+
+			setQuestions(prev => arrayMove(prev, oldIndex, newIndex));
+			setQuestionIdsAndRef(arrayMove(questionIds, oldIndex, newIndex));
+			setClientIds(prev => arrayMove(prev, oldIndex, newIndex));
+
+			if (draggedQuestionId && draggedQuestion) {
+				// Only PUT the dragged question with its new order.
+				// The backend shifts all other questions automatically.
+				updateQuestion.mutate(
+					{ questionId: draggedQuestionId, req: toApiRequest(draggedQuestion, newIndex + 1) },
+					{
+						onError: err => {
+							pushToast({ title: "排序失敗", description: (err as Error).message, variant: "error" });
+							setQuestions(prev => arrayMove(prev, newIndex, oldIndex));
+							setQuestionIdsAndRef(arrayMove(questionIdsRef.current, newIndex, oldIndex));
+							setClientIds(prev => arrayMove(prev, newIndex, oldIndex));
+						}
+					}
+				);
+			} else if (draggedQuestion) {
+				// Question not yet persisted; auto-save will create it with the correct order
+				markQuestionDirty(newIndex);
+			}
+		},
+		[clientIds, questionIds, questionsRef, questionIdsRef, updateQuestion, pushToast, setQuestionIdsAndRef, markQuestionDirty]
+	);
+
 	return (
 		<>
 			<div className={styles.layout}>
@@ -663,53 +730,61 @@ export const AdminSectionEditPage = () => {
 								rows={1}
 							/>
 						</section>
-						{questions.map((question, index) => (
-							<QuestionCard
-								key={questionIds[index] ?? index}
-								question={question}
-								questionNumber={index + 1}
-								defaultExpanded={index === newlyAddedIndex}
-								autoFocusTitle={index === newlyAddedIndex}
-								duplicateQuestion={() => handleDuplicateQuestion(index)}
-								removeQuestion={() => handleDeleteQuestionWithApi(index)}
-								onTitleChange={newTitle => handleTitleChange(index, newTitle)}
-								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
-								onAddOption={() => handleAddOption(index, { label: "新選項" })}
-								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
-								onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
-								onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
-								onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
-								onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
-								onRemoveOtherOption={() =>
-									handleRemoveOption(
-										index,
-										question.options!.findIndex(option => option.isOther)
-									)
-								}
-								onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
-								onStartChange={newStart => handleStartChange(index, newStart)}
-								onEndChange={newEnd => handleEndChange(index, newEnd)}
-								onStartLabelChange={label => handleStartLabelChange(index, label)}
-								onEndLabelChange={label => handleEndLabelChange(index, label)}
-								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
-								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
-								onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
-								sourceQuestionOptions={sourceQuestionOptions}
-								sourceQuestionId={question.sourceQuestionId}
-								onRequiredChange={required => handleRequiredChange(index, required)}
-								onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
-								onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
-								onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
-								onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
-								onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
-								onUrlChange={url => handleUrlChange(index, url)}
-								onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
-								onFold={() => {
-									void flushDirtyQuestions();
-								}}
-								onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
-							/>
-						))}
+						<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+							<SortableContext items={clientIds} strategy={verticalListSortingStrategy}>
+								{questions.map((question, index) => (
+									<SortableQuestionItem key={clientIds[index] ?? index} id={clientIds[index] ?? String(index)}>
+										{dragHandleListeners => (
+											<QuestionCard
+												dragHandleListeners={dragHandleListeners}
+												question={question}
+												questionNumber={index + 1}
+												defaultExpanded={index === newlyAddedIndex}
+												autoFocusTitle={index === newlyAddedIndex}
+												duplicateQuestion={() => handleDuplicateQuestion(index)}
+												removeQuestion={() => handleDeleteQuestionWithApi(index)}
+												onTitleChange={newTitle => handleTitleChange(index, newTitle)}
+												onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
+												onAddOption={() => handleAddOption(index, { label: "新選項" })}
+												onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+												onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
+												onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
+												onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
+												onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
+												onRemoveOtherOption={() =>
+													handleRemoveOption(
+														index,
+														question.options!.findIndex(option => option.isOther)
+													)
+												}
+												onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
+												onStartChange={newStart => handleStartChange(index, newStart)}
+												onEndChange={newEnd => handleEndChange(index, newEnd)}
+												onStartLabelChange={label => handleStartLabelChange(index, label)}
+												onEndLabelChange={label => handleEndLabelChange(index, label)}
+												onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
+												onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+												onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
+												sourceQuestionOptions={sourceQuestionOptions}
+												sourceQuestionId={question.sourceQuestionId}
+												onRequiredChange={required => handleRequiredChange(index, required)}
+												onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
+												onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
+												onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
+												onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
+												onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
+												onUrlChange={url => handleUrlChange(index, url)}
+												onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
+												onFold={() => {
+													void flushDirtyQuestions();
+												}}
+												onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
+											/>
+										)}
+									</SortableQuestionItem>
+								))}
+							</SortableContext>
+						</DndContext>
 					</div>
 				</div>
 				<div className={styles.sidebarContainer}>
