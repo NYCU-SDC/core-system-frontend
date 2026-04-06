@@ -161,7 +161,7 @@ export const OauthLinkPage = () => {
 				<div className={styles.text}>
 					<h2 className={styles.title}>你是 {name} 嗎？</h2>
 					<p className={styles.description}>
-						{`系統偵測到您使用 ${existingProvider} 信箱 (${email}) 的既有帳號與 ${newProvider} 帳號可以進行帳號合併。合併後，您將能夠使用 ${newProvider} 與 ${existingProvider} 驗證方式登入，並存取相同的個人資料與設定。`}
+						{`系統偵測到您使用的 ${existingProvider} 信箱 (${email}) 與既有的 ${newProvider} 信箱相同。合併後，您將能夠使用 ${newProvider} 與 ${existingProvider} 驗證方式登入，並存取相同的個人資料與設定。`}
 					</p>
 				</div>
 
