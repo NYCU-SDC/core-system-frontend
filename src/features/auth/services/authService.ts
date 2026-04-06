@@ -15,8 +15,8 @@ const normalizeProvider = (provider: OAuthProvider): string => {
 };
 
 const ProviderMap: Record<OAuthProvider, AuthOAuthLoginProviders> = {
-	google: "google",
-	nycu: "portal"
+	google: "GOOGLE",
+	nycu: "NYCU"
 };
 
 export const authService = {
