@@ -13,6 +13,11 @@ import styles from "./SectionEditPage.module.css";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
 
+type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
+	url?: string;
+	oauthConnect?: Question["oauthProvider"];
+};
+
 export const AdminSectionEditPage = () => {
 	const { formid, sectionId } = useParams<{ formid: string; sectionId: string }>();
 	const navigate = useNavigate();
@@ -29,6 +34,13 @@ export const AdminSectionEditPage = () => {
 	const updateSectionMutation = useUpdateSection(formid!, sectionId!);
 	const workflowQuery = useWorkflow(formid);
 	const updateWorkflowMutation = useUpdateWorkflow(formid!);
+
+	const copyQuestionField = <K extends keyof Question>(target: Question, source: Question, key: K) => {
+		const value = source[key];
+		if (value !== undefined) {
+			target[key] = value;
+		}
+	};
 
 	// States
 	const [questions, setQuestions] = useState<Question[]>([]);
@@ -138,48 +150,41 @@ export const AdminSectionEditPage = () => {
 					const syncQuestionFromApi = (apiQuestion: FormsQuestionResponse) => {
 						setQuestions(prev => {
 							if (!prev[index]) return prev;
+							const old = prev[index];
+
+							const nextOptions = old.isFromAnswer ? [] : old.options;
+							const nextDetailOptions = old.detailOptions;
+
+							const updated: Question = {
+								...old,
+								title: apiQuestion.title ?? old.title,
+								description: apiQuestion.description ?? old.description,
+								required: apiQuestion.required ?? old.required,
+								...(apiQuestion.sourceId !== undefined && {
+									sourceQuestionId: apiQuestion.sourceId ?? undefined,
+									isFromAnswer: Boolean(apiQuestion.sourceId)
+								}),
+								icon: (apiQuestion.scale?.icon ?? old.icon) as Question["icon"],
+								start: apiQuestion.scale?.minVal ?? old.start,
+								end: apiQuestion.scale?.maxVal ?? old.end,
+								startLabel: apiQuestion.scale?.minValueLabel ?? old.startLabel,
+								endLabel: apiQuestion.scale?.maxValueLabel ?? old.endLabel,
+								uploadAllowedFileTypes: apiQuestion.uploadFile?.allowedFileTypes ? [...apiQuestion.uploadFile.allowedFileTypes] : old.uploadAllowedFileTypes,
+								uploadMaxFileAmount: apiQuestion.uploadFile?.maxFileAmount ?? old.uploadMaxFileAmount,
+								uploadMaxFileSizeLimit: apiQuestion.uploadFile?.maxFileSizeLimit ?? old.uploadMaxFileSizeLimit,
+								dateHasYear: apiQuestion.date?.hasYear ?? old.dateHasYear,
+								dateHasMonth: apiQuestion.date?.hasMonth ?? old.dateHasMonth,
+								dateHasDay: apiQuestion.date?.hasDay ?? old.dateHasDay,
+								dateHasMinDate: Boolean(apiQuestion.date?.minDate),
+								dateHasMaxDate: Boolean(apiQuestion.date?.maxDate),
+								dateMinDate: apiQuestion.date?.minDate ? apiQuestion.date.minDate.slice(0, 10) : "",
+								dateMaxDate: apiQuestion.date?.maxDate ? apiQuestion.date.maxDate.slice(0, 10) : "",
+								options: nextOptions,
+								detailOptions: nextDetailOptions
+							};
+
 							const next = [...prev];
-							const target = next[index];
-							target.title = apiQuestion.title ?? target.title;
-							target.description = apiQuestion.description ?? target.description;
-							target.required = apiQuestion.required ?? target.required;
-							if (apiQuestion.sourceId !== undefined) {
-								target.sourceQuestionId = apiQuestion.sourceId ?? undefined;
-								target.isFromAnswer = Boolean(apiQuestion.sourceId);
-							}
-							target.icon = apiQuestion.scale?.icon ?? target.icon;
-							target.start = apiQuestion.scale?.minVal ?? target.start;
-							target.end = apiQuestion.scale?.maxVal ?? target.end;
-							target.startLabel = apiQuestion.scale?.minValueLabel ?? target.startLabel;
-							target.endLabel = apiQuestion.scale?.maxValueLabel ?? target.endLabel;
-							target.uploadAllowedFileTypes = apiQuestion.uploadFile?.allowedFileTypes ? [...apiQuestion.uploadFile.allowedFileTypes] : target.uploadAllowedFileTypes;
-							target.uploadMaxFileAmount = apiQuestion.uploadFile?.maxFileAmount ?? target.uploadMaxFileAmount;
-							target.uploadMaxFileSizeLimit = apiQuestion.uploadFile?.maxFileSizeLimit ?? target.uploadMaxFileSizeLimit;
-							target.dateHasYear = apiQuestion.date?.hasYear ?? target.dateHasYear;
-							target.dateHasMonth = apiQuestion.date?.hasMonth ?? target.dateHasMonth;
-							target.dateHasDay = apiQuestion.date?.hasDay ?? target.dateHasDay;
-							target.dateHasMinDate = Boolean(apiQuestion.date?.minDate);
-							target.dateHasMaxDate = Boolean(apiQuestion.date?.maxDate);
-							target.dateMinDate = apiQuestion.date?.minDate ? apiQuestion.date.minDate.slice(0, 10) : "";
-							target.dateMaxDate = apiQuestion.date?.maxDate ? apiQuestion.date.maxDate.slice(0, 10) : "";
-
-							if (target.type === "DETAILED_MULTIPLE_CHOICE" && apiQuestion.choices) {
-								target.detailOptions = apiQuestion.choices.map(choice => ({
-									id: choice.id,
-									label: choice.name ?? "",
-									description: choice.description ?? ""
-								}));
-							} else if (apiQuestion.choices) {
-								target.options = apiQuestion.choices.map(choice => ({
-									id: choice.id,
-									label: choice.name ?? "",
-									isOther: choice.isOther ?? false
-								}));
-							} else if (target.isFromAnswer) {
-								target.options = [];
-							}
-
-							questionsRef.current = next;
+							next[index] = updated;
 							return next;
 						});
 					};
@@ -206,35 +211,37 @@ export const AdminSectionEditPage = () => {
 	// Sync from API on first load
 	useEffect(() => {
 		if (apiQuestions.length > 0 && questions.length === 0) {
-			const mapped: Question[] = apiQuestions.map(q => ({
-				type: q.type as Question["type"],
-				title: q.title,
-				description: q.description ?? "",
-				required: q.required ?? false,
-				isFromAnswer: Boolean(q.sourceId),
-				sourceQuestionId: q.sourceId,
-				options: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", isOther: c.isOther ?? false })),
-				detailOptions: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", description: c.description ?? "" })),
-				start: q.scale?.minVal,
-				end: q.scale?.maxVal,
-				startLabel: q.scale?.minValueLabel ?? "",
-				endLabel: q.scale?.maxValueLabel ?? "",
-				icon: q.scale?.icon as Question["icon"],
-				uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
-				uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
-				uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
-				dateHasYear: q.date?.hasYear ?? true,
-				dateHasMonth: q.date?.hasMonth ?? true,
-				dateHasDay: q.date?.hasDay ?? true,
-				dateHasMinDate: Boolean(q.date?.minDate),
-				dateHasMaxDate: Boolean(q.date?.maxDate),
-				dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
-				dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				url: (q as any).url ?? "",
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				oauthProvider: (q as any).oauthConnect as Question["oauthProvider"] | undefined
-			}));
+			const mapped: Question[] = apiQuestions.map(q => {
+				const apiQuestion = q as ApiQuestionWithOptionalFields;
+
+				return {
+					type: q.type as Question["type"],
+					title: q.title,
+					description: q.description ?? "",
+					required: q.required ?? false,
+					isFromAnswer: Boolean(q.sourceId),
+					sourceQuestionId: q.sourceId,
+					options: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", isOther: c.isOther ?? false })),
+					detailOptions: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", description: c.description ?? "" })),
+					start: q.scale?.minVal,
+					end: q.scale?.maxVal,
+					startLabel: q.scale?.minValueLabel ?? "",
+					endLabel: q.scale?.maxValueLabel ?? "",
+					icon: q.scale?.icon as Question["icon"],
+					uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
+					uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
+					uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
+					dateHasYear: q.date?.hasYear ?? true,
+					dateHasMonth: q.date?.hasMonth ?? true,
+					dateHasDay: q.date?.hasDay ?? true,
+					dateHasMinDate: Boolean(q.date?.minDate),
+					dateHasMaxDate: Boolean(q.date?.maxDate),
+					dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
+					dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
+					url: apiQuestion.url ?? "",
+					oauthProvider: apiQuestion.oauthConnect
+				};
+			});
 			setQuestions(mapped);
 			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
 		}
@@ -338,10 +345,7 @@ export const AdminSectionEditPage = () => {
 		strategy.features.forEach(field => {
 			const keepFields = QUESTION_FEATURES[field];
 			keepFields.forEach(keepField => {
-				if (prev[keepField] !== undefined) {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					(nextQuestion as any)[keepField] = prev[keepField];
-				}
+				copyQuestionField(nextQuestion, prev, keepField);
 			});
 		});
 

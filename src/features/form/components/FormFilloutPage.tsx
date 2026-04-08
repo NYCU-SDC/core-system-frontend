@@ -293,12 +293,15 @@ export const FormFilloutPage = () => {
 
 		if (!urlResponseId) return;
 
+		const NO_ANSWER_REQUIRED_TYPES: string[] = ["OAUTH_CONNECT", "UPLOAD_FILE"];
+
 		// Validate required fields across all non-preview sections
 		const realSections = sections.filter(s => s.id !== "preview");
 		for (let i = 0; i < realSections.length; i++) {
 			const section = realSections[i];
 			const missingQuestion = section.questions?.find(q => {
 				if (!q.required) return false;
+				if (NO_ANSWER_REQUIRED_TYPES.includes(q.type)) return false;
 				const value = answers[q.id] ?? "";
 				return value.trim() === "";
 			});
@@ -314,13 +317,8 @@ export const FormFilloutPage = () => {
 		}
 
 		try {
-			// Build answers payload (same logic as saveAnswers)
-			const payload = buildAnswersPayload(sections, answers, otherTexts);
-
-			if (!payload) {
-				pushToast({ title: "提交失敗", description: "無法取得填答資料，請稍後再試一次", variant: "error" });
-				return;
-			}
+			// Build answers payload
+			const payload = buildAnswersPayload(sections, answers, otherTexts) ?? { answers: [] };
 
 			submitResponseMutation.mutate(
 				{

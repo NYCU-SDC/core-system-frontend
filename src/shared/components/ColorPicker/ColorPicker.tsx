@@ -1,4 +1,5 @@
-import { Button, Dialog } from "@/shared/components";
+import { Button } from "@/shared/components/Button/Button";
+import { Dialog } from "@/shared/components/Dialog/Dialog";
 import { Check, Plus } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import styles from "./ColorPicker.module.css";

@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { Heart, Smile, Star, ThumbsUp, Trophy } from "lucide-react";
 import styles from "./InlineSvg.module.css";
-
-const svgCache = new Map<string, string>();
 
 interface InlineSvgProps {
 	name: string;
@@ -10,32 +8,22 @@ interface InlineSvgProps {
 	className?: string;
 }
 
+const iconMap = {
+	star: Star,
+	heart: Heart,
+	"thumbs-up": ThumbsUp,
+	smile: Smile,
+	trophy: Trophy
+} as const;
+
 export const InlineSvg = ({ name, filled, size = 24, className }: InlineSvgProps) => {
-	const [svg, setSvg] = useState<string>(() => svgCache.get(name) || "");
+	const Icon = iconMap[name as keyof typeof iconMap];
 
-	useEffect(() => {
-		if (svgCache.has(name)) {
-			return;
-		}
+	if (!Icon) return null;
 
-		let mounted = true;
-
-		fetch(`/icons/lucide/${name}.svg`)
-			.then(res => res.text())
-			.then(data => {
-				if (!mounted) return;
-				svgCache.set(name, data);
-				setSvg(data);
-			});
-
-		return () => {
-			mounted = false;
-		};
-	}, [name]);
-
-	if (!svg) return null;
-
-	const processed = svg.replace("<svg", `<svg width="${size}" height="${size}" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" class="${className ?? ""}"`);
-
-	return <span dangerouslySetInnerHTML={{ __html: processed }} className={styles.wrapper} />;
+	return (
+		<span className={styles.wrapper}>
+			<Icon size={size} fill={filled ? "currentColor" : "none"} stroke="currentColor" className={className} />
+		</span>
+	);
 };

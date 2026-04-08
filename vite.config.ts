@@ -1,39 +1,27 @@
 import react from "@vitejs/plugin-react";
-import fs from "fs";
 import { resolve } from "path";
 import { visualizer } from "rollup-plugin-visualizer";
-import type { Plugin } from "vite";
-import { defineConfig, loadEnv } from "vite";
-
-const mpaFallback: Plugin = {
-	name: "mpa-fallback",
-	configureServer(server) {
-		const isAssetLike = (p: string) =>
-			p.startsWith("/@") || p.startsWith("/src/") || p.startsWith("/node_modules/") || p.startsWith("/assets/") || p.startsWith("/api/") || p === "/favicon.ico" || p.includes(".");
-
-		const isAdminPath = (p: string) => p === "/demo" || p.startsWith("/orgs");
-
-		server.middlewares.use((req, _res, next) => {
-			const original = req.url || "/";
-			const [pathname, query] = original.split("?");
-			if (isAssetLike(pathname)) return next();
-
-			req.url = (isAdminPath(pathname) ? "/admin.html" : "/forms.html") + (query ? `?${query}` : "");
-			next();
-		});
-	}
-};
+import { defineConfig, loadEnv, type Plugin } from "vite";
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "VITE_");
+	const gaId = env.VITE_GA_ID ?? "";
+
+	const injectGA: Plugin = {
+		name: "inject-ga",
+		transformIndexHtml(html: string) {
+			if (!gaId) {
+				// Remove the GA block entirely when no ID is provided
+				return html.replace(/<!--\s*Google tag[\s\S]*?<\/script>\s*/g, "");
+			}
+			return html.replaceAll("%VITE_GA_ID%", gaId);
+		}
+	};
+
 	return {
 		build: {
 			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
-				input: {
-					admin: resolve(__dirname, "admin.html"),
-					forms: resolve(__dirname, "forms.html")
-				},
 				onwarn(warning, warn) {
 					// Many modern React libraries ship `"use client"` to support
 					// React Server Components (Next.js App Router).
@@ -50,27 +38,7 @@ export default defineConfig(({ mode }) => {
 				"@": resolve(__dirname, "src")
 			}
 		},
-		plugins: [
-			react(),
-			mpaFallback,
-
-			visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true }),
-
-			{
-				name: "copy-lucide-static",
-				configResolved() {
-					const srcDir = resolve(process.cwd(), "node_modules/lucide-static/icons");
-					const destDir = resolve(process.cwd(), "public/icons/lucide");
-					fs.cpSync(srcDir, destDir, { recursive: true });
-					const iconNames = fs
-						.readdirSync(destDir)
-						.filter(fileName => fileName.endsWith(".svg"))
-						.map(fileName => fileName.slice(0, -4))
-						.sort();
-					fs.writeFileSync(resolve(destDir, "names.json"), JSON.stringify(iconNames));
-				}
-			}
-		],
+		plugins: [react(), injectGA, visualizer({ open: true, filename: "dist/stats.html", gzipSize: true, brotliSize: true })],
 		server: {
 			proxy: {
 				"/api": {
