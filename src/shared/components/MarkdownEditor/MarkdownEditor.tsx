@@ -3,9 +3,7 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 
-import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { marked } from "marked";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./MarkdownEditor.module.css";
@@ -13,8 +11,8 @@ import styles from "./MarkdownEditor.module.css";
 export type MarkdownEditorVariant = "outline" | "flushed";
 
 export interface MarkdownEditorProps {
-	value: string;
-	onChange: (nextValue: string) => void;
+	value: Record<string, unknown> | null;
+	onChange: (nextValue: Record<string, unknown>) => void;
 	onBlur?: () => void;
 	placeholder?: string;
 	label?: string;
@@ -26,15 +24,12 @@ export interface MarkdownEditorProps {
 
 const headingLevels = [1, 2, 3] as [1, 2, 3];
 
-const markdownToHtml = (markdown: string) => {
-	if (!markdown) return "";
-	return marked.parse(markdown, { gfm: true, breaks: true }) as string;
-};
+const EMPTY_DOC = { type: "doc", content: [{ type: "paragraph" }] };
 
 export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, error, themeColor, variant = "outline", className }: MarkdownEditorProps) => {
 	const resolvedColor = themeColor?.startsWith("--") ? `var(${themeColor})` : themeColor;
 	const [isFocused, setIsFocused] = useState(false);
-	const lastSyncedMarkdown = useRef(value ?? "");
+	const lastSyncedJson = useRef(JSON.stringify(value ?? null));
 
 	// Heading dropdown state
 	const [headingDropdownOpen, setHeadingDropdownOpen] = useState(false);
@@ -68,7 +63,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 				placeholder: placeholderText
 			})
 		],
-		content: value ? markdownToHtml(value) : "",
+		content: value ?? EMPTY_DOC,
 		editorProps: {
 			attributes: {
 				class: "markdown-editor"
@@ -76,22 +71,22 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 		}
 	});
 
-	const emitMarkdown = useCallback(() => {
+	const emitJSON = useCallback(() => {
 		if (!editor) return;
-		const html = editor.getHTML();
-		const markdown = htmlToMarkdown(html);
-		if (markdown === lastSyncedMarkdown.current) return;
-		lastSyncedMarkdown.current = markdown;
-		onChange(markdown);
+		const json = editor.getJSON();
+		const serialized = JSON.stringify(json);
+		if (serialized === lastSyncedJson.current) return;
+		lastSyncedJson.current = serialized;
+		onChange(json as Record<string, unknown>);
 	}, [editor, onChange]);
 
 	useEffect(() => {
 		if (!editor) return;
-		editor.on("update", emitMarkdown);
+		editor.on("update", emitJSON);
 		return () => {
-			editor.off("update", emitMarkdown);
+			editor.off("update", emitJSON);
 		};
-	}, [editor, emitMarkdown]);
+	}, [editor, emitJSON]);
 
 	useEffect(() => {
 		if (!editor || !onBlur) return;
@@ -116,10 +111,10 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 
 	useEffect(() => {
 		if (!editor) return;
-		if (value === lastSyncedMarkdown.current) return;
-		lastSyncedMarkdown.current = value;
-		const html = value ? markdownToHtml(value) : "";
-		editor.commands.setContent(html || "<p></p>", false);
+		const incoming = JSON.stringify(value ?? null);
+		if (incoming === lastSyncedJson.current) return;
+		lastSyncedJson.current = incoming;
+		editor.commands.setContent(value ?? EMPTY_DOC, false);
 	}, [editor, value]);
 
 	// Close heading dropdown on click outside

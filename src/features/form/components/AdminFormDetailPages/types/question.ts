@@ -16,7 +16,7 @@ export type Question = {
 		| "RATING"
 		| "OAUTH_CONNECT";
 	title: string;
-	description: string;
+	description: Record<string, unknown> | null;
 	required: boolean;
 	isFromAnswer: boolean;
 	sourceQuestionId?: string;
