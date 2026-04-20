@@ -33,7 +33,7 @@ export interface QuestionCardProps {
 	defaultExpanded?: boolean;
 	autoFocusTitle?: boolean;
 	onTitleChange?: (newTitle: string) => void;
-	onDescriptionChange?: (newDescription: string) => void;
+	onDescriptionChange?: (newDescription: Record<string, unknown> | null) => void;
 	removeQuestion: () => void | Promise<void>;
 	duplicateQuestion: () => void | Promise<void>;
 	onAddOption?: () => void;
@@ -166,8 +166,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [localTitle, setLocalTitle] = useState(question.title);
 	const localTitleRef = useRef(question.title);
 	localTitleRef.current = localTitle;
-	const [localDesc, setLocalDesc] = useState(question.description);
-	const localDescRef = useRef(question.description);
+	const [localDesc, setLocalDesc] = useState<Record<string, unknown> | null>(question.description);
+	const localDescRef = useRef<Record<string, unknown> | null>(question.description);
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
