@@ -1,6 +1,6 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useFormResponses } from "@/features/form/hooks/useFormResponses";
-import { useArchiveForm, useDeleteForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
+import { useArchiveForm, useDeleteForm, useUnarchiveForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
@@ -21,6 +21,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const responsesQuery = useFormResponses(formData.id);
 	const updateFormMutation = useUpdateForm(formData.id);
 	const archiveFormMutation = useArchiveForm(orgSlug);
+	const unarchiveFormMutation = useUnarchiveForm(orgSlug);
 	const deleteFormMutation = useDeleteForm(orgSlug);
 	const sectionsQuery = useSections(formData.id);
 
@@ -126,6 +127,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		});
 	};
 
+	const handleUnarchive = () => {
+		unarchiveFormMutation.mutate(formData.id, {
+			onSuccess: () => pushToast({ title: "已解除封存", variant: "success" }),
+			onError: error => pushToast({ title: "解除封存失敗", description: (error as Error).message, variant: "error" })
+		});
+	};
+
 	const handleDelete = () => {
 		const typedName = prompt(`請輸入表單名稱「${formData.title}」以確認刪除：`);
 		if (typedName === null) return;
@@ -181,9 +189,9 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isSettingRequired || allQuestions.length === 0} />}
 				</div>
 				<div className={styles.dangerActions}>
-					<Button onClick={handleArchive} disabled={archiveFormMutation.isPending || isArchived}>
+					<Button onClick={isArchived ? handleUnarchive : handleArchive} disabled={archiveFormMutation.isPending || unarchiveFormMutation.isPending}>
 						<Archive size={14} />
-						{isArchived ? "已封存" : "封存"}
+						{isArchived ? "解除封存" : "封存"}
 					</Button>
 					<Button themeColor="var(--red)" onClick={handleDelete} disabled={deleteFormMutation.isPending}>
 						<Trash2 size={14} />
