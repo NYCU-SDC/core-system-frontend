@@ -3,12 +3,12 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
+import { Button, Dialog, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
 import type { FormsForm, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormQuestionRenderer } from "../FormQuestionRenderer";
 import { StatusTag } from "../StatusTag";
@@ -571,48 +571,36 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				)}
 			</div>
 
-			{isSheetPopupOpen && (
-				<div className={styles.popupOverlay} onClick={() => setIsSheetPopupOpen(false)}>
-					<div className={styles.popup} onClick={event => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="連結試算表">
-						<div className={styles.popupHeader}>
-							<div className={styles.popupHeaderLeft}>
-								<p className={styles.popupTitle}>回覆搜集</p>
-								<StatusTag
-									variant={isSheetLinked ? "published" : "draft"}
-									label={isSheetLinked ? "已連結至試算表" : "尚未連結至試算表"}
-									showDot={isSheetLinked}
-									className={isSheetLinked ? styles.statusLinked : styles.statusUnlinked}
-								/>
-							</div>
-							<button className={styles.popupCloseButton} type="button" onClick={() => setIsSheetPopupOpen(false)} aria-label="關閉">
-								<X size={18} />
-							</button>
-						</div>
+			<Dialog open={isSheetPopupOpen} onOpenChange={setIsSheetPopupOpen} title="回覆搜集">
+				<StatusTag
+					variant={isSheetLinked ? "published" : "draft"}
+					label={isSheetLinked ? "已連結至試算表" : "尚未連結至試算表"}
+					showDot={isSheetLinked}
+					className={isSheetLinked ? styles.statusLinked : styles.statusUnlinked}
+				/>
 
-						<p className={styles.popupHint}>請將以下服務帳號加入您的 Google Sheets 編輯權限：</p>
+				<p className={styles.popupHint}>請將以下服務帳號加入您的 Google Sheets 編輯權限：</p>
 
-						<div className={styles.serviceAccountBox}>
-							{emailQuery.isLoading ? <LoadingSpinner /> : <span>{serviceAccountEmail}</span>}
-							<Button className={styles.copyButton} variant="secondary" onClick={handleCopyServiceAccount} title="複製服務帳號">
-								<Copy size={16} />
-							</Button>
-						</div>
-
-						<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." />
-
-						<div className={styles.popupActions}>
-							<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet}>
-								<Repeat2 size={16} />
-								{isCheckingSheet ? "檢查中..." : "檢查狀態"}
-							</Button>
-							<Button onClick={handleViewForm}>
-								<SquareArrowOutUpRight size={16} />
-								檢視表單
-							</Button>
-						</div>
-					</div>
+				<div className={styles.serviceAccountBox}>
+					{emailQuery.isLoading ? <LoadingSpinner /> : <span>{serviceAccountEmail}</span>}
+					<Button className={styles.copyButton} variant="secondary" onClick={handleCopyServiceAccount} title="複製服務帳號">
+						<Copy size={16} />
+					</Button>
 				</div>
-			)}
+
+				<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." />
+
+				<div className={styles.popupActions}>
+					<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet}>
+						<Repeat2 size={16} />
+						{isCheckingSheet ? "檢查中..." : "檢查狀態"}
+					</Button>
+					<Button onClick={handleViewForm}>
+						<SquareArrowOutUpRight size={16} />
+						檢視表單
+					</Button>
+				</div>
+			</Dialog>
 		</>
 	);
 };
