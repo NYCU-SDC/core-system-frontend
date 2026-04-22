@@ -28,6 +28,7 @@ import type {
 	UnitUserForm
 } from "@nycu-sdc/core-system-sdk";
 import {
+	filesDownloadFile,
 	formWorkflowCreateNode,
 	formWorkflowDeleteNode,
 	formWorkflowGetWorkflow,
@@ -228,6 +229,12 @@ export const updateFormResponse = async (responseId: string, answers: ResponsesA
 export const submitFormResponse = async (responseId: string, answers: ResponsesAnswersRequest): Promise<void> => {
 	const res = await responsesSubmitFormResponse(responseId, answers, defaultRequestOptions);
 	assertOk(res.status, "Failed to submit form", res.data);
+};
+
+export const downloadFile = async (fileId: string): Promise<Blob> => {
+	const res = await filesDownloadFile(fileId, defaultRequestOptions);
+	assertOk(res.status, "Failed to download file", res.data);
+	return res.data as Blob;
 };
 
 export const clearQuestionFiles = async (responseId: string, questionId: string): Promise<void> => {

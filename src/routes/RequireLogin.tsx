@@ -1,6 +1,5 @@
 import { useAuth, useAuthRefreshInterval } from "@/features/auth/hooks/useAuth";
-import { Outlet } from "react-router-dom";
-import CrossEntryRedirect from "./CrossEntryRedirect";
+import { Navigate, Outlet } from "react-router-dom";
 
 const RequireLogin = () => {
 	const { isAuthenticated, isLoading } = useAuth();
@@ -12,7 +11,7 @@ const RequireLogin = () => {
 	}
 
 	if (!isAuthenticated) {
-		return <CrossEntryRedirect to="/" />;
+		return <Navigate to="/" replace />;
 	}
 
 	return <Outlet />;

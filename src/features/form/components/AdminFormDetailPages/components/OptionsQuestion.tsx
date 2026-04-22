@@ -60,8 +60,8 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 						}
 						if (option.isOther) {
 							return (
-								<div className={styles.optionWrapper}>
-									<OptionsInput key="other" value="其他（使用者填寫）" type={props.type} variant="none" readOnly />
+								<div key={option.id ?? index} className={styles.optionWrapper}>
+									<OptionsInput value="其他（使用者填寫）" type={props.type} variant="none" readOnly />
 									{props.options.length > 1 && <X onClick={props.onRemoveOther} />}
 								</div>
 							);

@@ -108,7 +108,13 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 		const oauthBase = `/api/responses/${responseId}/questions/${questionId}/oauth`;
 		const connectUrl = `${oauthBase}?r=${encodeURIComponent(callbackUrl.toString())}`;
 
-		const popup = window.open(connectUrl, "form-oauth-connect", "popup=yes,width=520,height=760");
+		const popupWidth = 520;
+		const popupHeight = 760;
+		const screenLeft = window.screenLeft ?? window.screenX;
+		const screenTop = window.screenTop ?? window.screenY;
+		const left = Math.round(screenLeft + (window.outerWidth - popupWidth) / 2);
+		const top = Math.round(screenTop + (window.outerHeight - popupHeight) / 2);
+		const popup = window.open(connectUrl, "form-oauth-connect", `popup=yes,width=${popupWidth},height=${popupHeight},left=${left},top=${top}`);
 		if (!popup) {
 			pushToast({ title: "無法開啟綁定視窗", description: "請確認瀏覽器未封鎖彈出視窗", variant: "error" });
 			onConnectErrorRef.current?.("無法開啟綁定視窗");
@@ -144,6 +150,7 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 				}
 			} finally {
 				setIsConnecting(false);
+				popupRef.current = null;
 				try {
 					popup.close();
 				} catch {
@@ -154,15 +161,17 @@ export const AccountButton = ({ logo, children, connected = false, connectedLabe
 
 		window.addEventListener("message", handleMessage);
 
-		timerRef.current = window.setInterval(async () => {
+		timerRef.current = window.setInterval(() => {
 			if (popup.closed) {
 				clearTimer();
 				window.removeEventListener("message", handleMessage);
-				// If no FORM_OAUTH_CONNECTED message was handled, fall back to fetching
-				if (!(popup as Window & { __oauthHandled?: boolean }).__oauthHandled) {
-					await fetchAndApply({ showToast: true });
-				}
 				setIsConnecting(false);
+				popupRef.current = null;
+				// If no FORM_OAUTH_CONNECTED message was handled, do a silent refresh in background.
+				// This preserves immediate UI sync when callback message is missed, while still allowing instant retry.
+				if (!(popup as Window & { __oauthHandled?: boolean }).__oauthHandled) {
+					void fetchAndApply({ showToast: false });
+				}
 			}
 		}, 500);
 

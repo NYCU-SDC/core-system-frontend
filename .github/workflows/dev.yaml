@@ -27,7 +27,29 @@ jobs:
 
       - name: Run ESLint
         run: pnpm eslint .
+  Test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install
+
+      - name: Run tests
+        run: pnpm test:all
   Format:
     name: Check formatting with Prettier
     runs-on: ubuntu-latest
@@ -74,7 +96,7 @@ jobs:
   Push-Image:
     name: Build Docker image
     runs-on: ubuntu-latest
-    needs: [Lint, Format, Build]
+    needs: [Lint, Format, Build, Test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -110,6 +132,8 @@ jobs:
             nycusdc/core-system-frontend:dev
             nycusdc/core-system-frontend:${{ github.sha }}
           context: .
+          build-args: |
+            BUILD_MODE=dev
 
       - name: Build and Push Docker image
         uses: docker/build-push-action@v6
@@ -122,6 +146,8 @@ jobs:
             nycusdc/core-system-frontend:stage
             nycusdc/core-system-frontend:${{ github.sha }}
           context: .
+          build-args: |
+            BUILD_MODE=stage
 
   Deploy-Dev:
     if: ${{ contains(github.ref, 'refs/heads/main') }}
