@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import styles from "./StatusTag.module.css";
 
 export type StatusVariant = "published" | "draft" | "done";
@@ -5,6 +6,8 @@ export type StatusVariant = "published" | "draft" | "done";
 export interface StatusTagProps {
 	variant: StatusVariant;
 	showDot?: boolean;
+	label?: string;
+	className?: string;
 }
 
 const statusConfig: Record<StatusVariant, { label: string; className: string }> = {
@@ -13,13 +16,13 @@ const statusConfig: Record<StatusVariant, { label: string; className: string }> 
 	done: { label: "已結束", className: styles.done }
 };
 
-export const StatusTag = ({ variant, showDot = false }: StatusTagProps) => {
+export const StatusTag = ({ variant, showDot = false, label, className, ...props }: StatusTagProps & HTMLAttributes<HTMLSpanElement>) => {
 	const config = statusConfig[variant];
 
 	return (
-		<span className={`${styles.tag} ${config.className}`}>
+		<span className={`${styles.tag} ${config.className} ${className || ""}`} {...props}>
 			{showDot && <span className={styles.dot} />}
-			{config.label}
+			{label ?? config.label}
 		</span>
 	);
 };
