@@ -13,6 +13,7 @@ const HomePage = lazy(() => import("@/features/auth/components/HomePage").then(m
 const LogoutPage = lazy(() => import("@/features/auth/components/LogoutPage").then(m => ({ default: m.LogoutPage })));
 const NotFoundPage = lazy(() => import("@/features/auth/components/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 const WelcomePage = lazy(() => import("@/features/auth/components/WelcomePage").then(m => ({ default: m.WelcomePage })));
+const OauthLinkPage = lazy(() => import("@/features/auth/components/OauthLinkPage").then(m => ({ default: m.OauthLinkPage })));
 
 /* ── User form pages (each a separate chunk) ── */
 const FormFilloutPage = lazy(() => import("@/features/form/components/FormFilloutPage").then(m => ({ default: m.FormFilloutPage })));
@@ -47,6 +48,7 @@ export const AppRouter = () => {
 						<Route path="/callback" element={<CallbackPage />} />
 						<Route path="/forms/oauth-callback" element={<OAuthConnectCallbackPage />} />
 						<Route path="/welcome" element={<WelcomePage />} />
+						<Route path="/link" element={<OauthLinkPage />} />
 						<Route path="/logout" element={<LogoutPage />} />
 
 						{/* ── User form routes (login required) ── */}
