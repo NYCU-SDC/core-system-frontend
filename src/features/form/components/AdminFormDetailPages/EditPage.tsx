@@ -99,8 +99,53 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				}
 			});
 		},
-		[deleteWorkflowNodeMutation, workflowQuery]
+		[deleteWorkflowNodeMutation, workflowQuery, sectionsQuery]
 	);
+
+	const generateEdgesFromData = (nodes: NodeItem[]): Edge[] => {
+		const generatedEdges: Edge[] = [];
+		nodes.forEach(node => {
+			if (node.type === "CONDITION") {
+				if (node.nextTrue) {
+					generatedEdges.push({
+						id: `e${node.id}-true`,
+						source: node.id,
+						sourceHandle: "true",
+						target: node.nextTrue,
+						markerEnd: { type: "arrow", color: "var(--green)" },
+						type: "custom-edge",
+						style: { strokeWidth: 2 },
+						className: styles.edge,
+						data: { condition: "true" }
+					});
+				}
+				if (node.nextFalse) {
+					generatedEdges.push({
+						id: `e${node.id}-false`,
+						source: node.id,
+						sourceHandle: "false",
+						target: node.nextFalse,
+						markerEnd: { type: "arrow", color: "var(--pink)" },
+						type: "custom-edge",
+						style: { strokeWidth: 2 },
+						className: styles.edge,
+						data: { condition: "false" }
+					});
+				}
+			} else if (node.next) {
+				generatedEdges.push({
+					id: `e${node.id}-next`,
+					source: node.id,
+					target: node.next,
+					markerEnd: { type: "arrow", color: "var(--foreground)" },
+					type: "custom-edge",
+					style: { strokeWidth: 2 },
+					className: styles.edge
+				});
+			}
+		});
+		return generatedEdges;
+	};
 
 	const handleAddNode = useCallback(
 		(type: NodeItem["type"]) => {
@@ -129,7 +174,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				}
 			);
 		},
-		[createWorkflowNodeMutation, workflowQuery]
+		[createWorkflowNodeMutation, workflowQuery, sectionsQuery, getViewport]
 	);
 
 	const handleConditionSelectedChange = useCallback(
@@ -201,29 +246,22 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	}, [formData.id]);
 
 	useEffect(() => {
-		if (!workflowQuery.data) return;
-		if (!sectionsQuery.data) return;
+		if (!workflowQuery.data || !sectionsQuery.data) return;
 
 		const allQuestions = sectionsQuery.data.flatMap(sb => sb.questions?.map(q => ({ ...q, sectionTitle: sb.section.title })) || []) || [];
-		console.log("所有問題資料:", allQuestions);
-
 		const serverWorkflow = workflowQuery.data.workflow;
 
-		if (!isInitialized.current) {
-			const initialNodes = serverWorkflow.map(node => ({
-				id: node.id,
-				type: node.type as AppNode["type"],
-				position: { x: node.payload?.x ?? 0, y: node.payload?.y ?? 0 },
-				data: { label: node.label, raw: node, questions: allQuestions, onUpdateCondition: handleConditionSelectedChange, onUpdateChoice: handleChoiceChange }
-			}));
-
-			setNodes(initialNodes);
-			setEdges(generateEdgesFromData(serverWorkflow));
-			isInitialized.current = true;
-			return;
-		}
+		const isInitPhase = !isInitialized.current;
 
 		setNodes(prevNodes => {
+			if (isInitPhase) {
+				return serverWorkflow.map(node => ({
+					id: node.id,
+					type: node.type as AppNode["type"],
+					position: { x: node.payload?.x ?? 0, y: node.payload?.y ?? 0 },
+					data: { label: node.label, raw: node, questions: allQuestions, onUpdateCondition: handleConditionSelectedChange, onUpdateChoice: handleChoiceChange }
+				}));
+			}
 			const serverNodeIds = new Set(serverWorkflow.map(n => n.id));
 			const prevNodeIds = new Set(prevNodes.map(n => n.id));
 
@@ -237,7 +275,6 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				}
 
 				const serverNode = serverWorkflow.find(sn => sn.id === n.id)!;
-
 				const isQuestionsChanged = JSON.stringify(n.data.questions) !== JSON.stringify(allQuestions);
 
 				if (serverNode.label !== n.data.label || isQuestionsChanged) {
@@ -272,52 +309,18 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 			return hasChanges ? [...nextNodes, ...newNodes] : prevNodes;
 		});
-	}, [workflowQuery.data, sectionsQuery.data, handleConditionSelectedChange, handleChoiceChange]);
 
-	const generateEdgesFromData = (nodes: NodeItem[]): Edge[] => {
-		const generatedEdges: Edge[] = [];
-		nodes.forEach(node => {
-			if (node.type === "CONDITION") {
-				if (node.nextTrue) {
-					generatedEdges.push({
-						id: `e${node.id}-true`,
-						source: node.id,
-						sourceHandle: "true",
-						target: node.nextTrue,
-						markerEnd: { type: "arrow", color: "var(--green)" },
-						type: "custom-edge",
-						style: { strokeWidth: 2 },
-						className: styles.edge,
-						data: { condition: "true" }
-					});
-				}
-				if (node.nextFalse) {
-					generatedEdges.push({
-						id: `e${node.id}-false`,
-						source: node.id,
-						sourceHandle: "false",
-						target: node.nextFalse,
-						markerEnd: { type: "arrow", color: "var(--pink)" },
-						type: "custom-edge",
-						style: { strokeWidth: 2 },
-						className: styles.edge,
-						data: { condition: "false" }
-					});
-				}
-			} else if (node.next) {
-				generatedEdges.push({
-					id: `e${node.id}-next`,
-					source: node.id,
-					target: node.next,
-					markerEnd: { type: "arrow", color: "var(--foreground)" },
-					type: "custom-edge",
-					style: { strokeWidth: 2 },
-					className: styles.edge
-				});
+		setEdges(prevEdges => {
+			if (isInitPhase) {
+				return generateEdgesFromData(serverWorkflow);
 			}
+			return prevEdges;
 		});
-		return generatedEdges;
-	};
+
+		if (isInitPhase) {
+			isInitialized.current = true;
+		}
+	}, [workflowQuery.data, sectionsQuery.data, handleConditionSelectedChange, handleChoiceChange]);
 
 	// Event
 	const onNodesChange: OnNodesChange<AppNode> = useCallback(changes => {
@@ -363,7 +366,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		(deletedNodes: Node[]) => {
 			deletedNodes.forEach(d => deleteNode(d.id));
 		},
-		[updateWorkflow]
+		[deleteNode]
 	);
 
 	const onConnect: OnConnect = useCallback(
@@ -418,15 +421,18 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 			updateWorkflow(nextNodes, currentEdges);
 		},
-		[edges, updateWorkflow]
+		[updateWorkflow, getNodes, getEdges]
 	);
 
-	const onNodeDoubleClick: NodeMouseHandler = useCallback((_, n) => {
-		const nodeData = n.data.raw as NodeItem;
-		if (nodeData.type === "SECTION") {
-			navigate(`/orgs/${orgSlug}/forms/${formData.id}/section/${n.id}/edit`);
-		}
-	}, []);
+	const onNodeDoubleClick: NodeMouseHandler = useCallback(
+		(_, n) => {
+			const nodeData = n.data.raw as NodeItem;
+			if (nodeData.type === "SECTION") {
+				navigate(`/orgs/${orgSlug}/forms/${formData.id}/section/${n.id}/edit`);
+			}
+		},
+		[orgSlug, formData.id, navigate]
+	);
 
 	if (workflowQuery.isLoading) return <LoadingSpinner />;
 	if (workflowQuery.isError) return <ErrorMessage message={(workflowQuery.error as Error)?.message ?? "無法載入表單結構"} />;

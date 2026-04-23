@@ -18,7 +18,7 @@ export const ConditionNode = ({ data, id, selected }: NodeProps<AppNode>) => {
 	const currentQuestionId = data.raw.conditionRule?.question ?? "";
 	const isValidSelection = currentQuestionId === "" || (data.questions && data.questions.some(q => q.id === currentQuestionId));
 	const isChoiceQuestion = currentQuestionId
-		? data.questions?.find(q => q.id === currentQuestionId)?.type && CHOICE_QUESTION_TYPES.has(data.questions.find(q => q.id === currentQuestionId)?.type!)
+		? data.questions?.find(q => q.id === currentQuestionId)?.type && CHOICE_QUESTION_TYPES.has(data.questions.find(q => q.id === currentQuestionId)!.type)
 		: false;
 
 	useEffect(() => {
