@@ -13,10 +13,10 @@ import type {
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse,
-	FormsListSectionsResponse,
 	FormsQuestionRequest,
 	FormsQuestionResponse,
 	FormsSection,
+	FormsSectionBundle,
 	FormsSectionRequest,
 	ResponsesAnswersRequest,
 	ResponsesAnswersRequestUpdate,
@@ -120,21 +120,9 @@ export const getFormFonts = async (): Promise<FormsFont[]> => {
 
 // ── Sections & Questions ──────────────────────────────────────────────────
 
-export const listSections = async (formId: string): Promise<FormsListSectionsResponse[]> => {
+export const listSections = async (formId: string): Promise<FormsSectionBundle[]> => {
 	const res = await formsListSections(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load sections", res.data);
-
-	const raw = res.data as unknown;
-
-	// Normalize: the actual API may return [{section:{...}, questions:[...]}]
-	// instead of the SDK-typed [{sections: FormsSection[]}].
-	if (Array.isArray(raw) && raw.length > 0 && raw[0] !== null && typeof raw[0] === "object" && "section" in (raw[0] as object)) {
-		const normalized: FormsSection[] = (raw as Array<{ section: FormsSection; questions: FormsQuestionResponse[] | null }>).map(item => ({
-			...item.section,
-			questions: item.questions ?? []
-		}));
-		return [{ sections: normalized }];
-	}
 
 	return res.data;
 };

@@ -18,6 +18,11 @@
 	fill: var(--foreground);
 }
 
+.panel {
+	display: flex;
+	gap: 0.5rem;
+}
+
 /* Custom Node Style */
 .flow {
 	background-color: var(--background-color-primary);
@@ -29,6 +34,9 @@
 }
 
 .condition {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
 	background-color: var(--background-color-tertiary);
 	clip-path: polygon(0.75rem 0, calc(100% - 0.75rem) 0, 100% 0.75rem, 100% calc(100% - 0.75rem), calc(100% - 0.75rem) 100%, 0.75rem 100%, 0 calc(100% - 0.75rem), 0 0.75rem);
 }

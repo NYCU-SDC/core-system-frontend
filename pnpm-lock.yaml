@@ -18,8 +18,8 @@ importers:
         specifier: ^13.11.2
         version: 13.11.2(react@19.2.4)
       '@nycu-sdc/core-system-sdk':
-        specifier: 1.0.0
-        version: 1.0.0
+        specifier: 1.0.1-snapshot-ca0c714
+        version: 1.0.1-snapshot-ca0c714
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -523,8 +523,8 @@ packages:
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
     engines: {node: '>=8'}
 
-  '@nycu-sdc/core-system-sdk@1.0.0':
-    resolution: {integrity: sha512-UaUsKJx0qNuhVoChu1PGYV55WkzqNEj7ZLyqJNzn15m4ErARYRA24dXcKcbX1W6OS2RCMh0lWI2NxlRfBW7bNA==}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-ca0c714':
+    resolution: {integrity: sha512-IoXzDF7sfLwICvL9v2w/mpPnRXRJgLgf71ulN8EhA4MlwJhdOo4zXJVpMIySyZlCabpgYAzA2iEXfWPNUJNd3g==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -2794,7 +2794,7 @@ snapshots:
 
   '@lukeed/ms@2.0.2': {}
 
-  '@nycu-sdc/core-system-sdk@1.0.0': {}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-ca0c714': {}
 
   '@pinojs/redact@0.4.0': {}
 

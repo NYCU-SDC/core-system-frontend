@@ -5,6 +5,7 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, SpinningIcon, useToast } from "@/shared/components";
 import { useIsMutating } from "@tanstack/react-query";
+import { ReactFlowProvider } from "@xyflow/react";
 import { Check, Link, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -145,7 +146,9 @@ export const AdminFormDetailPage = () => {
 					)}
 					{activeTab === "edit" && !sectionId && (
 						<div className={styles.edit}>
-							<AdminFormEditPage />
+							<ReactFlowProvider>
+								<AdminFormEditPage formData={formQuery.data} />
+							</ReactFlowProvider>
 						</div>
 					)}
 					{activeTab === "edit" && sectionId && (
