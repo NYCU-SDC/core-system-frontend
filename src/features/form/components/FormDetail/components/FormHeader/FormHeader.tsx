@@ -1,21 +1,17 @@
 import { Button, Markdown, SpinningIcon } from "@/shared/components";
-import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import styles from "./FormHeader.module.css";
 
 interface FormHeaderProps {
 	title: string;
-	formDescription?: string | null;
+	formDescriptionHtml?: string | null;
 	currentStep: number;
-	currentSection?: { title?: string; description?: string } | null;
+	currentSection?: { title?: string; descriptionHtml?: string } | null;
 	onBack?: () => void;
 	saveStatus?: "saving" | "error" | "saved";
 }
 
-export const FormHeader = ({ title, formDescription, currentStep, currentSection, onBack, saveStatus }: FormHeaderProps) => {
-	const normalizedFormDescription = formDescription ? htmlToMarkdown(formDescription) : "";
-	const normalizedSectionDescription = currentSection?.description ? htmlToMarkdown(currentSection.description) : "";
-
+export const FormHeader = ({ title, formDescriptionHtml, currentStep, currentSection, onBack, saveStatus }: FormHeaderProps) => {
 	return (
 		<div className={styles.header}>
 			{(onBack || saveStatus) && (
@@ -49,9 +45,9 @@ export const FormHeader = ({ title, formDescription, currentStep, currentSection
 				</div>
 			)}
 			<h1 className={styles.title}>{title}</h1>
-			{currentStep === 0 && formDescription && <Markdown className={styles.description} content={normalizedFormDescription} />}
+			{currentStep === 0 && formDescriptionHtml && <Markdown className={styles.description} content={formDescriptionHtml} />}
 			<h2 className={styles.sectionHeader}>{currentSection?.title}</h2>
-			{currentSection?.description && <Markdown className={styles.sectionDescription} content={normalizedSectionDescription} />}
+			{currentSection?.descriptionHtml && <Markdown className={styles.sectionDescription} content={currentSection.descriptionHtml} />}
 		</div>
 	);
 };
