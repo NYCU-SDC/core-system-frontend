@@ -99,9 +99,21 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const initializedRef = useRef(false);
 	const sectionsQuery = useSections(formData.id);
 
-	const createNodeViaSdk = async (type: "SECTION" | "CONDITION", fallbackLabel: string): Promise<NodeItem | null> => {
+	const getNodePayload = (anchorId?: string) => {
+		const anchorIndex = anchorId ? nodeItems.findIndex(node => node.id === anchorId) : -1;
+		const row = anchorIndex >= 0 ? anchorIndex + 1 : nodeItems.length;
+		return {
+			x: 240,
+			y: 120 + row * 140
+		};
+	};
+
+	const createNodeViaSdk = async (type: "SECTION" | "CONDITION", fallbackLabel: string, anchorId?: string): Promise<NodeItem | null> => {
 		try {
-			const created = await createWorkflowNodeMutation.mutateAsync({ type });
+			const created = await createWorkflowNodeMutation.mutateAsync({
+				type,
+				payload: getNodePayload(anchorId)
+			});
 			return {
 				id: created.id,
 				label: created.label || fallbackLabel,
@@ -168,7 +180,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const handleAddSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`);
+		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`, id);
 		if (!newSectionNodeBase) return;
 		const newSectionId = newSectionNodeBase.id;
 		const newSectionNode: NodeItem = {
@@ -188,7 +200,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const handleAddTrueSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`);
+		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`, id);
 		if (!newSectionNodeBase) return;
 		const newSectionId = newSectionNodeBase.id;
 		const newSectionNode: NodeItem = {
@@ -208,9 +220,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const handleAddTrueCondition = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
-		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
-		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`, id);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`, id);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`, id);
 		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
 		const newConditionId = newConditionNodeBase.id;
 		const newTrueSectionId = trueSectionNodeBase.id;
@@ -241,7 +253,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const handleAddFalseSection = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`);
+		const newSectionNodeBase = await createNodeViaSdk("SECTION", `新區塊 ${prevNodes.length + 1}`, id);
 		if (!newSectionNodeBase) return;
 		const newSectionId = newSectionNodeBase.id;
 		const newSectionNode: NodeItem = {
@@ -261,9 +273,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const handleAddFalseCondition = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
-		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
-		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`, id);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`, id);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`, id);
 		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
 		const newConditionId = newConditionNodeBase.id;
 		const newTrueSectionId = trueSectionNodeBase.id;
@@ -294,9 +306,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const handleAddCondition = async (id: string) => {
 		const prevNodes = [...nodeItems];
-		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
-		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
-		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`, id);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`, id);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`, id);
 		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
 		const newConditionId = newConditionNodeBase.id;
 		const newTrueSectionId = trueSectionNodeBase.id;
@@ -332,7 +344,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		if (!nodeToUpdate) {
 			return;
 		}
-		const newMergeNodeBase = await createNodeViaSdk("SECTION", `合併節點 ${prevNodes.length + 1}`);
+		const newMergeNodeBase = await createNodeViaSdk("SECTION", `合併節點 ${prevNodes.length + 1}`, id);
 		if (!newMergeNodeBase) return;
 		const newMergeNodeId = newMergeNodeBase.id;
 		const newMergeNode: NodeItem = {
@@ -370,9 +382,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		if (!nodeToUpdate) {
 			return;
 		}
-		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`);
-		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`);
-		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`);
+		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`, id);
+		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`, id);
+		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`, id);
 		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
 		const newConditionId = newConditionNodeBase.id;
 		const newTrueSectionId = trueSectionNodeBase.id;
