@@ -2,7 +2,7 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
-import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
+import { EMPTY_PROSE_MIRROR_DOC, normalizeProseMirrorDoc, serializeProseMirrorDoc, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -58,9 +58,9 @@ export const AdminSectionEditPage = () => {
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
 	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
-	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState("");
+	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState<ProseMirrorLikeDocument>(EMPTY_PROSE_MIRROR_DOC);
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
-	const [savedSectionDescription, setSavedSectionDescription] = useState("");
+	const [savedSectionDescription, setSavedSectionDescription] = useState(() => serializeProseMirrorDoc(EMPTY_PROSE_MIRROR_DOC));
 	const questionsRef = useRef<Question[]>([]);
 	const questionIdsRef = useRef<(string | undefined)[]>([]);
 	const dirtyQuestionIndexesRef = useRef<Set<number>>(new Set());
@@ -104,16 +104,16 @@ export const AdminSectionEditPage = () => {
 	);
 
 	const saveSectionIfChanged = useCallback(
-		(nextSectionTitle: string, nextSectionDescription: string) => {
+		(nextSectionTitle: string, nextSectionDescription: ProseMirrorLikeDocument) => {
 			if (!sectionId) return;
-			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
+			if (nextSectionTitle === savedSectionTitle && serializeProseMirrorDoc(nextSectionDescription) === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
 				{ title: nextSectionTitle, description: nextSectionDescription },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
-						setSavedSectionDescription(nextSectionDescription);
+						setSavedSectionDescription(serializeProseMirrorDoc(nextSectionDescription));
 						if (workflowQuery.data?.workflow) {
 							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: nextSectionTitle } : n));
 							updateWorkflowMutation.mutate(
@@ -231,7 +231,7 @@ export const AdminSectionEditPage = () => {
 				return {
 					type: q.type as Question["type"],
 					title: q.title,
-					description: q.description ?? "",
+					description: q.description ?? EMPTY_PROSE_MIRROR_DOC,
 					required: q.required ?? false,
 					isFromAnswer: Boolean(q.sourceId),
 					sourceQuestionId: q.sourceId,
@@ -271,11 +271,11 @@ export const AdminSectionEditPage = () => {
 	}, [questionIds]);
 
 	useEffect(() => {
-		const markdownDescription = htmlToMarkdown(section?.description ?? "");
+		const normalizedDescription = normalizeProseMirrorDoc(section?.description);
 		setSectionTitleDraft(section?.title ?? "");
-		setSectionDescriptionDraft(markdownDescription);
+		setSectionDescriptionDraft(normalizedDescription);
 		setSavedSectionTitle(section?.title ?? "");
-		setSavedSectionDescription(markdownDescription);
+		setSavedSectionDescription(serializeProseMirrorDoc(normalizedDescription));
 	}, [section?.id, section?.title, section?.description]);
 
 	useEffect(() => {
@@ -308,7 +308,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: q.description,
+			description: q.description ?? EMPTY_PROSE_MIRROR_DOC,
 			required: q.required ?? false,
 			order
 		};
@@ -350,7 +350,7 @@ export const AdminSectionEditPage = () => {
 		const nextQuestion: Question = {
 			type: nextType,
 			title: prev.title,
-			description: prev.description,
+			description: prev.description ?? EMPTY_PROSE_MIRROR_DOC,
 			required: prev.required,
 			isFromAnswer: prev.isFromAnswer,
 			sourceQuestionId: prev.sourceQuestionId,
@@ -400,7 +400,7 @@ export const AdminSectionEditPage = () => {
 		const newQuestion: Question = {
 			type,
 			title: "問題標題",
-			description: "",
+			description: EMPTY_PROSE_MIRROR_DOC,
 			required: false,
 			isFromAnswer: false,
 			...strategy.initialState()
@@ -440,9 +440,9 @@ export const AdminSectionEditPage = () => {
 		markQuestionDirty(index);
 	};
 
-	const handleDescriptionChange = (index: number, newDescription: string) => {
+	const handleDescriptionChange = (index: number, newDescription: ProseMirrorLikeDocument | null) => {
 		const updatedQuestions = [...questions];
-		updatedQuestions[index].description = newDescription;
+		updatedQuestions[index].description = newDescription ?? EMPTY_PROSE_MIRROR_DOC;
 		setQuestions(updatedQuestions);
 		markQuestionDirty(index);
 	};

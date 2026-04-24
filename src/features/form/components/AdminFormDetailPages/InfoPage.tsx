@@ -3,9 +3,9 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useArchiveForm, useDeleteForm, useUnarchiveForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { proseMirrorToPlainText, textToProseMirrorDocument, textToProseMirrorDocumentUpdate } from "@/features/form/utils/proseMirror";
-import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
-import type { FormsFormResponse } from "@nycu-sdc/core-system-sdk";
+import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
+import { EMPTY_PROSE_MIRROR_DOC, normalizeProseMirrorDoc, serializeProseMirrorDoc } from "@/shared/utils/proseMirror";
+import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -44,20 +44,26 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 
 	// local draft state for settings
 	const [title, setTitle] = useState(formData.title ?? "");
-	const [description, setDescription] = useState(proseMirrorToPlainText(formData.description));
+	const [description, setDescription] = useState(() => normalizeProseMirrorDoc(formData.description));
 	const [confirmMsg, setConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
-	const [savedDescription, setSavedDescription] = useState(proseMirrorToPlainText(formData.description));
+	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(formData.description));
 	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [savedDeadline, setSavedDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [savedPublishTime, setSavedPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [savedIsPublic, setSavedIsPublic] = useState(formData.visibility === "PUBLIC");
 	const isArchived = formData.status === "ARCHIVED";
+	const serializedDescription = serializeProseMirrorDoc(description);
 	const hasSettingChanges =
-		title !== savedTitle || description !== savedDescription || confirmMsg !== savedConfirmMsg || deadline !== savedDeadline || publishTime !== savedPublishTime || isPublic !== savedIsPublic;
+		title !== savedTitle ||
+		serializedDescription !== savedDescription ||
+		confirmMsg !== savedConfirmMsg ||
+		deadline !== savedDeadline ||
+		publishTime !== savedPublishTime ||
+		isPublic !== savedIsPublic;
 
 	useEffect(() => {
 		if (!hasSettingChanges || updateFormMutation.isPending || isArchived) return;
@@ -75,7 +81,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				{
 					onSuccess: () => {
 						setSavedTitle(title);
-						setSavedDescription(description);
+						setSavedDescription(serializedDescription);
 						setSavedConfirmMsg(confirmMsg);
 						setSavedDeadline(deadline);
 						setSavedPublishTime(publishTime);
@@ -87,7 +93,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}, 500);
 
 		return () => window.clearTimeout(timerId);
-	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, confirmMsg, deadline, publishTime, isPublic, pushToast, isArchived]);
+	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, serializedDescription, confirmMsg, deadline, publishTime, isPublic, pushToast]);
 
 	const handleToggleAllRequired = async (checked: boolean) => {
 		if (allQuestions.length === 0) {
@@ -101,7 +107,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					required: checked,
 					type: q.type,
 					title: q.title,
-					description: textToProseMirrorDocument(proseMirrorToPlainText(q.description)),
+					description: q.description ?? EMPTY_PROSE_MIRROR_DOC,
 					order: (q as unknown as { order?: number }).order ?? idx,
 					...(q.choices ? { choices: q.choices } : {}),
 					...(q.scale ? { scale: q.scale } : {}),
@@ -164,11 +170,11 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					</div>
 				</section>
 				<h3>表單設定</h3>
-				<Input label="表單標題" placeholder="輸入表單標題" value={title} onChange={e => setTitle(e.target.value)} disabled={isArchived} />
-				<Input label="表單描述" placeholder="輸入表單描述" value={description} onChange={e => setDescription(e.target.value)} disabled={isArchived} />
-				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" value={confirmMsg} onChange={e => setConfirmMsg(e.target.value)} disabled={isArchived} />
-				<Input label="開始日期" type="date" value={publishTime} onChange={e => setPublishTime(e.target.value)} disabled={isArchived} />
-				<Input label="結束日期" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} disabled={isArchived} />
+				<Input label="表單標題" placeholder="輸入表單標題" value={title} onChange={e => setTitle(e.target.value)} />
+				<MarkdownEditor label="表單描述" placeholder="輸入表單描述" value={description} onChange={setDescription} />
+				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" value={confirmMsg} onChange={e => setConfirmMsg(e.target.value)} />
+				<Input label="開始日期" type="date" value={publishTime} onChange={e => setPublishTime(e.target.value)} />
+				<Input label="結束日期" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
 				<div className={`${styles.switch}`}>
 					<p className={`${styles.label}`}>公開表單（所有登入使用者可見）</p>
 					<Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={isArchived} />

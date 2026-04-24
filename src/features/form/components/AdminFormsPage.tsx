@@ -5,7 +5,8 @@ import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
-import type { FormsFormResponse } from "@nycu-sdc/core-system-sdk";
+import { EMPTY_PROSE_MIRROR_DOC } from "@/shared/utils/proseMirror";
+import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -88,7 +89,7 @@ export const AdminFormsPage = () => {
 		createFormMutation.mutate(
 			{
 				title: "未命名表單",
-				description: textToProseMirrorDocument(""),
+				description: EMPTY_PROSE_MIRROR_DOC,
 				messageAfterSubmission: "感謝您的填寫！",
 				visibility: "PUBLIC"
 			},
