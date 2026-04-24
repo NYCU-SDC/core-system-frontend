@@ -18,6 +18,7 @@ const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
 	nodes.map(n => ({
 		id: n.id,
 		label: n.label,
+		payload: n.payload,
 		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 		...(n.next !== undefined && { next: n.next }),
 		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -117,7 +118,8 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			return {
 				id: created.id,
 				label: created.label || fallbackLabel,
-				type
+				type,
+				payload: getNodePayload(anchorId)
 			};
 		} catch (error) {
 			pushToast({ title: "新增節點失敗", description: (error as Error).message, variant: "error" });
@@ -146,6 +148,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			id: n.id ?? uuidv4(),
 			label: n.label ?? "",
 			type: (n.type as NodeItem["type"]) ?? "SECTION",
+			payload: n.payload,
 			...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 			...(n.next !== undefined && { next: n.next }),
 			...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -159,9 +162,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				setNodeItems(postProcessNodes(workflowQuery.data.workflow.map(mapNode)));
 			} else {
 				const defaultNodes: NodeItem[] = [
-					{ id: uuidv4(), label: "開始表單", type: "START", next: "__section__" },
-					{ id: "__section__", label: "第一區塊", type: "SECTION", next: "__end__" },
-					{ id: "__end__", label: "確認 / 送出", type: "END" }
+					{ id: uuidv4(), label: "開始表單", type: "START", payload: { x: 240, y: 120 }, next: "__section__" },
+					{ id: "__section__", label: "第一區塊", type: "SECTION", payload: { x: 240, y: 260 }, next: "__end__" },
+					{ id: "__end__", label: "確認 / 送出", type: "END", payload: { x: 240, y: 400 } }
 				];
 				setNodeItems(postProcessNodes(defaultNodes));
 			}
@@ -171,7 +174,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				prev.map(local => {
 					const remote = workflowQuery.data!.workflow.find(n => n.id === local.id);
 					if (!remote) return local;
-					return { ...local, label: remote.label ?? local.label };
+					return { ...local, label: remote.label ?? local.label, payload: remote.payload ?? local.payload };
 				})
 			);
 		}

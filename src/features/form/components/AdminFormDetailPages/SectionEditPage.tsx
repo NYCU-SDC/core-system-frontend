@@ -2,7 +2,7 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
-import { EMPTY_PROSE_MIRROR_DOC, normalizeProseMirrorDoc, serializeProseMirrorDoc, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -97,7 +97,7 @@ export const AdminSectionEditPage = () => {
 			if (nextSectionTitle === savedSectionTitle && serializeProseMirrorDoc(nextSectionDescription) === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
-				{ title: nextSectionTitle, description: nextSectionDescription },
+				{ title: nextSectionTitle, description: toApiProseMirror(nextSectionDescription) },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
@@ -218,7 +218,7 @@ export const AdminSectionEditPage = () => {
 				return {
 					type: q.type as Question["type"],
 					title: q.title,
-					description: q.description ?? EMPTY_PROSE_MIRROR_DOC,
+					description: fromApiProseMirror(q.description),
 					required: q.required ?? false,
 					isFromAnswer: Boolean(q.sourceId),
 					sourceQuestionId: q.sourceId,
@@ -258,7 +258,7 @@ export const AdminSectionEditPage = () => {
 	}, [questionIds]);
 
 	useEffect(() => {
-		const normalizedDescription = normalizeProseMirrorDoc(section?.description);
+		const normalizedDescription = fromApiProseMirror(section?.description);
 		setSectionTitleDraft(section?.title ?? "");
 		setSectionDescriptionDraft(normalizedDescription);
 		setSavedSectionTitle(section?.title ?? "");
@@ -295,7 +295,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: q.description ?? EMPTY_PROSE_MIRROR_DOC,
+			description: toApiProseMirror(q.description),
 			required: q.required ?? false,
 			order
 		};

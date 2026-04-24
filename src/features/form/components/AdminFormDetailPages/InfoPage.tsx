@@ -4,7 +4,7 @@ import { useArchiveForm, useDeleteForm, useUpdateForm } from "@/features/form/ho
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
-import { EMPTY_PROSE_MIRROR_DOC, normalizeProseMirrorDoc, serializeProseMirrorDoc } from "@/shared/utils/proseMirror";
+import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror } from "@/shared/utils/proseMirror";
 import type { FormsForm } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -43,13 +43,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 
 	// local draft state for settings
 	const [title, setTitle] = useState(formData.title ?? "");
-	const [description, setDescription] = useState(() => normalizeProseMirrorDoc(formData.description));
+	const [description, setDescription] = useState(() => fromApiProseMirror(formData.description));
 	const [confirmMsg, setConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
-	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(formData.description));
+	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(fromApiProseMirror(formData.description)));
 	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [savedDeadline, setSavedDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [savedPublishTime, setSavedPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
@@ -71,7 +71,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 			updateFormMutation.mutate(
 				{
 					title,
-					description,
+					description: toApiProseMirror(description),
 					messageAfterSubmission: confirmMsg,
 					deadline: deadline ? new Date(deadline).toISOString() : undefined,
 					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
