@@ -45,6 +45,79 @@ interface AdminFormEditPageProps {
 	formData: FormsForm;
 }
 
+const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
+	nodes.map(n => ({
+		id: n.id,
+		label: n.label,
+		payload: n.payload,
+		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
+		...(n.next !== undefined && { next: n.next }),
+		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
+		...(n.nextFalse !== undefined && { nextFalse: n.nextFalse })
+	}));
+
+const getPath = (startId: string, nodeMap: Map<string, NodeItem>): string[] => {
+	const path: string[] = [];
+	let currentId: string | undefined = startId;
+	while (currentId) {
+		path.push(currentId);
+		const nextNode = nodeMap.get(currentId);
+		if (!nextNode) break;
+		const mergeId = findMergeNodeId(nextNode, nodeMap);
+		currentId = nextNode?.next || mergeId || undefined;
+	}
+	return path;
+};
+
+const findMergeNodeId = (node: NodeItem, nodeMap: Map<string, NodeItem>): string | null => {
+	if (!node.nextTrue || !node.nextFalse) return null;
+
+	const truePath = getPath(node.nextTrue, nodeMap);
+	const falsePath = getPath(node.nextFalse, nodeMap);
+
+	for (const id of truePath) {
+		if (falsePath.includes(id)) {
+			return id;
+		}
+	}
+
+	return null;
+};
+
+const postProcessNodes = (nodes: NodeItem[]): NodeItem[] => {
+	// Pass 1: compute mergeIds and collapse non-CONDITION branch nodes — use
+	// a read-only snapshot for lookups so mutations don't affect other nodes'
+	// findMergeNodeId calculations.
+	const snapshot = new Map<string, NodeItem>(nodes.map(n => [n.id, { ...n, isMergeNode: false }]));
+
+	const pass1 = nodes.map(node => {
+		const copy = { ...node, isMergeNode: false };
+		if (copy.nextTrue || copy.nextFalse) {
+			const mergeId = findMergeNodeId(copy, snapshot);
+			if (copy.nextTrue === mergeId && copy.type !== "CONDITION") {
+				copy.next = copy.nextFalse;
+				copy.nextFalse = undefined;
+				copy.nextTrue = undefined;
+			} else if (copy.nextFalse === mergeId && copy.type !== "CONDITION") {
+				copy.next = copy.nextTrue;
+				copy.nextFalse = undefined;
+				copy.nextTrue = undefined;
+			} else if (mergeId) {
+				copy.mergeId = mergeId;
+			}
+		}
+		return copy;
+	});
+
+	// Pass 2: mark merge nodes (nodes pointed to by more than one parent)
+	const res = pass1.map(node => ({
+		...node,
+		isMergeNode: pass1.filter(n => n.next === node.id).length + pass1.filter(n => n.nextTrue === node.id).length + pass1.filter(n => n.nextFalse === node.id).length > 1
+	}));
+
+	return res;
+};
+
 export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	const [nodes, setNodes] = useState<AppNode[]>([]);
 	const [edges, setEdges] = useState<Edge[]>([]);
@@ -85,7 +158,8 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			return {
 				id: created.id,
 				label: created.label || fallbackLabel,
-				type
+				type,
+				payload: getNodePayload(anchorId)
 			};
 		} catch (error) {
 			pushToast({ title: "新增節點失敗", description: (error as Error).message, variant: "error" });
@@ -114,6 +188,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 			id: n.id ?? uuidv4(),
 			label: n.label ?? "",
 			type: (n.type as NodeItem["type"]) ?? "SECTION",
+			payload: n.payload,
 			...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 			...(n.next !== undefined && { next: n.next }),
 			...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -127,9 +202,9 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				setNodeItems(postProcessNodes(workflowQuery.data.workflow.map(mapNode)));
 			} else {
 				const defaultNodes: NodeItem[] = [
-					{ id: uuidv4(), label: "開始表單", type: "START", next: "__section__" },
-					{ id: "__section__", label: "第一區塊", type: "SECTION", next: "__end__" },
-					{ id: "__end__", label: "確認 / 送出", type: "END" }
+					{ id: uuidv4(), label: "開始表單", type: "START", payload: { x: 240, y: 120 }, next: "__section__" },
+					{ id: "__section__", label: "第一區塊", type: "SECTION", payload: { x: 240, y: 260 }, next: "__end__" },
+					{ id: "__end__", label: "確認 / 送出", type: "END", payload: { x: 240, y: 400 } }
 				];
 				setNodeItems(postProcessNodes(defaultNodes));
 			}
@@ -139,7 +214,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				prev.map(local => {
 					const remote = workflowQuery.data!.workflow.find(n => n.id === local.id);
 					if (!remote) return local;
-					return { ...local, label: remote.label ?? local.label };
+					return { ...local, label: remote.label ?? local.label, payload: remote.payload ?? local.payload };
 				})
 			);
 		}

@@ -1,15 +1,11 @@
-import type { FormsQuestionResponse, FormWorkflowConditionRule } from "@nycu-sdc/core-system-sdk";
-import type { Node } from "@xyflow/react";
+import type { FormWorkflowConditionRule, FormWorkflowNodePayload } from "@nycu-sdc/core-system-sdk";
 
 export type NodeItem = {
 	id: string;
 	type: "START" | "END" | "SECTION" | "CONDITION";
 	/** Internal editor label (not shown to respondents) */
 	label: string;
-	payload: {
-		x: number;
-		y: number;
-	};
+	payload: FormWorkflowNodePayload;
 	/** Condition rule (CONDITION nodes only) */
 	conditionRule?: FormWorkflowConditionRule;
 	next?: string;
