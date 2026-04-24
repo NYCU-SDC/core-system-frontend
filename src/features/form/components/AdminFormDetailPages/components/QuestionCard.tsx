@@ -244,7 +244,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const maxDateError = question.dateHasMaxDate && !question.dateMaxDate ? "請填結束日期" : "";
 
 	return (
-		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)} {...(!isExpanded ? props.dragHandleListeners : {})}>
+		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)} {...(!isExpanded && props.dragHandleListeners)}>
 			{isExpanded ? (
 				<div
 					onClick={e => {
