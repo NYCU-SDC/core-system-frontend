@@ -104,6 +104,7 @@ export const FormFilloutPage = () => {
 				title: section.title,
 				description: section.description,
 				descriptionHtml: section.descriptionHtml,
+				descriptionHtml: section.descriptionHtml,
 				questions: section.questions ?? []
 			}));
 		});
@@ -399,7 +400,7 @@ export const FormFilloutPage = () => {
 			<div className={styles.container} style={themedContainerStyle}>
 				<FormHeader
 					title={form.title}
-					formDescription={form.descriptionHtml ?? proseMirrorToPlainText(form.description)}
+					formDescriptionHtml={form.descriptionHtml}
 					currentStep={currentStep}
 					currentSection={
 						currentSection
