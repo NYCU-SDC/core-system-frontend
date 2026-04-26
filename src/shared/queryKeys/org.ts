@@ -8,9 +8,7 @@ export const orgKeys = {
 	bySlug: (slug: string) => [...orgKeys.all, slug] as const,
 	members: (slug: string) => [...orgKeys.bySlug(slug), "members"] as const,
 	forms: (slug: string, statuses?: string[]) =>
-		statuses && statuses.length > 0
-			? ([...orgKeys.bySlug(slug), "forms", ...[...statuses].sort()] as const)
-			: ([...orgKeys.bySlug(slug), "forms"] as const),
+		statuses && statuses.length > 0 ? ([...orgKeys.bySlug(slug), "forms", ...[...statuses].sort()] as const) : ([...orgKeys.bySlug(slug), "forms"] as const),
 	form: (formId: string) => ["form", formId] as const,
 	myOrgs: ["orgs", "me"] as const
 };
