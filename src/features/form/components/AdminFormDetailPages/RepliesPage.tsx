@@ -254,8 +254,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
 	const allQuestions = useMemo(() => {
-		const sections = sectionsQuery.data?.flatMap(group => group.sections) ?? [];
-		return sections.flatMap(section => section.questions ?? []);
+		return sectionsQuery.data?.flatMap(group => group.questions ?? []) ?? [];
 	}, [sectionsQuery.data]);
 
 	const responseDetailQueries = useQueries({
@@ -485,7 +484,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						{responses.length > 0 &&
 							allQuestions.map(question => {
 								const details = answerDetailsByQuestionId.get(question.id) ?? [];
-								const hasDescription = Boolean(question.description?.trim());
+								const hasDescription = Boolean(question.description.content.trim());
 								return (
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
