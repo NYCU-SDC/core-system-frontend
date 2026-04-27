@@ -1,5 +1,6 @@
 import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
-import { Button, Checkbox, Input, Select, Switch, TextArea } from "@/shared/components";
+import { Button, Checkbox, Input, Select, Switch } from "@/shared/components";
+import { MarkdownEditor } from "@/shared/components/MarkdownEditor/MarkdownEditor";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import {
 	Calendar,
@@ -32,7 +33,7 @@ export interface QuestionCardProps {
 	defaultExpanded?: boolean;
 	autoFocusTitle?: boolean;
 	onTitleChange?: (newTitle: string) => void;
-	onDescriptionChange?: (newDescription: string) => void;
+	onDescriptionChange?: (newDescription: Record<string, unknown> | null) => void;
 	removeQuestion: () => void | Promise<void>;
 	duplicateQuestion: () => void | Promise<void>;
 	onAddOption?: () => void;
@@ -165,8 +166,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [localTitle, setLocalTitle] = useState(question.title);
 	const localTitleRef = useRef(question.title);
 	localTitleRef.current = localTitle;
-	const [localDesc, setLocalDesc] = useState(question.description);
-	const localDescRef = useRef(question.description);
+	const [localDesc, setLocalDesc] = useState<Record<string, unknown> | null>(question.description);
+	const localDescRef = useRef<Record<string, unknown> | null>(question.description);
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
@@ -272,14 +273,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								themeColor="--comment"
 								textSize="h2"
 							/>
-							<TextArea
+							<MarkdownEditor
 								value={localDesc}
-								onChange={e => setLocalDesc(e.target.value)}
+								onChange={nextValue => setLocalDesc(nextValue)}
 								onBlur={() => props.onDescriptionChange?.(localDesc)}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
-								rows={1}
 							/>
 						</div>
 						<div className={styles.typeWrapper}>

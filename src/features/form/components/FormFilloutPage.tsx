@@ -102,6 +102,7 @@ export const FormFilloutPage = () => {
 				formId: section.formId,
 				title: section.title,
 				description: section.description,
+				descriptionHtml: section.descriptionHtml,
 				questions: section.questions ?? []
 			}));
 		});
@@ -394,7 +395,7 @@ export const FormFilloutPage = () => {
 			<div className={styles.container} style={themedContainerStyle}>
 				<FormHeader
 					title={form.title}
-					formDescription={form.description}
+					formDescriptionHtml={form.descriptionHtml}
 					currentStep={currentStep}
 					currentSection={currentSection}
 					onBack={() => navigate("/forms")}
