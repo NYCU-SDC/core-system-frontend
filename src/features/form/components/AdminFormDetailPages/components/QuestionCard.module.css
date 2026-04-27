@@ -178,3 +178,22 @@
 	font-size: 0.875rem;
 	color: var(--color-caption);
 }
+
+.previewGrip {
+	color: var(--comment);
+	flex-shrink: 0;
+}
+
+.expandedGrip {
+	display: flex;
+	justify-content: center;
+	padding: 0;
+	margin-top: -1rem;
+	margin-bottom: -1rem;
+	cursor: grab;
+	color: var(--comment);
+}
+
+.expandedGrip:active {
+	cursor: grabbing;
+}
