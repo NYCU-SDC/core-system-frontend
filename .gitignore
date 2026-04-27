@@ -22,6 +22,7 @@ test-results/
 # Local tooling
 .claude/
 .codex-gitconfig
+.gitconfig-temp
 
 # Editor directories and files
 .vscode/*
