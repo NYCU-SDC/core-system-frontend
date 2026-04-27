@@ -31,14 +31,10 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 
 	// derive all questions across all sections
 	const allQuestions = useMemo(() => {
-		if (!sectionsQuery.data) return [];
-		return sectionsQuery.data.flatMap(item => {
-			const sections = Array.isArray(item.sections) ? item.sections : [];
-			return sections.flatMap(section => (section.questions ?? []).map(question => ({ sectionId: section.id, question })));
-		});
+		return sectionsQuery.data?.flatMap(group => group.questions?.map(question => ({ question: { ...question }, sectionId: group.section.id })) ?? []) ?? [];
 	}, [sectionsQuery.data]);
 
-	const allRequired = allQuestions.length > 0 && allQuestions.every(({ question: q }) => q.required);
+	const allRequired = allQuestions.length > 0 && allQuestions.every(q => q.question.required);
 	const [isSettingRequired, setIsSettingRequired] = useState(false);
 
 	// local draft state for settings
