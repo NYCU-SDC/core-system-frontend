@@ -10,6 +10,7 @@ import type {
 	FormsFormCoverUploadResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
+	FormsFormStatus,
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse,
@@ -71,6 +72,26 @@ export const listOrgForms = async (slug: string): Promise<FormsForm[]> => {
 	return res.data;
 };
 
+export const listOrgFormsByStatus = async (slug: string, statuses?: FormsFormStatus[]): Promise<FormsForm[]> => {
+	const query = new URLSearchParams();
+	(statuses ?? []).forEach(status => query.append("status", status));
+	const endpoint = query.toString().length > 0 ? `/api/orgs/${slug}/forms?${query.toString()}` : `/api/orgs/${slug}/forms`;
+
+	const response = await fetch(endpoint, {
+		...defaultRequestOptions,
+		method: "GET"
+	});
+
+	let data: unknown = [];
+	if (![204, 205, 304].includes(response.status)) {
+		const body = await response.text();
+		data = body.trim().length > 0 ? JSON.parse(body) : [];
+	}
+
+	assertOk(response.status, "Failed to load forms", data);
+	return data as FormsForm[];
+};
+
 export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsForm> => {
 	const res = await unitCreateOrgForm(slug, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to create form", res.data);
@@ -100,6 +121,20 @@ export const archiveForm = async (formId: string): Promise<FormsForm> => {
 	const res = await formsArchiveForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to archive form", res.data);
 	return res.data;
+};
+
+export const unarchiveForm = async (formId: string): Promise<FormsForm> => {
+	const response = await fetch(`/api/forms/${formId}/unarchive`, {
+		...defaultRequestOptions,
+		method: "POST"
+	});
+	const body = [204, 205, 304].includes(response.status) ? null : await response.text();
+	const data = body ? JSON.parse(body) : null;
+	assertOk(response.status, "Failed to unarchive form", data);
+	if (data == null) {
+		return getFormById(formId);
+	}
+	return data as FormsForm;
 };
 
 export const deleteForm = async (formId: string): Promise<void> => {

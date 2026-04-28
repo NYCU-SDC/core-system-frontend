@@ -26,6 +26,9 @@ const formatDate = (isoDate: string): string => {
 };
 
 const toStatusVariant = (status: string, deadline: string | null | undefined): StatusVariant => {
+	if (status === "ARCHIVED") {
+		return "archived";
+	}
 	if (deadline) {
 		const deadlineDate = new Date(deadline);
 		const now = new Date();
@@ -50,12 +53,12 @@ const toFormRow = (form: FormsForm): FormRow => ({
 export const AdminFormsPage = () => {
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
-	const [activeTab, setActiveTab] = useState("all");
+	const [activeTab, setActiveTab] = useState<"all" | StatusVariant>("all");
 	const meta = useSeo({ rule: SEO_CONFIG.adminForms });
 
 	// Fetch forms from API
 	const orgSlug = useActiveOrgSlug();
-	const formsQuery = useOrgForms(orgSlug);
+	const formsQuery = useOrgForms(orgSlug, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 
 	useEffect(() => {
@@ -113,10 +116,11 @@ export const AdminFormsPage = () => {
 								{ value: "all", label: "所有表單" },
 								{ value: "draft", label: "草稿" },
 								{ value: "published", label: "已發布" },
-								{ value: "done", label: "已截止" }
+								{ value: "done", label: "已截止" },
+								{ value: "archived", label: "已封存" }
 							]}
 							activeTab={activeTab}
-							onTabChange={setActiveTab}
+							onTabChange={value => setActiveTab(value as "all" | StatusVariant)}
 						/>
 						<Button icon={Plus} onClick={handleCreateForm} processing={createFormMutation.isPending}>
 							建立表單
