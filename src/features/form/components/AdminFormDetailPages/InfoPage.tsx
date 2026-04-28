@@ -86,7 +86,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}, 500);
 
 		return () => window.clearTimeout(timerId);
-}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, confirmMsg, deadline, publishTime, isPublic, pushToast, isArchived]);
+	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, confirmMsg, deadline, publishTime, isPublic, pushToast, isArchived]);
 
 	const handleToggleAllRequired = async (checked: boolean) => {
 		if (allQuestions.length === 0) {
@@ -186,7 +186,11 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				</Tooltip>
 				<div className={`${styles.switch}`}>
 					<p className={`${styles.label}`}>所有問題設為必填</p>
-					{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isArchived || isSettingRequired || allQuestions.length === 0} />}
+					{sectionsQuery.isLoading ? (
+						<LoadingSpinner />
+					) : (
+						<Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isArchived || isSettingRequired || allQuestions.length === 0} />
+					)}
 				</div>
 				<div className={styles.dangerActions}>
 					<Button onClick={isArchived ? handleUnarchive : handleArchive} disabled={archiveFormMutation.isPending || unarchiveFormMutation.isPending}>
