@@ -81,8 +81,13 @@ export const listOrgFormsByStatus = async (slug: string, statuses?: FormsFormSta
 		...defaultRequestOptions,
 		method: "GET"
 	});
-	const body = [204, 205, 304].includes(response.status) ? null : await response.text();
-	const data = body ? JSON.parse(body) : {};
+
+	let data: unknown = [];
+	if (![204, 205, 304].includes(response.status)) {
+		const body = await response.text();
+		data = body.trim().length > 0 ? JSON.parse(body) : [];
+	}
+
 	assertOk(response.status, "Failed to load forms", data);
 	return data as FormsForm[];
 };
@@ -124,8 +129,11 @@ export const unarchiveForm = async (formId: string): Promise<FormsForm> => {
 		method: "POST"
 	});
 	const body = [204, 205, 304].includes(response.status) ? null : await response.text();
-	const data = body ? JSON.parse(body) : {};
+	const data = body ? JSON.parse(body) : null;
 	assertOk(response.status, "Failed to unarchive form", data);
+	if (data == null) {
+		return getFormById(formId);
+	}
 	return data as FormsForm;
 };
 
