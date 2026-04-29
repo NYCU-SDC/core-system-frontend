@@ -64,7 +64,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 			updateFormMutation.mutate(
 				{
 					title,
-					description,
+					description: description.trim() ? description : undefined,
 					messageAfterSubmission: confirmMsg,
 					deadline: deadline ? new Date(deadline).toISOString() : undefined,
 					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
