@@ -1,6 +1,6 @@
 export type ProseMirrorLikeDocument = {
-	type: any;
-	[key: string]: any;
+	type: "doc" | (string & {});
+	[key: string]: unknown;
 };
 
 export const EMPTY_PROSE_MIRROR_DOC: ProseMirrorLikeDocument = {
