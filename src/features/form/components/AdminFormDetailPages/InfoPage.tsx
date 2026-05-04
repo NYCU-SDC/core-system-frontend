@@ -5,7 +5,7 @@ import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror } from "@/shared/utils/proseMirror";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import type { FormsForm, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -67,7 +67,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 			updateFormMutation.mutate(
 				{
 					title,
-					description: toApiProseMirror(description),
+					description: toApiProseMirror(description) as unknown as ProseMirrorDocumentUpdate,
 					messageAfterSubmission: confirmMsg,
 					deadline: deadline ? new Date(deadline).toISOString() : undefined,
 					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
