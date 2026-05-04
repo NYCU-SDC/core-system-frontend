@@ -67,7 +67,6 @@ export const AdminSectionEditPage = () => {
 
 	const sectionsQuery = useSections(formid);
 	const section = sectionsQuery.data?.flatMap(response => (Array.isArray(response.sections) ? response.sections : [])).find(foundSection => foundSection.id === sectionId);
-	const apiQuestions = section?.questions ?? [];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
@@ -84,7 +83,7 @@ export const AdminSectionEditPage = () => {
 	};
 
 	// States
-	const { state: draft, setState: setEditorState, replaceState, undo, redo, flushCheckpoint, canUndo, canRedo, debugHistory } = useUndoableEditor<EditorDraft>(EMPTY_DRAFT, { limit: 100 });
+	const { state: draft, setState: setEditorState, replaceState, undo, redo, flushCheckpoint, canUndo, canRedo } = useUndoableEditor<EditorDraft>(EMPTY_DRAFT, { limit: 100 });
 	const { questions, questionIds, sectionTitleDraft, sectionDescriptionDraft } = draft;
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
 	const [savedSectionDescription, setSavedSectionDescription] = useState("");
@@ -298,18 +297,19 @@ export const AdminSectionEditPage = () => {
 					}
 				}
 			}
-		} catch (err) {
+		} catch {
 			console.log("儲存失敗");
 			// pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
 		} finally {
 			isFlushingDirtyQuestionsRef.current = false;
 		}
-	}, [createQuestion, flushCheckpoint, formid, pushToast, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
+	}, [createQuestion, flushCheckpoint, formid, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
 
 	// Effects
 	// Sync from API on first load
 	useEffect(() => {
 		if (!section?.id) return;
+		const apiQuestions = section.questions ?? [];
 
 		const mapped: Question[] = apiQuestions.map(q => {
 			const apiQuestion = q as ApiQuestionWithOptionalFields;
@@ -357,7 +357,7 @@ export const AdminSectionEditPage = () => {
 		setSavedSectionDescription(section.description ?? "");
 		setDirtyQuestionVersion(0);
 		dirtyQuestionIndexesRef.current.clear();
-	}, [apiQuestions, replaceState, section?.description, section?.id, section?.title]);
+	}, [replaceState, section]);
 
 	useEffect(() => {
 		questionsRef.current = questions;
@@ -487,7 +487,7 @@ export const AdminSectionEditPage = () => {
 		if (existingId) {
 			try {
 				await deleteQuestion.mutateAsync(existingId);
-			} catch (err) {
+			} catch {
 				console.log("儲存失敗");
 				//pushToast({ title: "刪除失敗", description: (err as Error).message, variant: "error" });
 				return;

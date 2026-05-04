@@ -229,7 +229,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 
 		document.addEventListener("mousedown", handleOutsideClick);
 		return () => document.removeEventListener("mousedown", handleOutsideClick);
-	}, [isExpanded, props]);
+	}, [isExpanded, props, question.description, question.title]);
 
 	const handleDuplicateClick = () => {
 		if (isDuplicating || isDeleting) return;
