@@ -95,15 +95,15 @@ export const FormFilloutPage = () => {
 
 	const sections: Section[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
-		const loaded: Section[] = sectionsQuery.data.flatMap(item => {
-			const sections = Array.isArray(item.sections) ? item.sections : [];
-			return sections.map(section => ({
-				id: section.id,
-				formId: section.formId,
-				title: section.title,
-				description: section.description,
-				questions: section.questions ?? []
-			}));
+		const loaded: Section[] = sectionsQuery.data.map(item => {
+			return {
+				id: item.section.id,
+				formId: item.section.formId,
+				title: item.section.title,
+				description: item.section.description,
+				descriptionHtml: item.section.descriptionHtml,
+				questions: item.questions ?? []
+			};
 		});
 		const visible = resolveVisibleSectionsFromWorkflow(loaded, workflowQuery.data?.workflow, answers);
 		const withPreview = [...visible];
@@ -394,7 +394,7 @@ export const FormFilloutPage = () => {
 			<div className={styles.container} style={themedContainerStyle}>
 				<FormHeader
 					title={form.title}
-					formDescription={form.description}
+					formDescriptionHtml={form.descriptionHtml}
 					currentStep={currentStep}
 					currentSection={currentSection}
 					onBack={() => navigate("/forms")}

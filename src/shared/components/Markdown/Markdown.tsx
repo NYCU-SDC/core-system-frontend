@@ -1,5 +1,6 @@
 import { marked } from "marked";
-import { useEffect, useMemo, useRef } from "react";
+import type { MutableRefObject } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef } from "react";
 import styles from "./Markdown.module.css";
 
 export interface MarkdownProps {
@@ -7,7 +8,7 @@ export interface MarkdownProps {
 	className?: string;
 }
 
-export const Markdown = ({ content, className = "" }: MarkdownProps) => {
+export const Markdown = forwardRef<HTMLDivElement, MarkdownProps>(({ content, className = "" }, ref) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -15,6 +16,18 @@ export const Markdown = ({ content, className = "" }: MarkdownProps) => {
 	}, []);
 
 	const html = useMemo(() => marked.parse(content) as string, [content]);
+
+	const setRefs = useCallback(
+		(node: HTMLDivElement | null) => {
+			(containerRef as MutableRefObject<HTMLDivElement | null>).current = node;
+			if (typeof ref === "function") {
+				ref(node);
+			} else if (ref) {
+				(ref as MutableRefObject<HTMLDivElement | null>).current = node;
+			}
+		},
+		[ref]
+	);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -39,5 +52,7 @@ export const Markdown = ({ content, className = "" }: MarkdownProps) => {
 		};
 	}, [content]);
 
-	return <div ref={containerRef} className={`${styles.markdown} ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
-};
+	return <div ref={setRefs} className={`${styles.markdown} ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+});
+
+Markdown.displayName = "Markdown";

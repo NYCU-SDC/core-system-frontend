@@ -81,3 +81,7 @@ export { ErrorBoundary } from "./ErrorBoundary/ErrorBoundary";
 
 export { Markdown } from "./Markdown/Markdown";
 export type { MarkdownProps } from "./Markdown/Markdown";
+
+export { MarkdownEditor } from "./MarkdownEditor";
+export type { MarkdownEditorProps, MarkdownEditorVariant } from "./MarkdownEditor/MarkdownEditor";
+export * from "./ProseMirrorViewer";

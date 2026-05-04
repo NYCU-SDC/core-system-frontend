@@ -1,3 +1,5 @@
+import { extractTextFromProseMirror } from "@/shared/utils/proseMirror";
+
 export interface SeoRuleContext {
 	params: Record<string, string>;
 	data?: unknown; // 可放 react-query / loader 取得的資料
@@ -12,7 +14,7 @@ export interface SeoRule {
 
 interface FormSeoData {
 	title?: string;
-	description?: string;
+	description?: unknown;
 }
 
 export const SEO_CONFIG: Record<string, SeoRule> = {
@@ -87,6 +89,9 @@ export const SEO_CONFIG: Record<string, SeoRule> = {
 
 	formDetail: {
 		title: ({ data }) => (data as FormSeoData | undefined)?.title ?? "表單",
-		description: ({ data }) => (data as FormSeoData | undefined)?.description
+		description: ({ data }) => {
+			const desc = (data as FormSeoData | undefined)?.description;
+			return desc ? extractTextFromProseMirror(desc) : undefined;
+		}
 	}
 };
