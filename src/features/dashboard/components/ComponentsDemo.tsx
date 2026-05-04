@@ -1,3 +1,4 @@
+import { FILLOUT_UNDO_CONFIG, useFilloutUndo } from "@/features/form/hooks/useFilloutUndo";
 import { UserLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -43,6 +44,48 @@ export const ComponentsDemo = () => {
 	const [dateValue, setDateValue] = useState("");
 	const [scaleValue, setScaleValue] = useState("");
 	const [ratingValue, setRatingValue] = useState("");
+	const [demoSingleChoice, setDemoSingleChoice] = useState("");
+	const [demoMultipleChoice, setDemoMultipleChoice] = useState<string[]>([]);
+	const {
+		state: filloutDraft,
+		setState: setFilloutDraft,
+		undo: undoFillout,
+		redo: redoFillout,
+		flushCheckpoint: flushFilloutCheckpoint,
+		canUndo: canUndoFillout,
+		canRedo: canRedoFillout,
+		onTextInputBlurCheckpoint
+	} = useFilloutUndo(
+		{
+			answers: {},
+			otherTexts: {}
+		},
+		{ historyLimit: FILLOUT_UNDO_CONFIG.historyLimit }
+	);
+	const updateFilloutAnswer = (questionId: string, value: string) => {
+		setFilloutDraft(
+			prev => ({
+				...prev,
+				answers: {
+					...prev.answers,
+					[questionId]: value
+				}
+			}),
+			{ checkpoint: "none" }
+		);
+	};
+	const updateFilloutOtherText = (questionId: string, value: string) => {
+		setFilloutDraft(
+			prev => ({
+				...prev,
+				otherTexts: {
+					...prev.otherTexts,
+					[questionId]: value
+				}
+			}),
+			{ checkpoint: "none" }
+		);
+	};
 	const [dragItems, setDragItems] = useState<DragItem[]>([
 		{ id: "1", content: "First item" },
 		{ id: "2", content: "Second item" },
@@ -72,6 +115,52 @@ export const ComponentsDemo = () => {
 					<Input label="Email" placeholder="Enter your email" />
 					<Input label="Password" type="password" error="Password is required" />
 					<TextArea label="Message" placeholder="Enter your message" rows={4} />
+				</section>
+
+				<section className={styles.section} onBlurCapture={onTextInputBlurCheckpoint}>
+					<h2>Fillout Undo Sandbox</h2>
+					<Input label="Fillout Short Text" value={filloutDraft.answers.demo_short ?? ""} onChange={event => updateFilloutAnswer("demo_short", event.target.value)} />
+					<TextArea label="Fillout Long Text" rows={3} value={filloutDraft.answers.demo_long ?? ""} onChange={event => updateFilloutAnswer("demo_long", event.target.value)} />
+					<Input label="Fillout Other Text" value={filloutDraft.otherTexts.demo_other ?? ""} onChange={event => updateFilloutOtherText("demo_other", event.target.value)} />
+					<Radio
+						options={[
+							{ value: "frontend", label: "Frontend" },
+							{ value: "backend", label: "Backend" },
+							{ value: "designer", label: "Designer" }
+						]}
+						value={demoSingleChoice}
+						onValueChange={setDemoSingleChoice}
+					/>
+					<Checkbox
+						label="TypeScript"
+						checked={demoMultipleChoice.includes("ts")}
+						onCheckedChange={checked =>
+							setDemoMultipleChoice(prev => {
+								if (checked) return prev.includes("ts") ? prev : [...prev, "ts"];
+								return prev.filter(value => value !== "ts");
+							})
+						}
+					/>
+					<div className={styles.row}>
+						<Button
+							onClick={() => {
+								flushFilloutCheckpoint();
+								undoFillout();
+							}}
+							disabled={!canUndoFillout}
+						>
+							Undo Fillout
+						</Button>
+						<Button
+							onClick={() => {
+								flushFilloutCheckpoint();
+								redoFillout();
+							}}
+							disabled={!canRedoFillout}
+						>
+							Redo Fillout
+						</Button>
+					</div>
 				</section>
 
 				<section className={styles.section}>
