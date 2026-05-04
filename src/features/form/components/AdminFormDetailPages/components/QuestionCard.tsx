@@ -162,14 +162,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [localUploadMaxFileAmountStr, setLocalUploadMaxFileAmountStr] = useState(() => String(question.uploadMaxFileAmount ?? 1));
 	const [localUploadMaxFileSizeMbStr, setLocalUploadMaxFileSizeMbStr] = useState(() => String(Number(((question.uploadMaxFileSizeLimit ?? 10485760) / 1024 / 1024).toFixed(2))));
-	const [localTitle, setLocalTitle] = useState(question.title);
-	const localTitleRef = useRef(question.title);
-	localTitleRef.current = localTitle;
-	const [localDesc, setLocalDesc] = useState(question.description);
-	const localDescRef = useRef(question.description);
-	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
+	const descRef = useRef<HTMLTextAreaElement>(null);
 	const runWithIndicator = async (action: () => void | Promise<void>, setPending: (pending: boolean) => void) => {
 		setPending(true);
 		const startedAt = Date.now();
@@ -184,14 +179,6 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			setPending(false);
 		}
 	};
-
-	useEffect(() => {
-		setLocalTitle(question.title);
-	}, [question.title]);
-
-	useEffect(() => {
-		setLocalDesc(question.description);
-	}, [question.description]);
 
 	useEffect(() => {
 		if (props.autoFocusTitle && isExpanded && titleRef.current) {
@@ -215,11 +202,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					document.activeElement.blur();
 				}
 				// flush title & description via refs as a safety net
-				if (localTitleRef.current !== question.title) {
-					props.onTitleChange?.(localTitleRef.current);
+				const nextTitle = titleRef.current?.value ?? question.title;
+				const nextDescription = descRef.current?.value ?? question.description;
+				if (nextTitle !== question.title) {
+					props.onTitleChange?.(nextTitle);
 				}
-				if (localDescRef.current !== question.description) {
-					props.onDescriptionChange?.(localDescRef.current);
+				if (nextDescription !== question.description) {
+					props.onDescriptionChange?.(nextDescription);
 				}
 				props.onFold?.();
 				setIsExpanded(true);
@@ -259,11 +248,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					onKeyDown={e => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
-							if (localTitleRef.current !== question.title) {
-								props.onTitleChange?.(localTitleRef.current);
+							const nextTitle = titleRef.current?.value ?? question.title;
+							const nextDescription = descRef.current?.value ?? question.description;
+							if (nextTitle !== question.title) {
+								props.onTitleChange?.(nextTitle);
 							}
-							if (localDescRef.current !== question.description) {
-								props.onDescriptionChange?.(localDescRef.current);
+							if (nextDescription !== question.description) {
+								props.onDescriptionChange?.(nextDescription);
 							}
 							props.onFold?.();
 							setIsExpanded(false);
@@ -275,12 +266,12 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					<div className={styles.header}>
 						<div className={styles.input}>
 							<Input
+								key={`${question.clientId ?? question.title}-title-${question.title}`}
 								ref={titleRef}
-								value={localTitle}
-								onChange={e => setLocalTitle(e.target.value)}
-								onBlur={() => {
-									if (localTitle !== question.title) {
-										props.onTitleChange?.(localTitle);
+								defaultValue={question.title}
+								onBlur={event => {
+									if (event.target.value !== question.title) {
+										props.onTitleChange?.(event.target.value);
 									}
 								}}
 								placeholder="問題標題"
@@ -289,11 +280,12 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								textSize="h2"
 							/>
 							<TextArea
-								value={localDesc}
-								onChange={e => setLocalDesc(e.target.value)}
-								onBlur={() => {
-									if (localDesc !== question.description) {
-										props.onDescriptionChange?.(localDesc);
+								key={`${question.clientId ?? question.title}-description-${question.description}`}
+								ref={descRef}
+								defaultValue={question.description}
+								onBlur={event => {
+									if (event.target.value !== question.description) {
+										props.onDescriptionChange?.(event.target.value);
 									}
 								}}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"

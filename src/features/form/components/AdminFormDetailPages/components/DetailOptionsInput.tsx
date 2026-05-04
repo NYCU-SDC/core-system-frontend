@@ -1,7 +1,7 @@
 import type { DetailOption } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { Checkbox, Input, TextArea } from "@/shared/components";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./DetailOptionsInput.module.css";
 
 export interface DetailOptionInputProps {
@@ -14,14 +14,6 @@ export interface DetailOptionInputProps {
 export const DetailOptionInput = (props: DetailOptionInputProps) => {
 	const [localLabel, setLocalLabel] = useState(props.option.label);
 	const [localDesc, setLocalDesc] = useState(props.option.description);
-
-	useEffect(() => {
-		setLocalLabel(props.option.label);
-	}, [props.option.label]);
-
-	useEffect(() => {
-		setLocalDesc(props.option.description);
-	}, [props.option.description]);
 
 	return (
 		<div className={styles.wrapper}>

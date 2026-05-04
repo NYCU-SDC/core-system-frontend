@@ -1,7 +1,7 @@
 import type { Option } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { Select, Switch } from "@/shared/components";
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./OptionsQuestion.module.css";
 
@@ -32,10 +32,6 @@ interface OptionRowProps {
 const OptionRow = ({ option, index, type, canRemove, onCommit, onRemove }: OptionRowProps) => {
 	const [localLabel, setLocalLabel] = useState(option.label);
 	const skipBlurCommitRef = useRef(false);
-
-	useEffect(() => {
-		setLocalLabel(option.label);
-	}, [option.label]);
 
 	return (
 		<div className={styles.optionWrapper}>
@@ -77,7 +73,7 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 				<>
 					{props.options.map((option, index) => {
 						if (!option.isOther) {
-							return <OptionRow key={option.id} option={option} index={index} type={props.type} canRemove={props.options.length > 1} onCommit={props.onChange} onRemove={props.onRemove} />;
+							return <OptionRow key={`${option.id}-${option.label}`} option={option} index={index} type={props.type} canRemove={props.options.length > 1} onCommit={props.onChange} onRemove={props.onRemove} />;
 						}
 						if (option.isOther) {
 							return (
