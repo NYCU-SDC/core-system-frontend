@@ -156,7 +156,7 @@ const uploadFileTypeCategoryMap: Record<string, FormsAllowedFileTypes[]> = {
 export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const { question, removeQuestion, duplicateQuestion } = props;
 
-	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? false);
+	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? true);
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const [isDuplicating, setIsDuplicating] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -186,6 +186,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	};
 
 	useEffect(() => {
+		setLocalTitle(question.title);
+	}, [question.title]);
+
+	useEffect(() => {
 		setLocalDesc(question.description);
 	}, [question.description]);
 
@@ -211,10 +215,14 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					document.activeElement.blur();
 				}
 				// flush title & description via refs as a safety net
-				props.onTitleChange?.(localTitleRef.current);
-				props.onDescriptionChange?.(localDescRef.current);
+				if (localTitleRef.current !== question.title) {
+					props.onTitleChange?.(localTitleRef.current);
+				}
+				if (localDescRef.current !== question.description) {
+					props.onDescriptionChange?.(localDescRef.current);
+				}
 				props.onFold?.();
-				setIsExpanded(false);
+				setIsExpanded(true);
 				setIsTypeMenuOpen(false);
 			}
 		};
@@ -251,8 +259,12 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					onKeyDown={e => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
-							props.onTitleChange?.(localTitleRef.current);
-							props.onDescriptionChange?.(localDescRef.current);
+							if (localTitleRef.current !== question.title) {
+								props.onTitleChange?.(localTitleRef.current);
+							}
+							if (localDescRef.current !== question.description) {
+								props.onDescriptionChange?.(localDescRef.current);
+							}
 							props.onFold?.();
 							setIsExpanded(false);
 							setIsTypeMenuOpen(false);
@@ -266,7 +278,11 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								ref={titleRef}
 								value={localTitle}
 								onChange={e => setLocalTitle(e.target.value)}
-								onBlur={() => props.onTitleChange?.(localTitle)}
+								onBlur={() => {
+									if (localTitle !== question.title) {
+										props.onTitleChange?.(localTitle);
+									}
+								}}
 								placeholder="問題標題"
 								variant="flushed"
 								themeColor="--comment"
@@ -275,7 +291,11 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							<TextArea
 								value={localDesc}
 								onChange={e => setLocalDesc(e.target.value)}
-								onBlur={() => props.onDescriptionChange?.(localDesc)}
+								onBlur={() => {
+									if (localDesc !== question.description) {
+										props.onDescriptionChange?.(localDesc);
+									}
+								}}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
@@ -293,6 +313,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 											key={type}
 											type="button"
 											className={styles.typeMenuItem}
+											onMouseDown={event => event.preventDefault()}
 											onClick={() => {
 												props.onTypeChange?.(type);
 												setIsTypeMenuOpen(false);

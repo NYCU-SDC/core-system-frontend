@@ -1,6 +1,7 @@
 import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
 
 export type Question = {
+	clientId?: string;
 	type:
 		| "SHORT_TEXT"
 		| "LONG_TEXT"
