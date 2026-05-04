@@ -82,7 +82,7 @@ export const AdminFormsPage = () => {
 		createFormMutation.mutate(
 			{
 				title: "未命名表單",
-				description: "",
+				description: "表單描述",
 				messageAfterSubmission: "感謝您的填寫！",
 				visibility: "PUBLIC"
 			},

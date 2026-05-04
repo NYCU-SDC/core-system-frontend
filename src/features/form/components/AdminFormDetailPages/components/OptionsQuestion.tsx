@@ -1,7 +1,7 @@
 import type { Option } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { Select, Switch } from "@/shared/components";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { OptionsInput } from "./OptionsInput";
 import styles from "./OptionsQuestion.module.css";
 
@@ -31,6 +31,8 @@ interface OptionRowProps {
 
 const OptionRow = ({ option, index, type, canRemove, onCommit, onRemove }: OptionRowProps) => {
 	const [localLabel, setLocalLabel] = useState(option.label);
+	const skipBlurCommitRef = useRef(false);
+
 	return (
 		<div className={styles.optionWrapper}>
 			<OptionsInput
@@ -42,9 +44,24 @@ const OptionRow = ({ option, index, type, canRemove, onCommit, onRemove }: Optio
 				className={styles.optionInput}
 				onFocus={e => e.target.select()}
 				onChange={e => setLocalLabel(e.target.value)}
-				onBlur={() => onCommit(index, localLabel)}
+				onBlur={() => {
+					if (skipBlurCommitRef.current) {
+						skipBlurCommitRef.current = false;
+						return;
+					}
+					if (localLabel === option.label) return;
+					onCommit(index, localLabel);
+				}}
 			/>
-			{canRemove && <X onClick={() => onRemove(index)} />}
+			{canRemove && (
+				<X
+					onMouseDown={event => {
+						skipBlurCommitRef.current = true;
+						event.preventDefault();
+					}}
+					onClick={() => onRemove(index)}
+				/>
+			)}
 		</div>
 	);
 };
@@ -56,11 +73,11 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 				<>
 					{props.options.map((option, index) => {
 						if (!option.isOther) {
-							return <OptionRow key={option.id ?? index} option={option} index={index} type={props.type} canRemove={props.options.length > 1} onCommit={props.onChange} onRemove={props.onRemove} />;
+							return <OptionRow key={`${option.id}-${option.label}`} option={option} index={index} type={props.type} canRemove={props.options.length > 1} onCommit={props.onChange} onRemove={props.onRemove} />;
 						}
 						if (option.isOther) {
 							return (
-								<div key={option.id ?? index} className={styles.optionWrapper}>
+								<div key={option.id} className={styles.optionWrapper}>
 									<OptionsInput value="其他（使用者填寫）" type={props.type} variant="none" readOnly />
 									{props.options.length > 1 && <X onClick={props.onRemoveOther} />}
 								</div>
@@ -68,11 +85,20 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 						}
 					})}
 					<div className={styles.addOptions}>
-						<OptionsInput value="新增選項" type={props.type} variant="none" onClick={props.onAdd} listLabel={`${props.options.length + 1}.`} readOnly className={styles.addOption} />
+						<OptionsInput
+							value="新增選項"
+							type={props.type}
+							variant="none"
+							onMouseDown={event => event.preventDefault()}
+							onClick={props.onAdd}
+							listLabel={`${props.options.length + 1}.`}
+							readOnly
+							className={styles.addOption}
+						/>
 						{!props.options.some(option => option.isOther) && props.type !== "list" && (
 							<>
 								或
-								<a className={styles.addOther} onClick={props.onAddOther}>
+								<a className={styles.addOther} onMouseDown={event => event.preventDefault()} onClick={props.onAddOther}>
 									新增其他
 								</a>
 							</>

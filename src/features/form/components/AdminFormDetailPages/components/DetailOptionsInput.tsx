@@ -14,6 +14,7 @@ export interface DetailOptionInputProps {
 export const DetailOptionInput = (props: DetailOptionInputProps) => {
 	const [localLabel, setLocalLabel] = useState(props.option.label);
 	const [localDesc, setLocalDesc] = useState(props.option.description);
+
 	return (
 		<div className={styles.wrapper}>
 			<Checkbox className={styles.checkbox} disabled />

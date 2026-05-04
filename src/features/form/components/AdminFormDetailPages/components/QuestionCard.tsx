@@ -156,20 +156,15 @@ const uploadFileTypeCategoryMap: Record<string, FormsAllowedFileTypes[]> = {
 export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const { question, removeQuestion, duplicateQuestion } = props;
 
-	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? false);
+	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? true);
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const [isDuplicating, setIsDuplicating] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [localUploadMaxFileAmountStr, setLocalUploadMaxFileAmountStr] = useState(() => String(question.uploadMaxFileAmount ?? 1));
 	const [localUploadMaxFileSizeMbStr, setLocalUploadMaxFileSizeMbStr] = useState(() => String(Number(((question.uploadMaxFileSizeLimit ?? 10485760) / 1024 / 1024).toFixed(2))));
-	const [localTitle, setLocalTitle] = useState(question.title);
-	const localTitleRef = useRef(question.title);
-	localTitleRef.current = localTitle;
-	const [localDesc, setLocalDesc] = useState(question.description);
-	const localDescRef = useRef(question.description);
-	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
+	const descRef = useRef<HTMLTextAreaElement>(null);
 	const runWithIndicator = async (action: () => void | Promise<void>, setPending: (pending: boolean) => void) => {
 		setPending(true);
 		const startedAt = Date.now();
@@ -184,10 +179,6 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			setPending(false);
 		}
 	};
-
-	useEffect(() => {
-		setLocalDesc(question.description);
-	}, [question.description]);
 
 	useEffect(() => {
 		if (props.autoFocusTitle && isExpanded && titleRef.current) {
@@ -211,17 +202,23 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					document.activeElement.blur();
 				}
 				// flush title & description via refs as a safety net
-				props.onTitleChange?.(localTitleRef.current);
-				props.onDescriptionChange?.(localDescRef.current);
+				const nextTitle = titleRef.current?.value ?? question.title;
+				const nextDescription = descRef.current?.value ?? question.description;
+				if (nextTitle !== question.title) {
+					props.onTitleChange?.(nextTitle);
+				}
+				if (nextDescription !== question.description) {
+					props.onDescriptionChange?.(nextDescription);
+				}
 				props.onFold?.();
-				setIsExpanded(false);
+				setIsExpanded(true);
 				setIsTypeMenuOpen(false);
 			}
 		};
 
 		document.addEventListener("mousedown", handleOutsideClick);
 		return () => document.removeEventListener("mousedown", handleOutsideClick);
-	}, [isExpanded, props]);
+	}, [isExpanded, props, question.description, question.title]);
 
 	const handleDuplicateClick = () => {
 		if (isDuplicating || isDeleting) return;
@@ -251,8 +248,14 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					onKeyDown={e => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
-							props.onTitleChange?.(localTitleRef.current);
-							props.onDescriptionChange?.(localDescRef.current);
+							const nextTitle = titleRef.current?.value ?? question.title;
+							const nextDescription = descRef.current?.value ?? question.description;
+							if (nextTitle !== question.title) {
+								props.onTitleChange?.(nextTitle);
+							}
+							if (nextDescription !== question.description) {
+								props.onDescriptionChange?.(nextDescription);
+							}
 							props.onFold?.();
 							setIsExpanded(false);
 							setIsTypeMenuOpen(false);
@@ -263,19 +266,28 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					<div className={styles.header}>
 						<div className={styles.input}>
 							<Input
+								key={`${question.clientId ?? question.title}-title-${question.title}`}
 								ref={titleRef}
-								value={localTitle}
-								onChange={e => setLocalTitle(e.target.value)}
-								onBlur={() => props.onTitleChange?.(localTitle)}
+								defaultValue={question.title}
+								onBlur={event => {
+									if (event.target.value !== question.title) {
+										props.onTitleChange?.(event.target.value);
+									}
+								}}
 								placeholder="問題標題"
 								variant="flushed"
 								themeColor="--comment"
 								textSize="h2"
 							/>
 							<TextArea
-								value={localDesc}
-								onChange={e => setLocalDesc(e.target.value)}
-								onBlur={() => props.onDescriptionChange?.(localDesc)}
+								key={`${question.clientId ?? question.title}-description-${question.description}`}
+								ref={descRef}
+								defaultValue={question.description}
+								onBlur={event => {
+									if (event.target.value !== question.description) {
+										props.onDescriptionChange?.(event.target.value);
+									}
+								}}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
@@ -293,6 +305,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 											key={type}
 											type="button"
 											className={styles.typeMenuItem}
+											onMouseDown={event => event.preventDefault()}
 											onClick={() => {
 												props.onTypeChange?.(type);
 												setIsTypeMenuOpen(false);
