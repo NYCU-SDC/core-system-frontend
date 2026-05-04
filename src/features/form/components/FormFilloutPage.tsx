@@ -481,7 +481,6 @@ export const FormFilloutPage = () => {
 												onFileMetadataChange={files => setFileMetadata(prev => ({ ...prev, [question.id]: files }))}
 												onAnswerChange={updateAnswer}
 												onOtherTextChange={updateOtherText}
-												onCheckpoint={flushCheckpoint}
 											/>
 										))}
 										{(!sections[currentStep].questions || sections[currentStep].questions.length === 0) && <p className={styles.caption}>此區段目前沒有問題</p>}
