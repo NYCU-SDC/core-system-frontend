@@ -15,7 +15,7 @@ export const DetailOptionsQuestion = (props: DetailOptionsQuestionProps) => {
 		<div className={styles.container}>
 			{props.options.map((option, index) => (
 				<DetailOptionInput
-					key={option.id ?? index}
+					key={option.id}
 					option={option}
 					onLabelChange={value => props.onEdit?.(index, "label", value)}
 					onDescriptionChange={value => props.onEdit?.(index, "description", value)}
