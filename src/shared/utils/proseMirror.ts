@@ -1,4 +1,7 @@
-export type ProseMirrorLikeDocument = Record<string, unknown>;
+export type ProseMirrorLikeDocument = {
+	type: any;
+	[key: string]: any;
+};
 
 export const EMPTY_PROSE_MIRROR_DOC: ProseMirrorLikeDocument = {
 	type: "doc",
@@ -46,10 +49,29 @@ export const fromApiProseMirror = (value: unknown): ProseMirrorLikeDocument =>
 
 export const normalizeProseMirrorDoc = (value: unknown): ProseMirrorLikeDocument => {
 	if (value && typeof value === "object" && !Array.isArray(value)) {
-		return value as ProseMirrorLikeDocument;
+		const doc = value as Record<string, unknown>;
+		return {
+			...doc,
+			type: typeof doc.type === "string" ? doc.type : "doc"
+		} as ProseMirrorLikeDocument;
 	}
 
 	return EMPTY_PROSE_MIRROR_DOC;
 };
 
 export const serializeProseMirrorDoc = (value: unknown): string => JSON.stringify(normalizeProseMirrorDoc(value));
+
+export const extractTextFromProseMirror = (doc: unknown): string => {
+	if (!doc || typeof doc !== "object") return "";
+	const node = doc as Record<string, unknown>;
+
+	if (node.type === "text" && typeof node.text === "string") {
+		return node.text;
+	}
+
+	if (Array.isArray(node.content)) {
+		return node.content.map(extractTextFromProseMirror).join(" ");
+	}
+
+	return "";
+};

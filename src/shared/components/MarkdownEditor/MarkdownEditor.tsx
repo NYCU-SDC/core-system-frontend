@@ -1,3 +1,4 @@
+import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import * as Label from "@radix-ui/react-label";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -11,8 +12,8 @@ import styles from "./MarkdownEditor.module.css";
 export type MarkdownEditorVariant = "outline" | "flushed";
 
 export interface MarkdownEditorProps {
-	value: Record<string, unknown> | null;
-	onChange: (nextValue: Record<string, unknown>) => void;
+	value: ProseMirrorLikeDocument | null;
+	onChange: (nextValue: ProseMirrorLikeDocument) => void;
 	onBlur?: () => void;
 	placeholder?: string;
 	label?: string;
@@ -77,7 +78,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 		const serialized = JSON.stringify(json);
 		if (serialized === lastSyncedJson.current) return;
 		lastSyncedJson.current = serialized;
-		onChange(json as Record<string, unknown>);
+		onChange(json as ProseMirrorLikeDocument);
 	}, [editor, onChange]);
 
 	useEffect(() => {
