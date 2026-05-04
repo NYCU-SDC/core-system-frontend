@@ -84,3 +84,4 @@ export type { MarkdownProps } from "./Markdown/Markdown";
 
 export { MarkdownEditor } from "./MarkdownEditor";
 export type { MarkdownEditorProps, MarkdownEditorVariant } from "./MarkdownEditor/MarkdownEditor";
+export * from "./ProseMirrorViewer";

@@ -114,7 +114,7 @@ export const ComponentsDemo = () => {
 					<DateInput
 						id="date-demo"
 						label="Select a date"
-						description="Choose your preferred date"
+						descriptionHtml="Choose your preferred date"
 						value={dateValue}
 						onChange={setDateValue}
 						options={{ hasYear: true, hasMonth: true, hasDay: true }}
@@ -122,7 +122,7 @@ export const ComponentsDemo = () => {
 					<DateInput
 						id="month-year-demo"
 						label="Graduation Date"
-						description="Select month and year only"
+						descriptionHtml="Select month and year only"
 						value={dateValue}
 						onChange={setDateValue}
 						options={{ hasYear: true, hasMonth: true, hasDay: false }}
@@ -134,7 +134,7 @@ export const ComponentsDemo = () => {
 					<ScaleInput
 						id="scale-demo"
 						label="Rate your experience"
-						description="How would you rate your experience with this product?"
+						descriptionHtml="How would you rate your experience with this product?"
 						value={scaleValue}
 						onChange={setScaleValue}
 						options={{
@@ -151,7 +151,7 @@ export const ComponentsDemo = () => {
 					<ScaleInput
 						id="rating-demo"
 						label="Overall Satisfaction"
-						description="Rate your overall satisfaction"
+						descriptionHtml="Rate your overall satisfaction"
 						value={ratingValue}
 						onChange={setRatingValue}
 						options={{

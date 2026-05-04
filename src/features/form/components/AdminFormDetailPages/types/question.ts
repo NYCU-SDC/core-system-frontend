@@ -1,3 +1,4 @@
+import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import type { FormsQuestionRequest } from "@nycu-sdc/core-system-sdk";
 
 export type Question = {
@@ -16,7 +17,7 @@ export type Question = {
 		| "RATING"
 		| "OAUTH_CONNECT";
 	title: string;
-	description: Record<string, unknown> | null;
+	description: ProseMirrorLikeDocument | null;
 	required: boolean;
 	isFromAnswer: boolean;
 	sourceQuestionId?: string;

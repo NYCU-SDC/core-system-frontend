@@ -3,7 +3,7 @@ import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, u
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
-import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
+import type { FormsQuestionRequest, FormsQuestionResponse, ProseMirrorDocument } from "@nycu-sdc/core-system-sdk";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -25,8 +25,8 @@ export const AdminSectionEditPage = () => {
 	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
-	const section = sectionsQuery.data?.flatMap(response => (Array.isArray(response.sections) ? response.sections : [])).find(foundSection => foundSection.id === sectionId);
-	const apiQuestions = section?.questions ?? [];
+	const section = sectionsQuery.data?.map(response => response.section).find(foundSection => foundSection.id === sectionId);
+	const apiQuestions = sectionsQuery.data?.flatMap(response => response.questions ?? []).filter(q => q.sectionId === sectionId) as FormsQuestionResponse[];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
@@ -159,7 +159,7 @@ export const AdminSectionEditPage = () => {
 							const updated: Question = {
 								...old,
 								title: apiQuestion.title ?? old.title,
-								description: apiQuestion.description ?? old.description,
+								description: fromApiProseMirror(apiQuestion.description) ?? old.description,
 								required: apiQuestion.required ?? old.required,
 								...(apiQuestion.sourceId !== undefined && {
 									sourceQuestionId: apiQuestion.sourceId ?? undefined,
@@ -295,7 +295,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: toApiProseMirror(q.description),
+			description: toApiProseMirror(q.description) as ProseMirrorDocument,
 			required: q.required ?? false,
 			order
 		};
@@ -313,16 +313,14 @@ export const AdminSectionEditPage = () => {
 
 	const sourceQuestionOptions = useMemo(
 		() =>
-			(sectionsQuery.data ?? [])
-				.flatMap(sectionRes => sectionRes.sections ?? [])
-				.flatMap(sectionItem =>
-					(sectionItem.questions ?? [])
-						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
-						.map(question => ({
-							value: question.id,
-							label: `${sectionItem.title} / ${question.title}`
-						}))
-				),
+			(sectionsQuery.data ?? []).flatMap(sectionRes =>
+				(sectionRes.questions ?? [])
+					.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
+					.map(question => ({
+						value: question.id,
+						label: `${sectionRes.section.title} / ${question.title}`
+					}))
+			),
 		[sectionsQuery.data]
 	);
 

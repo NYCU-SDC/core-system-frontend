@@ -1,6 +1,7 @@
 import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
 import { Button, Checkbox, Input, Select, Switch } from "@/shared/components";
 import { MarkdownEditor } from "@/shared/components/MarkdownEditor/MarkdownEditor";
+import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import {
 	Calendar,
@@ -33,7 +34,7 @@ export interface QuestionCardProps {
 	defaultExpanded?: boolean;
 	autoFocusTitle?: boolean;
 	onTitleChange?: (newTitle: string) => void;
-	onDescriptionChange?: (newDescription: Record<string, unknown> | null) => void;
+	onDescriptionChange?: (newDescription: ProseMirrorLikeDocument) => void;
 	removeQuestion: () => void | Promise<void>;
 	duplicateQuestion: () => void | Promise<void>;
 	onAddOption?: () => void;
@@ -166,8 +167,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [localTitle, setLocalTitle] = useState(question.title);
 	const localTitleRef = useRef(question.title);
 	localTitleRef.current = localTitle;
-	const [localDesc, setLocalDesc] = useState<Record<string, unknown> | null>(question.description);
-	const localDescRef = useRef<Record<string, unknown> | null>(question.description);
+	const [localDesc, setLocalDesc] = useState<ProseMirrorLikeDocument>(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
+	const localDescRef = useRef<ProseMirrorLikeDocument>(question.description);
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
@@ -187,7 +188,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	};
 
 	useEffect(() => {
-		setLocalDesc(question.description);
+		setLocalDesc(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
 	}, [question.description]);
 
 	useEffect(() => {
@@ -213,7 +214,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 				}
 				// flush title & description via refs as a safety net
 				props.onTitleChange?.(localTitleRef.current);
-				props.onDescriptionChange?.(localDescRef.current);
+				props.onDescriptionChange?.(localDescRef.current || { type: "doc", content: [{ type: "paragraph" }] });
 				props.onFold?.();
 				setIsExpanded(false);
 				setIsTypeMenuOpen(false);
@@ -253,7 +254,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
 							props.onTitleChange?.(localTitleRef.current);
-							props.onDescriptionChange?.(localDescRef.current);
+							props.onDescriptionChange?.(localDescRef.current || { type: "doc", content: [{ type: "paragraph" }] });
 							props.onFold?.();
 							setIsExpanded(false);
 							setIsTypeMenuOpen(false);
