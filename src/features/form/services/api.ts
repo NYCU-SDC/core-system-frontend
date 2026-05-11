@@ -266,6 +266,21 @@ export const submitFormResponse = async (responseId: string, answers: ResponsesA
 	assertOk(res.status, "Failed to submit form", res.data);
 };
 
+export const cancelFormResponseSubmission = async (responseId: string): Promise<void> => {
+	const response = await fetch(`/api/responses/${responseId}/cancel`, {
+		...defaultRequestOptions,
+		method: "POST"
+	});
+
+	let data: unknown = {};
+	if (![204, 205, 304].includes(response.status)) {
+		const body = await response.text();
+		data = body.trim().length > 0 ? JSON.parse(body) : {};
+	}
+
+	assertOk(response.status, "Failed to cancel submission", data);
+};
+
 export const downloadFile = async (fileId: string): Promise<Blob> => {
 	const res = await filesDownloadFile(fileId, defaultRequestOptions);
 	assertOk(res.status, "Failed to download file", res.data);
