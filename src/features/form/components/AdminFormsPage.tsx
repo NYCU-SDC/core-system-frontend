@@ -16,6 +16,10 @@ import { TabButtons } from "./TabButtons";
 interface FormRow {
 	id: string;
 	title: string;
+	lastEditor: string;
+	lastEditorAvatarUrl: string;
+	creator: string;
+	creatorAvatarUrl: string;
 	lastEdited: string;
 	status: StatusVariant;
 	deadline: string;
@@ -44,6 +48,10 @@ const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
+	lastEditor: form.lastEditor.name,
+	lastEditorAvatarUrl: form.lastEditor.avatarUrl,
+	creator: form.creator.name,
+	creatorAvatarUrl: form.creator.avatarUrl,
 	status: toStatusVariant(form.status, form.deadline),
 	deadline: form.deadline ? formatDate(form.deadline) : "-"
 });
@@ -140,6 +148,8 @@ export const AdminFormsPage = () => {
 								<div className={styles.cardInfo}>
 									<span>最後編輯：{form.lastEdited}</span>
 									<span>截止日期：{form.deadline}</span>
+									<span>最後編輯者：{form.lastEditor}</span>
+									<span>建立者：{form.creator}</span>
 								</div>
 							</div>
 						))}
