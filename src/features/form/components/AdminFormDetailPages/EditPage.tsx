@@ -1,7 +1,7 @@
 import { useSections } from "@/features/form/hooks/useSections";
 import { useCreateWorkflowNode, useDeleteWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, LoadingSpinner } from "@/shared/components";
-import type { FormsForm, FormWorkflowCreateNodeRequest, FormWorkflowNodeResponse } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse, FormWorkflowCreateNodeRequest, FormWorkflowNodeResponse } from "@nycu-sdc/core-system-sdk";
 import {
 	addEdge,
 	applyEdgeChanges,
@@ -42,7 +42,7 @@ const edgeTypes = {
 };
 
 interface AdminFormEditPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
