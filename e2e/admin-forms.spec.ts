@@ -132,7 +132,7 @@ test("clicking a form card navigates to its info page", async ({ page }) => {
 
 	await page.click(`text=${publishedForm.title}`);
 
-	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/${publishedForm.id}/info`);
+	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/${publishedForm.id}/info**`);
 });
 
 test("tab filtering works and filtered cards are still clickable", async ({ page }) => {
@@ -150,5 +150,5 @@ test("tab filtering works and filtered cards are still clickable", async ({ page
 	await expect(draftCards).toHaveCount(3);
 
 	await page.click(`text=${draftForm1.title}`);
-	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/${draftForm1.id}/info`);
+	await page.waitForURL(`**/orgs/${ORG_SLUG}/forms/${draftForm1.id}/info**`);
 });
