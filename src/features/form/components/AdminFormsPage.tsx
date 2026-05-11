@@ -13,7 +13,7 @@ import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
 import { TabButtons } from "./TabButtons";
 
-interface FormRow {
+export interface FormRow {
 	id: string;
 	title: string;
 	lastEditor: string;
