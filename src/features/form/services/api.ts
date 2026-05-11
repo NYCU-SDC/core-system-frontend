@@ -6,10 +6,10 @@ import type {
 	FormWorkflowNodeResponse,
 	FormWorkflowNodeStructure,
 	FormsFont,
-	FormsForm,
 	FormsFormCoverUploadResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
+	FormsFormResponse,
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse,
@@ -65,38 +65,38 @@ const defaultRequestOptions: RequestInit = {
 
 // ── Forms ──────────────────────────────────────────────────────────────────
 
-export const listOrgForms = async (slug: string): Promise<FormsForm[]> => {
-	const res = await unitListFormsByOrg(slug, defaultRequestOptions);
+export const listOrgForms = async (slug: string): Promise<FormsFormResponse[]> => {
+	const res = await unitListFormsByOrg(slug, undefined, defaultRequestOptions);
 	assertOk(res.status, "Failed to load forms", res.data);
 	return res.data;
 };
 
-export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsForm> => {
+export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsFormResponse> => {
 	const res = await unitCreateOrgForm(slug, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to create form", res.data);
 	return res.data;
 };
 
-export const getFormById = async (formId: string): Promise<FormsForm> => {
+export const getFormById = async (formId: string): Promise<FormsFormResponse> => {
 	const res = await formsGetFormById(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load form", res.data);
 	return res.data;
 };
 
-export const updateForm = async (formId: string, req: FormsFormRequestUpdate): Promise<FormsForm> => {
+export const updateForm = async (formId: string, req: FormsFormRequestUpdate): Promise<FormsFormResponse> => {
 	const res = await formsUpdateForm(formId, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to update form", res.data);
 	return res.data;
 };
 
-export const publishForm = async (formId: string): Promise<FormsForm> => {
+export const publishForm = async (formId: string): Promise<FormsFormResponse> => {
 	const res = await formsPublishForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to publish form", res.data);
 	// publishForm returns FormPublishResponse which has same shape as Form
-	return res.data as unknown as FormsForm;
+	return res.data as unknown as FormsFormResponse;
 };
 
-export const archiveForm = async (formId: string): Promise<FormsForm> => {
+export const archiveForm = async (formId: string): Promise<FormsFormResponse> => {
 	const res = await formsArchiveForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to archive form", res.data);
 	return res.data;

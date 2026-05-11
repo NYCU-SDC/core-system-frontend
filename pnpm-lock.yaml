@@ -18,8 +18,8 @@ importers:
         specifier: ^13.11.2
         version: 13.11.2(react@19.2.4)
       '@nycu-sdc/core-system-sdk':
-        specifier: 1.0.1-snapshot-ca0c714
-        version: 1.0.1-snapshot-ca0c714
+        specifier: 1.0.1-snapshot-9e7bfab
+        version: 1.0.1-snapshot-9e7bfab
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -646,8 +646,8 @@ packages:
   '@mixmark-io/domino@2.2.0':
     resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
 
-  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-ca0c714':
-    resolution: {integrity: sha512-IoXzDF7sfLwICvL9v2w/mpPnRXRJgLgf71ulN8EhA4MlwJhdOo4zXJVpMIySyZlCabpgYAzA2iEXfWPNUJNd3g==}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-9e7bfab':
+    resolution: {integrity: sha512-c87u/Zmi+HfqFc4t+SLJ4yhgGxY6YciRq2K3ozBwJy42dmllgpvzQosh6bcmGs2xEzlalk1wVHJrQgQZRSzODg==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -3518,7 +3518,7 @@ snapshots:
 
   '@mixmark-io/domino@2.2.0': {}
 
-  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-ca0c714': {}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-9e7bfab': {}
 
   '@pinojs/redact@0.4.0': {}
 

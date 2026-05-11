@@ -5,7 +5,7 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC } from "@/shared/utils/proseMirror";
-import type { FormsForm, ProseMirrorDocument } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse, ProseMirrorDocument } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -40,7 +40,7 @@ const toStatusVariant = (status: string, deadline: string | null | undefined): S
 	return "draft";
 };
 
-const toFormRow = (form: FormsForm): FormRow => ({
+const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
