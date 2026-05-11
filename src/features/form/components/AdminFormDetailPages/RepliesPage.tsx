@@ -5,7 +5,7 @@ import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Dialog, ErrorMessage, LoadingSpinner, ProseMirrorViewer, Select, useToast } from "@/shared/components";
 import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
-import type { FormsForm, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
