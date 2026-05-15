@@ -199,7 +199,6 @@ export const FormsListPage = () => {
 								{form.status === UnitUserFormStatus.COMPLETED ? (
 									<div className={styles.actions}>
 										<Button
-											className={styles.sharedBtn}
 											onClick={event => {
 												event.stopPropagation();
 												handleFormClick(form);
