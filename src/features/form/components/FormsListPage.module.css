@@ -71,11 +71,6 @@
 	flex-shrink: 0;
 }
 
-.sharedBtn {
-	min-width: 6.5rem;
-	white-space: nowrap;
-}
-
 .empty {
 	text-align: center;
 	padding: 3rem;
