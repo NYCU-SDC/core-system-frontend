@@ -1,6 +1,7 @@
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -54,6 +55,7 @@ export const AdminFormPreviewPage = () => {
 				formId: section.formId,
 				title: section.title,
 				description: section.description,
+				descriptionHtml: section.descriptionHtml,
 				questions: section.questions ?? []
 			}));
 		});
@@ -138,7 +140,19 @@ export const AdminFormPreviewPage = () => {
 			<div className={styles.content}>
 				{coverImageUrl && <img src={coverImageUrl} className={formStyles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 				<div className={formStyles.container} style={themedContainerStyle}>
-					<FormHeader title={form.title} formDescription={form.description} currentStep={safeCurrentStep} currentSection={currentSection} />
+					<FormHeader
+						title={form.title}
+						formDescription={form.descriptionHtml ?? proseMirrorToPlainText(form.description)}
+						currentStep={safeCurrentStep}
+						currentSection={
+							currentSection
+								? {
+										title: currentSection.title,
+										description: currentSection.descriptionHtml ?? proseMirrorToPlainText(currentSection.description)
+									}
+								: null
+						}
+					/>
 
 					<FormStructure sections={sections} currentStep={safeCurrentStep} onSectionClick={goToStep} />
 

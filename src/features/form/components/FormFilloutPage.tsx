@@ -2,6 +2,7 @@ import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { buildAnswersPayload, useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -102,6 +103,7 @@ export const FormFilloutPage = () => {
 				formId: section.formId,
 				title: section.title,
 				description: section.description,
+				descriptionHtml: section.descriptionHtml,
 				questions: section.questions ?? []
 			}));
 		});
@@ -394,9 +396,16 @@ export const FormFilloutPage = () => {
 			<div className={styles.container} style={themedContainerStyle}>
 				<FormHeader
 					title={form.title}
-					formDescription={form.description}
+					formDescription={form.descriptionHtml ?? proseMirrorToPlainText(form.description)}
 					currentStep={currentStep}
-					currentSection={currentSection}
+					currentSection={
+						currentSection
+							? {
+									title: currentSection.title,
+									description: currentSection.descriptionHtml ?? proseMirrorToPlainText(currentSection.description)
+								}
+							: null
+					}
 					onBack={() => navigate("/forms")}
 					saveStatus={urlResponseId ? (updateResponseMutation.isPending ? "saving" : updateResponseMutation.isError ? "error" : "saved") : undefined}
 				/>

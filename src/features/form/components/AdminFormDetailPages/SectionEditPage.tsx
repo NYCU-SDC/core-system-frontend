@@ -1,9 +1,9 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { proseMirrorToPlainText, textToProseMirrorDocument, textToProseMirrorDocumentUpdate } from "@/features/form/utils/proseMirror";
 import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
 import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { marked } from "marked";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -97,7 +97,7 @@ export const AdminSectionEditPage = () => {
 			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
-				{ title: nextSectionTitle, description: nextSectionDescription ? (marked.parse(nextSectionDescription) as string) : nextSectionDescription },
+				{ title: nextSectionTitle, description: textToProseMirrorDocumentUpdate(nextSectionDescription) },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
@@ -108,6 +108,7 @@ export const AdminSectionEditPage = () => {
 								updatedNodes.map(n => ({
 									id: n.id,
 									label: n.label,
+									payload: n.payload,
 									...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 									...(n.next !== undefined && { next: n.next }),
 									...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -158,7 +159,7 @@ export const AdminSectionEditPage = () => {
 							const updated: Question = {
 								...old,
 								title: apiQuestion.title ?? old.title,
-								description: apiQuestion.description ?? old.description,
+								description: proseMirrorToPlainText(apiQuestion.description) || old.description,
 								required: apiQuestion.required ?? old.required,
 								...(apiQuestion.sourceId !== undefined && {
 									sourceQuestionId: apiQuestion.sourceId ?? undefined,
@@ -217,7 +218,7 @@ export const AdminSectionEditPage = () => {
 				return {
 					type: q.type as Question["type"],
 					title: q.title,
-					description: q.description ?? "",
+					description: proseMirrorToPlainText(q.description),
 					required: q.required ?? false,
 					isFromAnswer: Boolean(q.sourceId),
 					sourceQuestionId: q.sourceId,
@@ -258,9 +259,9 @@ export const AdminSectionEditPage = () => {
 
 	useEffect(() => {
 		setSectionTitleDraft(section?.title ?? "");
-		setSectionDescriptionDraft(section?.description ?? "");
+		setSectionDescriptionDraft(proseMirrorToPlainText(section?.description));
 		setSavedSectionTitle(section?.title ?? "");
-		setSavedSectionDescription(section?.description ?? "");
+		setSavedSectionDescription(proseMirrorToPlainText(section?.description));
 	}, [section?.id, section?.title, section?.description]);
 
 	useEffect(() => {
@@ -293,7 +294,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: q.description ? (marked.parse(q.description) as string) : q.description,
+			description: textToProseMirrorDocument(q.description),
 			required: q.required ?? false,
 			order
 		};

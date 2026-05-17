@@ -1,5 +1,6 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms";
+import { textToProseMirrorDocument } from "@/features/form/utils/proseMirror";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -85,7 +86,7 @@ export const AdminFormsPage = () => {
 		createFormMutation.mutate(
 			{
 				title: "未命名表單",
-				description: "",
+				description: textToProseMirrorDocument(""),
 				messageAfterSubmission: "感謝您的填寫！",
 				visibility: "PUBLIC"
 			},

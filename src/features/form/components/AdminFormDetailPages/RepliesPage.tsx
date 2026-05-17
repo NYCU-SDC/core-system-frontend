@@ -3,6 +3,7 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
+import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { Button, Dialog, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
 import type { FormsForm, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
@@ -484,13 +485,14 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						{responses.length === 0 && <p className={styles.emptyState}>尚無回覆。</p>}
 						{responses.length > 0 &&
 							allQuestions.map(question => {
+								const description = question.descriptionHtml ?? proseMirrorToPlainText(question.description);
 								const details = answerDetailsByQuestionId.get(question.id) ?? [];
-								const hasDescription = Boolean(question.description?.trim());
+								const hasDescription = Boolean(description.trim());
 								return (
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={question.description ?? ""} />}
+											{hasDescription && <Markdown className={styles.questionDescription} content={description} />}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
 										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
@@ -540,7 +542,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 						{selectedResponse &&
 							allQuestions.map(question => {
-								const hasDescription = Boolean(question.description?.trim());
+								const description = question.descriptionHtml ?? proseMirrorToPlainText(question.description);
+								const hasDescription = Boolean(description.trim());
 								const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
 								const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
 								const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
@@ -550,7 +553,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={question.description ?? ""} />}
+											{hasDescription && <Markdown className={styles.questionDescription} content={description} />}
 										</div>
 										<div className={styles.readonlyQuestionContent}>
 											<FormQuestionRenderer

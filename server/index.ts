@@ -235,7 +235,7 @@ async function handleFormSeoRoute(req: FormSeoRouteRequest, reply: FastifyReply)
 
 			if (res.status >= 200 && res.status < 300) {
 				title = res.data.title || title;
-				description = res.data.description || description;
+				description = res.data.descriptionHtml || description;
 				formMetaCache.set(formId, { title, description });
 				breaker.success();
 			} else {
