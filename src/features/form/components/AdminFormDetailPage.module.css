@@ -52,6 +52,15 @@
 	color: var(--foreground);
 }
 
+.tab:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.tab:disabled:hover {
+	color: var(--color-caption);
+}
+
 .tab.active {
 	color: var(--orange);
 	border-bottom-color: var(--orange);

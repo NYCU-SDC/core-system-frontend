@@ -14,7 +14,7 @@ import type {
 } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useOrgForms = (slug: string, statuses?: FormsFormStatus[]) =>
+export const useOrgForms = (slug: string, statuses?: readonly FormsFormStatus[]) =>
 	useQuery({
 		queryKey: orgKeys.forms(slug, statuses),
 		queryFn: () => api.listOrgFormsByStatus(slug, statuses)

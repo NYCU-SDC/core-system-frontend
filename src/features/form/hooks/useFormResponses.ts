@@ -55,6 +55,18 @@ export const useSubmitFormResponse = (formId: string) => {
 	});
 };
 
+export const useCancelFormResponseSubmission = () => {
+	const qc = useQueryClient();
+	return useMutation<void, Error, { formId: string; responseId: string }>({
+		mutationFn: ({ responseId }) => api.cancelFormResponseSubmission(responseId),
+		onSuccess: (_data, variables) => {
+			qc.invalidateQueries({ queryKey: formKeys.myForms });
+			qc.invalidateQueries({ queryKey: formKeys.responses(variables.formId) });
+			qc.invalidateQueries({ queryKey: formKeys.response(variables.formId, variables.responseId) });
+		}
+	});
+};
+
 export const useUploadQuestionFiles = (responseId: string, questionId: string) =>
 	useMutation<ResponsesQuestionFilesUploadResponse, Error, File[]>({
 		mutationFn: files => api.uploadQuestionFiles(responseId, questionId, files)

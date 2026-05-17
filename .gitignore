@@ -16,6 +16,7 @@ dist-ssr
 *.local
 
 # Test artifacts
+playwright/.auth/
 playwright-report/
 test-results/
 

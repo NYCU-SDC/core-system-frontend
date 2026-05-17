@@ -44,6 +44,7 @@ import {
 	formsGetGoogleSheetEmail,
 	formsListSections,
 	formsPublishForm,
+	formsUnarchiveForm,
 	formsUpdateForm,
 	formsUpdateQuestion,
 	formsUpdateSection,
@@ -73,8 +74,8 @@ export const listOrgForms = async (slug: string): Promise<FormsFormResponse[]> =
 	return res.data;
 };
 
-export const listOrgFormsByStatus = async (slug: string, statuses?: FormsFormStatus[]): Promise<FormsFormResponse[]> => {
-	const params = statuses && statuses.length > 0 ? { status: statuses } : undefined;
+export const listOrgFormsByStatus = async (slug: string, statuses?: readonly FormsFormStatus[]): Promise<FormsFormResponse[]> => {
+	const params = statuses && statuses.length > 0 ? { status: [...statuses] } : undefined;
 	const res = await unitListFormsByOrg(slug, params, defaultRequestOptions);
 	assertOk(res.status, "Failed to load forms", res.data);
 	return res.data;
@@ -111,17 +112,9 @@ export const archiveForm = async (formId: string): Promise<FormsFormResponse> =>
 };
 
 export const unarchiveForm = async (formId: string): Promise<FormsFormResponse> => {
-	const response = await fetch(`/api/forms/${formId}/unarchive`, {
-		...defaultRequestOptions,
-		method: "POST"
-	});
-	const body = [204, 205, 304].includes(response.status) ? null : await response.text();
-	const data = body ? JSON.parse(body) : null;
-	assertOk(response.status, "Failed to unarchive form", data);
-	if (data == null) {
-		return getFormById(formId);
-	}
-	return data as FormsFormResponse;
+	const res = await formsUnarchiveForm(formId, defaultRequestOptions);
+	assertOk(res.status, "Failed to unarchive form", res.data);
+	return res.data;
 };
 
 export const deleteForm = async (formId: string): Promise<void> => {
@@ -242,6 +235,16 @@ export const updateFormResponse = async (responseId: string, answers: ResponsesA
 export const submitFormResponse = async (responseId: string, answers: ResponsesAnswersRequest): Promise<void> => {
 	const res = await responsesSubmitFormResponse(responseId, answers, defaultRequestOptions);
 	assertOk(res.status, "Failed to submit form", res.data);
+};
+
+export const cancelFormResponseSubmission = async (responseId: string): Promise<void> => {
+	const response = await fetch(`/api/responses/${responseId}/cancel`, {
+		...defaultRequestOptions,
+		method: "POST"
+	});
+	const body = [204, 205, 304].includes(response.status) ? "" : await response.text();
+	const data = body.trim().length > 0 ? JSON.parse(body) : {};
+	assertOk(response.status, "Failed to cancel submission", data);
 };
 
 export const downloadFile = async (fileId: string): Promise<Blob> => {
