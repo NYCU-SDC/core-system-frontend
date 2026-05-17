@@ -32,10 +32,13 @@ export const ConditionNode = ({ data, id, selected }: NodeProps<AppNode>) => {
 	}, [currentQuestionId, isValidSelection, id, data]);
 
 	const handleQuestionChange = (questionId: string) => {
+		const nextQuestionType = data.questions?.find(q => q.id === questionId)?.type;
+		const nextIsChoiceQuestion = nextQuestionType ? CHOICE_QUESTION_TYPES.has(nextQuestionType) : false;
+
 		if (data.onUpdateCondition) {
 			data.onUpdateCondition(id, {
 				question: questionId,
-				source: isChoiceQuestion ? FormWorkflowConditionSource.CHOICE : FormWorkflowConditionSource.NON_CHOICE,
+				source: nextIsChoiceQuestion ? FormWorkflowConditionSource.CHOICE : FormWorkflowConditionSource.NON_CHOICE,
 				pattern: ""
 			});
 		}
