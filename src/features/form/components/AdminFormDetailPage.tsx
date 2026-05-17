@@ -105,7 +105,7 @@ export const AdminFormDetailPage = () => {
 							<span>{isSaving ? "儲存中" : "已儲存"}</span>
 						</div>
 						<Button onClick={handlePublish} disabled={publishFormMutation.isPending || formQuery.data.status !== "DRAFT"}>
-							{formQuery.data.status === "ARCHIVED" ? "已封存" : formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
+							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : formQuery.data.status === "ARCHIVED" ? "已封存" : "已發布"}
 						</Button>
 						{formQuery.data.status === "DRAFT" ? (
 							<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
@@ -145,6 +145,11 @@ export const AdminFormDetailPage = () => {
 							<AdminFormInfoPage formData={formQuery.data} />
 						</div>
 					)}
+					{activeTab === "edit" && isArchived && (
+						<div className={styles.edit}>
+							<ErrorMessage message="此表單已封存，請先解除封存後再編輯。" />
+						</div>
+					)}
 					{activeTab === "edit" && !sectionId && !isArchived && (
 						<div className={styles.edit}>
 							<AdminFormEditPage formData={formQuery.data} />
@@ -160,12 +165,16 @@ export const AdminFormDetailPage = () => {
 							<AdminFormRepliesPage formData={formQuery.data} />
 						</div>
 					)}
+					{activeTab === "design" && isArchived && (
+						<div className={styles.design}>
+							<ErrorMessage message="此表單已封存，請先解除封存後再調整設計。" />
+						</div>
+					)}
 					{activeTab === "design" && !isArchived && (
 						<div className={styles.design}>
 							<AdminFormDesignPage formData={formQuery.data} />
 						</div>
 					)}
-					{isArchived && (activeTab === "edit" || activeTab === "design") && <ErrorMessage message="封存表單無法編輯，請先在資訊頁解除封存。" />}
 				</div>
 			</div>
 		</AdminLayout>
