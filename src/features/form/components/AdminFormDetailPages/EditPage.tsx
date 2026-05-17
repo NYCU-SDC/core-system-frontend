@@ -1,5 +1,6 @@
 import { useSections } from "@/features/form/hooks/useSections";
 import { useCreateWorkflowNode, useDeleteWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { choiceIdToConditionPattern } from "@/features/form/utils/workflow";
 import { Button, ErrorMessage, LoadingSpinner } from "@/shared/components";
 import type { FormsForm, FormWorkflowCreateNodeRequest, FormWorkflowNodeResponse } from "@nycu-sdc/core-system-sdk";
 import {
@@ -226,7 +227,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 						...(targetNode.data.raw as FormWorkflowNodeResponse),
 						conditionRule: {
 							...(targetNode.data.raw as FormWorkflowNodeResponse).conditionRule,
-							pattern: choiceId
+							pattern: choiceIdToConditionPattern(choiceId)
 						}
 					}
 				}
