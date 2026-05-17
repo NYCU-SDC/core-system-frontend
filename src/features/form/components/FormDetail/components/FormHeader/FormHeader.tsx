@@ -1,17 +1,17 @@
-import { Button, SpinningIcon } from "@/shared/components";
+import { Button, Markdown, SpinningIcon } from "@/shared/components";
 import { AlertCircle, Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import styles from "./FormHeader.module.css";
 
 interface FormHeaderProps {
 	title: string;
-	formDescription?: string | null;
+	formDescriptionHtml?: string | null;
 	currentStep: number;
-	currentSection?: { title?: string; description?: string } | null;
+	currentSection?: { title?: string; descriptionHtml?: string } | null;
 	onBack?: () => void;
 	saveStatus?: "saving" | "error" | "saved";
 }
 
-export const FormHeader = ({ title, formDescription, currentStep, currentSection, onBack, saveStatus }: FormHeaderProps) => {
+export const FormHeader = ({ title, formDescriptionHtml, currentStep, currentSection, onBack, saveStatus }: FormHeaderProps) => {
 	return (
 		<div className={styles.header}>
 			{(onBack || saveStatus) && (
@@ -45,9 +45,9 @@ export const FormHeader = ({ title, formDescription, currentStep, currentSection
 				</div>
 			)}
 			<h1 className={styles.title}>{title}</h1>
-			{currentStep === 0 && formDescription && <div className={styles.description} dangerouslySetInnerHTML={{ __html: formDescription }} />}
+			{currentStep === 0 && formDescriptionHtml && <Markdown className={styles.description} content={formDescriptionHtml} />}
 			<h2 className={styles.sectionHeader}>{currentSection?.title}</h2>
-			{currentSection?.description && <div className={styles.sectionDescription} dangerouslySetInnerHTML={{ __html: currentSection.description }} />}
+			{currentSection?.descriptionHtml && <Markdown className={styles.sectionDescription} content={currentSection.descriptionHtml} />}
 		</div>
 	);
 };

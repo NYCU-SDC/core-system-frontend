@@ -5,7 +5,6 @@ import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workfl
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner } from "@/shared/components";
-import type { FormsSection } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useParams } from "react-router-dom";
 import styles from "./AdminFormPreviewPage.module.css";
@@ -44,19 +43,16 @@ export const AdminFormPreviewPage = () => {
 			.forEach(ensureEmfontStylesheet);
 	}, [formQuery.data?.dressing?.headerFont, formQuery.data?.dressing?.questionFont, formQuery.data?.dressing?.textFont]);
 
-	const sections: FormsSection[] = useMemo(() => {
+	const sections = useMemo(() => {
 		if (!sectionsQuery.data) return [];
 
-		const baseSections: FormsSection[] = sectionsQuery.data.flatMap(item => {
-			const list = Array.isArray(item.sections) ? item.sections : [];
-			return list.map(section => ({
-				id: section.id,
-				formId: section.formId,
-				title: section.title,
-				description: section.description,
-				questions: section.questions ?? []
-			}));
-		});
+		const baseSections = sectionsQuery.data.map(item => ({
+			id: item.section.id,
+			formId: item.section.formId,
+			title: item.section.title,
+			description: item.section.description,
+			questions: item.questions ?? []
+		}));
 
 		const visible = resolveVisibleSectionsFromWorkflow(baseSections, workflowQuery.data?.workflow, answers);
 		return [...visible, { id: "preview", formId: formid!, title: "填答結果預覽", questions: [] }];
@@ -138,7 +134,7 @@ export const AdminFormPreviewPage = () => {
 			<div className={styles.content}>
 				{coverImageUrl && <img src={coverImageUrl} className={formStyles.cover} alt="表單封面" onError={e => (e.currentTarget.style.display = "none")} />}
 				<div className={formStyles.container} style={themedContainerStyle}>
-					<FormHeader title={form.title} formDescription={form.description} currentStep={safeCurrentStep} currentSection={currentSection} />
+					<FormHeader title={form.title} formDescriptionHtml={form.descriptionHtml} currentStep={safeCurrentStep} currentSection={currentSection} />
 
 					<FormStructure sections={sections} currentStep={safeCurrentStep} onSectionClick={goToStep} />
 
