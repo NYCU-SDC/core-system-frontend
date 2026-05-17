@@ -36,8 +36,10 @@ export const AdminFormDetailPage = () => {
 	const meta = useSeo({ rule: SEO_CONFIG.adminFormDetail, data: formQuery.data });
 	const activeEditorMutations = useIsMutating({ mutationKey: ["form-editor", formid ?? ""] });
 	const isSaving = activeEditorMutations > 0;
+	const isArchived = formQuery.data?.status === "ARCHIVED";
 
 	const handleTabChange = (tab: TabType) => {
+		if (isArchived && (tab === "edit" || tab === "design")) return;
 		setActiveTab(tab);
 		navigate(`/orgs/${orgSlug}/forms/${formid}/${tab}`);
 	};
@@ -103,7 +105,7 @@ export const AdminFormDetailPage = () => {
 							<span>{isSaving ? "儲存中" : "已儲存"}</span>
 						</div>
 						<Button onClick={handlePublish} disabled={publishFormMutation.isPending || formQuery.data.status !== "DRAFT"}>
-							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
+							{formQuery.data.status === "ARCHIVED" ? "已封存" : formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
 						</Button>
 						{formQuery.data.status === "DRAFT" ? (
 							<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
@@ -126,13 +128,13 @@ export const AdminFormDetailPage = () => {
 					<button className={`${styles.tab} ${activeTab === "info" ? styles.active : ""}`} onClick={() => handleTabChange("info")}>
 						資訊
 					</button>
-					<button className={`${styles.tab} ${activeTab === "edit" ? styles.active : ""}`} onClick={() => handleTabChange("edit")}>
+					<button className={`${styles.tab} ${activeTab === "edit" ? styles.active : ""}`} onClick={() => handleTabChange("edit")} disabled={isArchived}>
 						編輯
 					</button>
 					<button className={`${styles.tab} ${activeTab === "reply" ? styles.active : ""}`} onClick={() => handleTabChange("reply")}>
 						回覆
 					</button>
-					<button className={`${styles.tab} ${activeTab === "design" ? styles.active : ""}`} onClick={() => handleTabChange("design")}>
+					<button className={`${styles.tab} ${activeTab === "design" ? styles.active : ""}`} onClick={() => handleTabChange("design")} disabled={isArchived}>
 						設計
 					</button>
 				</div>
@@ -143,12 +145,12 @@ export const AdminFormDetailPage = () => {
 							<AdminFormInfoPage formData={formQuery.data} />
 						</div>
 					)}
-					{activeTab === "edit" && !sectionId && (
+					{activeTab === "edit" && !sectionId && !isArchived && (
 						<div className={styles.edit}>
 							<AdminFormEditPage formData={formQuery.data} />
 						</div>
 					)}
-					{activeTab === "edit" && sectionId && (
+					{activeTab === "edit" && sectionId && !isArchived && (
 						<div className={styles.edit}>
 							<AdminSectionEditPage />
 						</div>
@@ -158,11 +160,12 @@ export const AdminFormDetailPage = () => {
 							<AdminFormRepliesPage formData={formQuery.data} />
 						</div>
 					)}
-					{activeTab === "design" && (
+					{activeTab === "design" && !isArchived && (
 						<div className={styles.design}>
 							<AdminFormDesignPage formData={formQuery.data} />
 						</div>
 					)}
+					{isArchived && (activeTab === "edit" || activeTab === "design") && <ErrorMessage message="封存表單無法編輯，請先在資訊頁解除封存。" />}
 				</div>
 			</div>
 		</AdminLayout>
