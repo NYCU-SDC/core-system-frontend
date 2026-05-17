@@ -5,7 +5,7 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC } from "@/shared/utils/proseMirror";
-import type { FormsForm, ProseMirrorDocument } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse, ProseMirrorDocument } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,9 +13,13 @@ import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
 import { TabButtons } from "./TabButtons";
 
-interface FormRow {
+export interface FormRow {
 	id: string;
 	title: string;
+	lastEditor: string;
+	lastEditorAvatarUrl: string;
+	creator: string;
+	creatorAvatarUrl: string;
 	lastEdited: string;
 	status: StatusVariant;
 	deadline: string;
@@ -40,10 +44,14 @@ const toStatusVariant = (status: string, deadline: string | null | undefined): S
 	return "draft";
 };
 
-const toFormRow = (form: FormsForm): FormRow => ({
+const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
+	lastEditor: form.lastEditor.name,
+	lastEditorAvatarUrl: form.lastEditor.avatarUrl,
+	creator: form.creator.name,
+	creatorAvatarUrl: form.creator.avatarUrl,
 	status: toStatusVariant(form.status, form.deadline),
 	deadline: form.deadline ? formatDate(form.deadline) : "-"
 });
@@ -140,6 +148,8 @@ export const AdminFormsPage = () => {
 								<div className={styles.cardInfo}>
 									<span>最後編輯：{form.lastEdited}</span>
 									<span>截止日期：{form.deadline}</span>
+									<span>最後編輯者：{form.lastEditor}</span>
+									<span>建立者：{form.creator}</span>
 								</div>
 							</div>
 						))}
