@@ -593,7 +593,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				arrowColor = "var(--pink)";
 			}
 			const newEdge: Edge = {
-				id: `e${params.source}-${params.target}`,
+				id: `e${params.source}-${params.sourceHandle ?? "next"}-${params.target}`,
 				source: params.source,
 				sourceHandle: params.sourceHandle,
 				target: params.target,
