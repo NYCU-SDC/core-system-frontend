@@ -2,7 +2,7 @@ import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { buildAnswersPayload, useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { proseMirrorToHtml } from "@/features/form/utils/proseMirror";
+import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -396,15 +396,15 @@ export const FormFilloutPage = () => {
 			<div className={styles.container} style={themedContainerStyle}>
 				<FormHeader
 					title={form.title}
-					formDescription={proseMirrorToHtml(form.description, form.descriptionHtml)}
+					formDescription={form.descriptionHtml ?? proseMirrorToPlainText(form.description)}
 					currentStep={currentStep}
 					currentSection={
 						currentSection
 							? {
-									...currentSection,
-									description: proseMirrorToHtml(currentSection.description, currentSection.descriptionHtml)
+									title: currentSection.title,
+									description: currentSection.descriptionHtml ?? proseMirrorToPlainText(currentSection.description)
 								}
-							: currentSection
+							: null
 					}
 					onBack={() => navigate("/forms")}
 					saveStatus={urlResponseId ? (updateResponseMutation.isPending ? "saving" : updateResponseMutation.isError ? "error" : "saved") : undefined}

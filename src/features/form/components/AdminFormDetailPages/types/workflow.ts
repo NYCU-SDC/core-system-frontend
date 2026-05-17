@@ -5,6 +5,7 @@ export type NodeItem = {
 	type: "START" | "END" | "SECTION" | "CONDITION";
 	/** Internal editor label (not shown to respondents) */
 	label: string;
+	payload: { x: number; y: number };
 	/** Condition rule (CONDITION nodes only) */
 	conditionRule?: FormWorkflowConditionRule;
 	next?: string;

@@ -1,7 +1,7 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { proseMirrorFromText, proseMirrorToPlainText, proseMirrorUpdateFromText } from "@/features/form/utils/proseMirror";
+import { proseMirrorToPlainText, textToProseMirrorDocument, textToProseMirrorDocumentUpdate } from "@/features/form/utils/proseMirror";
 import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
 import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -97,7 +97,7 @@ export const AdminSectionEditPage = () => {
 			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
-				{ title: nextSectionTitle, description: proseMirrorUpdateFromText(nextSectionDescription) },
+				{ title: nextSectionTitle, description: textToProseMirrorDocumentUpdate(nextSectionDescription) },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
@@ -108,7 +108,7 @@ export const AdminSectionEditPage = () => {
 								updatedNodes.map(n => ({
 									id: n.id,
 									label: n.label,
-									payload: { x: 0, y: 0 },
+									payload: n.payload,
 									...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 									...(n.next !== undefined && { next: n.next }),
 									...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -294,7 +294,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: proseMirrorFromText(q.description),
+			description: textToProseMirrorDocument(q.description),
 			required: q.required ?? false,
 			order
 		};

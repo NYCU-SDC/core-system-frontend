@@ -3,7 +3,7 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useArchiveForm, useDeleteForm, useUnarchiveForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { proseMirrorToPlainText, proseMirrorUpdateFromText } from "@/features/form/utils/proseMirror";
+import { proseMirrorToPlainText, textToProseMirrorDocument, textToProseMirrorDocumentUpdate } from "@/features/form/utils/proseMirror";
 import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
 import type { FormsFormResponse } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
@@ -66,7 +66,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 			updateFormMutation.mutate(
 				{
 					title,
-					description: description.trim() ? description : undefined,
+					description: textToProseMirrorDocumentUpdate(description),
 					messageAfterSubmission: confirmMsg,
 					deadline: deadline ? new Date(deadline).toISOString() : undefined,
 					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
@@ -101,7 +101,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					required: checked,
 					type: q.type,
 					title: q.title,
-					description: q.description,
+					description: textToProseMirrorDocument(proseMirrorToPlainText(q.description)),
 					order: (q as unknown as { order?: number }).order ?? idx,
 					...(q.choices ? { choices: q.choices } : {}),
 					...(q.scale ? { scale: q.scale } : {}),

@@ -1,7 +1,7 @@
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { proseMirrorToHtml } from "@/features/form/utils/proseMirror";
+import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -142,15 +142,15 @@ export const AdminFormPreviewPage = () => {
 				<div className={formStyles.container} style={themedContainerStyle}>
 					<FormHeader
 						title={form.title}
-						formDescription={proseMirrorToHtml(form.description, form.descriptionHtml)}
+						formDescription={form.descriptionHtml ?? proseMirrorToPlainText(form.description)}
 						currentStep={safeCurrentStep}
 						currentSection={
 							currentSection
 								? {
-										...currentSection,
-										description: proseMirrorToHtml(currentSection.description, currentSection.descriptionHtml)
+										title: currentSection.title,
+										description: currentSection.descriptionHtml ?? proseMirrorToPlainText(currentSection.description)
 									}
-								: currentSection
+							: null
 						}
 					/>
 
