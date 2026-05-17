@@ -36,6 +36,7 @@ export const AdminFormDetailPage = () => {
 	const meta = useSeo({ rule: SEO_CONFIG.adminFormDetail, data: formQuery.data });
 	const activeEditorMutations = useIsMutating({ mutationKey: ["form-editor", formid ?? ""] });
 	const isSaving = activeEditorMutations > 0;
+	const isArchived = formQuery.data?.status === "ARCHIVED";
 
 	const handleTabChange = (tab: TabType) => {
 		setActiveTab(tab);
@@ -103,7 +104,7 @@ export const AdminFormDetailPage = () => {
 							<span>{isSaving ? "儲存中" : "已儲存"}</span>
 						</div>
 						<Button onClick={handlePublish} disabled={publishFormMutation.isPending || formQuery.data.status !== "DRAFT"}>
-							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : "已發布"}
+							{formQuery.data.status === "DRAFT" ? "立即發佈表單" : formQuery.data.status === "ARCHIVED" ? "已封存" : "已發布"}
 						</Button>
 						{formQuery.data.status === "DRAFT" ? (
 							<Button variant="secondary" onClick={() => window.open(`/orgs/${orgSlug}/forms/${formid}/preview`, "_blank", "noopener,noreferrer")}>
@@ -143,12 +144,17 @@ export const AdminFormDetailPage = () => {
 							<AdminFormInfoPage formData={formQuery.data} />
 						</div>
 					)}
-					{activeTab === "edit" && !sectionId && (
+					{activeTab === "edit" && isArchived && (
+						<div className={styles.edit}>
+							<ErrorMessage message="此表單已封存，請先解除封存後再編輯。" />
+						</div>
+					)}
+					{activeTab === "edit" && !sectionId && !isArchived && (
 						<div className={styles.edit}>
 							<AdminFormEditPage formData={formQuery.data} />
 						</div>
 					)}
-					{activeTab === "edit" && sectionId && (
+					{activeTab === "edit" && sectionId && !isArchived && (
 						<div className={styles.edit}>
 							<AdminSectionEditPage />
 						</div>
@@ -158,7 +164,12 @@ export const AdminFormDetailPage = () => {
 							<AdminFormRepliesPage formData={formQuery.data} />
 						</div>
 					)}
-					{activeTab === "design" && (
+					{activeTab === "design" && isArchived && (
+						<div className={styles.design}>
+							<ErrorMessage message="此表單已封存，請先解除封存後再調整設計。" />
+						</div>
+					)}
+					{activeTab === "design" && !isArchived && (
 						<div className={styles.design}>
 							<AdminFormDesignPage formData={formQuery.data} />
 						</div>
