@@ -3,15 +3,16 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useArchiveForm, useDeleteForm, useUnarchiveForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
+import { proseMirrorToPlainText, proseMirrorUpdateFromText } from "@/features/form/utils/proseMirror";
 import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./InfoPage.module.css";
 
 interface AdminFormInfoPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
@@ -43,13 +44,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 
 	// local draft state for settings
 	const [title, setTitle] = useState(formData.title ?? "");
-	const [description, setDescription] = useState(formData.description ?? "");
+	const [description, setDescription] = useState(proseMirrorToPlainText(formData.description));
 	const [confirmMsg, setConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
-	const [savedDescription, setSavedDescription] = useState(formData.description ?? "");
+	const [savedDescription, setSavedDescription] = useState(proseMirrorToPlainText(formData.description));
 	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [savedDeadline, setSavedDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [savedPublishTime, setSavedPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
@@ -100,7 +101,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					required: checked,
 					type: q.type,
 					title: q.title,
-					description: q.description ?? "",
+					description: q.description,
 					order: (q as unknown as { order?: number }).order ?? idx,
 					...(q.choices ? { choices: q.choices } : {}),
 					...(q.scale ? { scale: q.scale } : {}),

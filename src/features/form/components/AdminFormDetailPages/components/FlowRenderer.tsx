@@ -1,6 +1,7 @@
 import type { NodeItem } from "@/features/form/components/AdminFormDetailPages/types/workflow";
+import type { FormsSectionsResponse } from "@/features/form/services/api";
 import { Button, Popover, Select } from "@/shared/components";
-import type { FormWorkflowConditionRule, FormsListSectionsResponse } from "@nycu-sdc/core-system-sdk";
+import type { FormWorkflowConditionRule } from "@nycu-sdc/core-system-sdk";
 import { FormWorkflowConditionSource } from "@nycu-sdc/core-system-sdk";
 import { useMemo } from "react";
 import { Arrow } from "./Arrow";
@@ -12,7 +13,7 @@ const CHOICE_QUESTION_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROP
 export interface FlowRendererProps {
 	nodes: NodeItem[];
 	/** Sections data (from useSections) — used to populate condition rule dropdowns */
-	sections?: FormsListSectionsResponse[];
+	sections?: FormsSectionsResponse[];
 	/** Called when a node's data changes (label / title / description / conditionRule) */
 	onNodeChange: (id: string, updates: Partial<NodeItem>) => void;
 	onAddSection: (id: string) => void;
@@ -114,7 +115,7 @@ export const FlowRenderer = ({
 
 interface FlowNodeProps {
 	node: NodeItem;
-	sections?: FormsListSectionsResponse[];
+	sections?: FormsSectionsResponse[];
 	onNodeChange: (id: string, updates: Partial<NodeItem>) => void;
 	onAddSection: () => void;
 	onDeleteSection: () => void;

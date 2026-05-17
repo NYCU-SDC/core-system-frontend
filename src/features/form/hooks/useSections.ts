@@ -2,7 +2,6 @@ import * as api from "@/features/form/services/api";
 import { formKeys } from "@/shared/queryKeys/org";
 import type {
 	FormsFont,
-	FormsListSectionsResponse,
 	FormsQuestionRequest,
 	FormsQuestionResponse,
 	FormsSection,
@@ -16,7 +15,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useSections = (formId: string | undefined, enabled = true) =>
-	useQuery<FormsListSectionsResponse[]>({
+	useQuery<api.FormsSectionsResponse[]>({
 		queryKey: formKeys.sections(formId ?? ""),
 		queryFn: () => api.listSections(formId!),
 		enabled: enabled && !!formId

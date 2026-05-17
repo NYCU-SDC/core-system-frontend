@@ -1,5 +1,6 @@
 import fastifyHttpProxy from "@fastify/http-proxy";
 import fastifyStatic from "@fastify/static";
+import type { ProseMirrorDocument, ProseMirrorNode } from "@nycu-sdc/core-system-sdk";
 import { formsGetFormById } from "@nycu-sdc/core-system-sdk/dist/generated/index.js";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import fs from "node:fs/promises";
@@ -11,6 +12,18 @@ import { buildMeta, SITE_NAME, type BuildMetaResult } from "../src/seo/buildMeta
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DIST_DIR = path.resolve(__dirname, "../dist");
+
+const textFromProseMirrorNode = (node: ProseMirrorNode): string => {
+	if (node.type === "text") return node.text ?? "";
+	const childText = node.content?.map(textFromProseMirrorNode).join("") ?? "";
+	return node.type === "paragraph" ? `${childText}\n` : childText;
+};
+
+const proseMirrorToPlainText = (document: ProseMirrorDocument | string | null | undefined): string => {
+	if (!document) return "";
+	if (typeof document === "string") return document;
+	return document.content?.map(textFromProseMirrorNode).join("").trimEnd() ?? "";
+};
 
 /* ================= CONFIG ================= */
 
@@ -235,7 +248,7 @@ async function handleFormSeoRoute(req: FormSeoRouteRequest, reply: FastifyReply)
 
 			if (res.status >= 200 && res.status < 300) {
 				title = res.data.title || title;
-				description = res.data.description || description;
+				description = proseMirrorToPlainText(res.data.description) || description;
 				formMetaCache.set(formId, { title, description });
 				breaker.success();
 			} else {

@@ -4,7 +4,7 @@ import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -42,7 +42,9 @@ const toStatusVariant = (status: string, deadline: string | null | undefined): S
 	return "draft";
 };
 
-const toFormRow = (form: FormsForm): FormRow => ({
+const ADMIN_FORM_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
+
+const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
@@ -58,7 +60,7 @@ export const AdminFormsPage = () => {
 
 	// Fetch forms from API
 	const orgSlug = useActiveOrgSlug();
-	const formsQuery = useOrgForms(orgSlug, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
+	const formsQuery = useOrgForms(orgSlug, ADMIN_FORM_STATUSES);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 
 	useEffect(() => {
@@ -85,6 +87,7 @@ export const AdminFormsPage = () => {
 		createFormMutation.mutate(
 			{
 				title: "未命名表單",
+				messageAfterSubmission: "感謝您的填寫！",
 				visibility: "PUBLIC"
 			},
 			{
