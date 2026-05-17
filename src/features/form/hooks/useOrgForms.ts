@@ -2,10 +2,10 @@ import * as api from "@/features/form/services/api";
 import { formKeys, orgKeys } from "@/shared/queryKeys/org";
 import type {
 	FormsFont,
-	FormsForm,
 	FormsFormCoverUploadResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
+	FormsFormResponse,
 	FormsFormStatus,
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
@@ -13,7 +13,7 @@ import type {
 } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useOrgForms = (slug: string, statuses?: FormsFormStatus[]) =>
+export const useOrgForms = (slug: string, statuses?: readonly FormsFormStatus[]) =>
 	useQuery({
 		queryKey: orgKeys.forms(slug, statuses),
 		queryFn: () => api.listOrgFormsByStatus(slug, statuses)
@@ -22,7 +22,7 @@ export const useOrgForms = (slug: string, statuses?: FormsFormStatus[]) =>
 export const useCreateOrgForm = (slug: string) => {
 	const qc = useQueryClient();
 
-	return useMutation<FormsForm, Error, FormsFormRequest>({
+	return useMutation<FormsFormResponse, Error, FormsFormRequest>({
 		mutationFn: req => api.createOrgForm(slug, req),
 		onSuccess: () => qc.invalidateQueries({ queryKey: orgKeys.forms(slug) })
 	});
@@ -40,7 +40,7 @@ export const useFormQuery = useFormById;
 export const useUpdateForm = (formId: string) => {
 	const qc = useQueryClient();
 
-	return useMutation<FormsForm, Error, FormsFormRequestUpdate>({
+	return useMutation<FormsFormResponse, Error, FormsFormRequestUpdate>({
 		mutationKey: ["form-editor", formId, "form"],
 		mutationFn: req => api.updateForm(formId, req),
 		onSuccess: updatedForm => {
@@ -53,7 +53,7 @@ export const useUpdateForm = (formId: string) => {
 export const usePublishForm = (slug: string) => {
 	const qc = useQueryClient();
 
-	return useMutation<FormsForm, Error, string>({
+	return useMutation<FormsFormResponse, Error, string>({
 		mutationFn: formId => api.publishForm(formId),
 		onSuccess: (updatedForm, formId) => {
 			qc.setQueryData(orgKeys.form(formId), updatedForm);
@@ -65,7 +65,7 @@ export const usePublishForm = (slug: string) => {
 export const useArchiveForm = (slug: string) => {
 	const qc = useQueryClient();
 
-	return useMutation<FormsForm, Error, string>({
+	return useMutation<FormsFormResponse, Error, string>({
 		mutationFn: formId => api.archiveForm(formId),
 		onSuccess: (updatedForm, formId) => {
 			qc.setQueryData(orgKeys.form(formId), updatedForm);
@@ -77,7 +77,7 @@ export const useArchiveForm = (slug: string) => {
 export const useUnarchiveForm = (slug: string) => {
 	const qc = useQueryClient();
 
-	return useMutation<FormsForm, Error, string>({
+	return useMutation<FormsFormResponse, Error, string>({
 		mutationFn: formId => api.unarchiveForm(formId),
 		onSuccess: (updatedForm, formId) => {
 			qc.setQueryData(orgKeys.form(formId), updatedForm);

@@ -2,7 +2,7 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useCreateWorkflowNode, useDeleteWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
-import type { FormWorkflowNodeRequest, FormsForm } from "@nycu-sdc/core-system-sdk";
+import type { FormWorkflowNodeRequest, FormsFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -11,13 +11,14 @@ import styles from "./EditPage.module.css";
 import type { NodeItem } from "./types/workflow";
 
 interface AdminFormEditPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 const toApiNodes = (nodes: NodeItem[]): FormWorkflowNodeRequest[] =>
 	nodes.map(n => ({
 		id: n.id,
 		label: n.label,
+		payload: { x: 0, y: 0 },
 		...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 		...(n.next !== undefined && { next: n.next }),
 		...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -101,7 +102,7 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 	const createNodeViaSdk = async (type: "SECTION" | "CONDITION", fallbackLabel: string): Promise<NodeItem | null> => {
 		try {
-			const created = await createWorkflowNodeMutation.mutateAsync({ type });
+			const created = await createWorkflowNodeMutation.mutateAsync({ type, payload: { x: 0, y: 0 } });
 			return {
 				id: created.id,
 				label: created.label || fallbackLabel,
