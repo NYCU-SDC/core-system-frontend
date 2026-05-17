@@ -7,6 +7,7 @@ import type {
 	FormWorkflowNodeStructure,
 	FormsFont,
 	FormsFormCoverUploadResponse,
+	FormsFormPublishResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
 	FormsFormResponse,
@@ -95,13 +96,10 @@ export const updateForm = async (formId: string, req: FormsFormRequestUpdate): P
 	return res.data;
 };
 
-export const publishForm = async (formId: string): Promise<FormsFormResponse> => {
-export const publishForm = async (formId: string): Promise<FormsFormResponse> => {
+export const publishForm = async (formId: string): Promise<FormsFormPublishResponse> => {
 	const res = await formsPublishForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to publish form", res.data);
-	// publishForm returns FormPublishResponse which has same shape as Form
-	return res.data as unknown as FormsFormResponse;
-	return res.data as unknown as FormsFormResponse;
+	return res.data;
 };
 
 export const archiveForm = async (formId: string): Promise<FormsFormResponse> => {
@@ -196,7 +194,10 @@ export const deleteWorkflowNode = async (formId: string, nodeId: string): Promis
 export const listMyForms = async (): Promise<UnitUserForm[]> => {
 	const res = await unitListFormsOfCurrentUser(defaultRequestOptions);
 	assertOk(res.status, "Failed to load my forms", res.data);
-	return res.data as UnitUserForm[];
+	if (res.status !== 200) {
+		throw new Error("Failed to load my forms");
+	}
+	return res.data;
 };
 
 // ── Responses ─────────────────────────────────────────────────────────────

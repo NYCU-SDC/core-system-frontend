@@ -3,6 +3,7 @@ import { formKeys, orgKeys } from "@/shared/queryKeys/org";
 import type {
 	FormsFont,
 	FormsFormCoverUploadResponse,
+	FormsFormPublishResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
 	FormsFormResponse,
@@ -54,11 +55,10 @@ export const useUpdateForm = (formId: string) => {
 export const usePublishForm = (slug: string) => {
 	const qc = useQueryClient();
 
-	return useMutation<FormsFormResponse, Error, string>({
-	return useMutation<FormsFormResponse, Error, string>({
+	return useMutation<FormsFormPublishResponse, Error, string>({
 		mutationFn: formId => api.publishForm(formId),
-		onSuccess: (updatedForm, formId) => {
-			qc.setQueryData(orgKeys.form(formId), updatedForm);
+		onSuccess: (_, formId) => {
+			qc.invalidateQueries({ queryKey: orgKeys.form(formId) });
 			qc.invalidateQueries({ queryKey: orgKeys.forms(slug) });
 		}
 	});
