@@ -1,54 +1,79 @@
-.header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	margin-bottom: 0.5rem;
+.edge {
+	--xy-edge-stroke-default: var(--foreground);
+	stroke-width: 2;
 }
 
-.description {
-	padding: 0;
-	padding-left: 1rem;
-	line-height: 1.5;
+.trueBranch {
+	--xy-edge-stroke-default: var(--green);
 }
 
-.flowContainer {
-	display: flex;
-	justify-content: center;
+.falseBranch {
+	--xy-edge-stroke-default: var(--pink);
 }
 
-.warnings {
-	margin-top: 1.5rem;
-	padding: 0.75rem 1rem;
-	border-radius: 0.5rem;
-	background: color-mix(in srgb, var(--orange) 10%, transparent);
-	border: 1px solid color-mix(in srgb, var(--orange) 40%, transparent);
+.controls {
+	--xy-controls-button-background-color-default: var(--background-color-primary);
+	--xy-controls-button-background-color-hover-default: var(--selection);
+	--xy-controls-button-border-color-default: var(--background-color-overlay);
+	fill: var(--foreground);
 }
 
-.warningsTitle {
-	margin: 0 0 0.5rem;
-	font-weight: 600;
-	color: var(--orange);
-}
-
-.warnings ul {
-	margin: 0;
-	padding-left: 1.25rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-}
-
-.warningItem {
-	font-size: 0.85rem;
-	color: var(--foreground);
+.panel {
 	display: flex;
 	gap: 0.5rem;
-	align-items: baseline;
 }
 
-.warningNode {
-	font-weight: 600;
-	white-space: nowrap;
-	color: var(--orange);
+/* Custom Node Style */
+.flow {
+	background-color: var(--background-color-primary);
+	border-radius: 9999px;
+}
+
+.section {
+	background-color: var(--background-color-tertiary);
+}
+
+.condition {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	background-color: var(--background-color-tertiary);
+	clip-path: polygon(0.75rem 0, calc(100% - 0.75rem) 0, 100% 0.75rem, 100% calc(100% - 0.75rem), calc(100% - 0.75rem) 100%, 0.75rem 100%, 0 calc(100% - 0.75rem), 0 0.75rem);
+}
+
+.node {
+	padding: 0.5rem 1rem;
+}
+
+.handler {
+	transition: opacity 0.2s;
+	opacity: 0;
+}
+
+.conditionHandler {
+	background: transparent;
+	border: none;
+	width: 1.5rem;
+	height: 1.5rem;
+	bottom: -0.75rem;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: crosshair;
+}
+
+.handlerTrue {
+	left: 40%;
+}
+
+.handlerFalse {
+	left: 60%;
+}
+
+.visible {
+	opacity: 1;
+}
+
+.selected {
+	border: 1px solid var(--selection);
 }
