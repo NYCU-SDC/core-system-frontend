@@ -201,8 +201,6 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 
 			const nextNodes = currentNodes.map(n => (n.id === nodeId ? updatedNode : n));
 
-			console.log("更新後的節點資料:", nextNodes);
-
 			setNodes(nextNodes);
 
 			updateWorkflow(nextNodes, currentEdges);
