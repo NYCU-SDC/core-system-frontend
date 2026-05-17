@@ -6,18 +6,19 @@ import type {
 	FormWorkflowNodeResponse,
 	FormWorkflowNodeStructure,
 	FormsFont,
-	FormsForm,
 	FormsFormCoverUploadResponse,
+	FormsFormPublishResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
+	FormsFormResponse,
 	FormsFormStatus,
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse,
-	FormsListSectionsResponse,
 	FormsQuestionRequest,
 	FormsQuestionResponse,
 	FormsSection,
+	FormsSectionBundle,
 	FormsSectionRequest,
 	ResponsesAnswersRequest,
 	ResponsesAnswersRequestUpdate,
@@ -66,64 +67,50 @@ const defaultRequestOptions: RequestInit = {
 
 // ── Forms ──────────────────────────────────────────────────────────────────
 
-export const listOrgForms = async (slug: string): Promise<FormsForm[]> => {
-	const res = await unitListFormsByOrg(slug, defaultRequestOptions);
+export const listOrgForms = async (slug: string): Promise<FormsFormResponse[]> => {
+	const res = await unitListFormsByOrg(slug, undefined, defaultRequestOptions);
 	assertOk(res.status, "Failed to load forms", res.data);
 	return res.data;
 };
 
-export const listOrgFormsByStatus = async (slug: string, statuses?: FormsFormStatus[]): Promise<FormsForm[]> => {
-	const query = new URLSearchParams();
-	(statuses ?? []).forEach(status => query.append("status", status));
-	const endpoint = query.toString().length > 0 ? `/api/orgs/${slug}/forms?${query.toString()}` : `/api/orgs/${slug}/forms`;
-
-	const response = await fetch(endpoint, {
-		...defaultRequestOptions,
-		method: "GET"
-	});
-
-	let data: unknown = [];
-	if (![204, 205, 304].includes(response.status)) {
-		const body = await response.text();
-		data = body.trim().length > 0 ? JSON.parse(body) : [];
-	}
-
-	assertOk(response.status, "Failed to load forms", data);
-	return data as FormsForm[];
+export const listOrgFormsByStatus = async (slug: string, statuses?: FormsFormStatus[]): Promise<FormsFormResponse[]> => {
+	const params = statuses && statuses.length > 0 ? { status: statuses } : undefined;
+	const res = await unitListFormsByOrg(slug, params, defaultRequestOptions);
+	assertOk(res.status, "Failed to load forms", res.data);
+	return res.data;
 };
 
-export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsForm> => {
+export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsFormResponse> => {
 	const res = await unitCreateOrgForm(slug, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to create form", res.data);
 	return res.data;
 };
 
-export const getFormById = async (formId: string): Promise<FormsForm> => {
+export const getFormById = async (formId: string): Promise<FormsFormResponse> => {
 	const res = await formsGetFormById(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load form", res.data);
 	return res.data;
 };
 
-export const updateForm = async (formId: string, req: FormsFormRequestUpdate): Promise<FormsForm> => {
+export const updateForm = async (formId: string, req: FormsFormRequestUpdate): Promise<FormsFormResponse> => {
 	const res = await formsUpdateForm(formId, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to update form", res.data);
 	return res.data;
 };
 
-export const publishForm = async (formId: string): Promise<FormsForm> => {
+export const publishForm = async (formId: string): Promise<FormsFormPublishResponse> => {
 	const res = await formsPublishForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to publish form", res.data);
-	// publishForm returns FormPublishResponse which has same shape as Form
-	return res.data as unknown as FormsForm;
+	return res.data;
 };
 
-export const archiveForm = async (formId: string): Promise<FormsForm> => {
+export const archiveForm = async (formId: string): Promise<FormsFormResponse> => {
 	const res = await formsArchiveForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to archive form", res.data);
 	return res.data;
 };
 
-export const unarchiveForm = async (formId: string): Promise<FormsForm> => {
+export const unarchiveForm = async (formId: string): Promise<FormsFormResponse> => {
 	const response = await fetch(`/api/forms/${formId}/unarchive`, {
 		...defaultRequestOptions,
 		method: "POST"
@@ -134,7 +121,7 @@ export const unarchiveForm = async (formId: string): Promise<FormsForm> => {
 	if (data == null) {
 		return getFormById(formId);
 	}
-	return data as FormsForm;
+	return data as FormsFormResponse;
 };
 
 export const deleteForm = async (formId: string): Promise<void> => {
@@ -156,21 +143,9 @@ export const getFormFonts = async (): Promise<FormsFont[]> => {
 
 // ── Sections & Questions ──────────────────────────────────────────────────
 
-export const listSections = async (formId: string): Promise<FormsListSectionsResponse[]> => {
+export const listSections = async (formId: string): Promise<FormsSectionBundle[]> => {
 	const res = await formsListSections(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load sections", res.data);
-
-	const raw = res.data as unknown;
-
-	// Normalize: the actual API may return [{section:{...}, questions:[...]}]
-	// instead of the SDK-typed [{sections: FormsSection[]}].
-	if (Array.isArray(raw) && raw.length > 0 && raw[0] !== null && typeof raw[0] === "object" && "section" in (raw[0] as object)) {
-		const normalized: FormsSection[] = (raw as Array<{ section: FormsSection; questions: FormsQuestionResponse[] | null }>).map(item => ({
-			...item.section,
-			questions: item.questions ?? []
-		}));
-		return [{ sections: normalized }];
-	}
 
 	return res.data;
 };
@@ -228,6 +203,9 @@ export const deleteWorkflowNode = async (formId: string, nodeId: string): Promis
 export const listMyForms = async (): Promise<UnitUserForm[]> => {
 	const res = await unitListFormsOfCurrentUser(defaultRequestOptions);
 	assertOk(res.status, "Failed to load my forms", res.data);
+	if (res.status !== 200) {
+		throw new Error("Failed to load my forms");
+	}
 	return res.data;
 };
 

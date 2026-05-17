@@ -3,6 +3,20 @@ import { FormWorkflowConditionSource } from "@nycu-sdc/core-system-sdk";
 
 export type WorkflowAnswers = Record<string, string>;
 
+const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
+
+export const choiceIdToConditionPattern = (choiceId: string): string => {
+	if (!choiceId) return "";
+	return `^${choiceId.replace(REGEX_SPECIAL_CHARS, "\\$&")}$`;
+};
+
+export const conditionPatternToChoiceId = (pattern: string | undefined): string => {
+	if (!pattern) return "";
+	const exactMatch = pattern.match(/^\^(.+)\$$/);
+	if (!exactMatch) return pattern;
+	return exactMatch[1].replace(/\\([.*+?^${}()|[\]\\])/g, "$1");
+};
+
 const evaluateCondition = (rule: FormWorkflowConditionRule | undefined, answers: WorkflowAnswers): boolean | null => {
 	if (!rule?.question || !rule.pattern) return null;
 

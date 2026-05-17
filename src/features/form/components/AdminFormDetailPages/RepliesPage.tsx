@@ -3,9 +3,9 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
-import { Button, Dialog, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
-import type { FormsForm, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
+import { Button, Dialog, ErrorMessage, LoadingSpinner, ProseMirrorViewer, Select, useToast } from "@/shared/components";
+import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import type { FormsFormResponse, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
@@ -227,7 +227,7 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 };
 
 interface AdminFormRepliesPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) => {
@@ -256,8 +256,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
 	const allQuestions = useMemo(() => {
-		const sections = sectionsQuery.data?.flatMap(group => group.sections) ?? [];
-		return sections.flatMap(section => section.questions ?? []);
+		return sectionsQuery.data?.flatMap(group => group.questions ?? []) ?? [];
 	}, [sectionsQuery.data]);
 
 	const responseDetailQueries = useQueries({
@@ -491,14 +490,13 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						{responses.length === 0 && <p className={styles.emptyState}>尚無回覆。</p>}
 						{responses.length > 0 &&
 							allQuestions.map(question => {
-								const description = question.descriptionHtml ?? proseMirrorToPlainText(question.description);
 								const details = answerDetailsByQuestionId.get(question.id) ?? [];
-								const hasDescription = Boolean(description.trim());
+								const hasDescription = question.description && JSON.stringify(question.description) !== JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
 								return (
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={description} />}
+											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={question.description as ProseMirrorLikeDocument} />}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
 										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
@@ -548,8 +546,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 						{selectedResponse &&
 							allQuestions.map(question => {
-								const description = question.descriptionHtml ?? proseMirrorToPlainText(question.description);
-								const hasDescription = Boolean(description.trim());
+								const hasDescription = question.description && JSON.stringify(question.description) !== JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
 								const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
 								const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
 								const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
@@ -559,7 +556,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={description} />}
+											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={question.description as ProseMirrorLikeDocument} />}
 										</div>
 										<div className={styles.readonlyQuestionContent}>
 											<FormQuestionRenderer

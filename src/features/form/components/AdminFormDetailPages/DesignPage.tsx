@@ -1,11 +1,11 @@
 import { useFormFonts, useUpdateForm, useUploadFormCoverImage } from "@/features/form/hooks/useOrgForms";
 import { ColorPicker, FileUpload, LoadingSpinner, SearchableSelect, useToast } from "@/shared/components";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useState } from "react";
 import styles from "./DesignPage.module.css";
 
 interface AdminFormDesignPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {

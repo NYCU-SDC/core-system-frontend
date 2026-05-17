@@ -4,11 +4,21 @@ const ORG_SLUG = "SDC";
 const BASE_URL = `/orgs/${ORG_SLUG}/forms`;
 const FORMS_API_PATTERN = new RegExp(`/api/orgs/${ORG_SLUG}/forms(?:\\?.*)?$`);
 
+const makeUser = (name: string) => ({
+	id: `user-${name.toLowerCase()}`,
+	name,
+	username: name.toLowerCase(),
+	avatarUrl: `https://example.com/avatar/${name.toLowerCase()}.png`,
+	emails: []
+});
+
 const draftForm1 = {
 	id: "f1",
 	title: "草稿表單一",
 	status: "DRAFT",
-	deadline: null,
+	lastEditor: makeUser("Alice"),
+	creator: makeUser("Bob"),
+	deadline: undefined,
 	updatedAt: "2025-05-28T08:00:00Z",
 	visibility: "PUBLIC"
 };
@@ -17,6 +27,8 @@ const publishedForm = {
 	id: "f2",
 	title: "已發布表單",
 	status: "PUBLISHED",
+	lastEditor: makeUser("Charlie"),
+	creator: makeUser("Dave"),
 	deadline: "2099-07-01T00:00:00Z",
 	updatedAt: "2025-06-01T10:00:00Z",
 	visibility: "PUBLIC"
@@ -26,7 +38,9 @@ const draftForm2 = {
 	id: "f3",
 	title: "草稿表單二",
 	status: "DRAFT",
-	deadline: null,
+	lastEditor: makeUser("Eve"),
+	creator: makeUser("Frank"),
+	deadline: undefined,
 	updatedAt: "2025-06-10T00:00:00Z",
 	visibility: "PUBLIC"
 };
@@ -35,6 +49,8 @@ const doneForm = {
 	id: "f4",
 	title: "已截止表單",
 	status: "PUBLISHED",
+	lastEditor: makeUser("Grace"),
+	creator: makeUser("Heidi"),
 	deadline: "2020-01-01T00:00:00Z",
 	updatedAt: "2025-01-01T00:00:00Z",
 	visibility: "PUBLIC"
@@ -44,7 +60,9 @@ const draftForm3 = {
 	id: "f5",
 	title: "草稿表單三",
 	status: "DRAFT",
-	deadline: null,
+	lastEditor: makeUser("Ivan"),
+	creator: makeUser("Judy"),
+	deadline: undefined,
 	updatedAt: "2025-06-15T00:00:00Z",
 	visibility: "PUBLIC"
 };
