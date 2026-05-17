@@ -1,3 +1,4 @@
+import { conditionPatternToChoiceId } from "@/features/form/utils/workflow";
 import { Select } from "@/shared/components";
 import { FormWorkflowConditionSource } from "@nycu-sdc/core-system-sdk";
 import { Handle, type NodeProps, Position, useEdges } from "@xyflow/react";
@@ -16,6 +17,7 @@ export const ConditionNode = ({ data, id, selected }: NodeProps<AppNode>) => {
 	const showTargetHandles = selected && targetCount <= 0;
 
 	const currentQuestionId = data.raw.conditionRule?.question ?? "";
+	const selectedChoiceId = conditionPatternToChoiceId(data.raw.conditionRule?.pattern);
 	const isValidSelection = currentQuestionId === "" || (data.questions && data.questions.some(q => q.id === currentQuestionId));
 	const isChoiceQuestion = currentQuestionId
 		? data.questions?.find(q => q.id === currentQuestionId)?.type && CHOICE_QUESTION_TYPES.has(data.questions.find(q => q.id === currentQuestionId)!.type)
@@ -66,7 +68,7 @@ export const ConditionNode = ({ data, id, selected }: NodeProps<AppNode>) => {
 						<p className={styles.text}>選擇</p>
 						<Select
 							options={(data.questions?.find(q => q.id === currentQuestionId)?.choices ?? []).map(c => ({ value: c.id, label: c.name }))}
-							value={data.raw.conditionRule?.pattern ?? ""}
+							value={selectedChoiceId}
 							onValueChange={handleChoiceChange}
 							placeholder="選擇答案"
 							variant="text"

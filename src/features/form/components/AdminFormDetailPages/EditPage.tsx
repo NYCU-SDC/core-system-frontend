@@ -1,5 +1,6 @@
 import { useSections } from "@/features/form/hooks/useSections";
 import { useCreateWorkflowNode, useDeleteWorkflowNode, useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
+import { choiceIdToConditionPattern } from "@/features/form/utils/workflow";
 import { Button, ErrorMessage, LoadingSpinner } from "@/shared/components";
 import type { FormsForm, FormWorkflowCreateNodeRequest, FormWorkflowNodeResponse } from "@nycu-sdc/core-system-sdk";
 import {
@@ -419,32 +420,44 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		saveNodes(processedNodes);
 	};
 
-	const handleAddMergeCondition = async (id: string) => {
-		const prevNodes = [...nodeItems];
-		const nodeToUpdate = prevNodes.find(node => node.id === id);
-		if (!nodeToUpdate) {
-			return;
-		}
-		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`, id);
-		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`, id);
-		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`, id);
-		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
-		const newConditionId = newConditionNodeBase.id;
-		const newTrueSectionId = trueSectionNodeBase.id;
-		const newFalseSectionId = falseSectionNodeBase.id;
-		const newConditionNode: NodeItem = {
-			...newConditionNodeBase,
-			nextTrue: newTrueSectionId,
-			nextFalse: newFalseSectionId
-		};
-		const trueSectionNode: NodeItem = {
-			...trueSectionNodeBase,
-			next: nodeToUpdate?.mergeId || undefined
-		};
-		const falseSectionNode: NodeItem = {
-			...falseSectionNodeBase,
-			next: nodeToUpdate?.mergeId || undefined
-		};
+	const handleChoiceChange = useCallback(
+		(nodeId: string, choiceId: string) => {
+			const currentNodes = getNodes() as AppNode[];
+			const currentEdges = getEdges();
+			const targetNode = currentNodes.find(n => n.id === nodeId);
+			if (!targetNode) {
+				return;
+			}
+
+			const updatedNode: AppNode = {
+				...targetNode,
+				data: {
+					...targetNode.data,
+					raw: {
+						...(targetNode.data.raw as FormWorkflowNodeResponse),
+						conditionRule: {
+							...(targetNode.data.raw as FormWorkflowNodeResponse).conditionRule,
+							pattern: choiceIdToConditionPattern(choiceId)
+						}
+					}
+				}
+			};
+
+			const nextNodes = currentNodes.map(n => (n.id === nodeId ? updatedNode : n));
+
+			setNodes(nextNodes);
+			updateWorkflow(nextNodes, currentEdges);
+		},
+		[getNodes, getEdges, updateWorkflow]
+	);
+
+	// Effect
+	useEffect(() => {
+		isInitialized.current = false;
+	}, [formData.id]);
+
+	useEffect(() => {
+		if (!workflowQuery.data || !sectionsQuery.data) return;
 
 		const allQuestions = sectionsQuery.data.flatMap(sb => sb.questions?.map(q => ({ ...q, sectionTitle: sb.section.title })) || []) || [];
 		const serverWorkflow = workflowQuery.data.workflow;
