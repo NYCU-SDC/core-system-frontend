@@ -31,7 +31,7 @@ export const AdminSectionEditPage = () => {
 
 	const sectionsQuery = useSections(formid);
 	const section = sectionsQuery.data?.map(response => response.section).find(foundSection => foundSection.id === sectionId);
-	const apiQuestions = sectionsQuery.data?.flatMap(response => response.questions ?? []).filter(q => q.sectionId === sectionId) as FormsQuestionResponse[];
+	const apiQuestions = (sectionsQuery.data?.flatMap(response => response.questions ?? []).filter(q => q.sectionId === sectionId) ?? []) as FormsQuestionResponse[];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
