@@ -125,6 +125,7 @@ export const FormsListPage = () => {
 	const handleCancelSubmission = async (event: MouseEvent<HTMLButtonElement>, form: FormRow) => {
 		event.stopPropagation();
 		if (cancelingFormId === form.id) return;
+		if (!window.confirm(`確定要取消提交「${form.title}」嗎？取消後會回到填寫中狀態。`)) return;
 
 		let responseId = form.responseIds?.[0];
 		if (!responseId) {
@@ -199,6 +200,7 @@ export const FormsListPage = () => {
 								{form.status === UnitUserFormStatus.COMPLETED ? (
 									<div className={styles.actions}>
 										<Button
+											processing={pendingFormId === form.id}
 											onClick={event => {
 												event.stopPropagation();
 												handleFormClick(form);
@@ -206,7 +208,13 @@ export const FormsListPage = () => {
 										>
 											{form.buttonLabel}
 										</Button>
-										<Button className={styles.sharedBtn} themeColor="var(--red)" processing={cancelingFormId === form.id} onClick={event => handleCancelSubmission(event, form)}>
+										<Button
+											className={styles.sharedBtn}
+											themeColor="var(--red)"
+											processing={cancelingFormId === form.id}
+											disabled={cancelSubmissionMutation.isPending}
+											onClick={event => handleCancelSubmission(event, form)}
+										>
 											取消提交
 										</Button>
 									</div>
