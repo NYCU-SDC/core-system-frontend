@@ -2,6 +2,7 @@ import { expect, mockRoute, test } from "./fixtures";
 
 const ORG_SLUG = "SDC";
 const BASE_URL = `/orgs/${ORG_SLUG}/forms`;
+const FORMS_API_PATTERN = new RegExp(`/api/orgs/${ORG_SLUG}/forms(?:\\?.*)?$`);
 
 const makeUser = (name: string) => ({
 	id: `user-${name.toLowerCase()}`,
@@ -67,11 +68,11 @@ const draftForm3 = {
 };
 
 test("clicking 建立表單 POSTs to API and navigates to new form info page", async ({ page }) => {
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, []);
+	await mockRoute(page, FORMS_API_PATTERN, []);
 
 	const newForm = { id: "new-f1", title: "未命名表單", status: "DRAFT" };
 
-	await page.route(`**/api/orgs/${ORG_SLUG}/forms`, async route => {
+	await page.route(FORMS_API_PATTERN, async route => {
 		if (route.request().method() === "POST") {
 			await route.fulfill({
 				status: 200,
@@ -96,9 +97,9 @@ test("clicking 建立表單 POSTs to API and navigates to new form info page", a
 });
 
 test("create form failure shows error toast and stays on forms page", async ({ page }) => {
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, []);
+	await mockRoute(page, FORMS_API_PATTERN, []);
 
-	await page.route(`**/api/orgs/${ORG_SLUG}/forms`, route => {
+	await page.route(FORMS_API_PATTERN, route => {
 		if (route.request().method() === "POST") {
 			route.fulfill({
 				status: 500,
@@ -125,7 +126,7 @@ test("create form failure shows error toast and stays on forms page", async ({ p
 });
 
 test("clicking a form card navigates to its info page", async ({ page }) => {
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, [publishedForm]);
+	await mockRoute(page, FORMS_API_PATTERN, [publishedForm]);
 
 	await page.goto(BASE_URL);
 	await page.waitForSelector(`text=${publishedForm.title}`);
@@ -137,7 +138,7 @@ test("clicking a form card navigates to its info page", async ({ page }) => {
 
 test("tab filtering works and filtered cards are still clickable", async ({ page }) => {
 	const allForms = [draftForm1, publishedForm, draftForm2, doneForm, draftForm3];
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms`, allForms);
+	await mockRoute(page, FORMS_API_PATTERN, allForms);
 
 	await page.goto(BASE_URL);
 

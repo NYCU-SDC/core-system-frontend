@@ -7,16 +7,17 @@ import type {
 	FormsFormRequest,
 	FormsFormRequestUpdate,
 	FormsFormResponse,
+	FormsFormStatus,
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse
 } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useOrgForms = (slug: string) =>
+export const useOrgForms = (slug: string, statuses?: FormsFormStatus[]) =>
 	useQuery({
-		queryKey: orgKeys.forms(slug),
-		queryFn: () => api.listOrgForms(slug)
+		queryKey: orgKeys.forms(slug, statuses),
+		queryFn: () => api.listOrgFormsByStatus(slug, statuses)
 	});
 
 export const useCreateOrgForm = (slug: string) => {
@@ -67,6 +68,18 @@ export const useArchiveForm = (slug: string) => {
 
 	return useMutation<FormsFormResponse, Error, string>({
 		mutationFn: formId => api.archiveForm(formId),
+		onSuccess: (updatedForm, formId) => {
+			qc.setQueryData(orgKeys.form(formId), updatedForm);
+			qc.invalidateQueries({ queryKey: orgKeys.forms(slug) });
+		}
+	});
+};
+
+export const useUnarchiveForm = (slug: string) => {
+	const qc = useQueryClient();
+
+	return useMutation<FormsFormResponse, Error, string>({
+		mutationFn: formId => api.unarchiveForm(formId),
 		onSuccess: (updatedForm, formId) => {
 			qc.setQueryData(orgKeys.form(formId), updatedForm);
 			qc.invalidateQueries({ queryKey: orgKeys.forms(slug) });

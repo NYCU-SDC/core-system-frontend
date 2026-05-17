@@ -11,6 +11,7 @@ import type {
 	FormsFormRequest,
 	FormsFormRequestUpdate,
 	FormsFormResponse,
+	FormsFormStatus,
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse,
@@ -72,6 +73,13 @@ export const listOrgForms = async (slug: string): Promise<FormsFormResponse[]> =
 	return res.data;
 };
 
+export const listOrgFormsByStatus = async (slug: string, statuses?: FormsFormStatus[]): Promise<FormsFormResponse[]> => {
+	const params = statuses && statuses.length > 0 ? { status: statuses } : undefined;
+	const res = await unitListFormsByOrg(slug, params, defaultRequestOptions);
+	assertOk(res.status, "Failed to load forms", res.data);
+	return res.data;
+};
+
 export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsFormResponse> => {
 	const res = await unitCreateOrgForm(slug, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to create form", res.data);
@@ -100,6 +108,20 @@ export const archiveForm = async (formId: string): Promise<FormsFormResponse> =>
 	const res = await formsArchiveForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to archive form", res.data);
 	return res.data;
+};
+
+export const unarchiveForm = async (formId: string): Promise<FormsFormResponse> => {
+	const response = await fetch(`/api/forms/${formId}/unarchive`, {
+		...defaultRequestOptions,
+		method: "POST"
+	});
+	const body = [204, 205, 304].includes(response.status) ? null : await response.text();
+	const data = body ? JSON.parse(body) : null;
+	assertOk(response.status, "Failed to unarchive form", data);
+	if (data == null) {
+		return getFormById(formId);
+	}
+	return data as FormsFormResponse;
 };
 
 export const deleteForm = async (formId: string): Promise<void> => {

@@ -246,6 +246,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const emailQuery = useGoogleSheetEmail();
 	const verifyMutation = useVerifyGoogleSheet(formData.id);
 	const updateFormMutation = useUpdateForm(formData.id);
+	const isArchived = formData.status === "ARCHIVED";
 
 	if (formData.googleSheetUrl !== prevGoogleSheetUrl) {
 		setSheetUrl(formData.googleSheetUrl ?? "");
@@ -374,6 +375,11 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	};
 
 	const handleVerifySheet = () => {
+		if (isArchived) {
+			pushToast({ title: "表單已封存", description: "請先解除封存後再連結試算表。", variant: "warning" });
+			return;
+		}
+
 		if (!sheetUrl.trim()) {
 			pushToast({ title: "請先貼上 Google Sheets URL", variant: "warning" });
 			return;
@@ -462,7 +468,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			<div className={styles.container}>
 				<div className={styles.topHeader}>
 					<h2 className={styles.totalText}>{responseCountText}</h2>
-					<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)}>
+					<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)} disabled={isArchived}>
 						<SquareArrowOutUpRight size={16} />
 						連結試算表
 					</Button>
@@ -588,10 +594,10 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 					</Button>
 				</div>
 
-				<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." />
+				<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." disabled={isArchived} />
 
 				<div className={styles.popupActions}>
-					<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet}>
+					<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet || isArchived}>
 						<Repeat2 size={16} />
 						{isCheckingSheet ? "檢查中..." : "檢查狀態"}
 					</Button>

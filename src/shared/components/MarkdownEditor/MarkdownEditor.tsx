@@ -21,13 +21,14 @@ export interface MarkdownEditorProps {
 	themeColor?: string;
 	variant?: MarkdownEditorVariant;
 	className?: string;
+	disabled?: boolean;
 }
 
 const headingLevels = [1, 2, 3] as [1, 2, 3];
 
 const EMPTY_DOC = { type: "doc", content: [{ type: "paragraph" }] };
 
-export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, error, themeColor, variant = "outline", className }: MarkdownEditorProps) => {
+export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, error, themeColor, variant = "outline", className, disabled = false }: MarkdownEditorProps) => {
 	const resolvedColor = themeColor?.startsWith("--") ? `var(${themeColor})` : themeColor;
 	const [isFocused, setIsFocused] = useState(false);
 	const lastSyncedJson = useRef(JSON.stringify(value ?? null));
@@ -65,6 +66,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			})
 		],
 		content: value ?? EMPTY_DOC,
+		editable: !disabled,
 		editorProps: {
 			attributes: {
 				class: "markdown-editor"
@@ -80,6 +82,11 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 		lastSyncedJson.current = serialized;
 		onChange(json as ProseMirrorLikeDocument);
 	}, [editor, onChange]);
+
+	useEffect(() => {
+		if (!editor) return;
+		editor.setEditable(!disabled);
+	}, [editor, disabled]);
 
 	useEffect(() => {
 		if (!editor) return;
@@ -206,7 +213,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "B",
 			title: "粗體",
 			active: Boolean(editor?.isActive("bold")),
-			disabled: !editor,
+			disabled: !editor || disabled,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleBold().run();
@@ -217,7 +224,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "I",
 			title: "斜體",
 			active: Boolean(editor?.isActive("italic")),
-			disabled: !editor,
+			disabled: !editor || disabled,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleItalic().run();
@@ -228,7 +235,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "•",
 			title: "無序列表",
 			active: Boolean(editor?.isActive("bulletList")),
-			disabled: !editor,
+			disabled: !editor || disabled,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleBulletList().run();
@@ -239,7 +246,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "1.",
 			title: "有序列表",
 			active: Boolean(editor?.isActive("orderedList")),
-			disabled: !editor,
+			disabled: !editor || disabled,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleOrderedList().run();
@@ -250,7 +257,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "❝",
 			title: "引用",
 			active: Boolean(editor?.isActive("blockquote")),
-			disabled: !editor,
+			disabled: !editor || disabled,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleBlockquote().run();
@@ -261,7 +268,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 			label: "</>",
 			title: "程式碼區塊",
 			active: Boolean(editor?.isActive("codeBlock")),
-			disabled: !editor,
+			disabled: !editor || disabled,
 			action: () => {
 				if (!editor) return;
 				editor.chain().focus().toggleCodeBlock().run();
@@ -290,7 +297,7 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 								e.preventDefault();
 								setHeadingDropdownOpen(prev => !prev);
 							}}
-							disabled={!editor}
+							disabled={!editor || disabled}
 						>
 							{currentHeadingLevel ? `H${currentHeadingLevel}` : "H"}
 							<span className={styles.dropdownArrow}>▾</span>
@@ -343,7 +350,13 @@ export const MarkdownEditor = ({ value, onChange, onBlur, placeholder, label, er
 
 					{/* Link button with popover */}
 					<div className={styles.linkWrapper} ref={linkDialogRef}>
-						<button type="button" title="連結" className={`${styles.toolbarButton} ${editor?.isActive("link") ? styles.toolbarButtonActive : ""}`} onClick={openLinkDialog} disabled={!editor}>
+						<button
+							type="button"
+							title="連結"
+							className={`${styles.toolbarButton} ${editor?.isActive("link") ? styles.toolbarButtonActive : ""}`}
+							onClick={openLinkDialog}
+							disabled={!editor || disabled}
+						>
 							🔗
 						</button>
 						{linkDialogOpen && (
