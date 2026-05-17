@@ -315,110 +315,65 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 		saveNodes(processedNodes);
 	};
 
-	const handleAddFalseCondition = async (id: string) => {
-		const prevNodes = [...nodeItems];
-		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`, id);
-		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`, id);
-		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`, id);
-		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
-		const newConditionId = newConditionNodeBase.id;
-		const newTrueSectionId = trueSectionNodeBase.id;
-		const newFalseSectionId = falseSectionNodeBase.id;
-		const newConditionNode: NodeItem = {
-			...newConditionNodeBase,
-			nextTrue: newTrueSectionId,
-			nextFalse: newFalseSectionId
-		};
-		const trueSectionNode: NodeItem = {
-			...trueSectionNodeBase,
-			next: prevNodes.find(node => node.id === id)?.nextFalse
-		};
-		const falseSectionNode: NodeItem = {
-			...falseSectionNodeBase,
-			next: prevNodes.find(node => node.id === id)?.nextFalse
-		};
-		const updatedNodes = prevNodes.map(node => {
-			if (node.id === id) {
-				return { ...node, nextFalse: newConditionId };
-			}
-			return node;
-		});
-		updatedNodes.push(newConditionNode, trueSectionNode, falseSectionNode);
-		const processedNodes = postProcessNodes(updatedNodes);
-		saveNodes(processedNodes);
-	};
+	const handleAddNode = useCallback(
+		(type: NodeItem["type"]) => {
+			if (!reactFlowWrapper.current) return;
 
-	const handleAddCondition = async (id: string) => {
-		const prevNodes = [...nodeItems];
-		const newConditionNodeBase = await createNodeViaSdk("CONDITION", `新條件 ${prevNodes.length + 1}`, id);
-		const trueSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 真 ${prevNodes.length + 1}`, id);
-		const falseSectionNodeBase = await createNodeViaSdk("SECTION", `條件區塊 假 ${prevNodes.length + 1}`, id);
-		if (!newConditionNodeBase || !trueSectionNodeBase || !falseSectionNodeBase) return;
-		const newConditionId = newConditionNodeBase.id;
-		const newTrueSectionId = trueSectionNodeBase.id;
-		const newFalseSectionId = falseSectionNodeBase.id;
-		const newConditionNode: NodeItem = {
-			...newConditionNodeBase,
-			nextTrue: newTrueSectionId,
-			nextFalse: newFalseSectionId
-		};
-		const oldNext = prevNodes.find(node => node.id === id)?.next;
-		const trueSectionNode: NodeItem = {
-			...trueSectionNodeBase,
-			next: oldNext
-		};
-		const falseSectionNode: NodeItem = {
-			...falseSectionNodeBase,
-			next: oldNext
-		};
-		const updatedNodes = prevNodes.map(node => {
-			if (node.id === id) {
-				return { ...node, next: newConditionId };
-			}
-			return node;
-		});
-		updatedNodes.push(newConditionNode, trueSectionNode, falseSectionNode);
-		const processedNodes = postProcessNodes(updatedNodes);
-		saveNodes(processedNodes);
-	};
+			const { x, y, zoom } = getViewport();
+			const width = reactFlowWrapper.current.offsetWidth;
+			const height = reactFlowWrapper.current.offsetHeight;
 
-	const handleAddMergeSection = async (id: string) => {
-		const prevNodes = [...nodeItems];
-		const nodeToUpdate = prevNodes.find(node => node.id === id);
-		if (!nodeToUpdate) {
-			return;
-		}
-		const newMergeNodeBase = await createNodeViaSdk("SECTION", `合併節點 ${prevNodes.length + 1}`, id);
-		if (!newMergeNodeBase) return;
-		const newMergeNodeId = newMergeNodeBase.id;
-		const newMergeNode: NodeItem = {
-			...newMergeNodeBase,
-			next: nodeToUpdate?.mergeId || undefined
-		};
+			const centerX = (width / 2 - x) / zoom;
+			const centerY = (height / 2 - y) / zoom;
 
-		const nodeMap = new Map<string, NodeItem>(prevNodes.map(n => [n.id, n]));
-		const truePath = getPath(nodeToUpdate.nextTrue || "", nodeMap);
-		const falsePath = getPath(nodeToUpdate.nextFalse || "", nodeMap);
+			createWorkflowNodeMutation.mutate(
+				{
+					type: type as FormWorkflowCreateNodeRequest["type"],
+					payload: { x: centerX, y: centerY }
+				},
+				{
+					onSuccess: () => {
+						workflowQuery.refetch();
+						sectionsQuery.refetch();
+					},
+					onError: error => {
+						console.error("新增節點失敗:", error);
+					}
+				}
+			);
+		},
+		[createWorkflowNodeMutation, workflowQuery, sectionsQuery, getViewport]
+	);
 
-		const updatedNodes = prevNodes.map(node => {
-			if (!truePath.includes(node.id) && !falsePath.includes(node.id) && node.id !== id) {
-				return node;
+	const handleConditionSelectedChange = useCallback(
+		(nodeId: string, conditionRule: FormWorkflowNodeResponse["conditionRule"]) => {
+			const currentNodes = getNodes() as AppNode[];
+			const currentEdges = getEdges();
+
+			const targetNode = currentNodes.find(n => n.id === nodeId);
+			if (!targetNode) {
+				return;
 			}
-			if (node.next === nodeToUpdate.mergeId) {
-				return { ...node, next: newMergeNodeId };
-			}
-			if (node.nextTrue === nodeToUpdate.mergeId) {
-				return { ...node, nextTrue: newMergeNodeId };
-			}
-			if (node.nextFalse === nodeToUpdate.mergeId) {
-				return { ...node, nextFalse: newMergeNodeId };
-			}
-			return node;
-		});
-		updatedNodes.push(newMergeNode);
-		const processedNodes = postProcessNodes(updatedNodes);
-		saveNodes(processedNodes);
-	};
+
+			const updatedNode: AppNode = {
+				...targetNode,
+				data: {
+					...targetNode.data,
+					raw: {
+						...(targetNode.data.raw as FormWorkflowNodeResponse),
+						conditionRule: conditionRule
+					}
+				}
+			};
+
+			const nextNodes = currentNodes.map(n => (n.id === nodeId ? updatedNode : n));
+
+			setNodes(nextNodes);
+
+			updateWorkflow(nextNodes, currentEdges);
+		},
+		[getNodes, getEdges, updateWorkflow]
+	);
 
 	const handleChoiceChange = useCallback(
 		(nodeId: string, choiceId: string) => {
