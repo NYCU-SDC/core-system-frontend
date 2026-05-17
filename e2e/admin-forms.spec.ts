@@ -2,12 +2,23 @@ import { expect, mockRoute, test } from "./fixtures";
 
 const ORG_SLUG = "SDC";
 const BASE_URL = `/orgs/${ORG_SLUG}/forms`;
+const FORMS_API_PATTERN = new RegExp(`/api/orgs/${ORG_SLUG}/forms(?:\\?.*)?$`);
+
+const makeUser = (name: string) => ({
+	id: `user-${name.toLowerCase()}`,
+	name,
+	username: name.toLowerCase(),
+	avatarUrl: `https://example.com/avatar/${name.toLowerCase()}.png`,
+	emails: []
+});
 
 const draftForm1 = {
 	id: "f1",
 	title: "草稿表單一",
 	status: "DRAFT",
-	deadline: null,
+	lastEditor: makeUser("Alice"),
+	creator: makeUser("Bob"),
+	deadline: undefined,
 	updatedAt: "2025-05-28T08:00:00Z",
 	visibility: "PUBLIC"
 };
@@ -16,6 +27,8 @@ const publishedForm = {
 	id: "f2",
 	title: "已發布表單",
 	status: "PUBLISHED",
+	lastEditor: makeUser("Charlie"),
+	creator: makeUser("Dave"),
 	deadline: "2099-07-01T00:00:00Z",
 	updatedAt: "2025-06-01T10:00:00Z",
 	visibility: "PUBLIC"
@@ -25,7 +38,9 @@ const draftForm2 = {
 	id: "f3",
 	title: "草稿表單二",
 	status: "DRAFT",
-	deadline: null,
+	lastEditor: makeUser("Eve"),
+	creator: makeUser("Frank"),
+	deadline: undefined,
 	updatedAt: "2025-06-10T00:00:00Z",
 	visibility: "PUBLIC"
 };
@@ -34,6 +49,8 @@ const doneForm = {
 	id: "f4",
 	title: "已截止表單",
 	status: "PUBLISHED",
+	lastEditor: makeUser("Grace"),
+	creator: makeUser("Heidi"),
 	deadline: "2020-01-01T00:00:00Z",
 	updatedAt: "2025-01-01T00:00:00Z",
 	visibility: "PUBLIC"
@@ -43,17 +60,19 @@ const draftForm3 = {
 	id: "f5",
 	title: "草稿表單三",
 	status: "DRAFT",
-	deadline: null,
+	lastEditor: makeUser("Ivan"),
+	creator: makeUser("Judy"),
+	deadline: undefined,
 	updatedAt: "2025-06-15T00:00:00Z",
 	visibility: "PUBLIC"
 };
 
 test("clicking 建立表單 POSTs to API and navigates to new form info page", async ({ page }) => {
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms**`, []);
+	await mockRoute(page, FORMS_API_PATTERN, []);
 
 	const newForm = { id: "new-f1", title: "未命名表單", status: "DRAFT" };
 
-	await page.route(`**/api/orgs/${ORG_SLUG}/forms**`, async route => {
+	await page.route(FORMS_API_PATTERN, async route => {
 		if (route.request().method() === "POST") {
 			await route.fulfill({
 				status: 200,
@@ -78,9 +97,9 @@ test("clicking 建立表單 POSTs to API and navigates to new form info page", a
 });
 
 test("create form failure shows error toast and stays on forms page", async ({ page }) => {
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms**`, []);
+	await mockRoute(page, FORMS_API_PATTERN, []);
 
-	await page.route(`**/api/orgs/${ORG_SLUG}/forms**`, route => {
+	await page.route(FORMS_API_PATTERN, route => {
 		if (route.request().method() === "POST") {
 			route.fulfill({
 				status: 500,
@@ -107,7 +126,7 @@ test("create form failure shows error toast and stays on forms page", async ({ p
 });
 
 test("clicking a form card navigates to its info page", async ({ page }) => {
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms**`, [publishedForm]);
+	await mockRoute(page, FORMS_API_PATTERN, [publishedForm]);
 
 	await page.goto(BASE_URL);
 	await page.waitForSelector(`text=${publishedForm.title}`);
@@ -119,7 +138,7 @@ test("clicking a form card navigates to its info page", async ({ page }) => {
 
 test("tab filtering works and filtered cards are still clickable", async ({ page }) => {
 	const allForms = [draftForm1, publishedForm, draftForm2, doneForm, draftForm3];
-	await mockRoute(page, `**/api/orgs/${ORG_SLUG}/forms**`, allForms);
+	await mockRoute(page, FORMS_API_PATTERN, allForms);
 
 	await page.goto(BASE_URL);
 

@@ -7,6 +7,7 @@ import type {
 	FormWorkflowNodeStructure,
 	FormsFont,
 	FormsFormCoverUploadResponse,
+	FormsFormPublishResponse,
 	FormsFormRequest,
 	FormsFormRequestUpdate,
 	FormsFormResponse,
@@ -74,7 +75,8 @@ export const listOrgForms = async (slug: string): Promise<FormsFormResponse[]> =
 };
 
 export const listOrgFormsByStatus = async (slug: string, statuses?: readonly FormsFormStatus[]): Promise<FormsFormResponse[]> => {
-	const res = await unitListFormsByOrg(slug, statuses && statuses.length > 0 ? { status: [...statuses] } : undefined, defaultRequestOptions);
+	const params = statuses && statuses.length > 0 ? { status: [...statuses] } : undefined;
+	const res = await unitListFormsByOrg(slug, params, defaultRequestOptions);
 	assertOk(res.status, "Failed to load forms", res.data);
 	return res.data;
 };
@@ -97,11 +99,10 @@ export const updateForm = async (formId: string, req: FormsFormRequestUpdate): P
 	return res.data;
 };
 
-export const publishForm = async (formId: string): Promise<FormsFormResponse> => {
+export const publishForm = async (formId: string): Promise<FormsFormPublishResponse> => {
 	const res = await formsPublishForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to publish form", res.data);
-	// publishForm returns FormPublishResponse which has same shape as Form
-	return res.data as unknown as FormsFormResponse;
+	return res.data;
 };
 
 export const archiveForm = async (formId: string): Promise<FormsFormResponse> => {
@@ -135,25 +136,11 @@ export const getFormFonts = async (): Promise<FormsFont[]> => {
 
 // ── Sections & Questions ──────────────────────────────────────────────────
 
-export type FormsSectionsResponse = { sections: FormsSection[] };
-
-export const listSections = async (formId: string): Promise<FormsSectionsResponse[]> => {
+export const listSections = async (formId: string): Promise<FormsSectionBundle[]> => {
 	const res = await formsListSections(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load sections", res.data);
 
-	const raw = res.data as unknown;
-
-	// Normalize: the actual API may return [{section:{...}, questions:[...]}]
-	// instead of the SDK-typed [{sections: FormsSection[]}].
-	if (Array.isArray(raw) && raw.length > 0 && raw[0] !== null && typeof raw[0] === "object" && "section" in (raw[0] as object)) {
-		const normalized: FormsSection[] = (raw as FormsSectionBundle[]).map(item => ({
-			...item.section,
-			questions: item.questions ?? []
-		}));
-		return [{ sections: normalized }];
-	}
-
-	return raw as FormsSectionsResponse[];
+	return res.data;
 };
 
 export const updateSection = async (formId: string, sectionId: string, req: FormsSectionRequest): Promise<FormsSection> => {
@@ -209,7 +196,10 @@ export const deleteWorkflowNode = async (formId: string, nodeId: string): Promis
 export const listMyForms = async (): Promise<UnitUserForm[]> => {
 	const res = await unitListFormsOfCurrentUser(defaultRequestOptions);
 	assertOk(res.status, "Failed to load my forms", res.data);
-	return res.data as UnitUserForm[];
+	if (res.status !== 200) {
+		throw new Error("Failed to load my forms");
+	}
+	return res.data;
 };
 
 // ── Responses ─────────────────────────────────────────────────────────────
@@ -252,13 +242,8 @@ export const cancelFormResponseSubmission = async (responseId: string): Promise<
 		...defaultRequestOptions,
 		method: "POST"
 	});
-
-	let data: unknown = {};
-	if (![204, 205, 304].includes(response.status)) {
-		const body = await response.text();
-		data = body.trim().length > 0 ? JSON.parse(body) : {};
-	}
-
+	const body = [204, 205, 304].includes(response.status) ? "" : await response.text();
+	const data = body.trim().length > 0 ? JSON.parse(body) : {};
 	assertOk(response.status, "Failed to cancel submission", data);
 };
 

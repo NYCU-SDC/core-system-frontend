@@ -5,6 +5,7 @@ import type {
 	FormsQuestionRequest,
 	FormsQuestionResponse,
 	FormsSection,
+	FormsSectionBundle,
 	FormsSectionRequest,
 	ResponsesAnswersRequest,
 	ResponsesDateAnswer,
@@ -15,7 +16,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useSections = (formId: string | undefined, enabled = true) =>
-	useQuery<api.FormsSectionsResponse[]>({
+	useQuery<FormsSectionBundle[]>({
 		queryKey: formKeys.sections(formId ?? ""),
 		queryFn: () => api.listSections(formId!),
 		enabled: enabled && !!formId
