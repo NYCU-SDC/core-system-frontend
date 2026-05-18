@@ -1,6 +1,8 @@
+import { htmlToMarkdown } from "@/shared/utils/htmlToMarkdown";
 import * as RadixCheckbox from "@radix-ui/react-checkbox";
 import { Check } from "lucide-react";
-import { useState, type ComponentPropsWithoutRef } from "react";
+import { useMemo, useState, type ComponentPropsWithoutRef } from "react";
+import { Markdown } from "../Markdown/Markdown";
 import styles from "./DetailedCheckbox.module.css";
 
 export interface DetailedCheckboxProps extends ComponentPropsWithoutRef<typeof RadixCheckbox.Root> {
@@ -12,6 +14,7 @@ export interface DetailedCheckboxProps extends ComponentPropsWithoutRef<typeof R
 export const DetailedCheckbox = ({ title, description, themeColor, style, id, ...props }: DetailedCheckboxProps) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [needsExpansion, setNeedsExpansion] = useState(false);
+	const markdownDescription = useMemo(() => htmlToMarkdown(description), [description]);
 
 	const checkboxStyle = themeColor ? { ...style, borderColor: themeColor, backgroundColor: props.checked ? themeColor : undefined } : style;
 
@@ -61,7 +64,7 @@ export const DetailedCheckbox = ({ title, description, themeColor, style, id, ..
 								}
 							}}
 						>
-							<div ref={handleDescriptionRef} className={`${styles.description} ${isExpanded ? styles.descriptionExpanded : ""}`} dangerouslySetInnerHTML={{ __html: description }} />
+							<Markdown ref={handleDescriptionRef} className={`${styles.description} ${isExpanded ? styles.descriptionExpanded : ""}`} content={markdownDescription} />
 							{needsExpansion && !isExpanded && <span className={styles.showMoreButton}>...顯示全部</span>}
 						</div>
 					</div>

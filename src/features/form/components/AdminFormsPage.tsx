@@ -4,7 +4,8 @@ import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import { EMPTY_PROSE_MIRROR_DOC } from "@/shared/utils/proseMirror";
+import type { FormsFormResponse, ProseMirrorDocument } from "@nycu-sdc/core-system-sdk";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -12,9 +13,13 @@ import styles from "./AdminFormsPage.module.css";
 import { StatusTag, type StatusVariant } from "./StatusTag";
 import { TabButtons } from "./TabButtons";
 
-interface FormRow {
+export interface FormRow {
 	id: string;
 	title: string;
+	lastEditor: string;
+	lastEditorAvatarUrl: string;
+	creator: string;
+	creatorAvatarUrl: string;
 	lastEdited: string;
 	status: StatusVariant;
 	deadline: string;
@@ -26,6 +31,9 @@ const formatDate = (isoDate: string): string => {
 };
 
 const toStatusVariant = (status: string, deadline: string | null | undefined): StatusVariant => {
+	if (status === "ARCHIVED") {
+		return "archived";
+	}
 	if (deadline) {
 		const deadlineDate = new Date(deadline);
 		const now = new Date();
@@ -39,10 +47,14 @@ const toStatusVariant = (status: string, deadline: string | null | undefined): S
 	return "draft";
 };
 
-const toFormRow = (form: FormsForm): FormRow => ({
+const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
+	lastEditor: form.lastEditor.name,
+	lastEditorAvatarUrl: form.lastEditor.avatarUrl,
+	creator: form.creator.name,
+	creatorAvatarUrl: form.creator.avatarUrl,
 	status: toStatusVariant(form.status, form.deadline),
 	deadline: form.deadline ? formatDate(form.deadline) : "-"
 });
@@ -50,12 +62,12 @@ const toFormRow = (form: FormsForm): FormRow => ({
 export const AdminFormsPage = () => {
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
-	const [activeTab, setActiveTab] = useState("all");
+	const [activeTab, setActiveTab] = useState<"all" | StatusVariant>("all");
 	const meta = useSeo({ rule: SEO_CONFIG.adminForms });
 
 	// Fetch forms from API
 	const orgSlug = useActiveOrgSlug();
-	const formsQuery = useOrgForms(orgSlug);
+	const formsQuery = useOrgForms(orgSlug, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 
 	useEffect(() => {
@@ -82,7 +94,7 @@ export const AdminFormsPage = () => {
 		createFormMutation.mutate(
 			{
 				title: "未命名表單",
-				description: "",
+				description: EMPTY_PROSE_MIRROR_DOC as unknown as ProseMirrorDocument,
 				messageAfterSubmission: "感謝您的填寫！",
 				visibility: "PUBLIC"
 			},
@@ -113,10 +125,11 @@ export const AdminFormsPage = () => {
 								{ value: "all", label: "所有表單" },
 								{ value: "draft", label: "草稿" },
 								{ value: "published", label: "已發布" },
-								{ value: "done", label: "已截止" }
+								{ value: "done", label: "已截止" },
+								{ value: "archived", label: "已封存" }
 							]}
 							activeTab={activeTab}
-							onTabChange={setActiveTab}
+							onTabChange={value => setActiveTab(value as "all" | StatusVariant)}
 						/>
 						<Button icon={Plus} onClick={handleCreateForm} processing={createFormMutation.isPending}>
 							建立表單
@@ -139,6 +152,8 @@ export const AdminFormsPage = () => {
 								<div className={styles.cardInfo}>
 									<span>最後編輯：{form.lastEdited}</span>
 									<span>截止日期：{form.deadline}</span>
+									<span>最後編輯者：{form.lastEditor}</span>
+									<span>建立者：{form.creator}</span>
 								</div>
 							</div>
 						))}

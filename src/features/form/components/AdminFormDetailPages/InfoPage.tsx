@@ -1,17 +1,18 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useFormResponses } from "@/features/form/hooks/useFormResponses";
-import { useArchiveForm, useDeleteForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
+import { useArchiveForm, useDeleteForm, useUnarchiveForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, Input, LoadingSpinner, Switch, Tooltip, useToast } from "@/shared/components";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
+import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror } from "@/shared/utils/proseMirror";
+import type { FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./InfoPage.module.css";
 
 interface AdminFormInfoPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
@@ -21,6 +22,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const responsesQuery = useFormResponses(formData.id);
 	const updateFormMutation = useUpdateForm(formData.id);
 	const archiveFormMutation = useArchiveForm(orgSlug);
+	const unarchiveFormMutation = useUnarchiveForm(orgSlug);
 	const deleteFormMutation = useDeleteForm(orgSlug);
 	const sectionsQuery = useSections(formData.id);
 
@@ -30,41 +32,43 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 
 	// derive all questions across all sections
 	const allQuestions = useMemo(() => {
-		if (!sectionsQuery.data) return [];
-		return sectionsQuery.data.flatMap(item => {
-			const sections = Array.isArray(item.sections) ? item.sections : [];
-			return sections.flatMap(section => (section.questions ?? []).map(question => ({ sectionId: section.id, question })));
-		});
+		return sectionsQuery.data?.flatMap(group => group.questions?.map(question => ({ question: { ...question }, sectionId: group.section.id })) ?? []) ?? [];
 	}, [sectionsQuery.data]);
 
-	const allRequired = allQuestions.length > 0 && allQuestions.every(({ question: q }) => q.required);
+	const allRequired = allQuestions.length > 0 && allQuestions.every(q => q.question.required);
 	const [isSettingRequired, setIsSettingRequired] = useState(false);
 
 	// local draft state for settings
 	const [title, setTitle] = useState(formData.title ?? "");
-	const [description, setDescription] = useState(formData.description ?? "");
+	const [description, setDescription] = useState(() => fromApiProseMirror(formData.description));
 	const [confirmMsg, setConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
-	const [savedDescription, setSavedDescription] = useState(formData.description ?? "");
+	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(fromApiProseMirror(formData.description)));
 	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [savedDeadline, setSavedDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [savedPublishTime, setSavedPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [savedIsPublic, setSavedIsPublic] = useState(formData.visibility === "PUBLIC");
 	const isArchived = formData.status === "ARCHIVED";
+	const serializedDescription = serializeProseMirrorDoc(description);
 	const hasSettingChanges =
-		title !== savedTitle || description !== savedDescription || confirmMsg !== savedConfirmMsg || deadline !== savedDeadline || publishTime !== savedPublishTime || isPublic !== savedIsPublic;
+		title !== savedTitle ||
+		serializedDescription !== savedDescription ||
+		confirmMsg !== savedConfirmMsg ||
+		deadline !== savedDeadline ||
+		publishTime !== savedPublishTime ||
+		isPublic !== savedIsPublic;
 
 	useEffect(() => {
-		if (!hasSettingChanges || updateFormMutation.isPending) return;
+		if (!hasSettingChanges || updateFormMutation.isPending || isArchived) return;
 
 		const timerId = window.setTimeout(() => {
 			updateFormMutation.mutate(
 				{
 					title,
-					description,
+					description: toApiProseMirror(description) as unknown as ProseMirrorDocumentUpdate,
 					messageAfterSubmission: confirmMsg,
 					deadline: deadline ? new Date(deadline).toISOString() : undefined,
 					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
@@ -73,7 +77,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				{
 					onSuccess: () => {
 						setSavedTitle(title);
-						setSavedDescription(description);
+						setSavedDescription(serializedDescription);
 						setSavedConfirmMsg(confirmMsg);
 						setSavedDeadline(deadline);
 						setSavedPublishTime(publishTime);
@@ -85,9 +89,10 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}, 500);
 
 		return () => window.clearTimeout(timerId);
-	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, confirmMsg, deadline, publishTime, isPublic, pushToast]);
+	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, serializedDescription, confirmMsg, deadline, publishTime, isPublic, pushToast, isArchived]);
 
 	const handleToggleAllRequired = async (checked: boolean) => {
+		if (isArchived) return;
 		if (allQuestions.length === 0) {
 			pushToast({ title: "此表單沒有題目", variant: "warning" });
 			return;
@@ -99,7 +104,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					required: checked,
 					type: q.type,
 					title: q.title,
-					description: q.description ?? "",
+					description: q.description ?? EMPTY_PROSE_MIRROR_DOC,
 					order: (q as unknown as { order?: number }).order ?? idx,
 					...(q.choices ? { choices: q.choices } : {}),
 					...(q.scale ? { scale: q.scale } : {}),
@@ -123,6 +128,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		archiveFormMutation.mutate(formData.id, {
 			onSuccess: () => pushToast({ title: "已封存", variant: "success" }),
 			onError: error => pushToast({ title: "封存失敗", description: (error as Error).message, variant: "error" })
+		});
+	};
+
+	const handleUnarchive = () => {
+		unarchiveFormMutation.mutate(formData.id, {
+			onSuccess: () => pushToast({ title: "已解除封存", variant: "success" }),
+			onError: error => pushToast({ title: "解除封存失敗", description: (error as Error).message, variant: "error" })
 		});
 	};
 
@@ -155,14 +167,14 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					</div>
 				</section>
 				<h3>表單設定</h3>
-				<Input label="表單標題" placeholder="輸入表單標題" value={title} onChange={e => setTitle(e.target.value)} />
-				<Input label="表單描述" placeholder="輸入表單描述" value={description} onChange={e => setDescription(e.target.value)} />
-				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" value={confirmMsg} onChange={e => setConfirmMsg(e.target.value)} />
-				<Input label="開始日期" type="date" value={publishTime} onChange={e => setPublishTime(e.target.value)} />
-				<Input label="結束日期" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
+				<Input label="表單標題" placeholder="輸入表單標題" value={title} onChange={e => setTitle(e.target.value)} disabled={isArchived} />
+				<MarkdownEditor label="表單描述" placeholder="輸入表單描述" value={description} onChange={setDescription} disabled={isArchived} />
+				<Input label="確認訊息" placeholder="輸入表單提交後顯示的訊息" value={confirmMsg} onChange={e => setConfirmMsg(e.target.value)} disabled={isArchived} />
+				<Input label="開始日期" type="date" value={publishTime} onChange={e => setPublishTime(e.target.value)} disabled={isArchived} />
+				<Input label="結束日期" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} disabled={isArchived} />
 				<div className={`${styles.switch}`}>
 					<p className={`${styles.label}`}>公開表單（所有登入使用者可見）</p>
-					<Switch checked={isPublic} onCheckedChange={setIsPublic} />
+					<Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={isArchived} />
 				</div>
 				<Tooltip content="目前所有表單均需登入才能填寫" side="right">
 					<div className={`${styles.switch}`}>
@@ -178,12 +190,16 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				</Tooltip>
 				<div className={`${styles.switch}`}>
 					<p className={`${styles.label}`}>所有問題設為必填</p>
-					{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isSettingRequired || allQuestions.length === 0} />}
+					{sectionsQuery.isLoading ? (
+						<LoadingSpinner />
+					) : (
+						<Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isArchived || isSettingRequired || allQuestions.length === 0} />
+					)}
 				</div>
 				<div className={styles.dangerActions}>
-					<Button onClick={handleArchive} disabled={archiveFormMutation.isPending || isArchived}>
+					<Button onClick={isArchived ? handleUnarchive : handleArchive} disabled={archiveFormMutation.isPending || unarchiveFormMutation.isPending}>
 						<Archive size={14} />
-						{isArchived ? "已封存" : "封存"}
+						{isArchived ? "解除封存" : "封存"}
 					</Button>
 					<Button themeColor="var(--red)" onClick={handleDelete} disabled={deleteFormMutation.isPending}>
 						<Trash2 size={14} />

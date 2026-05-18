@@ -1,10 +1,14 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
-import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { marked } from "marked";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
+import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { FormsQuestionRequest, FormsQuestionResponse, ProseMirrorDocument, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { QuestionCard } from "./components/QuestionCard";
@@ -12,6 +16,15 @@ import { QUESTION_STRATEGIES } from "./QuestionConfig";
 import styles from "./SectionEditPage.module.css";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
+
+function SortableQuestionItem({ id, children }: { id: string; children: (listeners: React.HTMLAttributes<HTMLElement> | undefined) => ReactNode }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+	return (
+		<div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes}>
+			{children(listeners as React.HTMLAttributes<HTMLElement> | undefined)}
+		</div>
+	);
+}
 
 type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
 	url?: string;
@@ -25,8 +38,8 @@ export const AdminSectionEditPage = () => {
 	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
-	const section = sectionsQuery.data?.flatMap(response => (Array.isArray(response.sections) ? response.sections : [])).find(foundSection => foundSection.id === sectionId);
-	const apiQuestions = section?.questions ?? [];
+	const section = sectionsQuery.data?.map(response => response.section).find(foundSection => foundSection.id === sectionId);
+	const apiQuestions = (sectionsQuery.data?.flatMap(response => response.questions ?? []).filter(q => q.sectionId === sectionId) ?? []) as FormsQuestionResponse[];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
@@ -45,10 +58,11 @@ export const AdminSectionEditPage = () => {
 	// States
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
+	const [clientIds, setClientIds] = useState<string[]>([]);
 	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
-	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState("");
+	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState<ProseMirrorLikeDocument>(EMPTY_PROSE_MIRROR_DOC);
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
-	const [savedSectionDescription, setSavedSectionDescription] = useState("");
+	const [savedSectionDescription, setSavedSectionDescription] = useState(() => serializeProseMirrorDoc(EMPTY_PROSE_MIRROR_DOC));
 	const questionsRef = useRef<Question[]>([]);
 	const questionIdsRef = useRef<(string | undefined)[]>([]);
 	const dirtyQuestionIndexesRef = useRef<Set<number>>(new Set());
@@ -91,23 +105,42 @@ export const AdminSectionEditPage = () => {
 		[markQuestionsDirty]
 	);
 
+	const remapDirtyQuestionIndexesAfterMove = useCallback((oldIndex: number, newIndex: number) => {
+		if (oldIndex === newIndex || dirtyQuestionIndexesRef.current.size === 0) return;
+
+		const remappedIndexes = new Set<number>();
+		dirtyQuestionIndexesRef.current.forEach(index => {
+			if (index === oldIndex) {
+				remappedIndexes.add(newIndex);
+			} else if (oldIndex < newIndex && index > oldIndex && index <= newIndex) {
+				remappedIndexes.add(index - 1);
+			} else if (oldIndex > newIndex && index >= newIndex && index < oldIndex) {
+				remappedIndexes.add(index + 1);
+			} else {
+				remappedIndexes.add(index);
+			}
+		});
+		dirtyQuestionIndexesRef.current = remappedIndexes;
+	}, []);
+
 	const saveSectionIfChanged = useCallback(
-		(nextSectionTitle: string, nextSectionDescription: string) => {
+		(nextSectionTitle: string, nextSectionDescription: ProseMirrorLikeDocument) => {
 			if (!sectionId) return;
-			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
+			if (nextSectionTitle === savedSectionTitle && serializeProseMirrorDoc(nextSectionDescription) === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
-				{ title: nextSectionTitle, description: nextSectionDescription ? (marked.parse(nextSectionDescription) as string) : nextSectionDescription },
+				{ title: nextSectionTitle, description: toApiProseMirror(nextSectionDescription) as unknown as ProseMirrorDocumentUpdate },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
-						setSavedSectionDescription(nextSectionDescription);
+						setSavedSectionDescription(serializeProseMirrorDoc(nextSectionDescription));
 						if (workflowQuery.data?.workflow) {
 							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: nextSectionTitle } : n));
 							updateWorkflowMutation.mutate(
 								updatedNodes.map(n => ({
 									id: n.id,
 									label: n.label,
+									payload: n.payload,
 									...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 									...(n.next !== undefined && { next: n.next }),
 									...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -158,7 +191,7 @@ export const AdminSectionEditPage = () => {
 							const updated: Question = {
 								...old,
 								title: apiQuestion.title ?? old.title,
-								description: apiQuestion.description ?? old.description,
+								description: fromApiProseMirror(apiQuestion.description) ?? old.description,
 								required: apiQuestion.required ?? old.required,
 								...(apiQuestion.sourceId !== undefined && {
 									sourceQuestionId: apiQuestion.sourceId ?? undefined,
@@ -217,7 +250,7 @@ export const AdminSectionEditPage = () => {
 				return {
 					type: q.type as Question["type"],
 					title: q.title,
-					description: q.description ?? "",
+					description: fromApiProseMirror(q.description),
 					required: q.required ?? false,
 					isFromAnswer: Boolean(q.sourceId),
 					sourceQuestionId: q.sourceId,
@@ -244,6 +277,7 @@ export const AdminSectionEditPage = () => {
 			});
 			setQuestions(mapped);
 			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
+			setClientIds(apiQuestions.map(q => q.id));
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [apiQuestions.length]);
@@ -257,10 +291,11 @@ export const AdminSectionEditPage = () => {
 	}, [questionIds]);
 
 	useEffect(() => {
+		const normalizedDescription = fromApiProseMirror(section?.description);
 		setSectionTitleDraft(section?.title ?? "");
-		setSectionDescriptionDraft(section?.description ?? "");
+		setSectionDescriptionDraft(normalizedDescription);
 		setSavedSectionTitle(section?.title ?? "");
-		setSavedSectionDescription(section?.description ?? "");
+		setSavedSectionDescription(serializeProseMirrorDoc(normalizedDescription));
 	}, [section?.id, section?.title, section?.description]);
 
 	useEffect(() => {
@@ -293,7 +328,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: q.description ? (marked.parse(q.description) as string) : q.description,
+			description: toApiProseMirror(q.description) as ProseMirrorDocument,
 			required: q.required ?? false,
 			order
 		};
@@ -311,16 +346,14 @@ export const AdminSectionEditPage = () => {
 
 	const sourceQuestionOptions = useMemo(
 		() =>
-			(sectionsQuery.data ?? [])
-				.flatMap(sectionRes => sectionRes.sections ?? [])
-				.flatMap(sectionItem =>
-					(sectionItem.questions ?? [])
-						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
-						.map(question => ({
-							value: question.id,
-							label: `${sectionItem.title} / ${question.title}`
-						}))
-				),
+			(sectionsQuery.data ?? []).flatMap(sectionRes =>
+				(sectionRes.questions ?? [])
+					.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
+					.map(question => ({
+						value: question.id,
+						label: `${sectionRes.section.title} / ${question.title}`
+					}))
+			),
 		[sectionsQuery.data]
 	);
 
@@ -335,7 +368,7 @@ export const AdminSectionEditPage = () => {
 		const nextQuestion: Question = {
 			type: nextType,
 			title: prev.title,
-			description: prev.description,
+			description: prev.description ?? EMPTY_PROSE_MIRROR_DOC,
 			required: prev.required,
 			isFromAnswer: prev.isFromAnswer,
 			sourceQuestionId: prev.sourceQuestionId,
@@ -384,7 +417,7 @@ export const AdminSectionEditPage = () => {
 		const newQuestion: Question = {
 			type,
 			title: "問題標題",
-			description: "",
+			description: EMPTY_PROSE_MIRROR_DOC,
 			required: false,
 			isFromAnswer: false,
 			...strategy.initialState()
@@ -392,6 +425,7 @@ export const AdminSectionEditPage = () => {
 
 		const updatedQuestions = [...questions, newQuestion];
 		setQuestions(updatedQuestions);
+		setClientIds(prev => [...prev, uuidv4()]);
 		setNewlyAddedIndex(newIndex);
 		markQuestionDirty(newIndex);
 	};
@@ -403,6 +437,11 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index, 1);
 		setQuestionIdsAndRef(updatedQuestionIds);
+		setClientIds(prev => {
+			const next = [...prev];
+			next.splice(index, 1);
+			return next;
+		});
 		markQuestionsDirtyFrom(index, updatedQuestions.length);
 	};
 
@@ -414,6 +453,11 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index + 1, 0, undefined);
 		setQuestionIdsAndRef(updatedQuestionIds);
+		setClientIds(prev => {
+			const next = [...prev];
+			next.splice(index + 1, 0, uuidv4());
+			return next;
+		});
 		markQuestionsDirtyFrom(index + 1, updatedQuestions.length);
 	};
 
@@ -424,9 +468,9 @@ export const AdminSectionEditPage = () => {
 		markQuestionDirty(index);
 	};
 
-	const handleDescriptionChange = (index: number, newDescription: string) => {
+	const handleDescriptionChange = (index: number, newDescription: ProseMirrorLikeDocument | null) => {
 		const updatedQuestions = [...questions];
-		updatedQuestions[index].description = newDescription;
+		updatedQuestions[index].description = newDescription ?? EMPTY_PROSE_MIRROR_DOC;
 		setQuestions(updatedQuestions);
 		markQuestionDirty(index);
 	};
@@ -635,6 +679,49 @@ export const AdminSectionEditPage = () => {
 		markQuestionDirty(questionIndex);
 	};
 
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			const { active, over } = event;
+			if (!over || active.id === over.id) return;
+
+			const oldIndex = clientIds.indexOf(active.id as string);
+			const newIndex = clientIds.indexOf(over.id as string);
+			if (oldIndex === -1 || newIndex === -1) return;
+
+			// Capture before state update to avoid stale closure
+			const draggedQuestion = questionsRef.current[oldIndex];
+			const draggedQuestionId = questionIdsRef.current[oldIndex];
+
+			setQuestions(prev => arrayMove(prev, oldIndex, newIndex));
+			setQuestionIdsAndRef(arrayMove(questionIds, oldIndex, newIndex));
+			setClientIds(prev => arrayMove(prev, oldIndex, newIndex));
+			remapDirtyQuestionIndexesAfterMove(oldIndex, newIndex);
+
+			if (draggedQuestionId && draggedQuestion) {
+				// Only PUT the dragged question with its new order.
+				// The backend shifts all other questions automatically.
+				updateQuestion.mutate(
+					{ questionId: draggedQuestionId, req: toApiRequest(draggedQuestion, newIndex + 1) },
+					{
+						onError: err => {
+							pushToast({ title: "排序失敗", description: (err as Error).message, variant: "error" });
+							setQuestions(prev => arrayMove(prev, newIndex, oldIndex));
+							setQuestionIdsAndRef(arrayMove(questionIdsRef.current, newIndex, oldIndex));
+							setClientIds(prev => arrayMove(prev, newIndex, oldIndex));
+							remapDirtyQuestionIndexesAfterMove(newIndex, oldIndex);
+						}
+					}
+				);
+			} else if (draggedQuestion) {
+				// Question not yet persisted; auto-save will create it with the correct order
+				markQuestionDirty(newIndex);
+			}
+		},
+		[clientIds, questionIds, questionsRef, questionIdsRef, updateQuestion, pushToast, setQuestionIdsAndRef, remapDirtyQuestionIndexesAfterMove, markQuestionDirty]
+	);
+
 	return (
 		<>
 			<div className={styles.layout}>
@@ -653,63 +740,70 @@ export const AdminSectionEditPage = () => {
 								onChange={event => setSectionTitleDraft(event.target.value)}
 								onBlur={handleSectionBlurSave}
 							/>
-							<TextArea
+							<MarkdownEditor
 								placeholder="區段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
 								value={sectionDescriptionDraft}
-								onChange={event => setSectionDescriptionDraft(event.target.value)}
+								onChange={setSectionDescriptionDraft}
 								onBlur={handleSectionBlurSave}
-								rows={1}
 							/>
 						</section>
-						{questions.map((question, index) => (
-							<QuestionCard
-								key={questionIds[index] ?? index}
-								question={question}
-								questionNumber={index + 1}
-								defaultExpanded={index === newlyAddedIndex}
-								autoFocusTitle={index === newlyAddedIndex}
-								duplicateQuestion={() => handleDuplicateQuestion(index)}
-								removeQuestion={() => handleDeleteQuestionWithApi(index)}
-								onTitleChange={newTitle => handleTitleChange(index, newTitle)}
-								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
-								onAddOption={() => handleAddOption(index, { label: "新選項" })}
-								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
-								onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
-								onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
-								onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
-								onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
-								onRemoveOtherOption={() =>
-									handleRemoveOption(
-										index,
-										question.options!.findIndex(option => option.isOther)
-									)
-								}
-								onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
-								onStartChange={newStart => handleStartChange(index, newStart)}
-								onEndChange={newEnd => handleEndChange(index, newEnd)}
-								onStartLabelChange={label => handleStartLabelChange(index, label)}
-								onEndLabelChange={label => handleEndLabelChange(index, label)}
-								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
-								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
-								onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
-								sourceQuestionOptions={sourceQuestionOptions}
-								sourceQuestionId={question.sourceQuestionId}
-								onRequiredChange={required => handleRequiredChange(index, required)}
-								onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
-								onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
-								onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
-								onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
-								onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
-								onUrlChange={url => handleUrlChange(index, url)}
-								onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
-								onFold={() => {
-									void flushDirtyQuestions();
-								}}
-								onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
-							/>
-						))}
+						<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+							<SortableContext items={clientIds} strategy={verticalListSortingStrategy}>
+								{questions.map((question, index) => (
+									<SortableQuestionItem key={clientIds[index] ?? index} id={clientIds[index] ?? String(index)}>
+										{dragHandleListeners => (
+											<QuestionCard
+												dragHandleListeners={dragHandleListeners}
+												question={question}
+												questionNumber={index + 1}
+												defaultExpanded={index === newlyAddedIndex}
+												autoFocusTitle={index === newlyAddedIndex}
+												duplicateQuestion={() => handleDuplicateQuestion(index)}
+												removeQuestion={() => handleDeleteQuestionWithApi(index)}
+												onTitleChange={newTitle => handleTitleChange(index, newTitle)}
+												onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
+												onAddOption={() => handleAddOption(index, { label: "新選項" })}
+												onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+												onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
+												onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
+												onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
+												onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
+												onRemoveOtherOption={() =>
+													handleRemoveOption(
+														index,
+														question.options!.findIndex(option => option.isOther)
+													)
+												}
+												onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
+												onStartChange={newStart => handleStartChange(index, newStart)}
+												onEndChange={newEnd => handleEndChange(index, newEnd)}
+												onStartLabelChange={label => handleStartLabelChange(index, label)}
+												onEndLabelChange={label => handleEndLabelChange(index, label)}
+												onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
+												onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+												onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
+												sourceQuestionOptions={sourceQuestionOptions}
+												sourceQuestionId={question.sourceQuestionId}
+												onRequiredChange={required => handleRequiredChange(index, required)}
+												onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
+												onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
+												onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
+												onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
+												onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
+												onUrlChange={url => handleUrlChange(index, url)}
+												onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
+												onFold={() => {
+													void flushDirtyQuestions();
+												}}
+												onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
+											/>
+										)}
+									</SortableQuestionItem>
+								))}
+							</SortableContext>
+						</DndContext>
 					</div>
 				</div>
 				<div className={styles.sidebarContainer}>

@@ -1,15 +1,16 @@
 import { useFormFonts, useUpdateForm, useUploadFormCoverImage } from "@/features/form/hooks/useOrgForms";
 import { ColorPicker, FileUpload, LoadingSpinner, SearchableSelect, useToast } from "@/shared/components";
-import type { FormsForm } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useEffect, useState } from "react";
 import styles from "./DesignPage.module.css";
 
 interface AdminFormDesignPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 	const { pushToast } = useToast();
+	const isArchived = formData.status === "ARCHIVED";
 	const fontsQuery = useFormFonts();
 	const updateFormMutation = useUpdateForm(formData.id);
 	const uploadCoverMutation = useUploadFormCoverImage(formData.id);
@@ -29,7 +30,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 	const hasDressingChanges = color !== savedDressing.color || headerFont !== savedDressing.headerFont || questionFont !== savedDressing.questionFont || textFont !== savedDressing.textFont;
 
 	useEffect(() => {
-		if (!hasDressingChanges) return;
+		if (!hasDressingChanges || isArchived) return;
 
 		const nextDressing = { color, headerFont, questionFont, textFont };
 		const timerId = window.setTimeout(() => {
@@ -43,10 +44,10 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 		}, 500);
 
 		return () => window.clearTimeout(timerId);
-	}, [color, headerFont, questionFont, textFont, hasDressingChanges, updateFormMutation, pushToast]);
+	}, [color, headerFont, questionFont, textFont, hasDressingChanges, updateFormMutation, pushToast, isArchived]);
 
 	const handleCoverUpload = (file: File | null) => {
-		if (!file) return;
+		if (!file || isArchived) return;
 		uploadCoverMutation.mutate(file, {
 			onSuccess: () => pushToast({ title: "封面圖片已上傳", variant: "success" }),
 			onError: e => pushToast({ title: "上傳失敗", description: (e as Error).message, variant: "error" })
@@ -58,7 +59,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 			<section className={styles.container}>
 				<div>
 					<p className={styles.label}>主題顏色</p>
-					<ColorPicker value={color} onChange={setColor} />
+					<ColorPicker value={color} onChange={setColor} disabled={isArchived} />
 				</div>
 				{
 					<div>
@@ -66,7 +67,7 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 						<img src={coverImageUrl} alt="Current cover" onError={e => (e.currentTarget.style.display = "none")} className={styles.coverImage} />
 					</div>
 				}
-				<FileUpload label="封面圖片（格式只支援 Webp）" onChange={handleCoverUpload} />
+				<FileUpload label="封面圖片（格式只支援 Webp）" onChange={handleCoverUpload} disabled={isArchived} />
 				{uploadCoverMutation.isPending && <LoadingSpinner />}
 				<h3>表單外觀</h3>
 				{fontsQuery.isLoading ? (

@@ -31,3 +31,8 @@
 	background: var(--orange-subtle);
 	color: var(--orange);
 }
+
+.archived {
+	background: var(--background-color-tertiary);
+	color: var(--color-description);
+}
