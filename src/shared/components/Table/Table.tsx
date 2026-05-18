@@ -31,11 +31,11 @@ export interface TableProps<T = Record<string, unknown>> {
 	defaultColumnWidth?: string;
 	/** 資料陣列 */
 	data: T[];
-	/** 邊框樣式: "none" = 無邊框, "horizontal" = 只有橫線, "full" = 全邊框，預設 "full" */
+	/** 邊框樣式: "none" /"horizontal"/ "full" ，預設 "full" */
 	borderStyle?: BorderStyle;
 	/** 全表對齊，預設 "center" */
 	align?: ColumnAlign;
-	/** Padding 密度: compact | normal | loose，預設 "normal" */
+	/** Padding : compact | normal | loose，預設 "normal" */
 	density?: PaddingDensity;
 	/** 是否 sticky header，預設 false */
 	stickyHeader?: boolean;
@@ -72,7 +72,6 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 	tableClassName,
 	rowClassName,
 	cellClassName,
-	onRowClick,
 	emptyMessage = "尚無資料"
 }: TableProps<T>) => {
 	const columns: TableColumn<T>[] =
@@ -84,6 +83,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 					...(defaultColumnWidth ? { width: "fixed" as const, fixedWidth: defaultColumnWidth } : {})
 				}))
 			: []);
+	const totalCols = Math.max(1, columns.length + (showRowNumber ? 1 : 0));
 
 	const containerClasses = [styles.container, fillHeight && styles.fillHeight, containerClassName].filter(Boolean).join(" ");
 
@@ -133,13 +133,13 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 				<tbody>
 					{data.length === 0 ? (
 						<tr>
-							<td colSpan={columns.length + (showRowNumber ? 1 : 0)} className={styles.empty}>
+							<td colSpan={totalCols} className={styles.empty}>
 								{emptyMessage}
 							</td>
 						</tr>
 					) : (
 						data.map((record, rowIndex) => (
-							<tr key={rowIndex} className={rowClassName?.(record, rowIndex) ?? ""} onClick={() => onRowClick?.(record, rowIndex)} style={onRowClick ? { cursor: "pointer" } : undefined}>
+							<tr key={rowIndex} className={rowClassName?.(record, rowIndex) ?? ""}>
 								{showRowNumber && <td className={`${styles.cell} ${styles.rowNumberCell}`}>{rowIndex + 1}</td>}
 								{columns.map(column => {
 									const value = record[column.key];
