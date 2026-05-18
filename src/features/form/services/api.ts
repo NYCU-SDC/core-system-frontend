@@ -239,7 +239,7 @@ const parseDownloadFilename = (contentDisposition: string | null): string | null
 		return decodeURIComponent(utf8Match[1]);
 	}
 
-	const basicMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+	const basicMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
 	return basicMatch?.[1] ?? null;
 };
 

@@ -266,7 +266,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 							</Button>
 							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} onClick={handleDownloadExportFile} disabled={isPreviewLoading || isDownloadLoading}>
 								<Download size={20} />
-								{isDownloadLoading ? "下載中..." : "直接下載"}
+								{isDownloadLoading ? "下載中..." : "下載檔案"}
 							</Button>
 						</div>
 					</>
@@ -290,7 +290,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 							</Button>
 							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} variant="secondary" onClick={handleDownloadExportFile} disabled={isDownloadLoading}>
 								<Download size={20} />
-								{isDownloadLoading ? "下載中..." : "下載 .xlsx"}
+								{isDownloadLoading ? "下載中..." : "下載檔案"}
 							</Button>
 						</div>
 					</>

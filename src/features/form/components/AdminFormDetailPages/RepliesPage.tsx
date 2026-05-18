@@ -4,12 +4,13 @@ import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/feat
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Dialog, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
-import type { FormsForm, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
+import { extractTextFromProseMirror } from "@/shared/utils/proseMirror";
+import type { FormsFormResponse, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FormQuestionRenderer } from "../FormQuestionRenderer";
 import type { ServerFileInfo } from "../QuestionRenderers/FileUploadRenderer";
 import { StatusTag } from "../StatusTag";
@@ -230,7 +231,7 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 };
 
 interface AdminFormRepliesPageProps {
-	formData: FormsForm;
+	formData: FormsFormResponse;
 }
 
 export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) => {
@@ -250,11 +251,6 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const verifyMutation = useVerifyGoogleSheet(formData.id);
 	const updateFormMutation = useUpdateForm(formData.id);
 	const isArchived = formData.status === "ARCHIVED";
-
-	useEffect(() => {
-		setSheetUrl(formData.googleSheetUrl ?? "");
-		setIsSheetLinked(Boolean(formData.googleSheetUrl));
-	}, [formData.googleSheetUrl]);
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
 	const allQuestions = useMemo(() => sectionsQuery.data?.flatMap(bundle => bundle.questions ?? []) ?? [], [sectionsQuery.data]);
@@ -448,6 +444,12 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		window.open(`/forms/${formData.id}`, "_blank", "noopener,noreferrer");
 	};
 
+	const handleOpenSheetPopup = () => {
+		setSheetUrl(formData.googleSheetUrl ?? "");
+		setIsSheetLinked(Boolean(formData.googleSheetUrl));
+		setIsSheetPopupOpen(true);
+	};
+
 	const handleSelectPreviousResponse = () => {
 		if (!hasPreviousResponse) return;
 		setSelectedResponseId(responses[selectedResponseArrayIndex - 1].id);
@@ -493,7 +495,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				<div className={styles.topHeader}>
 					<h2 className={styles.totalText}>{responseCountText}</h2>
 					<div className={styles.buttonGroup}>
-						<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)} disabled={isArchived}>
+						<Button className={styles.sheetButton} variant="secondary" onClick={handleOpenSheetPopup} disabled={isArchived}>
 							<SquareArrowOutUpRight size={16} />
 							連結試算表
 						</Button>
@@ -521,12 +523,13 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						{responses.length > 0 &&
 							allQuestions.map(question => {
 								const details = answerDetailsByQuestionId.get(question.id) ?? [];
-								const hasDescription = Boolean(question.description?.trim());
+								const questionDescription = extractTextFromProseMirror(question.description).trim();
+								const hasDescription = Boolean(questionDescription);
 								return (
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={question.description ?? ""} />}
+											{hasDescription && <Markdown className={styles.questionDescription} content={questionDescription} />}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
 										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
@@ -576,7 +579,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 						{selectedResponse &&
 							allQuestions.map(question => {
-								const hasDescription = Boolean(question.description?.trim());
+								const questionDescription = extractTextFromProseMirror(question.description).trim();
+								const hasDescription = Boolean(questionDescription);
 								const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
 								const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
 								const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
@@ -586,7 +590,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={question.description ?? ""} />}
+											{hasDescription && <Markdown className={styles.questionDescription} content={questionDescription} />}
 										</div>
 										<div className={styles.readonlyQuestionContent}>
 											<FormQuestionRenderer

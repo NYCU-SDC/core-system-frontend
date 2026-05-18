@@ -7,7 +7,7 @@ export type ColumnAlign = "left" | "center" | "right";
 export type BorderStyle = "none" | "horizontal" | "full";
 export type PaddingDensity = "compact" | "normal" | "loose";
 
-export interface TableColumn<T = any> {
+export interface TableColumn<T = Record<string, unknown>> {
 	/** 對應資料的欄位名稱 */
 	key: keyof T;
 	/** 表頭文字 */
@@ -24,7 +24,7 @@ export interface TableColumn<T = any> {
 	align?: ColumnAlign;
 }
 
-export interface TableProps<T = any> {
+export interface TableProps<T = Record<string, unknown>> {
 	/** 欄位定義陣列，未傳時自動從 data 的 key 產生 */
 	columns?: TableColumn<T>[];
 	/** 未傳 columns 時自動產生的欄位固定寬度（如 "8rem"） */
@@ -50,7 +50,7 @@ export interface TableProps<T = any> {
 	/** 動態給列加 class */
 	rowClassName?: (record: T, index: number) => string;
 	/** 動態給儲存格加 class */
-	cellClassName?: (value: any, record: T, index: number, columnKey: keyof T) => string;
+	cellClassName?: (value: T[keyof T], record: T, index: number, columnKey: keyof T) => string;
 	/** 列被點擊時的回調 */
 	onRowClick?: (record: T, index: number) => void;
 	/** 空狀態時的提示文字 */
@@ -58,7 +58,7 @@ export interface TableProps<T = any> {
 }
 
 // ==================== Component ====================
-export const Table =<T extends Record<string, any> = any>({
+export const Table =<T extends Record<string, unknown> = Record<string, unknown>>({
 	columns: columnsProp,
 	defaultColumnWidth,
 	data,
@@ -160,7 +160,7 @@ export const Table =<T extends Record<string, any> = any>({
 											style={columnStyle}
 											title={column.width === "fixed" && typeof value === "string" ? value : undefined}
 										>
-											{column.render ? column.render(value, record, rowIndex) : (value ?? "-")}
+											{column.render ? column.render(value, record, rowIndex) : ((value as ReactNode) ?? "-")}
 										</td>
 									);
 								})}

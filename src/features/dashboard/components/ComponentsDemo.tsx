@@ -347,7 +347,8 @@ export const ComponentsDemo = () => {
 					<h2>Table</h2>
 
 					{(() => {
-						const columns: TableColumn[] = [
+						type DemoTableRow = { name: string; studentId: string; dept: string; school: string; group: string; email: string; q1: string; q2?: string };
+						const columns: TableColumn<DemoTableRow>[] = [
 							{ key: "name", header: "名字", width: "fixed", fixedWidth: "8rem" },
 							{ key: "studentId", header: "學號", width: "fixed", fixedWidth: "8rem" },
 							{ key: "dept", header: "科系", width: "fixed", fixedWidth: "6rem" },
@@ -358,7 +359,7 @@ export const ComponentsDemo = () => {
 							{ key: "q2", header: "Q2 整體滿意度", width: "fixed", fixedWidth: "8rem" }
 						];
 
-						const rows = [
+						const rows: DemoTableRow[] = [
 							{ name: "毛宥鈞", studentId: "114567890", dept: "資工系", school: "陽明交大", group: "Core System", email: "abc@gmail.com", q1: "非常滿意" },
 							{ name: "王小明", studentId: "113456789", dept: "電機系", school: "台灣大學", group: "React", email: "wang@example.com", q1: "滿意" },
 							{ name: "李小華", studentId: "112345678", dept: "資管系", school: "政治大學", group: "Backend", email: "li@example.com", q1: "普通" }
@@ -379,12 +380,13 @@ export const ComponentsDemo = () => {
 							rejected: { label: "已拒絕", color: "#000000", bg: "var(--red)" },
 							pending: { label: "待審核", color: "#000000", bg: "var(--orange)" }
 						};
-						const reviewRows: Array<{ name: string; submittedAt: string; score: number; status: ReviewStatus }> = [
+						type ReviewRow = { name: string; submittedAt: string; score: number; status: ReviewStatus };
+						const reviewRows: ReviewRow[] = [
 							{ name: "EM", submittedAt: "2025-05-03", score: 99, status: "approved" },
 							{ name: "Alice", submittedAt: "2025-05-04", score: 52, status: "rejected" },
 							{ name: "Bob", submittedAt: "2025-05-05", score: 71, status: "pending" }
 						];
-						const reviewColumns: TableColumn[] = [
+						const reviewColumns: TableColumn<ReviewRow>[] = [
 							{ key: "name", header: "填答者", width: "fixed", fixedWidth: "7rem" },
 							{ key: "submittedAt", header: "提交日期", width: "fixed", fixedWidth: "8rem", align: "center" },
 							{
@@ -393,7 +395,10 @@ export const ComponentsDemo = () => {
 								width: "fixed",
 								fixedWidth: "5rem",
 								align: "right",
-								render: (value: number) => <span style={{ fontWeight: 600, color: value >= 80 ? "var(--green)" : value >= 60 ? "var(--orange)" : "var(--red)" }}>{value}</span>
+								render: value => {
+									const score = typeof value === "number" ? value : Number(value);
+									return <span style={{ fontWeight: 600, color: score >= 80 ? "var(--green)" : score >= 60 ? "var(--orange)" : "var(--red)" }}>{score}</span>;
+								}
 							},
 							{
 								key: "status",
@@ -401,8 +406,9 @@ export const ComponentsDemo = () => {
 								width: "fixed",
 								fixedWidth: "6rem",
 								align: "center",
-								render: (value: ReviewStatus) => {
-									const cfg = statusConfig[value];
+								render: value => {
+									const status = value as ReviewStatus;
+									const cfg = statusConfig[status];
 									return <span style={{ padding: "0.25rem 0.75rem", borderRadius: "999px", fontSize: "0.8125rem", fontWeight: 600, color: cfg.color, backgroundColor: cfg.bg }}>{cfg.label}</span>;
 								}
 							}

@@ -51,9 +51,9 @@ const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
-	lastEditor: form.lastEditor?.name || form.lastEditor?.username || form.lastEditor?.email || "-",
+	lastEditor: form.lastEditor?.name || form.lastEditor?.username || form.lastEditor?.emails?.[0] || "-",
 	lastEditorAvatarUrl: form.lastEditor?.avatarUrl || "",
-	creator: form.creator?.name || form.creator?.username || form.creator?.email || "-",
+	creator: form.creator?.name || form.creator?.username || form.creator?.emails?.[0] || "-",
 	creatorAvatarUrl: form.creator?.avatarUrl || "",
 	status: toStatusVariant(form.status, form.deadline),
 	deadline: form.deadline ? formatDate(form.deadline) : "-"
