@@ -86,9 +86,6 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.1
         version: 12.10.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      add:
-        specifier: ^2.0.6
-        version: 2.0.6
       dompurify:
         specifier: ^3.4.4
         version: 3.4.4
@@ -110,9 +107,6 @@ importers:
       marked:
         specifier: ^17.0.3
         version: 17.0.3
-      pnpm:
-        specifier: ^10.32.1
-        version: 10.33.2
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -1684,9 +1678,6 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  add@2.0.6:
-    resolution: {integrity: sha512-j5QzrmsokwWWp6kUcJQySpbG+xfOBqqKnup3OIk1pz+kB/80SLorZ9V8zHFLO92Lcd+hbvq8bT+zOGoPkmBV0Q==}
-
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
     peerDependencies:
@@ -2474,11 +2465,6 @@ packages:
   playwright@1.59.1:
     resolution: {integrity: sha512-C8oWjPR3F81yljW9o5OxcWzfh6avkVwDD2VYdwIGqTkl+OGFISgypqzfu7dOe4QNLL2aqcWBmI3PMtLIK233lw==}
     engines: {node: '>=18'}
-    hasBin: true
-
-  pnpm@10.33.2:
-    resolution: {integrity: sha512-qQ+vb+6rca1sblf5Tg/hoS9dzCLNdU20CulZPraj4LaxLjVAIYuzeuCDQEsfLObbKkEh6XmCm0r/lLmfSdoc+A==}
-    engines: {node: '>=18.12'}
     hasBin: true
 
   postcss@8.5.6:
@@ -4627,8 +4613,6 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  add@2.0.6: {}
-
   ajv-formats@3.0.1(ajv@8.18.0):
     optionalDependencies:
       ajv: 8.18.0
@@ -5420,8 +5404,6 @@ snapshots:
       playwright-core: 1.59.1
     optionalDependencies:
       fsevents: 2.3.2
-
-  pnpm@10.33.2: {}
 
   postcss@8.5.6:
     dependencies:
