@@ -45,7 +45,7 @@ const formatExportAnswer = (value: unknown): string => {
 export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsData }: ExportDialogProps) => {
 	const { pushToast } = useToast();
 	const [exportPopupStep, setExportPopupStep] = useState<ExportPopupStep>("select");
-	const [selectedExportQuestionIds, setSelectedExportQuestionIds] = useState<string[]>([]);
+	const [selectedExportQuestionIds, setSelectedExportQuestionIds] = useState<string[] | null>(null);
 	const [exportPreview, setExportPreview] = useState<ResponsesExportPreviewResponse | null>(null);
 	const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 	const [isDownloadLoading, setIsDownloadLoading] = useState(false);
@@ -64,8 +64,8 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 	}, [sectionsData]);
 
 	const exportQuestions = useMemo(() => exportSections.flatMap(section => section.questions), [exportSections]);
-	const effectiveSelectedExportQuestionIds = selectedExportQuestionIds.length > 0 ? selectedExportQuestionIds : exportQuestions.map(item => item.id);
-	const isAllExportQuestionsSelected = exportQuestions.length > 0 && effectiveSelectedExportQuestionIds.length === exportQuestions.length;
+	const effectiveSelectedExportQuestionIds = selectedExportQuestionIds ?? exportQuestions.map(item => item.id);
+	const isAllExportQuestionsSelected = exportQuestions.length > 0 && selectedExportQuestionIds === null;
 
 	const sectionCheckStates = useMemo(() => {
 		const map = new Map<string, "all" | "partial" | "none">();
@@ -120,7 +120,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 	useEffect(() => {
 		if (!open) return;
 		setExportPopupStep("select");
-		setSelectedExportQuestionIds([]);
+		setSelectedExportQuestionIds(null);
 		setExportPreview(null);
 		setIsPreviewLoading(false);
 		setIsDownloadLoading(false);
@@ -131,7 +131,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 			setSelectedExportQuestionIds([]);
 			return;
 		}
-		setSelectedExportQuestionIds(exportQuestions.map(item => item.id));
+		setSelectedExportQuestionIds(null);
 	};
 
 	const handleToggleExportSection = (sectionId: string) => {
@@ -142,7 +142,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 		const state = sectionCheckStates.get(sectionId);
 
 		setSelectedExportQuestionIds(prev => {
-			const base = prev.length > 0 ? prev : exportQuestions.map(question => question.id);
+			const base = prev ?? exportQuestions.map(question => question.id);
 			if (state === "all") return base.filter(id => !ids.includes(id));
 			return [...new Set([...base, ...ids])];
 		});
@@ -150,7 +150,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 
 	const handleToggleExportQuestion = (questionId: string) => {
 		setSelectedExportQuestionIds(prev => {
-			const base = prev.length > 0 ? prev : exportQuestions.map(item => item.id);
+			const base = prev ?? exportQuestions.map(item => item.id);
 			if (base.includes(questionId)) return base.filter(id => id !== questionId);
 			return [...base, questionId];
 		});
@@ -260,11 +260,11 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 						</div>
 
 						<div className={styles.exportPopupActions}>
-							<Button className={`${styles.buttonOrange} ${styles.exportPrimaryButton}`} onClick={handlePreviewExport} disabled={isPreviewLoading || isDownloadLoading}>
+							<Button className={styles.buttonOrange} onClick={handlePreviewExport} disabled={isPreviewLoading || isDownloadLoading}>
 								<FileText size={20} />
 								{isPreviewLoading ? "預覽中..." : "預覽匯出內容"}
 							</Button>
-							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} onClick={handleDownloadExportFile} disabled={isPreviewLoading || isDownloadLoading}>
+							<Button className={styles.buttonForeground} onClick={handleDownloadExportFile} disabled={isPreviewLoading || isDownloadLoading}>
 								<Download size={20} />
 								{isDownloadLoading ? "下載中..." : "下載檔案"}
 							</Button>
@@ -284,11 +284,11 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 						/>
 
 						<div className={styles.exportPopupActions}>
-							<Button className={`${styles.buttonOrange} ${styles.exportPrimaryButton}`} onClick={() => setExportPopupStep("select")} disabled={isDownloadLoading}>
+							<Button className={styles.buttonOrange} onClick={() => setExportPopupStep("select")} disabled={isDownloadLoading}>
 								<RotateCcw size={20} />
 								返回重新選擇
 							</Button>
-							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} variant="secondary" onClick={handleDownloadExportFile} disabled={isDownloadLoading}>
+							<Button className={styles.buttonForeground} variant="secondary" onClick={handleDownloadExportFile} disabled={isDownloadLoading}>
 								<Download size={20} />
 								{isDownloadLoading ? "下載中..." : "下載檔案"}
 							</Button>
