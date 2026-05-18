@@ -640,10 +640,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			<ExportDialog
 				open={isSheetExportPopupOpen}
 				onOpenChange={setIsSheetExportPopupOpen}
+				formId={formData.id}
+				formName={formData.title}
 				sectionsData={sectionsQuery.data}
-				responses={responses}
-				responseDetailsMap={responseDetailsMap}
-				memberDisplayById={memberDisplayById}
 			/>
 		</>
 	);

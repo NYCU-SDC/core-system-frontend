@@ -56,6 +56,18 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
+	position: relative;
+}
+
+.exportSectionGroup::before {
+	content: "";
+	position: absolute;
+	left: calc(1rem - 1px);
+	top: 1rem;
+	bottom: 1rem;
+	width: 2px;
+	background: color-mix(in srgb, var(--foreground) 20%, transparent);
+	border-radius: 1px;
 }
 
 .exportSectionItem {
@@ -99,6 +111,19 @@
 
 .exportQuestionItemIndented {
 	padding-left: 3rem;
+	position: relative;
+}
+
+.exportQuestionItemIndented::before {
+	content: "";
+	position: absolute;
+	left: calc(1rem - 1px);
+	top: 50%;
+	width: 2rem;
+	height: 2px;
+	background: color-mix(in srgb, var(--foreground) 20%, transparent);
+	transform: translateY(-50%);
+	border-radius: 1px;
 }
 
 .exportCheckboxIcon {
@@ -112,6 +137,8 @@
 	background: var(--orange);
 	color: var(--background);
 	font-weight: 600;
+	position: relative;
+	z-index: 1;
 }
 
 .exportPopupActions {

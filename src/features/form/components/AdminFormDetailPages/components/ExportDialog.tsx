@@ -1,50 +1,54 @@
+import * as api from "@/features/form/services/api";
 import type { TableColumn } from "@/shared/components";
-import { Button, Table, Dialog, useToast } from "@/shared/components";
-import type { FormsListSectionsResponse, ResponsesAnswersDetail, ResponsesGetFormResponse, ResponsesListResponse } from "@nycu-sdc/core-system-sdk";
+import { Button, Dialog, Table, useToast } from "@/shared/components";
+import type { FormsListSectionsResponse, ResponsesExportPreviewResponse } from "@nycu-sdc/core-system-sdk";
 import { Check, Download, FileText, Minus, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./ExportDialog.module.css";
 
 type ExportPopupStep = "select" | "preview";
+type ExportPreviewRow = Record<string, string>;
 
 interface ExportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	formId: string;
+	formName: string;
 	sectionsData: FormsListSectionsResponse[] | undefined;
-	responses: ResponsesListResponse["responses"];
-	responseDetailsMap: Map<string, ResponsesGetFormResponse>;
-	memberDisplayById: Map<string, string>;
 }
 
-const getAnswerDisplayValue = (detail?: ResponsesAnswersDetail): string => {
-	if (!detail) return "";
-	if (detail.payload?.displayValue) return detail.payload.displayValue;
-
-	const rawAnswer = detail.payload?.answer as { value?: unknown; otherText?: string } | undefined;
-	if (!rawAnswer) return "";
-
-	if (Array.isArray(rawAnswer.value)) {
-		const values = rawAnswer.value.map(value => String(value));
-		if (rawAnswer.otherText?.trim()) values.push(`其他：${rawAnswer.otherText.trim()}`);
-		return values.join("、");
+const formatExportAnswer = (value: unknown): string => {
+	if (value == null) return "-";
+	if (typeof value === "string") return value || "-";
+	if (typeof value === "number" || typeof value === "boolean") return String(value);
+	if (Array.isArray(value)) {
+		const items = value.map(item => formatExportAnswer(item)).filter(item => item !== "-");
+		return items.length > 0 ? items.join(", ") : "-";
+	}
+	if (typeof value === "object") {
+		const record = value as Record<string, unknown>;
+		if (typeof record.displayValue === "string" && record.displayValue.trim()) return record.displayValue;
+		if (typeof record.otherText === "string" && record.otherText.trim()) return record.otherText;
+		if (typeof record.value === "string" || typeof record.value === "number" || typeof record.value === "boolean") {
+			return String(record.value);
+		}
+		if (Array.isArray(record.value)) {
+			const items = record.value.map(item => formatExportAnswer(item)).filter(item => item !== "-");
+			return items.length > 0 ? items.join(", ") : "-";
+		}
+		return JSON.stringify(value);
 	}
 
-	if (typeof rawAnswer.value === "string" || typeof rawAnswer.value === "number") {
-		return String(rawAnswer.value);
-	}
-
-	if (rawAnswer.value && typeof rawAnswer.value === "object") {
-		const objectValue = rawAnswer.value as { username?: string; email?: string };
-		return objectValue.username || objectValue.email || "";
-	}
-
-	return "";
+	return String(value);
 };
 
-export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, responseDetailsMap, memberDisplayById }: ExportDialogProps) => {
+export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsData }: ExportDialogProps) => {
 	const { pushToast } = useToast();
 	const [exportPopupStep, setExportPopupStep] = useState<ExportPopupStep>("select");
 	const [selectedExportQuestionIds, setSelectedExportQuestionIds] = useState<string[]>([]);
+	const [exportPreview, setExportPreview] = useState<ResponsesExportPreviewResponse | null>(null);
+	const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+	const [isDownloadLoading, setIsDownloadLoading] = useState(false);
 
 	const exportSections = useMemo(() => {
 		const flatSections = sectionsData?.flatMap(group => group.sections) ?? [];
@@ -60,20 +64,19 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 		}));
 	}, [sectionsData]);
 
-	const exportQuestions = useMemo(() => exportSections.flatMap(s => s.questions), [exportSections]);
-
+	const exportQuestions = useMemo(() => exportSections.flatMap(section => section.questions), [exportSections]);
 	const effectiveSelectedExportQuestionIds = selectedExportQuestionIds.length > 0 ? selectedExportQuestionIds : exportQuestions.map(item => item.id);
-
 	const isAllExportQuestionsSelected = exportQuestions.length > 0 && effectiveSelectedExportQuestionIds.length === exportQuestions.length;
 
 	const sectionCheckStates = useMemo(() => {
 		const map = new Map<string, "all" | "partial" | "none">();
 		for (const section of exportSections) {
-			const ids = section.questions.map(q => q.id);
+			const ids = section.questions.map(question => question.id);
 			if (ids.length === 0) {
 				map.set(section.id, "none");
 				continue;
 			}
+
 			const selectedCount = ids.filter(id => effectiveSelectedExportQuestionIds.includes(id)).length;
 			if (selectedCount === 0) map.set(section.id, "none");
 			else if (selectedCount === ids.length) map.set(section.id, "all");
@@ -82,68 +85,47 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 		return map;
 	}, [exportSections, effectiveSelectedExportQuestionIds]);
 
-	const selectedExportQuestions = useMemo(() => {
-		const selectedSet = new Set(effectiveSelectedExportQuestionIds);
-		return exportQuestions.filter(item => selectedSet.has(item.id));
-	}, [effectiveSelectedExportQuestionIds, exportQuestions]);
+	const exportTableColumns: TableColumn<ExportPreviewRow>[] = useMemo(() => {
+		if (!exportPreview) return [];
+
+		return [
+			{
+				key: "responseId",
+				header: "回覆 ID",
+				minWidth: "12rem"
+			},
+			...exportPreview.headers.map(header => ({
+				key: header.id,
+				header: header.title,
+				minWidth: "10rem"
+			}))
+		];
+	}, [exportPreview]);
+
+	const exportPreviewRows = useMemo<ExportPreviewRow[]>(() => {
+		if (!exportPreview) return [];
+
+		return exportPreview.rows.map(row => {
+			const record: ExportPreviewRow = {
+				responseId: row.id
+			};
+
+			for (const header of exportPreview.headers) {
+				record[header.id] = formatExportAnswer(row.answers?.[header.id]);
+			}
+
+			return record;
+		});
+	}, [exportPreview]);
 
 	useEffect(() => {
 		if (!open) return;
 		setExportPopupStep("select");
 		setSelectedExportQuestionIds([]);
+		setExportPreview(null);
+		setIsPreviewLoading(false);
+		setIsDownloadLoading(false);
 	}, [open]);
-
-	const exportTableColumns: TableColumn[] = useMemo(
-		() => [
-			{ key: "responseLabel", header: "回覆", width: "fixed" as const, fixedWidth: "6rem" },
-			{ key: "createdAt", header: "提交時間", width: "fixed" as const, fixedWidth: "10rem" },
-			{ key: "submittedBy", header: "填答者", width: "fixed" as const, fixedWidth: "8rem" },
-			...selectedExportQuestions.map(item => ({
-				key: item.id,
-				header: item.label,
-				minWidth: "8rem",
-				render: (_value: unknown, record: unknown) => {
-					const typedRecord = record as Record<string, unknown>;
-					const answers = typedRecord.answers as string[];
-					const answerIndex = selectedExportQuestions.findIndex(q => q.id === item.id);
-					return answers?.[answerIndex] || "-";
-				}
-			}))
-		],
-		[selectedExportQuestions]
-	);
-
-	const exportPreviewRows = useMemo(() => {
-		return responses.map((response, index) => {
-			const responseDetail = responseDetailsMap.get(response.id);
-			const answerMap = new Map<string, ResponsesAnswersDetail>();
-
-			for (const section of responseDetail?.sections ?? []) {
-				for (const answerDetail of section.answerDetails ?? []) {
-					answerMap.set(answerDetail.question.id, answerDetail);
-				}
-			}
-
-			return {
-				id: response.id,
-				responseLabel: `回覆 ${index + 1}`,
-				createdAt: new Date(response.createdAt).toLocaleString("zh-TW"),
-				submittedBy: memberDisplayById.get(response.submittedBy) ?? response.submittedBy,
-				answers: selectedExportQuestions.map(item => getAnswerDisplayValue(answerMap.get(item.id)))
-			};
-		});
-	}, [memberDisplayById, responseDetailsMap, responses, selectedExportQuestions]);
-
-	const mockExportPreviewRows = useMemo(() => {
-		const mockSubmitters = ["毛宥鈞", "毛哥", "EM"];
-		return mockSubmitters.map((name, index) => ({
-			id: `mock-${index + 1}`,
-			responseLabel: `回覆 ${index + 1}`,
-			createdAt: new Date(2025, 4, 12, 10 + index * 2).toLocaleString("zh-TW"),
-			submittedBy: name,
-			answers: selectedExportQuestions.map((_, qi) => `樣本答案 ${qi + 1}`)
-		}));
-	}, [selectedExportQuestions]);
 
 	const handleToggleAllExportQuestions = () => {
 		if (isAllExportQuestionsSelected) {
@@ -154,12 +136,14 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 	};
 
 	const handleToggleExportSection = (sectionId: string) => {
-		const section = exportSections.find(s => s.id === sectionId);
+		const section = exportSections.find(item => item.id === sectionId);
 		if (!section) return;
-		const ids = section.questions.map(q => q.id);
+
+		const ids = section.questions.map(question => question.id);
 		const state = sectionCheckStates.get(sectionId);
+
 		setSelectedExportQuestionIds(prev => {
-			const base = prev.length > 0 ? prev : exportQuestions.map(q => q.id);
+			const base = prev.length > 0 ? prev : exportQuestions.map(question => question.id);
 			if (state === "all") return base.filter(id => !ids.includes(id));
 			return [...new Set([...base, ...ids])];
 		});
@@ -173,37 +157,72 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 		});
 	};
 
-	const handlePreviewExport = () => {
+	const handlePreviewExport = async () => {
 		if (effectiveSelectedExportQuestionIds.length === 0) {
 			pushToast({ title: "請至少選擇一個匯出欄位", variant: "warning" });
 			return;
 		}
-		setExportPopupStep("preview");
+
+		try {
+			setIsPreviewLoading(true);
+			const preview = await api.previewFormResponseExport(formId, {
+				questionIds: effectiveSelectedExportQuestionIds
+			});
+			setExportPreview(preview);
+			setExportPopupStep("preview");
+		} catch (error) {
+			pushToast({
+				title: "預覽匯出失敗",
+				description: (error as Error).message,
+				variant: "error"
+			});
+		} finally {
+			setIsPreviewLoading(false);
+		}
 	};
 
-	const handleDownloadExportFile = () => {
-		// TODO: 串接後端 .xlsx 匯出 API，或在前端接 xlsx / exceljs 產檔。
-		pushToast({
-			title: "尚未串接下載功能",
-			description: "請在 handleDownloadExportFile 中接上 .xlsx 產生邏輯。",
-			variant: "warning"
-		});
+	const handleDownloadExportFile = async () => {
+		if (effectiveSelectedExportQuestionIds.length === 0) {
+			pushToast({ title: "請至少選擇一個匯出欄位", variant: "warning" });
+			return;
+		}
+
+		try {
+			setIsDownloadLoading(true);
+			const { blob, filename } = await api.exportFormResponses(formId, effectiveSelectedExportQuestionIds);
+			const downloadUrl = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = downloadUrl;
+			link.download = filename || `${formName}.xlsx`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(downloadUrl);
+		} catch (error) {
+			pushToast({
+				title: "匯出下載失敗",
+				description: (error as Error).message,
+				variant: "error"
+			});
+		} finally {
+			setIsDownloadLoading(false);
+		}
 	};
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange} title="匯出回覆資料" size="xl">
 			<div className={styles.exportPopup}>
-				<h2 className={styles.exportTitle}>匯出 .xlsx</h2>
+				<h2 className={styles.exportTitle}>{formName}.xlsx</h2>
 
 				{exportPopupStep === "select" && (
 					<>
-						<p className={styles.exportHint}>請選擇欲匯出的題目：</p>
+						<p className={styles.exportHint}>請選擇要匯出的題目欄位</p>
 
 						<div className={styles.exportQuestionBox}>
 							<label className={styles.exportQuestionItem}>
 								<input type="checkbox" checked={isAllExportQuestionsSelected} onChange={handleToggleAllExportQuestions} />
 								<span className={styles.exportCheckboxIcon}>{isAllExportQuestionsSelected && <Check size={18} />}</span>
-								<span>全選</span>
+								<span>全部</span>
 							</label>
 
 							{exportSections.map(section => {
@@ -213,8 +232,8 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 										<label className={styles.exportSectionItem}>
 											<input
 												type="checkbox"
-												ref={el => {
-													if (el) el.indeterminate = state === "partial";
+												ref={element => {
+													if (element) element.indeterminate = state === "partial";
 												}}
 												checked={state === "all"}
 												onChange={() => handleToggleExportSection(section.id)}
@@ -223,7 +242,7 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 												{state === "all" && <Check size={18} />}
 												{state === "partial" && <Minus size={18} />}
 											</span>
-											<span>{section.title || "未命名區塊"}</span>
+											<span>{section.title || "未命名區段"}</span>
 										</label>
 
 										{section.questions.map(item => {
@@ -242,13 +261,13 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 						</div>
 
 						<div className={styles.exportPopupActions}>
-							<Button className={`${styles.buttonOrange} ${styles.exportPrimaryButton}`} onClick={handlePreviewExport}>
+							<Button className={`${styles.buttonOrange} ${styles.exportPrimaryButton}`} onClick={handlePreviewExport} disabled={isPreviewLoading || isDownloadLoading}>
 								<FileText size={20} />
-								預覽匯出格式
+								{isPreviewLoading ? "預覽中..." : "預覽匯出內容"}
 							</Button>
-							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} onClick={handleDownloadExportFile}>
+							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} onClick={handleDownloadExportFile} disabled={isPreviewLoading || isDownloadLoading}>
 								<Download size={20} />
-								下載檔案
+								{isDownloadLoading ? "下載中..." : "直接下載"}
 							</Button>
 						</div>
 					</>
@@ -258,20 +277,21 @@ export const ExportDialog = ({ open, onOpenChange, sectionsData, responses, resp
 					<>
 						<Table
 							columns={exportTableColumns}
-							data={exportPreviewRows.length > 0 ? exportPreviewRows : mockExportPreviewRows}
+							data={exportPreviewRows}
 							borderStyle="full"
 							containerClassName={styles.exportPreviewTableContainer}
 							showRowNumber
+							emptyMessage="目前沒有可預覽的匯出資料"
 						/>
 
 						<div className={styles.exportPopupActions}>
-							<Button className={`${styles.buttonOrange} ${styles.exportPrimaryButton}`} onClick={() => setExportPopupStep("select")}>
+							<Button className={`${styles.buttonOrange} ${styles.exportPrimaryButton}`} onClick={() => setExportPopupStep("select")} disabled={isDownloadLoading}>
 								<RotateCcw size={20} />
-								修改選擇欄位
+								返回重新選擇
 							</Button>
-							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} variant="secondary" onClick={handleDownloadExportFile}>
+							<Button className={`${styles.buttonForeground} ${styles.exportDownloadButton}`} variant="secondary" onClick={handleDownloadExportFile} disabled={isDownloadLoading}>
 								<Download size={20} />
-								下載檔案
+								{isDownloadLoading ? "下載中..." : "下載 .xlsx"}
 							</Button>
 						</div>
 					</>

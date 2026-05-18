@@ -21,6 +21,8 @@ import type {
 	ResponsesAnswersRequest,
 	ResponsesAnswersRequestUpdate,
 	ResponsesCreateResponse,
+	ResponsesExportPreviewRequest,
+	ResponsesExportPreviewResponse,
 	ResponsesGetFormResponse,
 	ResponsesGetQuestionResponse,
 	ResponsesListResponse,
@@ -49,6 +51,7 @@ import {
 	formsVerifyGoogleSheet,
 	responsesCreateFormResponse,
 	responsesDeleteFormResponse,
+	responsesPreviewFormResponseExport,
 	responsesGetFormResponse,
 	responsesGetQuestionResponse,
 	responsesListFormResponses,
@@ -214,6 +217,50 @@ export const getFormResponse = async (formId: string, responseId: string): Promi
 	const res = await responsesGetFormResponse(formId, responseId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load response", res.data);
 	return res.data as ResponsesGetFormResponse;
+};
+
+export const previewFormResponseExport = async (formId: string, req: ResponsesExportPreviewRequest): Promise<ResponsesExportPreviewResponse> => {
+	const res = await responsesPreviewFormResponseExport(formId, req, defaultRequestOptions);
+	assertOk(res.status, "Failed to preview export", res.data);
+	return res.data as ResponsesExportPreviewResponse;
+};
+
+const parseDownloadFilename = (contentDisposition: string | null): string | null => {
+	if (!contentDisposition) return null;
+
+	const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+	if (utf8Match?.[1]) {
+		return decodeURIComponent(utf8Match[1]);
+	}
+
+	const basicMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+	return basicMatch?.[1] ?? null;
+};
+
+export const exportFormResponses = async (formId: string, questionIds: string[]): Promise<{ blob: Blob; filename: string | null }> => {
+	const response = await fetch(`/api/forms/${formId}/responses/export/download`, {
+		...defaultRequestOptions,
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json"
+		},
+		body: JSON.stringify({ questionIds })
+	});
+
+	if (!response.ok) {
+		let payload: unknown;
+		try {
+			payload = await response.json();
+		} catch {
+			payload = await response.text();
+		}
+		assertOk(response.status, "Failed to export responses", payload);
+	}
+
+	return {
+		blob: await response.blob(),
+		filename: parseDownloadFilename(response.headers.get("Content-Disposition"))
+	};
 };
 
 export const deleteFormResponse = async (formId: string, responseId: string): Promise<void> => {
