@@ -643,15 +643,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 					</Button>
 				</div>
 			</Dialog>
-			
+
 			{/* 下載試算表對話框 */}
-			<ExportDialog
-				open={isSheetExportPopupOpen}
-				onOpenChange={setIsSheetExportPopupOpen}
-				formId={formData.id}
-				formName={formData.title}
-				sectionsData={sectionsQuery.data}
-			/>
+			<ExportDialog open={isSheetExportPopupOpen} onOpenChange={setIsSheetExportPopupOpen} formId={formData.id} formName={formData.title} sectionsData={sectionsQuery.data} />
 		</>
 	);
 };

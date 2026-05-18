@@ -21,9 +21,7 @@ export const ConditionNode = ({ data, id, selected }: NodeProps<AppNode>) => {
 	const isValidSelection = currentQuestionId === "" || (data.questions && data.questions.some(q => q.id === currentQuestionId));
 	const currentQuestion = data.questions?.find(q => q.id === currentQuestionId);
 	const currentQuestionChoices = (currentQuestion?.choices ?? []).filter(choice => !!choice && !!choice.id);
-	const isChoiceQuestion = currentQuestionId
-		? currentQuestion?.type && CHOICE_QUESTION_TYPES.has(currentQuestion.type)
-		: false;
+	const isChoiceQuestion = currentQuestionId ? currentQuestion?.type && CHOICE_QUESTION_TYPES.has(currentQuestion.type) : false;
 
 	useEffect(() => {
 		if (currentQuestionId && !isValidSelection && data.onUpdateCondition) {

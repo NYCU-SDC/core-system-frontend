@@ -58,7 +58,7 @@ export interface TableProps<T = Record<string, unknown>> {
 }
 
 // ==================== Component ====================
-export const Table =<T extends Record<string, unknown> = Record<string, unknown>>({
+export const Table = <T extends Record<string, unknown> = Record<string, unknown>>({
 	columns: columnsProp,
 	defaultColumnWidth,
 	data,
@@ -75,13 +75,15 @@ export const Table =<T extends Record<string, unknown> = Record<string, unknown>
 	onRowClick,
 	emptyMessage = "尚無資料"
 }: TableProps<T>) => {
-	const columns: TableColumn<T>[] = columnsProp ?? (data.length > 0
-		? Object.keys(data[0]).map(key => ({
-			key: key as keyof T,
-			header: key,
-			...(defaultColumnWidth ? { width: "fixed" as const, fixedWidth: defaultColumnWidth } : {})
-		}))
-		: []);
+	const columns: TableColumn<T>[] =
+		columnsProp ??
+		(data.length > 0
+			? Object.keys(data[0]).map(key => ({
+					key: key as keyof T,
+					header: key,
+					...(defaultColumnWidth ? { width: "fixed" as const, fixedWidth: defaultColumnWidth } : {})
+				}))
+			: []);
 
 	const containerClasses = [styles.container, fillHeight && styles.fillHeight, containerClassName].filter(Boolean).join(" ");
 
