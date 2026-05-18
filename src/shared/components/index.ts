@@ -33,7 +33,10 @@ export { DropdownMenu } from "./DropdownMenu/DropdownMenu";
 export type { DropdownMenuItem, DropdownMenuProps } from "./DropdownMenu/DropdownMenu";
 
 export { Dialog } from "./Dialog/Dialog";
-export type { DialogProps } from "./Dialog/Dialog";
+export type { DialogProps, DialogSize } from "./Dialog/Dialog";
+
+export { Table } from "./Table/Table";
+export type { ColumnAlign, TableColumn, TableProps } from "./Table/Table";
 
 export { ProgressBar } from "./ProgressBar/ProgressBar";
 export type { ProgressBarProps } from "./ProgressBar/ProgressBar";
