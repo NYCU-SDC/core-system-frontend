@@ -150,11 +150,6 @@
 }
 
 /* 語意 class */
-.exportPrimaryButton {
-}
-.exportDownloadButton {
-}
-
 .exportPreviewTableContainer {
 	max-height: 22.5rem;
 	overflow: auto;

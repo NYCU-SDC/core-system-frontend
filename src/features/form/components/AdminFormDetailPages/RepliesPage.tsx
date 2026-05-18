@@ -633,7 +633,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." disabled={isArchived} />
 
 				<div className={styles.popupActions}>
-					<Button className={`${styles.buttonForeground} ${styles.checkStatusButton}`} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet || isArchived}>
+					<Button className={styles.buttonForeground} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet || isArchived}>
 						<Repeat2 size={16} />
 						{isCheckingSheet ? "檢查中..." : "檢查狀態"}
 					</Button>
