@@ -1,7 +1,7 @@
 import * as api from "@/features/form/services/api";
 import type { TableColumn } from "@/shared/components";
 import { Button, Dialog, Table, useToast } from "@/shared/components";
-import type { FormsListSectionsResponse, ResponsesExportPreviewResponse } from "@nycu-sdc/core-system-sdk";
+import type { FormsSectionBundle, ResponsesExportPreviewResponse } from "@nycu-sdc/core-system-sdk";
 import { Check, Download, FileText, Minus, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./ExportDialog.module.css";
@@ -14,7 +14,7 @@ interface ExportDialogProps {
 	onOpenChange: (open: boolean) => void;
 	formId: string;
 	formName: string;
-	sectionsData: FormsListSectionsResponse[] | undefined;
+	sectionsData: FormsSectionBundle[] | undefined;
 }
 
 const formatExportAnswer = (value: unknown): string => {
@@ -51,12 +51,11 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 	const [isDownloadLoading, setIsDownloadLoading] = useState(false);
 
 	const exportSections = useMemo(() => {
-		const flatSections = sectionsData?.flatMap(group => group.sections) ?? [];
 		let qIndex = 0;
-		return flatSections.map(section => ({
-			id: section.id,
-			title: section.title ?? "",
-			questions: (section.questions ?? []).map(question => ({
+		return (sectionsData ?? []).map(bundle => ({
+			id: bundle.section.id,
+			title: bundle.section.title ?? "",
+			questions: (bundle.questions ?? []).map(question => ({
 				id: question.id,
 				label: `Q${++qIndex} ${question.title}`,
 				question

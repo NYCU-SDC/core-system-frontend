@@ -165,7 +165,8 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 	}
 
 	if (CHOICE_TYPES.has(question.type)) {
-		const choiceMap = new Map((question.choices ?? []).map(choice => [choice.id, choice.name]));
+		const choices = (question.choices ?? []).filter(choice => !!choice && !!choice.id);
+		const choiceMap = new Map(choices.map(choice => [choice.id, choice.name ?? choice.id]));
 		const countMap = new Map<string, number>();
 
 		for (const detail of details) {
@@ -175,9 +176,10 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 			}
 		}
 
-		for (const choice of question.choices ?? []) {
-			if (!countMap.has(choice.name)) {
-				countMap.set(choice.name, 0);
+		for (const choice of choices) {
+			const choiceLabel = choice.name ?? choice.id;
+			if (!countMap.has(choiceLabel)) {
+				countMap.set(choiceLabel, 0);
 			}
 		}
 
@@ -255,10 +257,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	}, [formData.googleSheetUrl]);
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
-	const allQuestions = useMemo(() => {
-		const sections = sectionsQuery.data?.flatMap(group => group.sections) ?? [];
-		return sections.flatMap(section => section.questions ?? []);
-	}, [sectionsQuery.data]);
+	const allQuestions = useMemo(() => sectionsQuery.data?.flatMap(bundle => bundle.questions ?? []) ?? [], [sectionsQuery.data]);
 
 	const responseDetailQueries = useQueries({
 		queries: responses.map(response => ({

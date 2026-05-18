@@ -51,10 +51,10 @@ const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
-	lastEditor: form.lastEditor.name,
-	lastEditorAvatarUrl: form.lastEditor.avatarUrl,
-	creator: form.creator.name,
-	creatorAvatarUrl: form.creator.avatarUrl,
+	lastEditor: form.lastEditor?.name || form.lastEditor?.username || form.lastEditor?.email || "-",
+	lastEditorAvatarUrl: form.lastEditor?.avatarUrl || "",
+	creator: form.creator?.name || form.creator?.username || form.creator?.email || "-",
+	creatorAvatarUrl: form.creator?.avatarUrl || "",
 	status: toStatusVariant(form.status, form.deadline),
 	deadline: form.deadline ? formatDate(form.deadline) : "-"
 });

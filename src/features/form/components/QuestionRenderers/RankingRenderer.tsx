@@ -16,7 +16,7 @@ export const RankingRenderer = ({
 	onAnswerChange: (questionId: string, value: string) => void;
 }) => {
 	const isFromAnswerRanking = Boolean(question.sourceId);
-	const rankingChoices = question.choices?.length ? question.choices : (sourceQuestion?.choices ?? []);
+	const rankingChoices = (question.choices?.length ? question.choices : (sourceQuestion?.choices ?? [])).filter(choice => !!choice && !!choice.id);
 	const sourceSelectedIds = sourceAnswerValue ? sourceAnswerValue.split(",").filter(Boolean) : [];
 	const shouldWaitSourceSelection = isFromAnswerRanking && sourceSelectedIds.length === 0;
 	const allowedIds = sourceSelectedIds.length > 0 ? sourceSelectedIds : rankingChoices.map(choice => choice.id);

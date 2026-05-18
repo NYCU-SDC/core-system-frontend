@@ -19,8 +19,10 @@ export const ConditionNode = ({ data, id, selected }: NodeProps<AppNode>) => {
 	const currentQuestionId = data.raw.conditionRule?.question ?? "";
 	const selectedChoiceId = conditionPatternToChoiceId(data.raw.conditionRule?.pattern);
 	const isValidSelection = currentQuestionId === "" || (data.questions && data.questions.some(q => q.id === currentQuestionId));
+	const currentQuestion = data.questions?.find(q => q.id === currentQuestionId);
+	const currentQuestionChoices = (currentQuestion?.choices ?? []).filter(choice => !!choice && !!choice.id);
 	const isChoiceQuestion = currentQuestionId
-		? data.questions?.find(q => q.id === currentQuestionId)?.type && CHOICE_QUESTION_TYPES.has(data.questions.find(q => q.id === currentQuestionId)!.type)
+		? currentQuestion?.type && CHOICE_QUESTION_TYPES.has(currentQuestion.type)
 		: false;
 
 	useEffect(() => {
@@ -67,7 +69,7 @@ export const ConditionNode = ({ data, id, selected }: NodeProps<AppNode>) => {
 					<>
 						<p className={styles.text}>選擇</p>
 						<Select
-							options={(data.questions?.find(q => q.id === currentQuestionId)?.choices ?? []).map(c => ({ value: c.id, label: c.name }))}
+							options={currentQuestionChoices.map(choice => ({ value: choice.id, label: choice.name ?? choice.id }))}
 							value={selectedChoiceId}
 							onValueChange={handleChoiceChange}
 							placeholder="選擇答案"
