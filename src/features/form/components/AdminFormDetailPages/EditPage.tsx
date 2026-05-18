@@ -12,6 +12,7 @@ import {
 	Controls,
 	Panel,
 	ReactFlow,
+	ReactFlowProvider,
 	useReactFlow,
 	type Edge,
 	type Node,
@@ -628,5 +629,13 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 				<Controls className={styles.controls} />
 			</ReactFlow>
 		</div>
+	);
+};
+
+export const AdminFormEditPageWithProvider = (props: AdminFormEditPageProps) => {
+	return (
+		<ReactFlowProvider>
+			<AdminFormEditPage {...props} />
+		</ReactFlowProvider>
 	);
 };

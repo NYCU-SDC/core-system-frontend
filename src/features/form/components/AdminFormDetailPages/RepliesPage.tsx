@@ -8,14 +8,15 @@ import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import type { FormsFormResponse, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
-import ReactECharts from "echarts-for-react";
 import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { FormQuestionRenderer } from "../FormQuestionRenderer";
 import { StatusTag } from "../StatusTag";
 import styles from "./RepliesPage.module.css";
 
 type RepliesMode = "summary" | "individual";
+
+const ReactECharts = lazy(() => import("echarts-for-react"));
 
 const CHOICE_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"]);
 const SCALE_TYPES = new Set(["LINEAR_SCALE", "RATING"]);
@@ -135,6 +136,12 @@ const buildPieChartOption = (items: SummaryDataItem[], pieColors: string[], text
 	};
 };
 
+const renderChart = (option: EChartsOption) => (
+	<Suspense fallback={<LoadingSpinner />}>
+		<ReactECharts className={styles.chart} option={option} notMerge lazyUpdate />
+	</Suspense>
+);
+
 const toAnswerValues = (answerDetail: ResponsesAnswersDetail): string[] => {
 	const rawAnswer = answerDetail.payload?.answer as { value?: unknown; otherText?: string } | undefined;
 	if (!rawAnswer) return [];
@@ -182,10 +189,10 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 
 		const data = [...countMap.entries()].map(([name, value]) => ({ name, value }));
 		if (question.type === "SINGLE_CHOICE") {
-			return <ReactECharts className={styles.chart} option={buildPieChartOption(data, pieColors, textColor)} notMerge lazyUpdate />;
+			return renderChart(buildPieChartOption(data, pieColors, textColor));
 		}
 
-		return <ReactECharts className={styles.chart} option={buildBarChartOption(data, barColor, textColor)} notMerge lazyUpdate />;
+		return renderChart(buildBarChartOption(data, barColor, textColor));
 	}
 
 	if (SCALE_TYPES.has(question.type)) {
@@ -206,7 +213,7 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 		}
 
 		const data = [...countMap.entries()].map(([key, value]) => ({ name: String(key), value }));
-		return <ReactECharts className={styles.chart} option={buildBarChartOption(data, barColor, textColor)} notMerge lazyUpdate />;
+		return renderChart(buildBarChartOption(data, barColor, textColor));
 	}
 
 	const textAnswers = details.map(detail => detail.payload?.displayValue?.trim() ?? "").filter(answer => answer.length > 0);

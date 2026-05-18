@@ -5,18 +5,18 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, SpinningIcon, useToast } from "@/shared/components";
 import { useIsMutating } from "@tanstack/react-query";
-import { ReactFlowProvider } from "@xyflow/react";
 import { Check, Link, LoaderCircle } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./AdminFormDetailPage.module.css";
-import { AdminFormDesignPage } from "./AdminFormDetailPages/DesignPage";
-import { AdminFormEditPage } from "./AdminFormDetailPages/EditPage";
-import { AdminFormInfoPage } from "./AdminFormDetailPages/InfoPage";
-import { AdminFormRepliesPage } from "./AdminFormDetailPages/RepliesPage";
-import { AdminSectionEditPage } from "./AdminFormDetailPages/SectionEditPage";
 
 type TabType = "info" | "edit" | "reply" | "design";
+
+const AdminFormDesignPage = lazy(() => import("./AdminFormDetailPages/DesignPage").then(m => ({ default: m.AdminFormDesignPage })));
+const AdminFormEditPageWithProvider = lazy(() => import("./AdminFormDetailPages/EditPage").then(m => ({ default: m.AdminFormEditPageWithProvider })));
+const AdminFormInfoPage = lazy(() => import("./AdminFormDetailPages/InfoPage").then(m => ({ default: m.AdminFormInfoPage })));
+const AdminFormRepliesPage = lazy(() => import("./AdminFormDetailPages/RepliesPage").then(m => ({ default: m.AdminFormRepliesPage })));
+const AdminSectionEditPage = lazy(() => import("./AdminFormDetailPages/SectionEditPage").then(m => ({ default: m.AdminSectionEditPage })));
 
 export const AdminFormDetailPage = () => {
 	const { formid, sectionId } = useParams();
@@ -140,45 +140,45 @@ export const AdminFormDetailPage = () => {
 					</button>
 				</div>
 
-				<div className={styles.content}>
-					{activeTab === "info" && (
-						<div className={styles.info}>
-							<AdminFormInfoPage formData={formQuery.data} />
-						</div>
-					)}
-					{activeTab === "edit" && isArchived && (
-						<div className={styles.edit}>
-							<ErrorMessage message="此表單已封存，請先解除封存後再編輯。" />
-						</div>
-					)}
-					{activeTab === "edit" && !sectionId && !isArchived && (
-						<div className={styles.edit}>
-							<ReactFlowProvider>
-								<AdminFormEditPage formData={formQuery.data} />
-							</ReactFlowProvider>
-						</div>
-					)}
-					{activeTab === "edit" && sectionId && !isArchived && (
-						<div className={styles.edit}>
-							<AdminSectionEditPage />
-						</div>
-					)}
-					{activeTab === "reply" && (
-						<div className={styles.replies}>
-							<AdminFormRepliesPage formData={formQuery.data} />
-						</div>
-					)}
-					{activeTab === "design" && isArchived && (
-						<div className={styles.design}>
-							<ErrorMessage message="此表單已封存，請先解除封存後再調整設計。" />
-						</div>
-					)}
-					{activeTab === "design" && !isArchived && (
-						<div className={styles.design}>
-							<AdminFormDesignPage formData={formQuery.data} />
-						</div>
-					)}
-				</div>
+				<Suspense fallback={<LoadingSpinner />}>
+					<div className={styles.content}>
+						{activeTab === "info" && (
+							<div className={styles.info}>
+								<AdminFormInfoPage formData={formQuery.data} />
+							</div>
+						)}
+						{activeTab === "edit" && isArchived && (
+							<div className={styles.edit}>
+								<ErrorMessage message="此表單已封存，請先解除封存後再編輯。" />
+							</div>
+						)}
+						{activeTab === "edit" && !sectionId && !isArchived && (
+							<div className={styles.edit}>
+								<AdminFormEditPageWithProvider formData={formQuery.data} />
+							</div>
+						)}
+						{activeTab === "edit" && sectionId && !isArchived && (
+							<div className={styles.edit}>
+								<AdminSectionEditPage />
+							</div>
+						)}
+						{activeTab === "reply" && (
+							<div className={styles.replies}>
+								<AdminFormRepliesPage formData={formQuery.data} />
+							</div>
+						)}
+						{activeTab === "design" && isArchived && (
+							<div className={styles.design}>
+								<ErrorMessage message="此表單已封存，請先解除封存後再調整設計。" />
+							</div>
+						)}
+						{activeTab === "design" && !isArchived && (
+							<div className={styles.design}>
+								<AdminFormDesignPage formData={formQuery.data} />
+							</div>
+						)}
+					</div>
+				</Suspense>
 			</div>
 		</AdminLayout>
 	);
