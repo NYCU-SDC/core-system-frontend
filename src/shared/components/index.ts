@@ -35,6 +35,9 @@ export type { DropdownMenuItem, DropdownMenuProps } from "./DropdownMenu/Dropdow
 export { Dialog } from "./Dialog/Dialog";
 export type { DialogProps, DialogSize } from "./Dialog/Dialog";
 
+export { ScrollContainer } from "./ScrollArea/ScrollContainer";
+export type { ScrollContainerProps } from "./ScrollArea/ScrollContainer";
+
 export { Table } from "./Table/Table";
 export type { ColumnAlign, TableColumn, TableProps } from "./Table/Table";
 

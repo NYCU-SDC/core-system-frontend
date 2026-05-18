@@ -22,6 +22,7 @@ import {
 	Radio,
 	RadioCard,
 	ScaleInput,
+	ScrollContainer,
 	SearchableSelect,
 	Select,
 	Switch,
@@ -190,6 +191,17 @@ export const ComponentsDemo = () => {
 							{ value: "3", label: "Option 3" }
 						]}
 					/>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Scroll Container</h2>
+					<ScrollContainer className={styles.scrollDemo}>
+						<div className={styles.scrollDemoContent}>
+							{Array.from({ length: 12 }, (_, index) => (
+								<p key={index}>Scrollable content row {index + 1}</p>
+							))}
+						</div>
+					</ScrollContainer>
 				</section>
 
 				<section className={styles.section}>

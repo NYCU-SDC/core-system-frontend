@@ -1,6 +1,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
+import { ScrollContainer } from "../ScrollArea/ScrollContainer";
 import styles from "./Dialog.module.css";
 
 export type DialogSize = "sm" | "md" | "lg" | "xl";
@@ -36,7 +37,7 @@ export const Dialog = ({ open, onOpenChange, title, description, children, foote
 							<X size={20} />
 						</DialogPrimitive.Close>
 					</div>
-					<div className={styles.body}>{children}</div>
+					<ScrollContainer className={styles.body}>{children}</ScrollContainer>
 					{footer && <div className={styles.footer}>{footer}</div>}
 				</DialogPrimitive.Content>
 			</DialogPrimitive.Portal>

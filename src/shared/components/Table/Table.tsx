@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { ScrollContainer } from "../ScrollArea/ScrollContainer";
 import styles from "./Table.module.css";
 
 // ==================== Types ====================
@@ -105,7 +106,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 	};
 
 	return (
-		<div className={containerClasses}>
+		<ScrollContainer className={containerClasses}>
 			<table className={`${tableClasses} ${getDensityClass(density)}`} data-align={align}>
 				<thead>
 					<tr>
@@ -171,6 +172,6 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 					)}
 				</tbody>
 			</table>
-		</div>
+		</ScrollContainer>
 	);
 };

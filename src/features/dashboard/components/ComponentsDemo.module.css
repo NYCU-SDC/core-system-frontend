@@ -31,6 +31,22 @@
 	gap: 0.5rem;
 }
 
+.scrollDemo {
+	max-height: 12rem;
+	overflow: auto;
+	border: 0.0625rem solid var(--border);
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, var(--foreground) 4%, transparent);
+	padding: 1rem;
+}
+
+.scrollDemoContent {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	min-width: 18rem;
+}
+
 .tableMaxHeight {
 	max-height: 16rem;
 	overflow: auto;

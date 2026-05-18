@@ -1,6 +1,6 @@
 import * as api from "@/features/form/services/api";
 import type { TableColumn } from "@/shared/components";
-import { Button, Dialog, Table, useToast } from "@/shared/components";
+import { Button, Dialog, ScrollContainer, Table, useToast } from "@/shared/components";
 import type { FormsSectionBundle, ResponsesExportPreviewResponse } from "@nycu-sdc/core-system-sdk";
 import { Check, Download, FileText, Minus, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -217,7 +217,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 					<>
 						<p className={styles.exportHint}>請選擇要匯出的題目欄位</p>
 
-						<div className={styles.exportQuestionBox}>
+						<ScrollContainer className={styles.exportQuestionBox}>
 							<label className={styles.exportQuestionItem}>
 								<input type="checkbox" checked={isAllExportQuestionsSelected} onChange={handleToggleAllExportQuestions} />
 								<span className={styles.exportCheckboxIcon}>{isAllExportQuestionsSelected && <Check size={18} />}</span>
@@ -257,7 +257,7 @@ export const ExportDialog = ({ open, onOpenChange, formId, formName, sectionsDat
 									</div>
 								);
 							})}
-						</div>
+						</ScrollContainer>
 
 						<div className={styles.exportPopupActions}>
 							<Button className={styles.buttonOrange} onClick={handlePreviewExport} disabled={isPreviewLoading || isDownloadLoading}>

@@ -7,22 +7,6 @@
 	margin-bottom: 0.5rem;
 }
 
-.container::-webkit-scrollbar {
-	width: 7px;
-	height: 8px;
-}
-
-.container::-webkit-scrollbar-track {
-	background: var(--color-caption);
-	border-radius: 2.5px;
-}
-
-.container::-webkit-scrollbar-thumb {
-	background: var(--color-display);
-	border-radius: 2.5px;
-	border: 1px solid var(--color-caption);
-}
-
 .container.fillHeight {
 	flex: 1;
 	min-height: 0;
