@@ -77,21 +77,21 @@ export const AdminFormDesignPage = ({ formData }: AdminFormDesignPageProps) => {
 						<SearchableSelect
 							label="頁首字體"
 							placeholder="搜尋字體名稱或 ID..."
-							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name} (${f.id})` }))}
+							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name ?? f.id} (${f.id})` }))}
 							value={headerFont || undefined}
 							onValueChange={v => setHeaderFont(v)}
 						/>
 						<SearchableSelect
 							label="問題字體"
 							placeholder="搜尋字體名稱或 ID..."
-							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name} (${f.id})` }))}
+							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name ?? f.id} (${f.id})` }))}
 							value={questionFont || undefined}
 							onValueChange={v => setQuestionFont(v)}
 						/>
 						<SearchableSelect
 							label="文字字體"
 							placeholder="搜尋字體名稱或 ID..."
-							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name} (${f.id})` }))}
+							options={(fontsQuery.data ?? []).map(f => ({ value: f.id, label: `${f.name ?? f.id} (${f.id})` }))}
 							value={textFont || undefined}
 							onValueChange={v => setTextFont(v)}
 						/>

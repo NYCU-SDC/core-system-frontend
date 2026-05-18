@@ -21,7 +21,6 @@
 	left: 50%;
 	transform: translate(-50%, -50%);
 	width: 90vw;
-	max-width: 28rem;
 	max-height: 85vh;
 	background-color: var(--background-color-secondary);
 	border: 0.0625rem solid var(--background-color-tertiary);
@@ -29,6 +28,22 @@
 	padding: 1.5rem;
 	z-index: 9999;
 	animation: contentShow 0.15s ease;
+}
+
+.contentSm {
+	width: min(90vw, 24rem);
+}
+
+.contentMd {
+	width: min(90vw, 28rem);
+}
+
+.contentLg {
+	width: min(90vw, 40rem);
+}
+
+.contentXl {
+	width: min(90vw, 56rem);
 }
 
 @keyframes contentShow {
@@ -91,6 +106,9 @@
 }
 
 .body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
 	margin: 1.5rem 0;
 	color: var(--color-body);
 }

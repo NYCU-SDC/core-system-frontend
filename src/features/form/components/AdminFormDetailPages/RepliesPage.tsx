@@ -3,20 +3,21 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, Dialog, ErrorMessage, LoadingSpinner, ProseMirrorViewer, Select, useToast } from "@/shared/components";
-import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import { Button, Dialog, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
+import { extractTextFromProseMirror } from "@/shared/utils/proseMirror";
 import type { FormsFormResponse, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
+import ReactECharts from "echarts-for-react";
 import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight } from "lucide-react";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FormQuestionRenderer } from "../FormQuestionRenderer";
+import type { ServerFileInfo } from "../QuestionRenderers/FileUploadRenderer";
 import { StatusTag } from "../StatusTag";
+import { ExportDialog } from "./components/ExportDialog";
 import styles from "./RepliesPage.module.css";
 
 type RepliesMode = "summary" | "individual";
-
-const ReactECharts = lazy(() => import("echarts-for-react"));
 
 const CHOICE_TYPES = new Set(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "DROPDOWN", "DETAILED_MULTIPLE_CHOICE", "RANKING"]);
 const SCALE_TYPES = new Set(["LINEAR_SCALE", "RATING"]);
@@ -136,12 +137,6 @@ const buildPieChartOption = (items: SummaryDataItem[], pieColors: string[], text
 	};
 };
 
-const renderChart = (option: EChartsOption) => (
-	<Suspense fallback={<LoadingSpinner />}>
-		<ReactECharts className={styles.chart} option={option} notMerge lazyUpdate />
-	</Suspense>
-);
-
 const toAnswerValues = (answerDetail: ResponsesAnswersDetail): string[] => {
 	const rawAnswer = answerDetail.payload?.answer as { value?: unknown; otherText?: string } | undefined;
 	if (!rawAnswer) return [];
@@ -171,7 +166,8 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 	}
 
 	if (CHOICE_TYPES.has(question.type)) {
-		const choiceMap = new Map((question.choices ?? []).map(choice => [choice.id, choice.name]));
+		const choices = (question.choices ?? []).filter(choice => !!choice && !!choice.id);
+		const choiceMap = new Map(choices.map(choice => [choice.id, choice.name ?? choice.id]));
 		const countMap = new Map<string, number>();
 
 		for (const detail of details) {
@@ -181,18 +177,19 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 			}
 		}
 
-		for (const choice of question.choices ?? []) {
-			if (!countMap.has(choice.name)) {
-				countMap.set(choice.name, 0);
+		for (const choice of choices) {
+			const choiceLabel = choice.name ?? choice.id;
+			if (!countMap.has(choiceLabel)) {
+				countMap.set(choiceLabel, 0);
 			}
 		}
 
 		const data = [...countMap.entries()].map(([name, value]) => ({ name, value }));
 		if (question.type === "SINGLE_CHOICE") {
-			return renderChart(buildPieChartOption(data, pieColors, textColor));
+			return <ReactECharts className={styles.chart} option={buildPieChartOption(data, pieColors, textColor)} notMerge lazyUpdate />;
 		}
 
-		return renderChart(buildBarChartOption(data, barColor, textColor));
+		return <ReactECharts className={styles.chart} option={buildBarChartOption(data, barColor, textColor)} notMerge lazyUpdate />;
 	}
 
 	if (SCALE_TYPES.has(question.type)) {
@@ -213,7 +210,7 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 		}
 
 		const data = [...countMap.entries()].map(([key, value]) => ({ name: String(key), value }));
-		return renderChart(buildBarChartOption(data, barColor, textColor));
+		return <ReactECharts className={styles.chart} option={buildBarChartOption(data, barColor, textColor)} notMerge lazyUpdate />;
 	}
 
 	const textAnswers = details.map(detail => detail.payload?.displayValue?.trim() ?? "").filter(answer => answer.length > 0);
@@ -242,9 +239,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const [mode, setMode] = useState<RepliesMode>("summary");
 	const [selectedResponseId, setSelectedResponseId] = useState<string>("");
 	const [isSheetPopupOpen, setIsSheetPopupOpen] = useState(false);
+	const [isSheetExportPopupOpen, setIsSheetExportPopupOpen] = useState(false);
 	const [sheetUrl, setSheetUrl] = useState(formData.googleSheetUrl ?? "");
 	const [isSheetLinked, setIsSheetLinked] = useState(Boolean(formData.googleSheetUrl));
-	const [prevGoogleSheetUrl, setPrevGoogleSheetUrl] = useState(formData.googleSheetUrl);
 	const orgSlug = useActiveOrgSlug();
 
 	const responsesQuery = useFormResponses(formData.id);
@@ -255,16 +252,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const updateFormMutation = useUpdateForm(formData.id);
 	const isArchived = formData.status === "ARCHIVED";
 
-	if (formData.googleSheetUrl !== prevGoogleSheetUrl) {
-		setSheetUrl(formData.googleSheetUrl ?? "");
-		setIsSheetLinked(Boolean(formData.googleSheetUrl));
-		setPrevGoogleSheetUrl(formData.googleSheetUrl);
-	}
-
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
-	const allQuestions = useMemo(() => {
-		return sectionsQuery.data?.flatMap(group => group.questions ?? []) ?? [];
-	}, [sectionsQuery.data]);
+	const allQuestions = useMemo(() => sectionsQuery.data?.flatMap(bundle => bundle.questions ?? []) ?? [], [sectionsQuery.data]);
 
 	const responseDetailQueries = useQueries({
 		queries: responses.map(response => ({
@@ -321,6 +310,27 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		}
 		return next;
 	}, [selectedResponseDetails]);
+
+	const selectedFileMetadataByQuestionId = useMemo(() => {
+		const next = new Map<string, ServerFileInfo[]>();
+
+		for (const [questionId, answerDetail] of selectedAnswersByQuestionId.entries()) {
+			if (answerDetail.question.type !== "UPLOAD_FILE") continue;
+
+			const rawAnswer = answerDetail.payload?.answer as { value?: { originalFilename?: string; fileId?: string; contentType?: string }[] } | undefined;
+			const fileInfos = (rawAnswer?.value ?? [])
+				.filter(file => file.fileId && file.originalFilename)
+				.map(file => ({
+					fileId: file.fileId!,
+					originalFilename: file.originalFilename!,
+					contentType: file.contentType ?? "application/octet-stream"
+				}));
+
+			next.set(questionId, fileInfos);
+		}
+
+		return next;
+	}, [selectedAnswersByQuestionId]);
 
 	const questionsById = useMemo(() => new Map(allQuestions.map(question => [question.id, question])), [allQuestions]);
 
@@ -383,7 +393,6 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 	const handleVerifySheet = () => {
 		if (isArchived) {
-			pushToast({ title: "表單已封存", description: "請先解除封存後再連結試算表。", variant: "warning" });
 			return;
 		}
 
@@ -414,7 +423,11 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 								pushToast({ title: "已連結至試算表", variant: "success" });
 							},
 							onError: error => {
-								pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" });
+								pushToast({
+									title: "儲存失敗",
+									description: (error as Error).message,
+									variant: "error"
+								});
 							}
 						}
 					);
@@ -429,6 +442,12 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 	const handleViewForm = () => {
 		window.open(`/forms/${formData.id}`, "_blank", "noopener,noreferrer");
+	};
+
+	const handleOpenSheetPopup = () => {
+		setSheetUrl(formData.googleSheetUrl ?? "");
+		setIsSheetLinked(Boolean(formData.googleSheetUrl));
+		setIsSheetPopupOpen(true);
 	};
 
 	const handleSelectPreviousResponse = () => {
@@ -475,10 +494,16 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			<div className={styles.container}>
 				<div className={styles.topHeader}>
 					<h2 className={styles.totalText}>{responseCountText}</h2>
-					<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)} disabled={isArchived}>
-						<SquareArrowOutUpRight size={16} />
-						連結試算表
-					</Button>
+					<div className={styles.buttonGroup}>
+						<Button className={styles.sheetButton} variant="secondary" onClick={handleOpenSheetPopup} disabled={isArchived}>
+							<SquareArrowOutUpRight size={16} />
+							連結試算表
+						</Button>
+						<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetExportPopupOpen(true)}>
+							<SquareArrowOutUpRight size={16} />
+							匯出試算表
+						</Button>
+					</div>
 				</div>
 
 				<div className={styles.modeTabs}>
@@ -498,12 +523,13 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						{responses.length > 0 &&
 							allQuestions.map(question => {
 								const details = answerDetailsByQuestionId.get(question.id) ?? [];
-								const hasDescription = question.description && JSON.stringify(question.description) !== JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
+								const questionDescription = extractTextFromProseMirror(question.description).trim();
+								const hasDescription = Boolean(questionDescription);
 								return (
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={question.description as ProseMirrorLikeDocument} />}
+											{hasDescription && <Markdown className={styles.questionDescription} content={questionDescription} />}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
 										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
@@ -553,7 +579,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 						{selectedResponse &&
 							allQuestions.map(question => {
-								const hasDescription = question.description && JSON.stringify(question.description) !== JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
+								const questionDescription = extractTextFromProseMirror(question.description).trim();
+								const hasDescription = Boolean(questionDescription);
 								const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
 								const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
 								const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
@@ -563,7 +590,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={question.description as ProseMirrorLikeDocument} />}
+											{hasDescription && <Markdown className={styles.questionDescription} content={questionDescription} />}
 										</div>
 										<div className={styles.readonlyQuestionContent}>
 											<FormQuestionRenderer
@@ -573,6 +600,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 												sourceQuestion={sourceQuestion}
 												sourceAnswerValue={sourceAnswerValue}
 												disableFileUpload
+												initialFiles={selectedFileMetadataByQuestionId.get(question.id)}
 												onAnswerChange={() => {}}
 												onOtherTextChange={() => {}}
 											/>
@@ -584,6 +612,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				)}
 			</div>
 
+			{/* 連結試算表對話框 */}
 			<Dialog open={isSheetPopupOpen} onOpenChange={setIsSheetPopupOpen} title="回覆搜集">
 				<StatusTag
 					variant={isSheetLinked ? "published" : "draft"}
@@ -604,7 +633,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." disabled={isArchived} />
 
 				<div className={styles.popupActions}>
-					<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet || isArchived}>
+					<Button className={styles.buttonForeground} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet || isArchived}>
 						<Repeat2 size={16} />
 						{isCheckingSheet ? "檢查中..." : "檢查狀態"}
 					</Button>
@@ -614,6 +643,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 					</Button>
 				</div>
 			</Dialog>
+
+			{/* 下載試算表對話框 */}
+			<ExportDialog open={isSheetExportPopupOpen} onOpenChange={setIsSheetExportPopupOpen} formId={formData.id} formName={formData.title} sectionsData={sectionsQuery.data} />
 		</>
 	);
 };

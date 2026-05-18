@@ -1,7 +1,7 @@
 import { UserLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import type { DragItem } from "@/shared/components";
+import type { DragItem, TableColumn } from "@/shared/components";
 import {
 	AccountButton,
 	Badge,
@@ -25,6 +25,7 @@ import {
 	SearchableSelect,
 	Select,
 	Switch,
+	Table,
 	TextArea,
 	Tooltip,
 	useToast
@@ -340,6 +341,101 @@ export const ComponentsDemo = () => {
 						<p>This is a blockquote with some example text to demonstrate the styling.</p>
 						<cite>— Author Name</cite>
 					</blockquote>
+				</section>
+
+				<section className={styles.section}>
+					<h2>Table</h2>
+
+					{(() => {
+						type DemoTableRow = { name: string; studentId: string; dept: string; school: string; group: string; email: string; q1: string; q2?: string };
+						const columns: TableColumn<DemoTableRow>[] = [
+							{ key: "name", header: "名字", width: "fixed", fixedWidth: "8rem" },
+							{ key: "studentId", header: "學號", width: "fixed", fixedWidth: "8rem" },
+							{ key: "dept", header: "科系", width: "fixed", fixedWidth: "6rem" },
+							{ key: "school", header: "學校", width: "fixed", fixedWidth: "8rem" },
+							{ key: "group", header: "組別", width: "fixed", fixedWidth: "8rem" },
+							{ key: "email", header: "電子郵件", width: "fixed", fixedWidth: "12rem" },
+							{ key: "q1", header: "Q1 整體滿意度", width: "fixed", fixedWidth: "8rem" },
+							{ key: "q2", header: "Q2 整體滿意度", width: "fixed", fixedWidth: "8rem" }
+						];
+
+						const rows: DemoTableRow[] = [
+							{ name: "毛宥鈞", studentId: "114567890", dept: "資工系", school: "陽明交大", group: "Core System", email: "abc@gmail.com", q1: "非常滿意" },
+							{ name: "王小明", studentId: "113456789", dept: "電機系", school: "台灣大學", group: "React", email: "wang@example.com", q1: "滿意" },
+							{ name: "李小華", studentId: "112345678", dept: "資管系", school: "政治大學", group: "Backend", email: "li@example.com", q1: "普通" }
+						];
+
+						const manyRows = [
+							...rows,
+							{ name: "陳小美", studentId: "111234567", dept: "資工系", school: "成功大學", group: "Frontend", email: "chen@example.com", q1: "非常滿意", q2: "非常滿意" },
+							{ name: "林大仁", studentId: "110123456", dept: "電機系", school: "清華大學", group: "DevOps", email: "lin@example.com", q1: "滿意", q2: "非常滿意" },
+							{ name: "張小龍", studentId: "109012345", dept: "資管系", school: "中央大學", group: "Core System", email: "zhang@example.com", q1: "非常滿意", q2: "非常滿意" },
+							{ name: "劉小玉", studentId: "108901234", dept: "資工系", school: "陽明交大", group: "Backend", email: "liu@example.com", q1: "普通", q2: "非常滿意" },
+							{ name: "黃大明", studentId: "107890123", dept: "電機系", school: "台灣大學", group: "React", email: "huang@example.com", q1: "滿意", q2: "非常滿意" }
+						];
+
+						type ReviewStatus = "approved" | "rejected" | "pending";
+						const statusConfig: Record<ReviewStatus, { label: string; color: string; bg: string }> = {
+							approved: { label: "已通過", color: "#000000", bg: "var(--green)" },
+							rejected: { label: "已拒絕", color: "#000000", bg: "var(--red)" },
+							pending: { label: "待審核", color: "#000000", bg: "var(--orange)" }
+						};
+						type ReviewRow = { name: string; submittedAt: string; score: number; status: ReviewStatus };
+						const reviewRows: ReviewRow[] = [
+							{ name: "EM", submittedAt: "2025-05-03", score: 99, status: "approved" },
+							{ name: "Alice", submittedAt: "2025-05-04", score: 52, status: "rejected" },
+							{ name: "Bob", submittedAt: "2025-05-05", score: 71, status: "pending" }
+						];
+						const reviewColumns: TableColumn<ReviewRow>[] = [
+							{ key: "name", header: "填答者", width: "fixed", fixedWidth: "7rem" },
+							{ key: "submittedAt", header: "提交日期", width: "fixed", fixedWidth: "8rem", align: "center" },
+							{
+								key: "score",
+								header: "分數",
+								width: "fixed",
+								fixedWidth: "5rem",
+								align: "right",
+								render: value => {
+									const score = typeof value === "number" ? value : Number(value);
+									return <span style={{ fontWeight: 600, color: score >= 80 ? "var(--green)" : score >= 60 ? "var(--orange)" : "var(--red)" }}>{score}</span>;
+								}
+							},
+							{
+								key: "status",
+								header: "狀態",
+								width: "fixed",
+								fixedWidth: "6rem",
+								align: "center",
+								render: value => {
+									const status = value as ReviewStatus;
+									const cfg = statusConfig[status];
+									return <span style={{ padding: "0.25rem 0.75rem", borderRadius: "999px", fontSize: "0.8125rem", fontWeight: 600, color: cfg.color, backgroundColor: cfg.bg }}>{cfg.label}</span>;
+								}
+							}
+						];
+
+						return (
+							<>
+								<p>borderStyle: none & align: left</p>
+								<Table columns={columns} data={rows} borderStyle="none" align="left" />
+
+								<p>borderStyle: horizontal & density: compact</p>
+								<Table columns={columns} data={manyRows} borderStyle="horizontal" density="compact" showRowNumber />
+
+								<p>render + per-column align（狀態 badge、分數條件色）</p>
+								<Table columns={reviewColumns} data={reviewRows} borderStyle="full" showRowNumber />
+
+								<p>maxHeight + 橫向捲軸 + stickyHeader</p>
+								<Table columns={columns} data={manyRows} borderStyle="full" showRowNumber containerClassName={styles.tableMaxHeight} stickyHeader />
+
+								<p>自動產生欄位（defaultColumnWidth，不需手動定義 columns）</p>
+								<Table data={rows} defaultColumnWidth="8rem" borderStyle="full" showRowNumber />
+
+								<p>empty state</p>
+								<Table columns={columns} data={[]} borderStyle="full" />
+							</>
+						);
+					})()}
 				</section>
 
 				<section className={styles.section}>
