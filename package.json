@@ -12,7 +12,7 @@
 		"lint": "eslint .",
 		"prepare": "sh -c 'command -v git >/dev/null 2>&1 && [ -d .git ] && git config core.hooksPath .githooks || exit 0'",
 		"preview": "vite preview",
-		"start": "node --env-file=.env server/index.js",
+		"start": "node --env-file-if-exists=.env dist/server.js",
 		"test": "vitest run",
 		"test:all": "pnpm test && pnpm test:e2e",
 		"test:coverage": "vitest run --coverage",
