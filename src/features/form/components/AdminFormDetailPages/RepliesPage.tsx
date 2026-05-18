@@ -9,9 +9,11 @@ import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormQuestionRenderer } from "../FormQuestionRenderer";
+import type { ServerFileInfo } from "../QuestionRenderers/FileUploadRenderer";
 import { StatusTag } from "../StatusTag";
+import { ExportDialog } from "./components/ExportDialog";
 import styles from "./RepliesPage.module.css";
 
 type RepliesMode = "summary" | "individual";
@@ -234,9 +236,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const [mode, setMode] = useState<RepliesMode>("summary");
 	const [selectedResponseId, setSelectedResponseId] = useState<string>("");
 	const [isSheetPopupOpen, setIsSheetPopupOpen] = useState(false);
+	const [isSheetExportPopupOpen, setIsSheetExportPopupOpen] = useState(false);
 	const [sheetUrl, setSheetUrl] = useState(formData.googleSheetUrl ?? "");
 	const [isSheetLinked, setIsSheetLinked] = useState(Boolean(formData.googleSheetUrl));
-	const [prevGoogleSheetUrl, setPrevGoogleSheetUrl] = useState(formData.googleSheetUrl);
 	const orgSlug = useActiveOrgSlug();
 
 	const responsesQuery = useFormResponses(formData.id);
@@ -246,11 +248,10 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const verifyMutation = useVerifyGoogleSheet(formData.id);
 	const updateFormMutation = useUpdateForm(formData.id);
 
-	if (formData.googleSheetUrl !== prevGoogleSheetUrl) {
+	useEffect(() => {
 		setSheetUrl(formData.googleSheetUrl ?? "");
 		setIsSheetLinked(Boolean(formData.googleSheetUrl));
-		setPrevGoogleSheetUrl(formData.googleSheetUrl);
-	}
+	}, [formData.googleSheetUrl]);
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
 	const allQuestions = useMemo(() => {
@@ -313,6 +314,27 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		}
 		return next;
 	}, [selectedResponseDetails]);
+
+	const selectedFileMetadataByQuestionId = useMemo(() => {
+		const next = new Map<string, ServerFileInfo[]>();
+
+		for (const [questionId, answerDetail] of selectedAnswersByQuestionId.entries()) {
+			if (answerDetail.question.type !== "UPLOAD_FILE") continue;
+
+			const rawAnswer = answerDetail.payload?.answer as { value?: { originalFilename?: string; fileId?: string; contentType?: string }[] } | undefined;
+			const fileInfos = (rawAnswer?.value ?? [])
+				.filter(file => file.fileId && file.originalFilename)
+				.map(file => ({
+					fileId: file.fileId!,
+					originalFilename: file.originalFilename!,
+					contentType: file.contentType ?? "application/octet-stream"
+				}));
+
+			next.set(questionId, fileInfos);
+		}
+
+		return next;
+	}, [selectedAnswersByQuestionId]);
 
 	const questionsById = useMemo(() => new Map(allQuestions.map(question => [question.id, question])), [allQuestions]);
 
@@ -401,7 +423,11 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 								pushToast({ title: "已連結至試算表", variant: "success" });
 							},
 							onError: error => {
-								pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" });
+								pushToast({
+									title: "儲存失敗",
+									description: (error as Error).message,
+									variant: "error"
+								});
 							}
 						}
 					);
@@ -462,10 +488,16 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			<div className={styles.container}>
 				<div className={styles.topHeader}>
 					<h2 className={styles.totalText}>{responseCountText}</h2>
-					<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)}>
-						<SquareArrowOutUpRight size={16} />
-						連結試算表
-					</Button>
+					<div className={styles.buttonGroup}>
+						<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)}>
+							<SquareArrowOutUpRight size={16} />
+							連結試算表
+						</Button>
+						<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetExportPopupOpen(true)}>
+							<SquareArrowOutUpRight size={16} />
+							匯出試算表
+						</Button>
+					</div>
 				</div>
 
 				<div className={styles.modeTabs}>
@@ -560,6 +592,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 												sourceQuestion={sourceQuestion}
 												sourceAnswerValue={sourceAnswerValue}
 												disableFileUpload
+												initialFiles={selectedFileMetadataByQuestionId.get(question.id)}
 												onAnswerChange={() => {}}
 												onOtherTextChange={() => {}}
 											/>
@@ -571,6 +604,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				)}
 			</div>
 
+			{/* 連結試算表對話框 */}
 			<Dialog open={isSheetPopupOpen} onOpenChange={setIsSheetPopupOpen} title="回覆搜集">
 				<StatusTag
 					variant={isSheetLinked ? "published" : "draft"}
@@ -591,7 +625,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." />
 
 				<div className={styles.popupActions}>
-					<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet}>
+					<Button className={`${styles.buttonForeground} ${styles.checkStatusButton}`} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet}>
 						<Repeat2 size={16} />
 						{isCheckingSheet ? "檢查中..." : "檢查狀態"}
 					</Button>
@@ -601,6 +635,16 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 					</Button>
 				</div>
 			</Dialog>
+			
+			{/* 下載試算表對話框 */}
+			<ExportDialog
+				open={isSheetExportPopupOpen}
+				onOpenChange={setIsSheetExportPopupOpen}
+				sectionsData={sectionsQuery.data}
+				responses={responses}
+				responseDetailsMap={responseDetailsMap}
+				memberDisplayById={memberDisplayById}
+			/>
 		</>
 	);
 };
