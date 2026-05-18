@@ -254,11 +254,12 @@ export const exportFormResponses = async (formId: string, questionIds: string[])
 	});
 
 	if (!response.ok) {
-		let payload: unknown;
+		const body = await response.text();
+		let payload: unknown = body;
 		try {
-			payload = await response.json();
+			payload = JSON.parse(body);
 		} catch {
-			payload = await response.text();
+			payload = body;
 		}
 		assertOk(response.status, "Failed to export responses", payload);
 	}
