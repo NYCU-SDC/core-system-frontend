@@ -6,14 +6,16 @@ export interface ScrollContainerProps extends ComponentPropsWithoutRef<"div"> {
 	children: ReactNode;
 }
 
-export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(({ children, className, ...props }, ref) => {
-	const classes = [styles.scrollContainer, className].filter(Boolean).join(" ");
+export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
+	({ children, className, ...props }, ref) => {
+		const classes = [styles.scrollContainer, className].filter(Boolean).join(" ");
 
-	return (
-		<div ref={ref} className={classes} {...props}>
-			{children}
-		</div>
-	);
-});
+		return (
+			<div ref={ref} className={classes} {...props}>
+				{children}
+			</div>
+		);
+	}
+);
 
 ScrollContainer.displayName = "ScrollContainer";
