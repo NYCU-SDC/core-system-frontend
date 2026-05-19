@@ -268,6 +268,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const [isSheetExportPopupOpen, setIsSheetExportPopupOpen] = useState(false);
 	const [sheetUrl, setSheetUrl] = useState(formData.googleSheetUrl ?? "");
 	const [isSheetLinked, setIsSheetLinked] = useState(Boolean(formData.googleSheetUrl));
+	const [prevGoogleSheetUrl, setPrevGoogleSheetUrl] = useState(formData.googleSheetUrl);
 	const orgSlug = useActiveOrgSlug();
 
 	const responsesQuery = useFormResponses(formData.id);
@@ -277,6 +278,12 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const verifyMutation = useVerifyGoogleSheet(formData.id);
 	const updateFormMutation = useUpdateForm(formData.id);
 	const isArchived = formData.status === "ARCHIVED";
+
+	if (formData.googleSheetUrl !== prevGoogleSheetUrl) {
+		setSheetUrl(formData.googleSheetUrl ?? "");
+		setIsSheetLinked(Boolean(formData.googleSheetUrl));
+		setPrevGoogleSheetUrl(formData.googleSheetUrl);
+	}
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
 	const allQuestions = useMemo(() => sectionsQuery.data?.flatMap(bundle => bundle.questions ?? []) ?? [], [sectionsQuery.data]);
