@@ -364,7 +364,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		}
 
 		return next;
-	}, [allQuestions, selectedAnswersByQuestionId]);
+	}, [selectedAnswersByQuestionId]);
 
 	const questionsById = useMemo(() => new Map(allQuestions.map(question => [question.id, question])), [allQuestions]);
 
