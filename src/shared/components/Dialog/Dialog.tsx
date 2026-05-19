@@ -31,9 +31,11 @@ export const Dialog = ({ open, onOpenChange, title, description, children, foote
 				<DialogPrimitive.Overlay className={styles.overlay} style={backgroundColor ? { backgroundColor } : undefined} />
 				<DialogPrimitive.Content className={`${styles.content} ${sizeClassNameMap[size]}`}>
 					<div className={styles.header}>
-						<DialogPrimitive.Title className={styles.title}>{title}</DialogPrimitive.Title>
-						{description && <DialogPrimitive.Description className={styles.description}>{description}</DialogPrimitive.Description>}
-						<DialogPrimitive.Close className={styles.close} aria-label="關閉對話框">
+						<div className={styles.headerText}>
+							<DialogPrimitive.Title className={styles.title}>{title}</DialogPrimitive.Title>
+							{description && <DialogPrimitive.Description className={styles.description}>{description}</DialogPrimitive.Description>}
+						</div>
+						<DialogPrimitive.Close className={styles.close} aria-label="Close dialog">
 							<X size={20} />
 						</DialogPrimitive.Close>
 					</div>
