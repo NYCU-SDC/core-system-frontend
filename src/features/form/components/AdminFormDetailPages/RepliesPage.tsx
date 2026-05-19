@@ -3,8 +3,8 @@ import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, Dialog, ErrorMessage, LoadingSpinner, Markdown, Select, useToast } from "@/shared/components";
-import { extractTextFromProseMirror } from "@/shared/utils/proseMirror";
+import { Button, Dialog, ErrorMessage, LoadingSpinner, ProseMirrorViewer, Select, useToast } from "@/shared/components";
+import { fromApiProseMirror } from "@/shared/utils/proseMirror";
 import type { FormsFormResponse, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
@@ -25,6 +25,32 @@ const SCALE_TYPES = new Set(["LINEAR_SCALE", "RATING"]);
 type SummaryDataItem = {
 	name: string;
 	value: number;
+};
+
+type UploadAnswerFile = {
+	fileId?: string;
+	originalFilename?: string;
+	contentType?: string;
+};
+
+const extractUploadAnswerFiles = (value: unknown): UploadAnswerFile[] => {
+	if (Array.isArray(value)) return value as UploadAnswerFile[];
+	if (value && typeof value === "object") {
+		const files = (value as { files?: unknown }).files;
+		return Array.isArray(files) ? (files as UploadAnswerFile[]) : [];
+	}
+	return [];
+};
+
+const hasDescriptionContent = (doc: unknown): boolean => {
+	if (!doc || typeof doc !== "object") return false;
+
+	const node = doc as { type?: string; text?: unknown; content?: unknown[] };
+	if (node.type === "text" && typeof node.text === "string") {
+		return node.text.trim().length > 0;
+	}
+
+	return Array.isArray(node.content) && node.content.some(hasDescriptionContent);
 };
 
 const getCssVarColor = (tokenName: string, fallback: string) => {
@@ -317,8 +343,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		for (const [questionId, answerDetail] of selectedAnswersByQuestionId.entries()) {
 			if (answerDetail.question.type !== "UPLOAD_FILE") continue;
 
-			const rawAnswer = answerDetail.payload?.answer as { value?: { originalFilename?: string; fileId?: string; contentType?: string }[] } | undefined;
-			const fileInfos = (rawAnswer?.value ?? [])
+			const rawAnswer = answerDetail.payload?.answer as { value?: unknown } | undefined;
+			const rawFiles = extractUploadAnswerFiles(rawAnswer?.value);
+			const fileInfos = rawFiles
 				.filter(file => file.fileId && file.originalFilename)
 				.map(file => ({
 					fileId: file.fileId!,
@@ -330,7 +357,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		}
 
 		return next;
-	}, [selectedAnswersByQuestionId]);
+	}, [allQuestions, selectedAnswersByQuestionId]);
 
 	const questionsById = useMemo(() => new Map(allQuestions.map(question => [question.id, question])), [allQuestions]);
 
@@ -360,6 +387,14 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			}
 
 			if (rawAnswer.value && typeof rawAnswer.value === "object") {
+				if (answerDetail.question.type === "UPLOAD_FILE") {
+					const fileNames = extractUploadAnswerFiles(rawAnswer.value)
+						.map(file => file.originalFilename)
+						.filter((fileName): fileName is string => Boolean(fileName));
+					valueByQuestionId.set(questionId, fileNames.join(","));
+					continue;
+				}
+
 				const oauthValue = rawAnswer.value as { username?: string; email?: string };
 				valueByQuestionId.set(questionId, oauthValue.username || oauthValue.email || answerDetail.payload?.displayValue || "");
 				continue;
@@ -523,13 +558,13 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						{responses.length > 0 &&
 							allQuestions.map(question => {
 								const details = answerDetailsByQuestionId.get(question.id) ?? [];
-								const questionDescription = extractTextFromProseMirror(question.description).trim();
-								const hasDescription = Boolean(questionDescription);
+								const description = question.description ? fromApiProseMirror(question.description) : null;
+								const hasDescription = hasDescriptionContent(description);
 								return (
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={questionDescription} />}
+											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={description} />}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
 										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
@@ -579,8 +614,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 						{selectedResponse &&
 							allQuestions.map(question => {
-								const questionDescription = extractTextFromProseMirror(question.description).trim();
-								const hasDescription = Boolean(questionDescription);
+								const description = question.description ? fromApiProseMirror(question.description) : null;
+								const hasDescription = hasDescriptionContent(description);
 								const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
 								const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
 								const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
@@ -590,9 +625,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <Markdown className={styles.questionDescription} content={questionDescription} />}
+											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={description} />}
 										</div>
-										<div className={styles.readonlyQuestionContent}>
+										<div className={question.type === "UPLOAD_FILE" ? undefined : styles.readonlyQuestionContent}>
 											<FormQuestionRenderer
 												question={question}
 												value={value}
@@ -600,6 +635,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 												sourceQuestion={sourceQuestion}
 												sourceAnswerValue={sourceAnswerValue}
 												disableFileUpload
+												downloadInitialFiles={false}
 												initialFiles={selectedFileMetadataByQuestionId.get(question.id)}
 												onAnswerChange={() => {}}
 												onOtherTextChange={() => {}}

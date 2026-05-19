@@ -141,6 +141,37 @@
 	font-size: 0.9375rem;
 }
 
+.questionDescription :global(p) {
+	margin: 0;
+}
+
+.questionDescription :global(p + p) {
+	margin-top: 0.5rem;
+}
+
+.questionDescription :global(h1),
+.questionDescription :global(h2),
+.questionDescription :global(h3),
+.questionDescription :global(h4),
+.questionDescription :global(h5),
+.questionDescription :global(h6) {
+	margin: 0;
+	color: var(--color-heading);
+	font-size: 1em;
+	font-weight: 600;
+}
+
+.questionDescription :global(ul),
+.questionDescription :global(ol) {
+	margin: 0.5rem 0 0;
+	padding-left: 1.5rem;
+}
+
+.questionDescription :global(a) {
+	color: inherit;
+	text-decoration: underline;
+}
+
 .questionCount {
 	margin: 0;
 	font-size: 0.875rem;
