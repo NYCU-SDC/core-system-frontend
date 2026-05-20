@@ -636,6 +636,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 										</div>
 										<div className={question.type === "UPLOAD_FILE" ? undefined : styles.readonlyQuestionContent}>
 											<FormQuestionRenderer
+												key={`${selectedResponse.id}-${question.id}`}
 												question={question}
 												value={value}
 												otherTextValue={otherTextValue}
