@@ -66,7 +66,9 @@ export const AdminSectionEditPage = () => {
 	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
-	const section = sectionsQuery.data?.flatMap(response => (Array.isArray(response.sections) ? response.sections : [])).find(foundSection => foundSection.id === sectionId);
+	const sectionBundle = sectionsQuery.data?.find(response => response.section.id === sectionId);
+	const section = sectionBundle?.section;
+	const apiQuestions = (sectionBundle?.questions ?? []) as FormsQuestionResponse[];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
@@ -309,7 +311,6 @@ export const AdminSectionEditPage = () => {
 	// Sync from API on first load
 	useEffect(() => {
 		if (!section?.id) return;
-		const apiQuestions = section.questions ?? [];
 
 		const mapped: Question[] = apiQuestions.map(q => {
 			const apiQuestion = q as ApiQuestionWithOptionalFields;
@@ -433,13 +434,12 @@ export const AdminSectionEditPage = () => {
 	const sourceQuestionOptions = useMemo(
 		() =>
 			(sectionsQuery.data ?? [])
-				.flatMap(sectionRes => sectionRes.sections ?? [])
-				.flatMap(sectionItem =>
-					(sectionItem.questions ?? [])
+				.flatMap(sectionRes =>
+					(sectionRes.questions ?? [])
 						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
 						.map(question => ({
 							value: question.id,
-							label: `${sectionItem.title} / ${question.title}`
+							label: `${sectionRes.section.title} / ${question.title}`
 						}))
 				),
 		[sectionsQuery.data]

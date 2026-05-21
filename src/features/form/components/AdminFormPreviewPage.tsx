@@ -47,16 +47,14 @@ export const AdminFormPreviewPage = () => {
 	const sections: FormsSection[] = useMemo(() => {
 		if (!sectionsQuery.data) return [];
 
-		const baseSections: FormsSection[] = sectionsQuery.data.flatMap(item => {
-			const list = Array.isArray(item.sections) ? item.sections : [];
-			return list.map(section => ({
-				id: section.id,
-				formId: section.formId,
-				title: section.title,
-				description: section.description,
-				questions: section.questions ?? []
-			}));
-		});
+		const baseSections: FormsSection[] = sectionsQuery.data.map(item => ({
+			id: item.section.id,
+			formId: item.section.formId,
+			title: item.section.title,
+			description: item.section.description,
+			descriptionHtml: item.section.descriptionHtml,
+			questions: item.questions ?? []
+		}));
 
 		const visible = resolveVisibleSectionsFromWorkflow(baseSections, workflowQuery.data?.workflow, answers);
 		return [...visible, { id: "preview", formId: formid!, title: "填答結果預覽", questions: [] }];
