@@ -15,7 +15,7 @@ export const MultipleChoiceRenderer = ({
 	onOtherTextChange: (questionId: string, value: string) => void;
 	otherTextValue: string;
 }) => {
-	const choices = question.choices ?? [];
+	const choices = (question.choices ?? []).filter(choice => !!choice && !!choice.id);
 	const otherChoice = choices.find(choice => choice.isOther);
 	const selectedIds = value ? value.split(",").filter(Boolean) : [];
 
@@ -26,7 +26,7 @@ export const MultipleChoiceRenderer = ({
 					<Checkbox
 						key={choice.id}
 						id={`${question.id}-${choice.id}`}
-						label={choice.name}
+						label={choice.name ?? choice.id}
 						checked={selectedIds.includes(choice.id)}
 						onCheckedChange={checked => {
 							const newValues = checked ? [...selectedIds, choice.id] : selectedIds.filter(v => v !== choice.id);

@@ -1,11 +1,14 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
-import { useUndoableEditor } from "@/features/form/hooks/useUndoableEditor";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
-import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { marked } from "marked";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
+import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { FormsQuestionRequest, FormsQuestionResponse, ProseMirrorDocument, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { QuestionCard } from "./components/QuestionCard";
@@ -14,29 +17,19 @@ import styles from "./SectionEditPage.module.css";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
 
+function SortableQuestionItem({ id, children }: { id: string; children: (listeners: React.HTMLAttributes<HTMLElement> | undefined) => ReactNode }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+	return (
+		<div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes}>
+			{children(listeners as React.HTMLAttributes<HTMLElement> | undefined)}
+		</div>
+	);
+}
+
 type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
 	url?: string;
 	oauthConnect?: Question["oauthProvider"];
 };
-
-type EditorDraft = {
-	questions: Question[];
-	questionIds: (string | undefined)[];
-	sectionTitleDraft: string;
-	sectionDescriptionDraft: string;
-};
-
-const EMPTY_DRAFT: EditorDraft = {
-	questions: [],
-	questionIds: [],
-	sectionTitleDraft: "",
-	sectionDescriptionDraft: ""
-};
-
-const ensureQuestionClientId = (question: Question): Question => ({
-	...question,
-	clientId: question.clientId ?? uuidv4()
-});
 
 const ensureOptionId = (option: Option): Option => ({
 	...option,
@@ -66,9 +59,8 @@ export const AdminSectionEditPage = () => {
 	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
-	const sectionBundle = sectionsQuery.data?.find(response => response.section.id === sectionId);
-	const section = sectionBundle?.section;
-	const apiQuestions = (sectionBundle?.questions ?? []) as FormsQuestionResponse[];
+	const section = sectionsQuery.data?.flatMap(response => (Array.isArray(response.sections) ? response.sections : [])).find(foundSection => foundSection.id === sectionId);
+	const apiQuestions = section?.questions ?? [];
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
@@ -85,10 +77,12 @@ export const AdminSectionEditPage = () => {
 	};
 
 	// States
-	const { state: draft, setState: setEditorState, replaceState, undo, redo, flushCheckpoint, canUndo, canRedo } = useUndoableEditor<EditorDraft>(EMPTY_DRAFT, { limit: 100 });
-	const { questions, questionIds, sectionTitleDraft, sectionDescriptionDraft } = draft;
+	const [questions, setQuestionsState] = useState<Question[]>([]);
+	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
+	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
+	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState("");
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
-	const [savedSectionDescription, setSavedSectionDescription] = useState("");
+	const [savedSectionDescription, setSavedSectionDescription] = useState(() => serializeProseMirrorDoc(EMPTY_PROSE_MIRROR_DOC));
 	const questionsRef = useRef<Question[]>([]);
 	const questionIdsRef = useRef<(string | undefined)[]>([]);
 	const dirtyQuestionIndexesRef = useRef<Set<number>>(new Set());
@@ -99,41 +93,24 @@ export const AdminSectionEditPage = () => {
 
 	// Callbacks
 	const setQuestions = useCallback(
-		(updater: Question[] | ((prev: Question[]) => Question[]), checkpoint: "immediate" | "debounced" | "none" = "immediate") => {
-			setEditorState(
-				prev => ({
-					...prev,
-					questions: typeof updater === "function" ? (updater as (prev: Question[]) => Question[])(prev.questions) : updater
-				}),
-				{ checkpoint }
-			);
+		(updater: Question[] | ((prev: Question[]) => Question[]), _checkpoint?: string) => {
+			setQuestionsState(prev => (typeof updater === "function" ? (updater as (prev: Question[]) => Question[])(prev) : updater));
 		},
-		[setEditorState]
+		[setQuestionsState]
 	);
 
-	const setQuestionIdsAndRef = useCallback(
-		(nextQuestionIds: (string | undefined)[], checkpoint: "immediate" | "debounced" | "none" = "immediate") => {
-			questionIdsRef.current = nextQuestionIds;
-			setEditorState(
-				prev => ({
-					...prev,
-					questionIds: nextQuestionIds
-				}),
-				{ checkpoint }
-			);
-		},
-		[setEditorState]
-	);
+	const setQuestionIdsAndRef = useCallback((nextQuestionIds: (string | undefined)[], _checkpoint?: string) => {
+		questionIdsRef.current = nextQuestionIds;
+		setQuestionIds(nextQuestionIds);
+	}, []);
 
 	const updateQuestionAt = useCallback(
-		(index: number, updater: (question: Question) => Question, checkpoint: "immediate" | "debounced" | "none" = "immediate") => {
-			setQuestions(
-				prev =>
-					prev.map((question, currentIndex) => {
-						if (currentIndex !== index) return question;
-						return ensureQuestionClientId(updater(ensureQuestionClientId(question)));
-					}),
-				checkpoint
+		(index: number, updater: (question: Question) => Question, _checkpoint?: string) => {
+			setQuestions(prev =>
+				prev.map((question, currentIndex) => {
+					if (currentIndex !== index) return question;
+					return updater(question);
+				})
 			);
 		},
 		[setQuestions]
@@ -167,23 +144,42 @@ export const AdminSectionEditPage = () => {
 		[markQuestionsDirty]
 	);
 
+	const remapDirtyQuestionIndexesAfterMove = useCallback((oldIndex: number, newIndex: number) => {
+		if (oldIndex === newIndex || dirtyQuestionIndexesRef.current.size === 0) return;
+
+		const remappedIndexes = new Set<number>();
+		dirtyQuestionIndexesRef.current.forEach(index => {
+			if (index === oldIndex) {
+				remappedIndexes.add(newIndex);
+			} else if (oldIndex < newIndex && index > oldIndex && index <= newIndex) {
+				remappedIndexes.add(index - 1);
+			} else if (oldIndex > newIndex && index >= newIndex && index < oldIndex) {
+				remappedIndexes.add(index + 1);
+			} else {
+				remappedIndexes.add(index);
+			}
+		});
+		dirtyQuestionIndexesRef.current = remappedIndexes;
+	}, []);
+
 	const saveSectionIfChanged = useCallback(
-		(nextSectionTitle: string, nextSectionDescription: string) => {
+		(nextSectionTitle: string, nextSectionDescription: ProseMirrorLikeDocument) => {
 			if (!sectionId) return;
-			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
+			if (nextSectionTitle === savedSectionTitle && serializeProseMirrorDoc(nextSectionDescription) === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
-				{ title: nextSectionTitle, description: nextSectionDescription ? (marked.parse(nextSectionDescription) as string) : nextSectionDescription },
+				{ title: nextSectionTitle, description: toApiProseMirror(nextSectionDescription) as unknown as ProseMirrorDocumentUpdate },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
-						setSavedSectionDescription(nextSectionDescription);
+						setSavedSectionDescription(serializeProseMirrorDoc(nextSectionDescription));
 						if (workflowQuery.data?.workflow) {
 							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: nextSectionTitle } : n));
 							updateWorkflowMutation.mutate(
 								updatedNodes.map(n => ({
 									id: n.id,
 									label: n.label,
+									payload: n.payload,
 									...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 									...(n.next !== undefined && { next: n.next }),
 									...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -204,9 +200,8 @@ export const AdminSectionEditPage = () => {
 
 	const handleSectionBlurSave = useCallback(() => {
 		if (!sectionId) return;
-		flushCheckpoint();
 		saveSectionIfChanged(sectionTitleDraft, sectionDescriptionDraft);
-	}, [flushCheckpoint, saveSectionIfChanged, sectionDescriptionDraft, sectionId, sectionTitleDraft]);
+	}, [saveSectionIfChanged, sectionDescriptionDraft, sectionId, sectionTitleDraft]);
 
 	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
 		const base: FormsQuestionRequest = {
@@ -233,7 +228,6 @@ export const AdminSectionEditPage = () => {
 		if (isFlushingDirtyQuestionsRef.current) return;
 		if (dirtyQuestionIndexesRef.current.size === 0) return;
 
-		flushCheckpoint();
 		isFlushingDirtyQuestionsRef.current = true;
 		try {
 			while (dirtyQuestionIndexesRef.current.size > 0) {
@@ -257,7 +251,7 @@ export const AdminSectionEditPage = () => {
 							const updated: Question = {
 								...old,
 								title: apiQuestion.title ?? old.title,
-								description: apiQuestion.description ?? old.description,
+								description: fromApiProseMirror(apiQuestion.description) ?? old.description,
 								required: apiQuestion.required ?? old.required,
 								...(apiQuestion.sourceId !== undefined && {
 									sourceQuestionId: apiQuestion.sourceId ?? undefined,
@@ -305,7 +299,7 @@ export const AdminSectionEditPage = () => {
 		} finally {
 			isFlushingDirtyQuestionsRef.current = false;
 		}
-	}, [createQuestion, flushCheckpoint, formid, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
+	}, [createQuestion, formid, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
 
 	// Effects
 	// Sync from API on first load
@@ -317,48 +311,39 @@ export const AdminSectionEditPage = () => {
 			const existingQuestionIndex = questionIdsRef.current.findIndex(questionId => questionId === q.id);
 			const existingQuestion = existingQuestionIndex >= 0 ? questionsRef.current[existingQuestionIndex] : undefined;
 
-			return {
-				clientId: q.id ?? uuidv4(),
-				type: q.type as Question["type"],
-				title: q.title,
-				description: q.description ?? "",
-				required: q.required ?? false,
-				isFromAnswer: Boolean(q.sourceId),
-				sourceQuestionId: q.sourceId,
-				options: mapApiChoicesToOptions(q.choices, existingQuestion?.options),
-				detailOptions: mapApiChoicesToDetailOptions(q.choices, existingQuestion?.detailOptions),
-				start: q.scale?.minVal,
-				end: q.scale?.maxVal,
-				startLabel: q.scale?.minValueLabel ?? "",
-				endLabel: q.scale?.maxValueLabel ?? "",
-				icon: q.scale?.icon as Question["icon"],
-				uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
-				uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
-				uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
-				dateHasYear: q.date?.hasYear ?? true,
-				dateHasMonth: q.date?.hasMonth ?? true,
-				dateHasDay: q.date?.hasDay ?? true,
-				dateHasMinDate: Boolean(q.date?.minDate),
-				dateHasMaxDate: Boolean(q.date?.maxDate),
-				dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
-				dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
-				url: apiQuestion.url ?? "",
-				oauthProvider: apiQuestion.oauthConnect
-			};
-		});
-
-		replaceState({
-			questions: mapped,
-			questionIds: apiQuestions.map(q => q.id),
-			sectionTitleDraft: section.title ?? "",
-			sectionDescriptionDraft: section.description ?? ""
-		});
-		questionIdsRef.current = apiQuestions.map(q => q.id);
-		setSavedSectionTitle(section.title ?? "");
-		setSavedSectionDescription(section.description ?? "");
-		setDirtyQuestionVersion(0);
-		dirtyQuestionIndexesRef.current.clear();
-	}, [replaceState, section]);
+				return {
+					type: q.type as Question["type"],
+					title: q.title,
+					description: q.description ?? "",
+					required: q.required ?? false,
+					isFromAnswer: Boolean(q.sourceId),
+					sourceQuestionId: q.sourceId,
+					options: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", isOther: c.isOther ?? false })),
+					detailOptions: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", description: c.description ?? "" })),
+					start: q.scale?.minVal,
+					end: q.scale?.maxVal,
+					startLabel: q.scale?.minValueLabel ?? "",
+					endLabel: q.scale?.maxValueLabel ?? "",
+					icon: q.scale?.icon as Question["icon"],
+					uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
+					uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
+					uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
+					dateHasYear: q.date?.hasYear ?? true,
+					dateHasMonth: q.date?.hasMonth ?? true,
+					dateHasDay: q.date?.hasDay ?? true,
+					dateHasMinDate: Boolean(q.date?.minDate),
+					dateHasMaxDate: Boolean(q.date?.maxDate),
+					dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
+					dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
+					url: apiQuestion.url ?? "",
+					oauthProvider: apiQuestion.oauthConnect
+				};
+			});
+			setQuestions(mapped);
+			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [apiQuestions.length]);
 
 	useEffect(() => {
 		questionsRef.current = questions;
@@ -367,6 +352,13 @@ export const AdminSectionEditPage = () => {
 	useEffect(() => {
 		questionIdsRef.current = questionIds;
 	}, [questionIds]);
+
+	useEffect(() => {
+		setSectionTitleDraft(section?.title ?? "");
+		setSectionDescriptionDraft(section?.description ?? "");
+		setSavedSectionTitle(section?.title ?? "");
+		setSavedSectionDescription(section?.description ?? "");
+	}, [section?.id, section?.title, section?.description]);
 
 	useEffect(() => {
 		if (dirtyQuestionVersion === 0) return;
@@ -394,52 +386,36 @@ export const AdminSectionEditPage = () => {
 		[flushDirtyQuestions]
 	);
 
-	useEffect(() => {
-		const isNativeTextUndoTarget = (target: EventTarget | null) => {
-			if (!(target instanceof HTMLElement)) return false;
-			if (target.isContentEditable || target.closest('[contenteditable="true"]')) return true;
-			if (target instanceof HTMLTextAreaElement) return true;
-			if (target instanceof HTMLInputElement) {
-				const nonTextTypes = new Set(["button", "checkbox", "color", "file", "hidden", "image", "radio", "range", "reset", "submit"]);
-				return !nonTextTypes.has(target.type);
-			}
-			return false;
+	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
+		const base: FormsQuestionRequest = {
+			type: q.type as FormsQuestionRequest["type"],
+			title: q.title,
+			description: q.description ? (marked.parse(q.description) as string) : q.description,
+			required: q.required ?? false,
+			order
 		};
 
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.isComposing) return;
-			const modifierPressed = event.metaKey || event.ctrlKey;
-			if (!modifierPressed) return;
-			if (isNativeTextUndoTarget(event.target)) return;
+		if (q.isFromAnswer && q.sourceQuestionId) {
+			base.sourceId = q.sourceQuestionId;
+			delete base.choices;
+		} else if (QUESTION_STRATEGIES[q.type].features.includes("HAS_OPTIONS") && q.options) {
+			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
+		}
 
-			const lowerKey = event.key.toLowerCase();
-			const isUndo = lowerKey === "z" && !event.shiftKey;
-			const isRedo = (lowerKey === "z" && event.shiftKey) || (lowerKey === "y" && event.ctrlKey && !event.metaKey);
-			if (!isUndo && !isRedo) return;
-
-			event.preventDefault();
-			if (isUndo) {
-				if (!canUndo) return;
-				undo();
-				return;
-			}
-			if (!canRedo) return;
-			redo();
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [canRedo, canUndo, flushCheckpoint, redo, undo]);
+		QUESTION_STRATEGIES[q.type].toApiPayload?.(q, base);
+		return base;
+	};
 
 	const sourceQuestionOptions = useMemo(
 		() =>
 			(sectionsQuery.data ?? [])
-				.flatMap(sectionRes =>
-					(sectionRes.questions ?? [])
+				.flatMap(sectionRes => sectionRes.sections ?? [])
+				.flatMap(sectionItem =>
+					(sectionItem.questions ?? [])
 						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
 						.map(question => ({
 							value: question.id,
-							label: `${sectionRes.section.title} / ${question.title}`
+							label: `${sectionItem.title} / ${question.title}`
 						}))
 				),
 		[sectionsQuery.data]
@@ -457,7 +433,7 @@ export const AdminSectionEditPage = () => {
 			clientId: prev.clientId ?? uuidv4(),
 			type: nextType,
 			title: prev.title,
-			description: prev.description,
+			description: prev.description ?? EMPTY_PROSE_MIRROR_DOC,
 			required: prev.required,
 			isFromAnswer: prev.isFromAnswer,
 			sourceQuestionId: prev.sourceQuestionId,
@@ -508,14 +484,14 @@ export const AdminSectionEditPage = () => {
 			clientId: uuidv4(),
 			type,
 			title: "問題標題",
-			description: "",
+			description: EMPTY_PROSE_MIRROR_DOC,
 			required: false,
 			isFromAnswer: false,
 			...strategy.initialState()
 		};
 
 		const updatedQuestions = [...questions, newQuestion];
-		setQuestions(updatedQuestions, "immediate");
+		setQuestions(updatedQuestions);
 		setNewlyAddedIndex(newIndex);
 		markQuestionDirty(newIndex);
 	};
@@ -524,15 +500,7 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestions = questions.filter((_, currentIndex) => currentIndex !== index);
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index, 1);
-		questionIdsRef.current = updatedQuestionIds;
-		setEditorState(
-			prev => ({
-				...prev,
-				questions: updatedQuestions,
-				questionIds: updatedQuestionIds
-			}),
-			{ checkpoint: "immediate" }
-		);
+		setQuestionIdsAndRef(updatedQuestionIds);
 		markQuestionsDirtyFrom(index, updatedQuestions.length);
 	};
 
@@ -543,15 +511,7 @@ export const AdminSectionEditPage = () => {
 		});
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index + 1, 0, undefined);
-		questionIdsRef.current = updatedQuestionIds;
-		setEditorState(
-			prev => ({
-				...prev,
-				questions: updatedQuestions,
-				questionIds: updatedQuestionIds
-			}),
-			{ checkpoint: "immediate" }
-		);
+		setQuestionIdsAndRef(updatedQuestionIds);
 		markQuestionsDirtyFrom(index + 1, updatedQuestions.length);
 	};
 
@@ -562,8 +522,9 @@ export const AdminSectionEditPage = () => {
 	};
 
 	const handleDescriptionChange = (index: number, newDescription: string) => {
-		if (questions[index]?.description === newDescription) return;
-		updateQuestionAt(index, question => ({ ...question, description: newDescription }), "debounced");
+		const updatedQuestions = [...questions];
+		updatedQuestions[index].description = newDescription;
+		setQuestions(updatedQuestions);
 		markQuestionDirty(index);
 	};
 
@@ -750,6 +711,49 @@ export const AdminSectionEditPage = () => {
 		markQuestionDirty(questionIndex);
 	};
 
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			const { active, over } = event;
+			if (!over || active.id === over.id) return;
+
+			const oldIndex = clientIds.indexOf(active.id as string);
+			const newIndex = clientIds.indexOf(over.id as string);
+			if (oldIndex === -1 || newIndex === -1) return;
+
+			// Capture before state update to avoid stale closure
+			const draggedQuestion = questionsRef.current[oldIndex];
+			const draggedQuestionId = questionIdsRef.current[oldIndex];
+
+			setQuestions(prev => arrayMove(prev, oldIndex, newIndex));
+			setQuestionIdsAndRef(arrayMove(questionIds, oldIndex, newIndex));
+			setClientIds(prev => arrayMove(prev, oldIndex, newIndex));
+			remapDirtyQuestionIndexesAfterMove(oldIndex, newIndex);
+
+			if (draggedQuestionId && draggedQuestion) {
+				// Only PUT the dragged question with its new order.
+				// The backend shifts all other questions automatically.
+				updateQuestion.mutate(
+					{ questionId: draggedQuestionId, req: toApiRequest(draggedQuestion, newIndex + 1) },
+					{
+						onError: err => {
+							pushToast({ title: "排序失敗", description: (err as Error).message, variant: "error" });
+							setQuestions(prev => arrayMove(prev, newIndex, oldIndex));
+							setQuestionIdsAndRef(arrayMove(questionIdsRef.current, newIndex, oldIndex));
+							setClientIds(prev => arrayMove(prev, newIndex, oldIndex));
+							remapDirtyQuestionIndexesAfterMove(newIndex, oldIndex);
+						}
+					}
+				);
+			} else if (draggedQuestion) {
+				// Question not yet persisted; auto-save will create it with the correct order
+				markQuestionDirty(newIndex);
+			}
+		},
+		[clientIds, questionIds, questionsRef, questionIdsRef, updateQuestion, pushToast, setQuestionIdsAndRef, remapDirtyQuestionIndexesAfterMove, markQuestionDirty]
+	);
+
 	return (
 		<>
 			<div className={styles.layout}>
@@ -757,15 +761,7 @@ export const AdminSectionEditPage = () => {
 					<Button onClick={handleBack}>返回</Button>
 					{sectionsQuery.isLoading && <LoadingSpinner />}
 					{sectionsQuery.isError && <ErrorMessage message={(sectionsQuery.error as Error)?.message ?? "無法載入區塊資料"} />}
-					<div
-						className={styles.container}
-						onBlur={event => {
-							if (!(event.target instanceof HTMLElement)) return;
-							if (event.target.isContentEditable || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-								flushCheckpoint();
-							}
-						}}
-					>
+					<div className={styles.container}>
 						<section className={styles.card}>
 							<Input
 								placeholder="區段標題"
@@ -773,41 +769,24 @@ export const AdminSectionEditPage = () => {
 								themeColor="--comment"
 								textSize="h2"
 								value={sectionTitleDraft}
-								onChange={event =>
-									setEditorState(
-										prev => ({
-											...prev,
-											sectionTitleDraft: event.target.value
-										}),
-										{ checkpoint: "debounced" }
-									)
-								}
+								onChange={event => setSectionTitleDraft(event.target.value)}
 								onBlur={handleSectionBlurSave}
 							/>
-							<TextArea
+							<MarkdownEditor
 								placeholder="區段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
 								value={sectionDescriptionDraft}
-								onChange={event =>
-									setEditorState(
-										prev => ({
-											...prev,
-											sectionDescriptionDraft: event.target.value
-										}),
-										{ checkpoint: "debounced" }
-									)
-								}
+								onChange={event => setSectionDescriptionDraft(event.target.value)}
 								onBlur={handleSectionBlurSave}
-								rows={1}
 							/>
 						</section>
 						{questions.map((question, index) => (
 							<QuestionCard
-								key={question.clientId}
+								key={questionIds[index] ?? index}
 								question={question}
 								questionNumber={index + 1}
-								//		defaultExpanded={index === newlyAddedIndex}
+								defaultExpanded={index === newlyAddedIndex}
 								autoFocusTitle={index === newlyAddedIndex}
 								duplicateQuestion={() => handleDuplicateQuestion(index)}
 								removeQuestion={() => handleDeleteQuestionWithApi(index)}
@@ -844,7 +823,6 @@ export const AdminSectionEditPage = () => {
 								onUrlChange={url => handleUrlChange(index, url)}
 								onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
 								onFold={() => {
-									flushCheckpoint();
 									void flushDirtyQuestions();
 								}}
 								onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}

@@ -1,5 +1,7 @@
 import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
-import { Button, Checkbox, Input, Select, Switch, TextArea } from "@/shared/components";
+import { Button, Checkbox, Input, Select, Switch } from "@/shared/components";
+import { MarkdownEditor } from "@/shared/components/MarkdownEditor/MarkdownEditor";
+import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import {
 	Calendar,
@@ -9,6 +11,7 @@ import {
 	Copy,
 	Ellipsis,
 	Github,
+	GripVertical,
 	LayoutList,
 	Link2,
 	List,
@@ -32,7 +35,7 @@ export interface QuestionCardProps {
 	defaultExpanded?: boolean;
 	autoFocusTitle?: boolean;
 	onTitleChange?: (newTitle: string) => void;
-	onDescriptionChange?: (newDescription: string) => void;
+	onDescriptionChange?: (newDescription: ProseMirrorLikeDocument) => void;
 	removeQuestion: () => void | Promise<void>;
 	duplicateQuestion: () => void | Promise<void>;
 	onAddOption?: () => void;
@@ -62,6 +65,7 @@ export interface QuestionCardProps {
 	onOauthProviderChange?: (provider: "GOOGLE" | "GITHUB") => void;
 	onFold?: () => void;
 	onTypeChange?: (nextType: Question["type"]) => void;
+	dragHandleListeners?: React.HTMLAttributes<HTMLElement>;
 }
 
 type typeInfo = {
@@ -162,6 +166,12 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [localUploadMaxFileAmountStr, setLocalUploadMaxFileAmountStr] = useState(() => String(question.uploadMaxFileAmount ?? 1));
 	const [localUploadMaxFileSizeMbStr, setLocalUploadMaxFileSizeMbStr] = useState(() => String(Number(((question.uploadMaxFileSizeLimit ?? 10485760) / 1024 / 1024).toFixed(2))));
+	const [localTitle, setLocalTitle] = useState(question.title);
+	const localTitleRef = useRef(question.title);
+	localTitleRef.current = localTitle;
+	const [localDesc, setLocalDesc] = useState<ProseMirrorLikeDocument>(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
+	const localDescRef = useRef<ProseMirrorLikeDocument>(question.description);
+	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
 	const descRef = useRef<HTMLTextAreaElement>(null);
@@ -179,6 +189,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			setPending(false);
 		}
 	};
+
+	useEffect(() => {
+		setLocalDesc(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
+	}, [question.description]);
 
 	useEffect(() => {
 		if (props.autoFocusTitle && isExpanded && titleRef.current) {
@@ -202,14 +216,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					document.activeElement.blur();
 				}
 				// flush title & description via refs as a safety net
-				const nextTitle = titleRef.current?.value ?? question.title;
-				const nextDescription = descRef.current?.value ?? question.description;
-				if (nextTitle !== question.title) {
-					props.onTitleChange?.(nextTitle);
-				}
-				if (nextDescription !== question.description) {
-					props.onDescriptionChange?.(nextDescription);
-				}
+				props.onTitleChange?.(localTitleRef.current);
+				props.onDescriptionChange?.(localDescRef.current);
 				props.onFold?.();
 				setIsExpanded(true);
 				setIsTypeMenuOpen(false);
@@ -239,7 +247,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const maxDateError = question.dateHasMaxDate && !question.dateMaxDate ? "請填結束日期" : "";
 
 	return (
-		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)}>
+		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)} {...(!isExpanded && props.dragHandleListeners)}>
 			{isExpanded ? (
 				<div
 					onClick={e => {
@@ -248,14 +256,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					onKeyDown={e => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
-							const nextTitle = titleRef.current?.value ?? question.title;
-							const nextDescription = descRef.current?.value ?? question.description;
-							if (nextTitle !== question.title) {
-								props.onTitleChange?.(nextTitle);
-							}
-							if (nextDescription !== question.description) {
-								props.onDescriptionChange?.(nextDescription);
-							}
+							props.onTitleChange?.(localTitleRef.current);
+							props.onDescriptionChange?.(localDescRef.current);
 							props.onFold?.();
 							setIsExpanded(false);
 							setIsTypeMenuOpen(false);
@@ -263,6 +265,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					}}
 					className={styles.content}
 				>
+					<div className={styles.expandedGrip} {...props.dragHandleListeners}>
+						<GripVertical size={16} />
+					</div>
 					<div className={styles.header}>
 						<div className={styles.input}>
 							<Input
@@ -280,18 +285,12 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								textSize="h2"
 							/>
 							<TextArea
-								key={`${question.clientId ?? question.title}-description-${question.description}`}
-								ref={descRef}
-								defaultValue={question.description}
-								onBlur={event => {
-									if (event.target.value !== question.description) {
-										props.onDescriptionChange?.(event.target.value);
-									}
-								}}
+								value={localDesc}
+								onChange={e => setLocalDesc(e.target.value)}
+								onBlur={() => props.onDescriptionChange?.(localDesc)}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
-								rows={1}
 							/>
 						</div>
 						<div className={styles.typeWrapper}>
@@ -546,6 +545,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 				</div>
 			) : (
 				<div className={styles.preview}>
+					<GripVertical className={styles.previewGrip} size={18} />
 					{typeMap[question.type].icon}
 					<p>
 						{props.questionNumber !== undefined ? `Q${props.questionNumber}. ` : ""}

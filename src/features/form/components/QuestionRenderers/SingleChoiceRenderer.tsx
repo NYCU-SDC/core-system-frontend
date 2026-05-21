@@ -14,13 +14,13 @@ export const SingleChoiceRenderer = ({
 	onOtherTextChange: (questionId: string, value: string) => void;
 	otherTextValue: string;
 }) => {
-	const choices = question.choices ?? [];
+	const choices = (question.choices ?? []).filter(choice => !!choice && !!choice.id);
 	const otherChoice = choices.find(choice => choice.isOther);
 
 	return (
 		<>
 			<Radio
-				options={choices.map(choice => ({ value: choice.id, label: choice.name }))}
+				options={choices.map(choice => ({ value: choice.id, label: choice.name ?? choice.id }))}
 				value={value}
 				onValueChange={newValue => {
 					onAnswerChange(question.id, newValue);

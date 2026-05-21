@@ -1,0 +1,241 @@
+.wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.label {
+	color: var(--color-heading);
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.editorShell {
+	--editor-border-color: var(--background-color-tertiary);
+	--editor-focus-color: var(--form-theme-color, var(--orange));
+	border: 0.0625rem solid var(--editor-border-color);
+	border-radius: 0.5rem;
+	background-color: var(--background-color-secondary);
+	transition:
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.flushed {
+	border: none;
+	border-bottom: 0.0625rem solid var(--editor-border-color);
+	border-radius: 0;
+	background-color: transparent;
+}
+
+.focused {
+	border-color: var(--editor-focus-color);
+	box-shadow: 0 0 0 1px var(--editor-focus-color, transparent);
+}
+
+.flushed.focused {
+	border-color: transparent;
+	border-bottom-color: var(--editor-focus-color);
+	box-shadow: none;
+}
+
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	padding: 0.4rem 0.6rem;
+	border-bottom: 1px solid var(--editor-border-color);
+	background: var(--background-color-tertiary);
+}
+
+.toolbarButton {
+	align-items: center;
+	background: transparent;
+	border: none;
+	border-radius: 0.45rem;
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 0.85rem;
+	font-weight: 500;
+	gap: 0.2rem;
+	padding: 0.3rem 0.55rem;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.toolbarButton:focus-visible {
+	outline: 2px solid var(--editor-focus-color);
+	outline-offset: 2px;
+}
+
+.toolbarButtonActive {
+	background: var(--editor-focus-color);
+	color: var(--background-color-primary);
+}
+
+.toolbarButton:disabled {
+	cursor: not-allowed;
+	opacity: 0.4;
+}
+
+.editorArea {
+	padding: 0.75rem 1rem;
+	min-height: 8rem;
+}
+
+.flushedContent {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.editorArea :global(.ProseMirror) {
+	outline: none;
+	min-height: 6rem;
+	color: inherit;
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+.editorArea :global(.ProseMirror em) {
+	font-style: italic;
+	font-synthesis: style;
+}
+
+.editorArea :global(.ProseMirror li > p) {
+	margin: 0;
+	display: inline;
+}
+
+.editorArea :global(.ProseMirror p.is-editor-empty:first-child::before) {
+	content: attr(data-placeholder);
+	color: var(--comment);
+	float: left;
+	height: 0;
+	pointer-events: none;
+}
+
+.errorMessage {
+	color: var(--red);
+	font-size: 0.875rem;
+}
+
+/* Heading dropdown */
+.headingWrapper {
+	position: relative;
+}
+
+.dropdownArrow {
+	font-size: 0.65rem;
+	opacity: 0.7;
+}
+
+.dropdownMenu {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	left: 0;
+	z-index: 20;
+	background: var(--background-color-secondary);
+	border: 1px solid var(--editor-border-color);
+	border-radius: 0.45rem;
+	box-shadow: 0 4px 12px color-mix(in srgb, var(--background-color-primary) 12%, transparent);
+	min-width: 6rem;
+	overflow: hidden;
+}
+
+.dropdownItem {
+	display: block;
+	width: 100%;
+	padding: 0.35rem 0.75rem;
+	text-align: left;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-size: 0.85rem;
+	color: inherit;
+}
+
+.dropdownItem:hover {
+	background: var(--background-color-tertiary);
+}
+
+.dropdownItemActive {
+	color: var(--editor-focus-color);
+	font-weight: 600;
+}
+
+/* Link popover */
+.linkWrapper {
+	position: relative;
+}
+
+.linkPopover {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	left: 0;
+	z-index: 20;
+	background: var(--background-color-secondary);
+	border: 1px solid var(--editor-border-color);
+	border-radius: 0.5rem;
+	box-shadow: 0 4px 12px color-mix(in srgb, var(--background-color-primary) 12%, transparent);
+	padding: 0.65rem 0.75rem;
+	min-width: 16rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.linkPopoverField {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.linkPopoverLabel {
+	font-size: 0.75rem;
+	color: var(--color-heading);
+}
+
+.linkPopoverInput {
+	padding: 0.3rem 0.5rem;
+	border: 1px solid var(--editor-border-color);
+	border-radius: 0.3rem;
+	background: var(--background-color-tertiary);
+	color: inherit;
+	font-size: 0.85rem;
+	outline: none;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.linkPopoverInput:focus {
+	border-color: var(--editor-focus-color);
+}
+
+.linkPopoverActions {
+	display: flex;
+	gap: 0.4rem;
+	justify-content: flex-end;
+	margin-top: 0.1rem;
+}
+
+.linkPopoverApply {
+	padding: 0.3rem 0.75rem;
+	background: var(--editor-focus-color);
+	color: var(--background-color-primary);
+	border: none;
+	border-radius: 0.3rem;
+	cursor: pointer;
+	font-size: 0.8rem;
+}
+
+.linkPopoverRemove {
+	padding: 0.3rem 0.75rem;
+	background: transparent;
+	border: 1px solid var(--editor-border-color);
+	border-radius: 0.3rem;
+	cursor: pointer;
+	font-size: 0.8rem;
+	color: inherit;
+}
