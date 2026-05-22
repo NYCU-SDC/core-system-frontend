@@ -196,6 +196,10 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 						<Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isArchived || isSettingRequired || allQuestions.length === 0} />
 					)}
 				</div>
+				<div className={`${styles.switch}`}>
+					<p className={`${styles.label}`}>允許編輯回覆</p>
+					{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={true} onCheckedChange={() => {}} disabled={isArchived} />}
+				</div>
 				<div className={styles.dangerActions}>
 					<Button onClick={isArchived ? handleUnarchive : handleArchive} disabled={archiveFormMutation.isPending || unarchiveFormMutation.isPending}>
 						<Archive size={14} />
