@@ -190,8 +190,8 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				</Tooltip>
 				<Tooltip content="成功送出表單後寄送確認信給填寫者" side="right">
 					<div className={`${styles.switch}`}>
-						<p className={`${styles.label}`}>成功送出後寄送確認信</p>
-						<Switch checked disabled />
+						<p className={`${styles.label}`}>送出表單後寄送確認信</p>
+						<Switch />
 					</div>
 				</Tooltip>
 				<div className={`${styles.switch}`}>
