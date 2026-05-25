@@ -5,7 +5,7 @@ import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror } from "@/shared/utils/proseMirror";
-import type { FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormRequestUpdate, FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -45,6 +45,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
+	const [sendResponseEmail, setSendResponseEmail] = useState((formData as FormsFormResponse & { sendResponseEmail?: boolean }).sendResponseEmail ?? true);
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
 	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(fromApiProseMirror(formData.description)));
 	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
@@ -124,6 +125,18 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}
 	};
 
+	const handleToggleSendResponseEmail = (checked: boolean) => {
+		if (isArchived) return;
+		const previousValue = sendResponseEmail;
+		setSendResponseEmail(checked);
+		updateFormMutation.mutate({ sendResponseEmail: checked } as FormsFormRequestUpdate, {
+			onError: error => {
+				setSendResponseEmail(previousValue);
+				pushToast({ title: "閮剖?憭望?", description: (error as Error).message, variant: "error" });
+			}
+		});
+	};
+
 	const handleArchive = () => {
 		archiveFormMutation.mutate(formData.id, {
 			onSuccess: () => pushToast({ title: "已封存", variant: "success" }),
@@ -191,7 +204,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				<Tooltip content="成功送出表單後寄送確認信給填寫者" side="right">
 					<div className={`${styles.switch}`}>
 						<p className={`${styles.label}`}>送出表單後寄送確認信</p>
-						<Switch />
+						<Switch checked={sendResponseEmail} onCheckedChange={handleToggleSendResponseEmail} disabled={isArchived || updateFormMutation.isPending} />
 					</div>
 				</Tooltip>
 				<div className={`${styles.switch}`}>
