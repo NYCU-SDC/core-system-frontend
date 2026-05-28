@@ -1,6 +1,6 @@
 import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
-import { ClipboardList, FileText, LogOut, Menu, Settings, X } from "lucide-react";
+import { ClipboardList, FileText, FileUser, LogOut, Menu, Settings, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./AdminNav.module.css";
 
@@ -15,6 +15,7 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 
 	const isUserForms = pathname === "/forms" || pathname.startsWith("/forms/");
 	const isFormsDashboard = pathname === `/orgs/${orgSlug}/forms` || pathname.startsWith(`/orgs/${orgSlug}/forms/`);
+	const isMemberData = pathname === `/orgs/${orgSlug}/members` || pathname.startsWith(`/orgs/${orgSlug}/members/`);
 	const isSettings = pathname.startsWith(`/orgs/${orgSlug}/settings`);
 	const isUserSettings = pathname === "/account/settings";
 
@@ -47,6 +48,11 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 						<Link to={`/orgs/${orgSlug}/forms`} className={styles.link} title="表單管理">
 							<div className={`${styles.navItem} ${isFormsDashboard ? styles.navItemActive : ""}`}>
 								<FileText size={22} />
+							</div>
+						</Link>
+						<Link to={`/orgs/${orgSlug}/members`} className={styles.link} title="Member Data">
+							<div className={`${styles.navItem} ${isMemberData ? styles.navItemActive : ""}`}>
+								<FileUser size={22} />
 							</div>
 						</Link>
 					</div>

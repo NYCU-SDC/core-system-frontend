@@ -24,6 +24,7 @@ const OAuthConnectCallbackPage = lazy(() => import("@/features/form/components/O
 /* ── Admin pages (each a separate chunk) ── */
 const AdminSettingsPage = lazy(() => import("@/features/dashboard/components/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
 const ComponentsDemo = lazy(() => import("@/features/dashboard/components/ComponentsDemo").then(m => ({ default: m.ComponentsDemo })));
+const MemberDataPage = lazy(() => import("@/features/dashboard/components/MemberDataPage").then(m => ({ default: m.MemberDataPage })));
 const SettingsPage = lazy(() => import("@/features/dashboard/components/SettingsPage").then(m => ({ default: m.SettingsPage })));
 const AdminFormDetailPage = lazy(() => import("@/features/form/components/AdminFormDetailPage").then(m => ({ default: m.AdminFormDetailPage })));
 const AdminFormPreviewPage = lazy(() => import("@/features/form/components/AdminFormPreviewPage").then(m => ({ default: m.AdminFormPreviewPage })));
@@ -98,6 +99,7 @@ export const AppRouter = () => {
 							<Route path="/orgs/:orgSlug/forms/:formid/reply" element={<AdminFormDetailPage />} />
 							<Route path="/orgs/:orgSlug/forms/:formid/design" element={<AdminFormDetailPage />} />
 							<Route path="/orgs/:orgSlug/forms/:formid/preview" element={<AdminFormPreviewPage />} />
+							<Route path="/orgs/:orgSlug/members" element={<MemberDataPage />} />
 							<Route path="/orgs/:orgSlug/settings" element={<AdminSettingsPage />} />
 							<Route path="/account/settings" element={<SettingsPage />} />
 						</Route>
