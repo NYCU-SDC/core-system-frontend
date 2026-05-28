@@ -60,7 +60,8 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		confirmMsg !== savedConfirmMsg ||
 		deadline !== savedDeadline ||
 		publishTime !== savedPublishTime ||
-		isPublic !== savedIsPublic;
+		isPublic !== savedIsPublic ||
+		allowEditResponse !== formData.allowEditResponse;
 
 	useEffect(() => {
 		if (!hasSettingChanges || updateFormMutation.isPending || isArchived) return;
@@ -201,7 +202,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				<Tooltip content="目前所有回覆均允許編輯" side="right">
 					<div className={`${styles.switch}`}>
 						<p className={`${styles.label}`}>允許編輯回覆</p>
-						<Switch checked disabled />
+						{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allowEditResponse} onCheckedChange={setAllowEditResponse} disabled={isArchived} />}
 					</div>
 				</Tooltip>
 				<div className={`${styles.switch}`}>
@@ -211,10 +212,6 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					) : (
 						<Switch checked={allRequired} onCheckedChange={handleToggleAllRequired} disabled={isArchived || isSettingRequired || allQuestions.length === 0} />
 					)}
-				</div>
-				<div className={`${styles.switch}`}>
-					<p className={`${styles.label}`}>允許編輯回覆</p>
-					{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allowEditResponse} onCheckedChange={setAllowEditResponse} disabled={isArchived} />}
 				</div>
 				<div className={styles.dangerActions}>
 					<Button onClick={isArchived ? handleUnarchive : handleArchive} disabled={archiveFormMutation.isPending || unarchiveFormMutation.isPending}>
