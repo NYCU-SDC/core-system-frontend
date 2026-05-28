@@ -218,7 +218,16 @@ export const FormsListPage = () => {
 										>
 											{form.buttonLabel}
 										</Button>
-										{form.allowEditResponse && <Button onClick={handleEditResponse(form)}>編輯回覆</Button>}
+										{form.allowEditResponse && (
+											<Button
+												onClick={event => {
+													event.stopPropagation();
+													handleEditResponse(form);
+												}}
+											>
+												編輯回覆
+											</Button>
+										)}
 										<Button
 											className={styles.sharedBtn}
 											themeColor="var(--red)"
