@@ -44,6 +44,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [confirmMsg, setConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
+	const [allowEditResponse, setAllowEditResponse] = useState(formData.allowEditResponse ?? false);
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
 	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(fromApiProseMirror(formData.description)));
@@ -59,7 +60,8 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		confirmMsg !== savedConfirmMsg ||
 		deadline !== savedDeadline ||
 		publishTime !== savedPublishTime ||
-		isPublic !== savedIsPublic;
+		isPublic !== savedIsPublic ||
+		allowEditResponse !== formData.allowEditResponse;
 
 	useEffect(() => {
 		if (!hasSettingChanges || updateFormMutation.isPending || isArchived) return;
@@ -72,7 +74,8 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					messageAfterSubmission: confirmMsg,
 					deadline: deadline ? new Date(deadline).toISOString() : undefined,
 					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
-					visibility: isPublic ? "PUBLIC" : "PRIVATE"
+					visibility: isPublic ? "PUBLIC" : "PRIVATE",
+					allowEditResponse: allowEditResponse
 				},
 				{
 					onSuccess: () => {
@@ -89,7 +92,21 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}, 500);
 
 		return () => window.clearTimeout(timerId);
-	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, serializedDescription, confirmMsg, deadline, publishTime, isPublic, pushToast, isArchived]);
+	}, [
+		hasSettingChanges,
+		updateFormMutation.isPending,
+		updateFormMutation,
+		title,
+		description,
+		serializedDescription,
+		confirmMsg,
+		deadline,
+		publishTime,
+		allowEditResponse,
+		isPublic,
+		pushToast,
+		isArchived
+	]);
 
 	const handleToggleAllRequired = async (checked: boolean) => {
 		if (isArchived) return;
@@ -185,7 +202,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				<Tooltip content="目前所有回覆均允許編輯" side="right">
 					<div className={`${styles.switch}`}>
 						<p className={`${styles.label}`}>允許編輯回覆</p>
-						<Switch checked disabled />
+						{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allowEditResponse} onCheckedChange={setAllowEditResponse} disabled={isArchived} />}
 					</div>
 				</Tooltip>
 				<div className={`${styles.switch}`}>
