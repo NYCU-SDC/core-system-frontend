@@ -1,0 +1,213 @@
+.container {
+	position: relative;
+	display: inline-block;
+}
+
+.trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.5rem 1rem;
+	border: 0;
+	border-radius: 0.1875rem;
+	background: var(--selection);
+	color: var(--color-heading);
+	font-size: 1rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.trigger:hover {
+	background: var(--background-color-tertiary);
+}
+
+.chevron {
+	transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+	transform: rotate(180deg);
+}
+
+/* ── Dropdown panel ─────────────────────────────────────── */
+
+@keyframes dropdownIn {
+	from {
+		opacity: 0;
+		transform: translateY(-0.375rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.dropdown {
+	position: absolute;
+	top: calc(100% + 0.5rem);
+	left: 0;
+	z-index: 100;
+	width: 12rem;
+	background: var(--selection);
+	border: 0.0625rem solid var(--hero-background-primary);
+	border-radius: 0.1875rem;
+	animation: dropdownIn 0.15s ease;
+}
+
+/* ── List items ─────────────────────────────────────────── */
+
+.item,
+.addItem {
+	display: flex;
+	align-items: center;
+	padding: 0.275rem 0.625rem 0.275rem 0.75rem;
+	background: transparent;
+	color: var(--color-heading);
+	line-height: 1;
+	cursor: pointer;
+	user-select: none;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.item:not(.itemLocked):hover,
+.addItem:hover {
+	background: var(--background-color-tertiary);
+	border-radius: 0.1875rem;
+	outline: 0.0625rem solid var(--hero-background-color-primary);
+	outline-offset: 0.0125rem;
+	z-index: 102;
+}
+
+.item {
+	position: relative;
+	gap: 0.5rem;
+}
+
+.item + .item {
+	border-top: 0.085rem solid var(--background-color-tertiary);
+}
+
+/* ── Drag handle ────────────────────────────────────────── */
+
+.handle {
+	position: absolute;
+	right: calc(100% + 0.25rem);
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.125rem;
+	border-radius: 0.25rem;
+	color: var(--caption);
+	cursor: grab;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
+.item:hover .handle {
+	opacity: 1;
+}
+
+.handle:active {
+	background: var(--selection);
+}
+
+/* ── Item text ──────────────────────────────────────────── */
+
+.itemTitle {
+	flex: 1;
+	font-size: 1rem;
+}
+
+/* ── Lock icon, plus icon ──────────────────────────────────────────── */
+
+.lockIcon,
+.plusIcon {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 0.25rem;
+}
+
+/* ── ⋮ button + submenu ─────────────────────────────────── */
+
+.moreWrapper {
+	position: relative;
+	flex-shrink: 0;
+}
+
+.moreButton {
+	display: flex;
+	align-items: center;
+	padding: 0.25rem;
+	border: 0;
+	border-radius: 0.1875rem;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.moreButton:hover {
+	background: var(--selection);
+	color: var(--foreground);
+}
+
+.submenu {
+	position: absolute;
+	top: 0;
+	left: 100.25%;
+	z-index: 101;
+	min-width: 11rem;
+	overflow: hidden;
+	background: var(--selection);
+	border: 0.0625rem solid var(--hero-background-primary);
+	border-radius: 0.1875rem;
+}
+
+.submenuItem {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	width: 100%;
+	padding: 0.35rem 0.625rem 0.35rem 0.75rem;
+	border: 0;
+	background: transparent;
+	color: var(--color-body);
+	line-height: 1;
+	text-align: left;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.submenuItem + .submenuItem {
+	border-top: 0.0625rem solid var(--background-color-tertiary);
+}
+
+.submenuItem:hover {
+	background: var(--background-color-overlay);
+	color: var(--foreground);
+}
+.submenuItemIcon {
+	display: flex;
+	align-items: center;
+	padding: 0.25rem;
+}
+
+/* ── 新增分頁 ────────────────────────────────────────────── */
+
+.addItem {
+	justify-content: space-between;
+	width: 100%;
+	border: 0;
+	border-top: 0.0625rem solid var(--background-color-tertiary);
+}
