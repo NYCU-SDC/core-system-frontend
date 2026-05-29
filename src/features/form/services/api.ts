@@ -342,6 +342,60 @@ export const getConnectOauthAccountUrl = (responseId: string, questionId: string
 	return base;
 };
 
+// ── Views ──────────────────────────────────────────────────────────────────
+
+export interface ViewsViewResponse {
+	id: string;
+	title: string;
+	locked: boolean;
+	order: number;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface ViewsUpdateViewRequest {
+	title?: string;
+	order?: number;
+}
+
+const viewsJson = async <T>(url: string, options: RequestInit): Promise<T> => {
+	const res = await fetch(url, options);
+	const data = await res.json().catch(() => null);
+	assertOk(res.status, `Request failed: ${url}`, data);
+	return data as T;
+};
+
+const viewsBase = (formId: string) => `/api/forms/${formId}/views`;
+
+export const listViews = (formId: string) =>
+	viewsJson<ViewsViewResponse[]>(viewsBase(formId), defaultRequestOptions);
+
+export const getView = (formId: string, viewId: string) =>
+	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}`, defaultRequestOptions);
+
+export const createView = (formId: string) =>
+	viewsJson<ViewsViewResponse>(viewsBase(formId), { ...defaultRequestOptions, method: "POST" });
+
+export const duplicateView = (formId: string, viewId: string) =>
+	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/duplicate`, { ...defaultRequestOptions, method: "POST" });
+
+export const updateView = (formId: string, viewId: string, req: ViewsUpdateViewRequest) =>
+	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}`, { ...defaultRequestOptions, method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
+
+export const lockView = (formId: string, viewId: string) =>
+	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/lock`, { ...defaultRequestOptions, method: "POST" });
+
+export const unlockView = (formId: string, viewId: string) =>
+	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/unlock`, { ...defaultRequestOptions, method: "POST" });
+
+export const deleteView = async (formId: string, viewId: string): Promise<void> => {
+	const res = await fetch(`${viewsBase(formId)}/${viewId}`, { ...defaultRequestOptions, method: "DELETE" });
+	if (!res.ok) {
+		const data = await res.json().catch(() => null);
+		assertOk(res.status, "Failed to delete view", data);
+	}
+};
+
 // ── Google Sheet ──────────────────────────────────────────────────────────
 
 export const getGoogleSheetEmail = async (): Promise<FormsGoogleSheetEmailResponse> => {
