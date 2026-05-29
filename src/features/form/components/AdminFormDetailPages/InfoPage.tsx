@@ -132,7 +132,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		updateFormMutation.mutate({ sendResponseEmail: checked } as FormsFormRequestUpdate, {
 			onError: error => {
 				setSendResponseEmail(previousValue);
-				pushToast({ title: "閮剖?憭望?", description: (error as Error).message, variant: "error" });
+				pushToast({ title: "儲存通知設定失敗", description: (error as Error).message, variant: "error" });
 			}
 		});
 	};
