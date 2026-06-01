@@ -44,11 +44,12 @@ export const FormPreviewSection = (props: FormPreviewSectionProps) => {
 						<ul className={styles.previewList}>
 							{section.questions?.map((q, qi) => {
 								const raw = props.localAnswers[q.id] ?? "";
+								const choices = (q.choices ?? []).filter(choice => !!choice && !!choice.id);
 								const displayValue = raw
-									? q.choices
+									? choices.length > 0
 										? raw
 												.split(",")
-												.map(id => q.choices?.find(c => c.id === id)?.name ?? id)
+												.map(id => choices.find(choice => choice.id === id)?.name ?? id)
 												.join("、")
 										: raw
 									: "";

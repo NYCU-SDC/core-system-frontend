@@ -1,6 +1,6 @@
 import * as formApi from "@/features/form/services/api";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { RefreshCw, Upload, X } from "lucide-react";
+import { Download, RefreshCw, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import styles from "./FileUploadRenderer.module.css";
 
@@ -28,6 +28,7 @@ interface FileUploadRendererProps {
 	onFilesChange: (fileNames: string) => void;
 	onFileMetadataChange?: (files: ServerFileInfo[]) => void;
 	disabled?: boolean;
+	downloadInitialFiles?: boolean;
 	initialFiles?: ServerFileInfo[];
 }
 
@@ -40,6 +41,7 @@ export const FileUploadRenderer = ({
 	onFilesChange,
 	onFileMetadataChange,
 	disabled = false,
+	downloadInitialFiles = true,
 	initialFiles
 }: FileUploadRendererProps) => {
 	const [items, setItems] = useState<FileItem[]>([]);
@@ -61,9 +63,13 @@ export const FileUploadRenderer = ({
 			id: crypto.randomUUID(),
 			filename: f.originalFilename,
 			serverInfo: f,
-			status: "loading" as const
+			status: downloadInitialFiles ? ("loading" as const) : ("success" as const)
 		}));
 		setItems(placeholders);
+		onFilesChange(initialFiles.map(file => file.originalFilename).join(","));
+		onFileMetadataChange?.(initialFiles);
+
+		if (!downloadInitialFiles) return;
 
 		placeholders.forEach(async (placeholder, index) => {
 			const info = initialFiles[index];
@@ -84,7 +90,20 @@ export const FileUploadRenderer = ({
 				setItems(prev => prev.map(i => (i.id === placeholder.id ? { ...i, status: "error" as const, error: "下載失敗，請重新上傳" } : i)));
 			}
 		});
-	}, [initialFiles, onFilesChange]);
+	}, [downloadInitialFiles, initialFiles, onFileMetadataChange, onFilesChange]);
+
+	const handleDownload = async (item: FileItem) => {
+		if (!item.serverInfo) return;
+		const blob = await formApi.downloadFile(item.serverInfo.fileId);
+		const downloadUrl = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = downloadUrl;
+		link.download = item.serverInfo.originalFilename;
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+		URL.revokeObjectURL(downloadUrl);
+	};
 
 	const doUploadBatch = async (batch: FileItem[]) => {
 		if (!responseId || batch.length === 0) return;
@@ -248,7 +267,12 @@ export const FileUploadRenderer = ({
 									重新上傳
 								</button>
 							)}
-							{item.status !== "uploading" && (
+							{item.serverInfo && item.status !== "loading" && item.status !== "uploading" && (
+								<button type="button" className={styles.fileActionBtn} onClick={() => void handleDownload(item).catch(() => undefined)} aria-label="Download file">
+									<Download size={14} />
+								</button>
+							)}
+							{!disabled && item.status !== "uploading" && (
 								<button type="button" className={styles.fileRemoveBtn} onClick={() => removeItem(item.id)} aria-label="移除" disabled={disabled}>
 									<X size={14} />
 								</button>

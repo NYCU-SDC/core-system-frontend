@@ -27,8 +27,8 @@ importers:
         specifier: ^13.11.2
         version: 13.11.2(react@19.2.4)
       '@nycu-sdc/core-system-sdk':
-        specifier: 1.0.1-snapshot-76e347f
-        version: 1.0.1-snapshot-76e347f
+        specifier: 1.0.1-snapshot-3a777c4
+        version: 1.0.1-snapshot-3a777c4
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -68,27 +68,30 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.21
         version: 5.90.21(react@19.2.4)
+      '@tiptap/core':
+        specifier: ^2.27.2
+        version: 2.27.2(@tiptap/pm@2.27.2)
       '@tiptap/extension-link':
-        specifier: ^2.6.6
+        specifier: ^2.27.2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
       '@tiptap/extension-placeholder':
-        specifier: ^2.6.6
+        specifier: ^2.27.2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
       '@tiptap/html':
         specifier: ^2.27.2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
       '@tiptap/react':
-        specifier: ^2.7.1
+        specifier: ^2.27.2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tiptap/starter-kit':
-        specifier: ^2.7.1
+        specifier: ^2.27.2
         version: 2.27.2
       '@xyflow/react':
         specifier: ^12.10.1
         version: 12.10.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      add:
-        specifier: ^2.0.6
-        version: 2.0.6
+      dompurify:
+        specifier: ^3.4.4
+        version: 3.4.4
       echarts:
         specifier: ^6.0.0
         version: 6.0.0
@@ -107,9 +110,6 @@ importers:
       marked:
         specifier: ^17.0.3
         version: 17.0.3
-      pnpm:
-        specifier: ^10.32.1
-        version: 10.33.2
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -677,8 +677,8 @@ packages:
   '@mixmark-io/domino@2.2.0':
     resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
 
-  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-76e347f':
-    resolution: {integrity: sha512-stAKCdmglBHQ8GF5dgvie/XOLVfW5q2+pIFC5wSTqsZ9UZEPPlmpeT7ihuL8uWRPkti7b8MHMFGwXegeBIlozg==}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-3a777c4':
+    resolution: {integrity: sha512-apnzR5qLdWSml5GWi/dEr1aUDlsJvQHRfuzv3Z2ksvBGbTUhEen9FDrpfPWpXlHmIJMYHPyjLMX71VMyMZz3Jg==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -1541,6 +1541,9 @@ packages:
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
 
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
   '@types/turndown@5.0.6':
     resolution: {integrity: sha512-ru00MoyeeouE5BX4gRL+6m/BsDfbRayOskWqUvh7CLGW+UXxHQItqALa38kKnOiZPqJrtzJUgAC2+F0rL1S4Pg==}
 
@@ -1677,9 +1680,6 @@ packages:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
-
-  add@2.0.6:
-    resolution: {integrity: sha512-j5QzrmsokwWWp6kUcJQySpbG+xfOBqqKnup3OIk1pz+kB/80SLorZ9V8zHFLO92Lcd+hbvq8bT+zOGoPkmBV0Q==}
 
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
@@ -1913,6 +1913,9 @@ packages:
 
   dom-accessibility-api@0.6.3:
     resolution: {integrity: sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w==}
+
+  dompurify@3.4.4:
+    resolution: {integrity: sha512-r8K7KGKEcztXfA/nfabSYB2hg9tDphORJTdf8xprN/luSLGmNhOBN8dm1/SYjqLLet6YUFEXOcrdTuwryp/Bew==}
 
   echarts-for-react@3.0.6:
     resolution: {integrity: sha512-4zqLgTGWS3JvkQDXjzkR1k1CHRdpd6by0988TWMJgnvDytegWLbeP/VNZmMa+0VJx2eD7Y632bi2JquXDgiGJg==}
@@ -2465,11 +2468,6 @@ packages:
   playwright@1.59.1:
     resolution: {integrity: sha512-C8oWjPR3F81yljW9o5OxcWzfh6avkVwDD2VYdwIGqTkl+OGFISgypqzfu7dOe4QNLL2aqcWBmI3PMtLIK233lw==}
     engines: {node: '>=18'}
-    hasBin: true
-
-  pnpm@10.33.2:
-    resolution: {integrity: sha512-qQ+vb+6rca1sblf5Tg/hoS9dzCLNdU20CulZPraj4LaxLjVAIYuzeuCDQEsfLObbKkEh6XmCm0r/lLmfSdoc+A==}
-    engines: {node: '>=18.12'}
     hasBin: true
 
   postcss@8.5.6:
@@ -3574,7 +3572,7 @@ snapshots:
 
   '@mixmark-io/domino@2.2.0': {}
 
-  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-76e347f': {}
+  '@nycu-sdc/core-system-sdk@1.0.1-snapshot-3a777c4': {}
 
   '@pinojs/redact@0.4.0': {}
 
@@ -4414,6 +4412,9 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
+  '@types/trusted-types@2.0.7':
+    optional: true
+
   '@types/turndown@5.0.6': {}
 
   '@types/use-sync-external-store@0.0.6': {}
@@ -4614,8 +4615,6 @@ snapshots:
       acorn: 8.15.0
 
   acorn@8.15.0: {}
-
-  add@2.0.6: {}
 
   ajv-formats@3.0.1(ajv@8.18.0):
     optionalDependencies:
@@ -4819,6 +4818,10 @@ snapshots:
   dom-accessibility-api@0.5.16: {}
 
   dom-accessibility-api@0.6.3: {}
+
+  dompurify@3.4.4:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
 
   echarts-for-react@3.0.6(echarts@6.0.0)(react@19.2.4):
     dependencies:
@@ -5404,8 +5407,6 @@ snapshots:
       playwright-core: 1.59.1
     optionalDependencies:
       fsevents: 2.3.2
-
-  pnpm@10.33.2: {}
 
   postcss@8.5.6:
     dependencies:

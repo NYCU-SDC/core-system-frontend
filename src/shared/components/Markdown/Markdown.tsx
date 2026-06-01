@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 import type { MutableRefObject } from "react";
 import { forwardRef, useCallback, useEffect, useMemo, useRef } from "react";
@@ -15,7 +16,7 @@ export const Markdown = forwardRef<HTMLDivElement, MarkdownProps>(({ content, cl
 		marked.setOptions({ breaks: true, gfm: true });
 	}, []);
 
-	const html = useMemo(() => marked.parse(content) as string, [content]);
+	const html = useMemo(() => DOMPurify.sanitize(marked.parse(content) as string), [content]);
 
 	const setRefs = useCallback(
 		(node: HTMLDivElement | null) => {

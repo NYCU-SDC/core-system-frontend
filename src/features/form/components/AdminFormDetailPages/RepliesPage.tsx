@@ -4,7 +4,7 @@ import { useGoogleSheetEmail, useUpdateForm, useVerifyGoogleSheet } from "@/feat
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Dialog, ErrorMessage, LoadingSpinner, ProseMirrorViewer, Select, useToast } from "@/shared/components";
-import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import { fromApiProseMirror } from "@/shared/utils/proseMirror";
 import type { FormsFormResponse, FormsQuestionResponse, ResponsesAnswersDetail, ResponsesGetFormResponse } from "@nycu-sdc/core-system-sdk";
 import { useQueries } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
@@ -12,7 +12,9 @@ import ReactECharts from "echarts-for-react";
 import { ChevronLeft, ChevronRight, Copy, Repeat2, SquareArrowOutUpRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormQuestionRenderer } from "../FormQuestionRenderer";
+import type { ServerFileInfo } from "../QuestionRenderers/FileUploadRenderer";
 import { StatusTag } from "../StatusTag";
+import { ExportDialog } from "./components/ExportDialog";
 import styles from "./RepliesPage.module.css";
 
 type RepliesMode = "summary" | "individual";
@@ -23,6 +25,32 @@ const SCALE_TYPES = new Set(["LINEAR_SCALE", "RATING"]);
 type SummaryDataItem = {
 	name: string;
 	value: number;
+};
+
+type UploadAnswerFile = {
+	fileId?: string;
+	originalFilename?: string;
+	contentType?: string;
+};
+
+const extractUploadAnswerFiles = (value: unknown): UploadAnswerFile[] => {
+	if (Array.isArray(value)) return value as UploadAnswerFile[];
+	if (value && typeof value === "object") {
+		const files = (value as { files?: unknown }).files;
+		return Array.isArray(files) ? (files as UploadAnswerFile[]) : [];
+	}
+	return [];
+};
+
+const hasDescriptionContent = (doc: unknown): boolean => {
+	if (!doc || typeof doc !== "object") return false;
+
+	const node = doc as { type?: string; text?: unknown; content?: unknown[] };
+	if (node.type === "text" && typeof node.text === "string") {
+		return node.text.trim().length > 0;
+	}
+
+	return Array.isArray(node.content) && node.content.some(hasDescriptionContent);
 };
 
 const getCssVarColor = (tokenName: string, fallback: string) => {
@@ -164,7 +192,8 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 	}
 
 	if (CHOICE_TYPES.has(question.type)) {
-		const choiceMap = new Map((question.choices ?? []).map(choice => [choice.id, choice.name]));
+		const choices = (question.choices ?? []).filter(choice => !!choice && !!choice.id);
+		const choiceMap = new Map(choices.map(choice => [choice.id, choice.name ?? choice.id]));
 		const countMap = new Map<string, number>();
 
 		for (const detail of details) {
@@ -174,9 +203,10 @@ const renderSummaryVisualization = (question: FormsQuestionResponse, details: Re
 			}
 		}
 
-		for (const choice of question.choices ?? []) {
-			if (!countMap.has(choice.name)) {
-				countMap.set(choice.name, 0);
+		for (const choice of choices) {
+			const choiceLabel = choice.name ?? choice.id;
+			if (!countMap.has(choiceLabel)) {
+				countMap.set(choiceLabel, 0);
 			}
 		}
 
@@ -235,6 +265,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	const [mode, setMode] = useState<RepliesMode>("summary");
 	const [selectedResponseId, setSelectedResponseId] = useState<string>("");
 	const [isSheetPopupOpen, setIsSheetPopupOpen] = useState(false);
+	const [isSheetExportPopupOpen, setIsSheetExportPopupOpen] = useState(false);
 	const [sheetUrl, setSheetUrl] = useState(formData.googleSheetUrl ?? "");
 	const [isSheetLinked, setIsSheetLinked] = useState(Boolean(formData.googleSheetUrl));
 	const [prevGoogleSheetUrl, setPrevGoogleSheetUrl] = useState(formData.googleSheetUrl);
@@ -255,9 +286,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 	}
 
 	const responses = useMemo(() => responsesQuery.data?.responses ?? [], [responsesQuery.data?.responses]);
-	const allQuestions = useMemo(() => {
-		return sectionsQuery.data?.flatMap(group => group.questions ?? []) ?? [];
-	}, [sectionsQuery.data]);
+	const allQuestions = useMemo(() => sectionsQuery.data?.flatMap(bundle => bundle.questions ?? []) ?? [], [sectionsQuery.data]);
 
 	const responseDetailQueries = useQueries({
 		queries: responses.map(response => ({
@@ -315,6 +344,28 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 		return next;
 	}, [selectedResponseDetails]);
 
+	const selectedFileMetadataByQuestionId = useMemo(() => {
+		const next = new Map<string, ServerFileInfo[]>();
+
+		for (const [questionId, answerDetail] of selectedAnswersByQuestionId.entries()) {
+			if (answerDetail.question.type !== "UPLOAD_FILE") continue;
+
+			const rawAnswer = answerDetail.payload?.answer as { value?: unknown } | undefined;
+			const rawFiles = extractUploadAnswerFiles(rawAnswer?.value);
+			const fileInfos = rawFiles
+				.filter(file => file.fileId && file.originalFilename)
+				.map(file => ({
+					fileId: file.fileId!,
+					originalFilename: file.originalFilename!,
+					contentType: file.contentType ?? "application/octet-stream"
+				}));
+
+			next.set(questionId, fileInfos);
+		}
+
+		return next;
+	}, [selectedAnswersByQuestionId]);
+
 	const questionsById = useMemo(() => new Map(allQuestions.map(question => [question.id, question])), [allQuestions]);
 
 	const selectedRendererValues = useMemo(() => {
@@ -343,6 +394,14 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			}
 
 			if (rawAnswer.value && typeof rawAnswer.value === "object") {
+				if (answerDetail.question.type === "UPLOAD_FILE") {
+					const fileNames = extractUploadAnswerFiles(rawAnswer.value)
+						.map(file => file.originalFilename)
+						.filter((fileName): fileName is string => Boolean(fileName));
+					valueByQuestionId.set(questionId, fileNames.join(","));
+					continue;
+				}
+
 				const oauthValue = rawAnswer.value as { username?: string; email?: string };
 				valueByQuestionId.set(questionId, oauthValue.username || oauthValue.email || answerDetail.payload?.displayValue || "");
 				continue;
@@ -376,7 +435,6 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 	const handleVerifySheet = () => {
 		if (isArchived) {
-			pushToast({ title: "表單已封存", description: "請先解除封存後再連結試算表。", variant: "warning" });
 			return;
 		}
 
@@ -407,7 +465,11 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 								pushToast({ title: "已連結至試算表", variant: "success" });
 							},
 							onError: error => {
-								pushToast({ title: "儲存失敗", description: (error as Error).message, variant: "error" });
+								pushToast({
+									title: "儲存失敗",
+									description: (error as Error).message,
+									variant: "error"
+								});
 							}
 						}
 					);
@@ -422,6 +484,12 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 	const handleViewForm = () => {
 		window.open(`/forms/${formData.id}`, "_blank", "noopener,noreferrer");
+	};
+
+	const handleOpenSheetPopup = () => {
+		setSheetUrl(formData.googleSheetUrl ?? "");
+		setIsSheetLinked(Boolean(formData.googleSheetUrl));
+		setIsSheetPopupOpen(true);
 	};
 
 	const handleSelectPreviousResponse = () => {
@@ -468,10 +536,16 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 			<div className={styles.container}>
 				<div className={styles.topHeader}>
 					<h2 className={styles.totalText}>{responseCountText}</h2>
-					<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetPopupOpen(true)} disabled={isArchived}>
-						<SquareArrowOutUpRight size={16} />
-						連結試算表
-					</Button>
+					<div className={styles.buttonGroup}>
+						<Button className={styles.sheetButton} variant="secondary" onClick={handleOpenSheetPopup} disabled={isArchived}>
+							<SquareArrowOutUpRight size={16} />
+							連結試算表
+						</Button>
+						<Button className={styles.sheetButton} variant="secondary" onClick={() => setIsSheetExportPopupOpen(true)}>
+							<SquareArrowOutUpRight size={16} />
+							匯出試算表
+						</Button>
+					</div>
 				</div>
 
 				<div className={styles.modeTabs}>
@@ -491,12 +565,13 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 						{responses.length > 0 &&
 							allQuestions.map(question => {
 								const details = answerDetailsByQuestionId.get(question.id) ?? [];
-								const hasDescription = question.description && JSON.stringify(question.description) !== JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
+								const description = question.description ? fromApiProseMirror(question.description) : null;
+								const hasDescription = hasDescriptionContent(description);
 								return (
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={question.description as ProseMirrorLikeDocument} />}
+											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={description} />}
 											<p className={styles.questionCount}>{responseCountText}</p>
 										</div>
 										<div className={styles.questionContent}>{renderSummaryVisualization(question, details, chartBarColor, chartPieColors, chartTextColor)}</div>
@@ -546,7 +621,8 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 
 						{selectedResponse &&
 							allQuestions.map(question => {
-								const hasDescription = question.description && JSON.stringify(question.description) !== JSON.stringify({ type: "doc", content: [{ type: "paragraph" }] });
+								const description = question.description ? fromApiProseMirror(question.description) : null;
+								const hasDescription = hasDescriptionContent(description);
 								const value = selectedRendererValues.valueByQuestionId.get(question.id) ?? "";
 								const otherTextValue = selectedRendererValues.otherTextByQuestionId.get(question.id) ?? "";
 								const sourceQuestion = question.sourceId ? questionsById.get(question.sourceId) : undefined;
@@ -556,16 +632,19 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 									<section key={question.id} className={styles.questionBlock}>
 										<div className={styles.questionMeta}>
 											<p className={styles.questionTitle}>{question.title}</p>
-											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={question.description as ProseMirrorLikeDocument} />}
+											{hasDescription && <ProseMirrorViewer className={styles.questionDescription} content={description} />}
 										</div>
-										<div className={styles.readonlyQuestionContent}>
+										<div className={question.type === "UPLOAD_FILE" ? undefined : styles.readonlyQuestionContent}>
 											<FormQuestionRenderer
+												key={`${selectedResponse.id}-${question.id}`}
 												question={question}
 												value={value}
 												otherTextValue={otherTextValue}
 												sourceQuestion={sourceQuestion}
 												sourceAnswerValue={sourceAnswerValue}
 												disableFileUpload
+												downloadInitialFiles={false}
+												initialFiles={selectedFileMetadataByQuestionId.get(question.id)}
 												onAnswerChange={() => {}}
 												onOtherTextChange={() => {}}
 											/>
@@ -577,6 +656,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				)}
 			</div>
 
+			{/* 連結試算表對話框 */}
 			<Dialog open={isSheetPopupOpen} onOpenChange={setIsSheetPopupOpen} title="回覆搜集">
 				<StatusTag
 					variant={isSheetLinked ? "published" : "draft"}
@@ -597,7 +677,7 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 				<input className={styles.sheetUrlInput} value={sheetUrl} onChange={event => setSheetUrl(event.target.value)} placeholder="https://docs.google.com/spreadsheets/d/..." disabled={isArchived} />
 
 				<div className={styles.popupActions}>
-					<Button className={styles.checkStatusButton} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet || isArchived}>
+					<Button className={styles.buttonForeground} variant="secondary" onClick={handleVerifySheet} disabled={isCheckingSheet || isArchived}>
 						<Repeat2 size={16} />
 						{isCheckingSheet ? "檢查中..." : "檢查狀態"}
 					</Button>
@@ -607,6 +687,9 @@ export const AdminFormRepliesPage = ({ formData }: AdminFormRepliesPageProps) =>
 					</Button>
 				</div>
 			</Dialog>
+
+			{/* 下載試算表對話框 */}
+			<ExportDialog open={isSheetExportPopupOpen} onOpenChange={setIsSheetExportPopupOpen} formId={formData.id} formName={formData.title} sectionsData={sectionsQuery.data} />
 		</>
 	);
 };

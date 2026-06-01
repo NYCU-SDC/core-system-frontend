@@ -25,6 +25,7 @@
 }
 
 .sheetButton:hover:not(:disabled) {
+	color: white;
 	opacity: 0.9;
 }
 
@@ -47,6 +48,7 @@
 	color: var(--color-caption);
 	cursor: pointer;
 	border-bottom: 0.125rem solid transparent;
+	transition: all 0.2s ease;
 }
 
 .modeTab:hover {
@@ -87,26 +89,30 @@
 	color: var(--foreground);
 	cursor: pointer;
 	line-height: 1;
+	border-radius: 0.25rem;
+	transition: all 0.2s ease;
 }
 
 .selectorArrowButton:hover:not(:disabled) {
 	color: var(--orange);
+	background-color: var(--background-color-tertiary);
 }
 
 .selectorArrowButton:disabled {
 	color: var(--comment);
 	cursor: not-allowed;
+	opacity: 0.5;
 }
 
 .selectorArrowButton:focus-visible {
 	outline: 0.125rem solid var(--cyan);
 	outline-offset: 0.125rem;
-	border-radius: 0.25rem;
 }
 
 .selectorLabel {
 	font-weight: 500;
 	color: var(--color-heading);
+	white-space: nowrap;
 }
 
 .questionBlock {
@@ -132,6 +138,38 @@
 .questionDescription {
 	margin: 0;
 	color: var(--color-caption);
+	font-size: 0.9375rem;
+}
+
+.questionDescription :global(p) {
+	margin: 0;
+}
+
+.questionDescription :global(p + p) {
+	margin-top: 0.5rem;
+}
+
+.questionDescription :global(h1),
+.questionDescription :global(h2),
+.questionDescription :global(h3),
+.questionDescription :global(h4),
+.questionDescription :global(h5),
+.questionDescription :global(h6) {
+	margin: 0;
+	color: var(--color-heading);
+	font-size: 1em;
+	font-weight: 600;
+}
+
+.questionDescription :global(ul),
+.questionDescription :global(ol) {
+	margin: 0.5rem 0 0;
+	padding-left: 1.5rem;
+}
+
+.questionDescription :global(a) {
+	color: inherit;
+	text-decoration: underline;
 }
 
 .questionCount {
@@ -166,6 +204,8 @@
 	padding: 1rem;
 	background-color: var(--selection);
 	border-radius: 1rem;
+	word-break: break-word;
+	line-height: 1.6;
 }
 
 .responseHeader {
@@ -201,69 +241,18 @@
 .emptyState {
 	margin: 0;
 	color: var(--comment);
-}
-
-.popupOverlay {
-	position: fixed;
-	inset: 0;
-	z-index: 9998;
-	background: rgba(0, 0, 0, 0.5);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 1rem;
-}
-
-.popup {
-	width: min(42rem, 100%);
-	background: var(--background-color-secondary);
-	border: 0.0625rem solid var(--background-color-tertiary);
-	border-radius: 2rem;
 	padding: 2rem;
+	text-align: center;
+}
+
+.buttonGroup {
 	display: flex;
-	flex-direction: column;
-	gap: 2rem;
+	gap: 0.5rem;
 }
 
-.popupHeader {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 1rem;
-}
-
-.popupHeaderLeft {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	flex-wrap: wrap;
-}
-
-.popupTitle {
-	margin: 0;
-	font-size: 1.5rem;
-	font-weight: 700;
-	color: var(--color-heading);
-}
-
-.popupCloseButton {
-	background: transparent;
-	border: none;
-	color: var(--color-caption);
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.25rem;
-	border-radius: 0.25rem;
-}
-
-.popupCloseButton:hover {
-	background: transparent;
-	color: var(--foreground);
-}
-
+/* 連結試算表對話框 */
 .popupHint {
-	margin: 0;
+	margin: 1rem 0;
 	font-size: 0.9375rem;
 	color: var(--color-body);
 }
@@ -287,6 +276,7 @@
 	min-width: auto;
 	line-height: 1;
 	flex-shrink: 0;
+	transition: all 0.2s ease;
 }
 
 .copyButton:hover:not(:disabled) {
@@ -303,6 +293,7 @@
 	padding: 0.75rem;
 	color: var(--foreground);
 	font-size: 0.9375rem;
+	font-family: inherit;
 }
 
 .sheetUrlInput:focus-visible {
@@ -312,29 +303,31 @@
 
 .popupActions {
 	display: flex;
-	justify-content: flex-end;
+	justify-content: flex-start;
 	gap: 0.5rem;
 	flex-wrap: wrap;
 }
 
-.checkStatusButton {
-	background: var(--foreground);
+/* 共用按鈕樣式 */
+.buttonForeground {
+	background-color: var(--foreground);
 	color: var(--background-color-primary);
 	border: 0.0625rem solid var(--foreground);
 }
 
-.checkStatusButton:hover:not(:disabled) {
-	background: var(--foreground);
+.buttonForeground:hover:not(:disabled) {
 	opacity: 0.9;
 }
 
 .statusLinked {
+	align-self: flex-start;
 	background: var(--green-subtle);
 	color: var(--green);
 	border-color: var(--green);
 }
 
 .statusUnlinked {
+	align-self: flex-start;
 	background: var(--background-color-tertiary);
 	color: var(--color-caption);
 	border-color: var(--selection);
