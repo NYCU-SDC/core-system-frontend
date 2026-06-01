@@ -5,9 +5,9 @@ import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror } from "@/shared/utils/proseMirror";
-import type { FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormRequestUpdate, FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./InfoPage.module.css";
 
@@ -25,6 +25,8 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const unarchiveFormMutation = useUnarchiveForm(orgSlug);
 	const deleteFormMutation = useDeleteForm(orgSlug);
 	const sectionsQuery = useSections(formData.id);
+	const sendResponseEmailSupported = "sendResponseEmail" in formData;
+	const sendResponseEmailWarningShownRef = useRef(false);
 
 	// derive counts
 	const allResponses = responsesQuery.data?.responses ?? [];
@@ -46,6 +48,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
 	const [allowEditResponse, setAllowEditResponse] = useState(formData.allowEditResponse ?? false);
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
+	const [sendResponseEmail, setSendResponseEmail] = useState(sendResponseEmailSupported ? ((formData as FormsFormResponse & { sendResponseEmail?: boolean }).sendResponseEmail ?? false) : false);
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
 	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(fromApiProseMirror(formData.description)));
 	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
@@ -62,6 +65,22 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		publishTime !== savedPublishTime ||
 		isPublic !== savedIsPublic ||
 		allowEditResponse !== formData.allowEditResponse;
+	const sendResponseEmailDisabled = !sendResponseEmailSupported || isArchived || updateFormMutation.isPending;
+
+	useEffect(() => {
+		if (sendResponseEmailSupported) {
+			sendResponseEmailWarningShownRef.current = false;
+			return;
+		}
+		if (sendResponseEmailWarningShownRef.current) return;
+
+		sendResponseEmailWarningShownRef.current = true;
+		pushToast({
+			title: "通知設定暫不可用",
+			description: "後端尚未回傳寄送確認信設定，已暫時停用此開關。",
+			variant: "warning"
+		});
+	}, [sendResponseEmailSupported, pushToast]);
 
 	useEffect(() => {
 		if (!hasSettingChanges || updateFormMutation.isPending || isArchived) return;
@@ -141,6 +160,26 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}
 	};
 
+	const handleToggleSendResponseEmail = (checked: boolean) => {
+		if (!sendResponseEmailSupported) {
+			pushToast({
+				title: "通知設定暫不可用",
+				description: "後端尚未回傳寄送確認信設定，無法變更此開關。",
+				variant: "warning"
+			});
+			return;
+		}
+		if (isArchived) return;
+		const previousValue = sendResponseEmail;
+		setSendResponseEmail(checked);
+		updateFormMutation.mutate({ sendResponseEmail: checked } as FormsFormRequestUpdate, {
+			onError: error => {
+				setSendResponseEmail(previousValue);
+				pushToast({ title: "儲存通知設定失敗", description: (error as Error).message, variant: "error" });
+			}
+		});
+	};
+
 	const handleArchive = () => {
 		archiveFormMutation.mutate(formData.id, {
 			onSuccess: () => pushToast({ title: "已封存", variant: "success" }),
@@ -203,6 +242,12 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					<div className={`${styles.switch}`}>
 						<p className={`${styles.label}`}>允許編輯回覆</p>
 						{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allowEditResponse} onCheckedChange={setAllowEditResponse} disabled={isArchived} />}
+					</div>
+				</Tooltip>
+				<Tooltip content={sendResponseEmailSupported ? "成功送出表單後寄送確認信給填寫者" : "後端尚未支援此設定，暫時無法調整"} side="right">
+					<div className={`${styles.switch}`}>
+						<p className={`${styles.label}`}>送出表單後寄送確認信</p>
+						<Switch checked={sendResponseEmail} onCheckedChange={handleToggleSendResponseEmail} disabled={sendResponseEmailDisabled} />
 					</div>
 				</Tooltip>
 				<div className={`${styles.switch}`}>
