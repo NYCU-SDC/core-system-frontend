@@ -166,6 +166,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [localUploadMaxFileAmountStr, setLocalUploadMaxFileAmountStr] = useState(() => String(question.uploadMaxFileAmount ?? 1));
 	const [localUploadMaxFileSizeMbStr, setLocalUploadMaxFileSizeMbStr] = useState(() => String(Number(((question.uploadMaxFileSizeLimit ?? 10485760) / 1024 / 1024).toFixed(2))));
+	// Phase 1 TODO: title 接線接到一半。localTitle/localTitleRef 永遠停在初始 question.title(setter 未接),導致行 219/259 的 onTitleChange 回填用到過期標題。接 Editor undo 時一併修正。
+	// 註:build 收綠靠下方的 `void setLocalTitle`(實際擋 build 的是 tsc noUnusedLocals/TS6133,eslint-disable 無法消除);接 undo 時一併移除這兩者。
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [localTitle, setLocalTitle] = useState(question.title);
 	const localTitleRef = useRef(question.title);
 	localTitleRef.current = localTitle;
@@ -174,7 +177,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
-	const descRef = useRef<HTMLTextAreaElement>(null);
+	void setLocalTitle;
 	const runWithIndicator = async (action: () => void | Promise<void>, setPending: (pending: boolean) => void) => {
 		setPending(true);
 		const startedAt = Date.now();
@@ -217,7 +220,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 				}
 				// flush title & description via refs as a safety net
 				props.onTitleChange?.(localTitleRef.current);
-				props.onDescriptionChange?.(localDescRef.current);
+				// Phase 2: redo PM blur-commit; minimal null guard for now
+				if (localDescRef.current) props.onDescriptionChange?.(localDescRef.current);
 				props.onFold?.();
 				setIsExpanded(true);
 				setIsTypeMenuOpen(false);
@@ -257,7 +261,8 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
 							props.onTitleChange?.(localTitleRef.current);
-							props.onDescriptionChange?.(localDescRef.current);
+							// Phase 2: redo PM blur-commit; minimal null guard for now
+							if (localDescRef.current) props.onDescriptionChange?.(localDescRef.current);
 							props.onFold?.();
 							setIsExpanded(false);
 							setIsTypeMenuOpen(false);
@@ -284,10 +289,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								themeColor="--comment"
 								textSize="h2"
 							/>
-							<TextArea
+							<MarkdownEditor
 								value={localDesc}
-								onChange={e => setLocalDesc(e.target.value)}
-								onBlur={() => props.onDescriptionChange?.(localDesc)}
+								onChange={nextDesc => setLocalDesc(nextDesc)}
+								onBlur={() => {
+									// Phase 2: redo PM blur-commit; minimal null guard for now
+									if (localDescRef.current) props.onDescriptionChange?.(localDescRef.current);
+								}}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
