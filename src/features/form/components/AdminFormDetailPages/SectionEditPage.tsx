@@ -562,6 +562,11 @@ export const AdminSectionEditPage = () => {
 	};
 
 	const handleDescriptionChange = (index: number, newDescription: ProseMirrorLikeDocument) => {
+		// Diff guard (same pattern as handleTitleChange). Critical: QuestionCard's outside-click
+		// safety net fires onDescriptionChange for EVERY expanded card on ANY click. Without this
+		// guard, every click marked all questions dirty -> autosave PUT every question ->
+		// syncQuestionFromApi overwrote every title/description with the API response.
+		if (serializeProseMirrorDoc(questions[index]?.description) === serializeProseMirrorDoc(newDescription)) return;
 		// Immutable update so we never mutate a snapshot already captured in history. Debounced
 		// to coalesce the blur commit with the outside-click / Enter safety-net double-fire.
 		updateQuestionAt(index, question => ({ ...question, description: newDescription }), "debounced");
