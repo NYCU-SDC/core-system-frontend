@@ -1,4 +1,5 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
+import { useSectionEditUndo, type SectionEditSnapshot } from "@/features/form/hooks/useSectionEditUndo";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
@@ -77,9 +78,8 @@ export const AdminSectionEditPage = () => {
 		}
 	};
 
-	// States
-	const [questions, setQuestionsState] = useState<Question[]>([]);
-	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
+	// States (section title/description drafts are non-undoable: they autosave via onBlur and
+	// the description MarkdownEditor owns its own ProseMirror history).
 	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
 	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState<ProseMirrorLikeDocument>(() => EMPTY_PROSE_MIRROR_DOC);
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
@@ -89,32 +89,33 @@ export const AdminSectionEditPage = () => {
 	const dirtyQuestionIndexesRef = useRef<Set<number>>(new Set());
 	const autosaveTimerRef = useRef<number | null>(null);
 	const isFlushingDirtyQuestionsRef = useRef(false);
+	const flushPromiseRef = useRef<Promise<void> | null>(null);
+	const hydratedSectionIdRef = useRef<string | null>(null);
 	const [dirtyQuestionVersion, setDirtyQuestionVersion] = useState(0);
 	const [newlyAddedIndex, setNewlyAddedIndex] = useState<number | null>(null);
 
-	// Callbacks
-	const setQuestions = useCallback(
-		(updater: Question[] | ((prev: Question[]) => Question[]), _checkpoint?: string) => {
-			setQuestionsState(prev => (typeof updater === "function" ? (updater as (prev: Question[]) => Question[])(prev) : updater));
-		},
-		[setQuestionsState]
+	// Undo/redo engine. beforeUndoRedo / afterUndoRedo are wired through refs because the
+	// flush + mark-dirty callbacks are defined further down and themselves depend on the
+	// engine's setters — referencing them directly here would be a definition cycle.
+	const beforeUndoRedoRef = useRef<() => Promise<void>>(async () => {});
+	const afterUndoRedoRef = useRef<(snapshot: SectionEditSnapshot) => void>(() => {});
+
+	const { questions, questionIds, setQuestions, updateQuestionAt, setQuestionIds, setSnapshot, hydrate, undo, redo, canUndo, canRedo, onTextInputBlurCheckpoint } = useSectionEditUndo(
+		{ questions: [], questionIds: [] },
+		{
+			beforeUndoRedo: () => beforeUndoRedoRef.current(),
+			afterUndoRedo: snapshot => afterUndoRedoRef.current(snapshot)
+		}
 	);
 
-	const setQuestionIdsAndRef = useCallback((nextQuestionIds: (string | undefined)[], _checkpoint?: string) => {
-		questionIdsRef.current = nextQuestionIds;
-		setQuestionIds(nextQuestionIds);
-	}, []);
-
-	const updateQuestionAt = useCallback(
-		(index: number, updater: (question: Question) => Question, _checkpoint?: string) => {
-			setQuestions(prev =>
-				prev.map((question, currentIndex) => {
-					if (currentIndex !== index) return question;
-					return updater(question);
-				})
-			);
+	// Synchronous server-id ref update is required by the sequential flush loop: each create
+	// reads questionIdsRef.current to build the next ids array before React re-renders.
+	const setQuestionIdsAndRef = useCallback(
+		(nextQuestionIds: (string | undefined)[], checkpoint?: "immediate" | "debounced" | "none") => {
+			questionIdsRef.current = nextQuestionIds;
+			setQuestionIds(nextQuestionIds, checkpoint);
 		},
-		[setQuestions]
+		[setQuestionIds]
 	);
 
 	const markQuestionsDirty = useCallback((indexes: number[]) => {
@@ -226,84 +227,127 @@ export const AdminSectionEditPage = () => {
 
 	const flushDirtyQuestions = useCallback(async () => {
 		if (!formid || !sectionId) return;
-		if (isFlushingDirtyQuestionsRef.current) return;
+		if (isFlushingDirtyQuestionsRef.current) {
+			// A flush is already running; await it so callers (e.g. undo/redo) can rely on
+			// in-flight autosave having settled before they mutate history.
+			if (flushPromiseRef.current) await flushPromiseRef.current;
+			return;
+		}
 		if (dirtyQuestionIndexesRef.current.size === 0) return;
 
 		isFlushingDirtyQuestionsRef.current = true;
-		try {
-			while (dirtyQuestionIndexesRef.current.size > 0) {
-				const dirtyIndexes = [...dirtyQuestionIndexesRef.current].sort((a, b) => a - b);
-				dirtyQuestionIndexesRef.current.clear();
+		const run = (async () => {
+			try {
+				while (dirtyQuestionIndexesRef.current.size > 0) {
+					const dirtyIndexes = [...dirtyQuestionIndexesRef.current].sort((a, b) => a - b);
+					dirtyQuestionIndexesRef.current.clear();
 
-				for (const index of dirtyIndexes) {
-					const question = questionsRef.current[index];
-					if (!question) continue;
+					for (const index of dirtyIndexes) {
+						const question = questionsRef.current[index];
+						if (!question) continue;
 
-					const req = toApiRequest(question, index + 1);
-					const existingId = questionIdsRef.current[index];
-					const syncQuestionFromApi = (apiQuestion: FormsQuestionResponse) => {
-						setQuestions(prev => {
-							if (!prev[index]) return prev;
-							const old = prev[index];
+						const req = toApiRequest(question, index + 1);
+						const existingId = questionIdsRef.current[index];
+						const syncQuestionFromApi = (apiQuestion: FormsQuestionResponse) => {
+							setQuestions(prev => {
+								if (!prev[index]) return prev;
+								const old = prev[index];
 
-							const nextOptions = old.isFromAnswer ? [] : old.options;
-							const nextDetailOptions = old.detailOptions;
+								const nextOptions = old.isFromAnswer ? [] : old.options;
+								const nextDetailOptions = old.detailOptions;
 
-							const updated: Question = {
-								...old,
-								title: apiQuestion.title ?? old.title,
-								description: fromApiProseMirror(apiQuestion.description) ?? old.description,
-								required: apiQuestion.required ?? old.required,
-								...(apiQuestion.sourceId !== undefined && {
-									sourceQuestionId: apiQuestion.sourceId ?? undefined,
-									isFromAnswer: Boolean(apiQuestion.sourceId)
-								}),
-								icon: (apiQuestion.scale?.icon ?? old.icon) as Question["icon"],
-								start: apiQuestion.scale?.minVal ?? old.start,
-								end: apiQuestion.scale?.maxVal ?? old.end,
-								startLabel: apiQuestion.scale?.minValueLabel ?? old.startLabel,
-								endLabel: apiQuestion.scale?.maxValueLabel ?? old.endLabel,
-								uploadAllowedFileTypes: apiQuestion.uploadFile?.allowedFileTypes ? [...apiQuestion.uploadFile.allowedFileTypes] : old.uploadAllowedFileTypes,
-								uploadMaxFileAmount: apiQuestion.uploadFile?.maxFileAmount ?? old.uploadMaxFileAmount,
-								uploadMaxFileSizeLimit: apiQuestion.uploadFile?.maxFileSizeLimit ?? old.uploadMaxFileSizeLimit,
-								dateHasYear: apiQuestion.date?.hasYear ?? old.dateHasYear,
-								dateHasMonth: apiQuestion.date?.hasMonth ?? old.dateHasMonth,
-								dateHasDay: apiQuestion.date?.hasDay ?? old.dateHasDay,
-								dateHasMinDate: Boolean(apiQuestion.date?.minDate),
-								dateHasMaxDate: Boolean(apiQuestion.date?.maxDate),
-								dateMinDate: apiQuestion.date?.minDate ? apiQuestion.date.minDate.slice(0, 10) : "",
-								dateMaxDate: apiQuestion.date?.maxDate ? apiQuestion.date.maxDate.slice(0, 10) : "",
-								options: nextOptions,
-								detailOptions: nextDetailOptions
-							};
+								const updated: Question = {
+									...old,
+									title: apiQuestion.title ?? old.title,
+									description: fromApiProseMirror(apiQuestion.description) ?? old.description,
+									required: apiQuestion.required ?? old.required,
+									...(apiQuestion.sourceId !== undefined && {
+										sourceQuestionId: apiQuestion.sourceId ?? undefined,
+										isFromAnswer: Boolean(apiQuestion.sourceId)
+									}),
+									icon: (apiQuestion.scale?.icon ?? old.icon) as Question["icon"],
+									start: apiQuestion.scale?.minVal ?? old.start,
+									end: apiQuestion.scale?.maxVal ?? old.end,
+									startLabel: apiQuestion.scale?.minValueLabel ?? old.startLabel,
+									endLabel: apiQuestion.scale?.maxValueLabel ?? old.endLabel,
+									uploadAllowedFileTypes: apiQuestion.uploadFile?.allowedFileTypes ? [...apiQuestion.uploadFile.allowedFileTypes] : old.uploadAllowedFileTypes,
+									uploadMaxFileAmount: apiQuestion.uploadFile?.maxFileAmount ?? old.uploadMaxFileAmount,
+									uploadMaxFileSizeLimit: apiQuestion.uploadFile?.maxFileSizeLimit ?? old.uploadMaxFileSizeLimit,
+									dateHasYear: apiQuestion.date?.hasYear ?? old.dateHasYear,
+									dateHasMonth: apiQuestion.date?.hasMonth ?? old.dateHasMonth,
+									dateHasDay: apiQuestion.date?.hasDay ?? old.dateHasDay,
+									dateHasMinDate: Boolean(apiQuestion.date?.minDate),
+									dateHasMaxDate: Boolean(apiQuestion.date?.maxDate),
+									dateMinDate: apiQuestion.date?.minDate ? apiQuestion.date.minDate.slice(0, 10) : "",
+									dateMaxDate: apiQuestion.date?.maxDate ? apiQuestion.date.maxDate.slice(0, 10) : "",
+									options: nextOptions,
+									detailOptions: nextDetailOptions
+								};
 
-							const next = [...prev];
-							next[index] = updated;
-							return next;
-						}, "none");
-					};
-					if (existingId) {
-						const updated = await updateQuestion.mutateAsync({ questionId: existingId, req });
-						syncQuestionFromApi(updated);
-					} else {
-						const res = await createQuestion.mutateAsync(req);
-						syncQuestionFromApi(res);
-						const nextQuestionIds = [...questionIdsRef.current];
-						nextQuestionIds[index] = res.id;
-						setQuestionIdsAndRef(nextQuestionIds, "none");
+								const next = [...prev];
+								next[index] = updated;
+								return next;
+							}, "none");
+						};
+						if (existingId) {
+							const updated = await updateQuestion.mutateAsync({ questionId: existingId, req });
+							syncQuestionFromApi(updated);
+						} else {
+							const res = await createQuestion.mutateAsync(req);
+							syncQuestionFromApi(res);
+							// Phase 1 known-limitation: redo a newly-created question may re-POST (id was
+							// none-backfilled, not in snapshot), so the history entry for the redone state
+							// still has questionIds[index] === undefined. Future fix: clientId->serverId map,
+							// NOT patching the id into past/future (that would change engine semantics).
+							const nextQuestionIds = [...questionIdsRef.current];
+							nextQuestionIds[index] = res.id;
+							setQuestionIdsAndRef(nextQuestionIds, "none");
+						}
 					}
 				}
+			} catch {
+				console.log("儲存失敗");
+				// pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
+			} finally {
+				isFlushingDirtyQuestionsRef.current = false;
+				flushPromiseRef.current = null;
 			}
-		} catch {
-			console.log("儲存失敗");
-			// pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
-		} finally {
-			isFlushingDirtyQuestionsRef.current = false;
-		}
+		})();
+		flushPromiseRef.current = run;
+		await run;
 	}, [createQuestion, formid, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
 
+	// beforeUndoRedo: drain in-flight + pending autosave so a later flush can't overwrite the
+	// undone state with a stale API response (方案 a hard requirement 3).
+	const awaitInFlightFlush = useCallback(async () => {
+		if (autosaveTimerRef.current !== null) {
+			window.clearTimeout(autosaveTimerRef.current);
+			autosaveTimerRef.current = null;
+		}
+		await flushDirtyQuestions();
+		if (flushPromiseRef.current) await flushPromiseRef.current;
+	}, [flushDirtyQuestions]);
+
+	// afterUndoRedo: 方案 a hard requirement 1 — re-mark the restored questions dirty so the
+	// existing autosave converges the backend. Single section is <=15 questions, so mark all
+	// rather than diffing which changed.
+	const markAllQuestionsDirty = useCallback(
+		(snapshot: SectionEditSnapshot) => {
+			markQuestionsDirtyFrom(0, snapshot.questions.length);
+		},
+		[markQuestionsDirtyFrom]
+	);
+
+	beforeUndoRedoRef.current = awaitInFlightFlush;
+	afterUndoRedoRef.current = markAllQuestionsDirty;
+
 	// Effects
-	// Sync from API on first load
+	// Hydrate from API. The sections query is invalidated after every autosave create/update/
+	// delete, so this effect re-fires whenever the server question count changes — NOT only on
+	// first load. We therefore distinguish:
+	//   - first hydration of a section -> seed the undo baseline (clears past/future).
+	//   - later server reconciliation  -> merge with checkpoint "none" so it neither pollutes
+	//     the undo stack nor wipes history (which a re-seed would).
 	useEffect(() => {
 		if (!section?.id) return;
 
@@ -341,10 +385,20 @@ export const AdminSectionEditPage = () => {
 				oauthProvider: apiQuestion.oauthConnect
 			};
 		});
-		setQuestions(mapped);
-		setQuestionIdsAndRef(apiQuestions.map(q => q.id));
+		const nextQuestionIds = apiQuestions.map(q => q.id);
+
+		if (hydratedSectionIdRef.current !== section.id) {
+			hydratedSectionIdRef.current = section.id;
+			dirtyQuestionIndexesRef.current.clear();
+			questionsRef.current = mapped;
+			questionIdsRef.current = nextQuestionIds;
+			hydrate({ questions: mapped, questionIds: nextQuestionIds });
+		} else {
+			setQuestions(mapped, "none");
+			setQuestionIdsAndRef(nextQuestionIds, "none");
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [apiQuestions.length]);
+	}, [apiQuestions.length, section?.id]);
 
 	useEffect(() => {
 		questionsRef.current = questions;
@@ -389,15 +443,17 @@ export const AdminSectionEditPage = () => {
 
 	const sourceQuestionOptions = useMemo(
 		() =>
-			(sectionsQuery.data ?? [])
-				.flatMap(sectionItem =>
-					(sectionItem.questions ?? [])
-						.filter((question: FormsQuestionResponse) => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
-						.map((question: FormsQuestionResponse) => ({
-							value: question.id,
-							label: `${sectionItem.section.title} / ${question.title}`
-						}))
-				),
+			(sectionsQuery.data ?? []).flatMap(sectionItem =>
+				(sectionItem.questions ?? [])
+					.filter(
+						(question: FormsQuestionResponse) =>
+							question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN"
+					)
+					.map((question: FormsQuestionResponse) => ({
+						value: question.id,
+						label: `${sectionItem.section.title} / ${question.title}`
+					}))
+			),
 		[sectionsQuery.data]
 	);
 
@@ -473,7 +529,9 @@ export const AdminSectionEditPage = () => {
 		};
 
 		const updatedQuestions = [...questions, newQuestion];
-		setQuestions(updatedQuestions);
+		// Keep the parallel arrays aligned (new question has no server id yet) and commit both
+		// in one checkpoint so the add costs exactly one undo step.
+		setSnapshot({ questions: updatedQuestions, questionIds: [...questionIds, undefined] }, "immediate");
 		setNewlyAddedIndex(newIndex);
 		markQuestionDirty(newIndex);
 	};
@@ -482,8 +540,7 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestions = questions.filter((_, currentIndex) => currentIndex !== index);
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index, 1);
-		setQuestions(updatedQuestions);
-		setQuestionIdsAndRef(updatedQuestionIds);
+		setSnapshot({ questions: updatedQuestions, questionIds: updatedQuestionIds }, "immediate");
 		markQuestionsDirtyFrom(index, updatedQuestions.length);
 	};
 
@@ -494,8 +551,7 @@ export const AdminSectionEditPage = () => {
 		});
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index + 1, 0, undefined);
-		setQuestions(updatedQuestions);
-		setQuestionIdsAndRef(updatedQuestionIds);
+		setSnapshot({ questions: updatedQuestions, questionIds: updatedQuestionIds }, "immediate");
 		markQuestionsDirtyFrom(index + 1, updatedQuestions.length);
 	};
 
@@ -506,9 +562,9 @@ export const AdminSectionEditPage = () => {
 	};
 
 	const handleDescriptionChange = (index: number, newDescription: ProseMirrorLikeDocument) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[index].description = newDescription;
-		setQuestions(updatedQuestions);
+		// Immutable update so we never mutate a snapshot already captured in history. Debounced
+		// to coalesce the blur commit with the outside-click / Enter safety-net double-fire.
+		updateQuestionAt(index, question => ({ ...question, description: newDescription }), "debounced");
 		markQuestionDirty(index);
 	};
 
@@ -710,8 +766,9 @@ export const AdminSectionEditPage = () => {
 			const draggedQuestion = questionsRef.current[oldIndex];
 			const draggedQuestionId = questionIdsRef.current[oldIndex];
 
-			setQuestions(prev => arrayMove(prev, oldIndex, newIndex));
-			setQuestionIdsAndRef(arrayMove(questionIds, oldIndex, newIndex));
+			// Reorder both arrays in a single checkpoint so the drag is one undo step.
+			setSnapshot(prev => ({ questions: arrayMove(prev.questions, oldIndex, newIndex), questionIds: arrayMove(prev.questionIds, oldIndex, newIndex) }), "immediate");
+			questionIdsRef.current = arrayMove(questionIdsRef.current, oldIndex, newIndex);
 			remapDirtyQuestionIndexesAfterMove(oldIndex, newIndex);
 
 			if (draggedQuestionId && draggedQuestion) {
@@ -722,8 +779,8 @@ export const AdminSectionEditPage = () => {
 					{
 						onError: err => {
 							pushToast({ title: "排序失敗", description: (err as Error).message, variant: "error" });
-							setQuestions(prev => arrayMove(prev, newIndex, oldIndex));
-							setQuestionIdsAndRef(arrayMove(questionIdsRef.current, newIndex, oldIndex));
+							setSnapshot(prev => ({ questions: arrayMove(prev.questions, newIndex, oldIndex), questionIds: arrayMove(prev.questionIds, newIndex, oldIndex) }), "immediate");
+							questionIdsRef.current = arrayMove(questionIdsRef.current, newIndex, oldIndex);
 							remapDirtyQuestionIndexesAfterMove(newIndex, oldIndex);
 						}
 					}
@@ -733,17 +790,27 @@ export const AdminSectionEditPage = () => {
 				markQuestionDirty(newIndex);
 			}
 		},
-		[clientIds, questionIds, questionsRef, questionIdsRef, updateQuestion, pushToast, setQuestionIdsAndRef, remapDirtyQuestionIndexesAfterMove, markQuestionDirty]
+		[clientIds, questionsRef, questionIdsRef, updateQuestion, pushToast, setSnapshot, remapDirtyQuestionIndexesAfterMove, markQuestionDirty]
 	);
 
 	return (
 		<>
 			<div className={styles.layout}>
 				<div className={styles.content}>
-					<Button onClick={handleBack}>返回</Button>
+					<div style={{ display: "flex", gap: "8px" }}>
+						<Button onClick={handleBack}>返回</Button>
+						<Button variant="secondary" onClick={() => void undo()} disabled={!canUndo}>
+							復原
+						</Button>
+						<Button variant="secondary" onClick={() => void redo()} disabled={!canRedo}>
+							重做
+						</Button>
+					</div>
 					{sectionsQuery.isLoading && <LoadingSpinner />}
 					{sectionsQuery.isError && <ErrorMessage message={(sectionsQuery.error as Error)?.message ?? "無法載入區塊資料"} />}
-					<div className={styles.container}>
+					{/* onBlurCapture flushes any pending debounced text checkpoint when leaving an input,
+					    so a text edit becomes a discrete undo step on blur. */}
+					<div className={styles.container} onBlurCapture={onTextInputBlurCheckpoint}>
 						<section className={styles.card}>
 							<Input
 								placeholder="區段標題"
