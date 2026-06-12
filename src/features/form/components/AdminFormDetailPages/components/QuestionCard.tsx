@@ -166,9 +166,9 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [localUploadMaxFileAmountStr, setLocalUploadMaxFileAmountStr] = useState(() => String(question.uploadMaxFileAmount ?? 1));
 	const [localUploadMaxFileSizeMbStr, setLocalUploadMaxFileSizeMbStr] = useState(() => String(Number(((question.uploadMaxFileSizeLimit ?? 10485760) / 1024 / 1024).toFixed(2))));
-	// Phase 1 TODO: title 接線接到一半。localTitle/localTitleRef 永遠停在初始 question.title(setter 未接),導致行 219/259 的 onTitleChange 回填用到過期標題。接 Editor undo 時一併修正。
-	// 註:build 收綠靠下方的 `void setLocalTitle`(實際擋 build 的是 tsc noUnusedLocals/TS6133,eslint-disable 無法消除);接 undo 時一併移除這兩者。
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	// localTitle/localTitleRef must track BOTH live keystrokes (so the outside-click / Enter
+	// safety net commits what the user actually typed, not a stale value) AND external changes
+	// to question.title (undo / autosave reflow), mirrored by the effect below.
 	const [localTitle, setLocalTitle] = useState(question.title);
 	const localTitleRef = useRef(question.title);
 	localTitleRef.current = localTitle;
@@ -177,7 +177,6 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
-	void setLocalTitle;
 	const runWithIndicator = async (action: () => void | Promise<void>, setPending: (pending: boolean) => void) => {
 		setPending(true);
 		const startedAt = Date.now();
@@ -192,6 +191,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 			setPending(false);
 		}
 	};
+
+	useEffect(() => {
+		setLocalTitle(question.title);
+	}, [question.title]);
 
 	useEffect(() => {
 		setLocalDesc(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
@@ -279,6 +282,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 								key={`${question.clientId ?? question.title}-title-${question.title}`}
 								ref={titleRef}
 								defaultValue={question.title}
+								onChange={event => setLocalTitle(event.target.value)}
 								onBlur={event => {
 									if (event.target.value !== question.title) {
 										props.onTitleChange?.(event.target.value);
