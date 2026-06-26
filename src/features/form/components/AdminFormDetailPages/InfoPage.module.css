@@ -83,12 +83,17 @@
 	gap: 1rem;
 	width: 100%;
 	justify-content: space-between;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 }
 
 .highlightInput {
-	flex: 1 1 25rem;
+	flex: 1 1 24rem;
 	min-width: 0;
+}
+
+.highlightResetButton {
+	flex: 0 0 auto;
+	min-width: 11.5rem;
 }
 
 .highlightPickerRow {

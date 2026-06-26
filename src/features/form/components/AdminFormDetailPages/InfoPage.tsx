@@ -376,7 +376,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 									onChange={event => setHighlightTitle(event.target.value)}
 									disabled={isArchived || highlightIsPending}
 								/>
-								<Button type="button" icon={RotateCcw} onClick={() => setHighlightTitle(selectedHighlightQuestionTitle)} disabled={isArchived || highlightIsPending || !canResetHighlightTitle}>
+								<Button
+									type="button"
+									className={styles.highlightResetButton}
+									icon={RotateCcw}
+									onClick={() => setHighlightTitle(selectedHighlightQuestionTitle)}
+									disabled={isArchived || highlightIsPending || !canResetHighlightTitle}
+								>
 									重置為問題標題
 								</Button>
 							</div>
