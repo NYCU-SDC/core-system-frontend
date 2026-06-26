@@ -78,6 +78,100 @@ const defaultRequestOptions: RequestInit = {
 
 // ── Forms ──────────────────────────────────────────────────────────────────
 
+const MOCK_EMPTY_SECTION_ID = "c34d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f";
+
+const emptyQuestionDescription: FormsQuestionResponse["description"] = {
+	type: "doc",
+	content: [
+		{
+			type: "paragraph",
+			content: []
+		}
+	]
+};
+
+const withMockSectionQuestions = (sections: FormsSectionBundle[]): FormsSectionBundle[] => {
+	if (!import.meta.env.DEV) return sections;
+
+	return sections.map(bundle => {
+		if (bundle.section.id !== MOCK_EMPTY_SECTION_ID || bundle.questions !== null) return bundle;
+
+		const now = "2025-02-01T15:30:00Z";
+		const sectionId = bundle.section.id;
+
+		return {
+			...bundle,
+			questions: [
+				{
+					id: "11111111-1111-4111-8111-111111111111",
+					sectionId,
+					required: false,
+					type: "SINGLE_CHOICE",
+					title: "Q1 請選一個組別",
+					description: emptyQuestionDescription,
+					descriptionHtml: "<p></p>",
+					choices: [
+						{ id: "11111111-1111-4111-8111-111111111101", name: "Full Stack" },
+						{ id: "11111111-1111-4111-8111-111111111102", name: "Backend" },
+						{ id: "11111111-1111-4111-8111-111111111103", name: "Frontend" }
+					],
+					createdAt: now,
+					updatedAt: now
+				},
+				{
+					id: "22222222-2222-4222-8222-222222222222",
+					sectionId,
+					required: false,
+					type: "MULTIPLE_CHOICE",
+					title: "Q2 請選多個組別",
+					description: emptyQuestionDescription,
+					descriptionHtml: "<p></p>",
+					choices: [
+						{ id: "22222222-2222-4222-8222-222222222201", name: "Full Stack" },
+						{ id: "22222222-2222-4222-8222-222222222202", name: "Backend" },
+						{ id: "22222222-2222-4222-8222-222222222203", name: "Frontend" },
+						{ id: "22222222-2222-4222-8222-222222222204", name: "Data" }
+					],
+					createdAt: now,
+					updatedAt: now
+				},
+				{
+					id: "33333333-3333-4333-8333-333333333333",
+					sectionId,
+					required: false,
+					type: "DROPDOWN",
+					title: "Q3 請選一個組別（選單）",
+					description: emptyQuestionDescription,
+					descriptionHtml: "<p></p>",
+					choices: [
+						{ id: "33333333-3333-4333-8333-333333333301", name: "Full Stack" },
+						{ id: "33333333-3333-4333-8333-333333333302", name: "Backend" },
+						{ id: "33333333-3333-4333-8333-333333333303", name: "Frontend" }
+					],
+					createdAt: now,
+					updatedAt: now
+				},
+				{
+					id: "44444444-4444-4444-8444-444444444444",
+					sectionId,
+					required: false,
+					type: "DETAILED_MULTIPLE_CHOICE",
+					title: "Q4 請選多個組別（詳細多選）",
+					description: emptyQuestionDescription,
+					descriptionHtml: "<p></p>",
+					choices: [
+						{ id: "44444444-4444-4444-8444-444444444401", name: "Full Stack", description: "前後端整合開發" },
+						{ id: "44444444-4444-4444-8444-444444444402", name: "Backend", description: "API 與資料服務" },
+						{ id: "44444444-4444-4444-8444-444444444403", name: "Frontend", description: "使用者介面開發" }
+					],
+					createdAt: now,
+					updatedAt: now
+				}
+			]
+		};
+	});
+};
+
 export const listOrgForms = async (slug: string): Promise<FormsFormResponse[]> => {
 	const res = await unitListFormsByOrg(slug, undefined, defaultRequestOptions);
 	assertOk(res.status, "Failed to load forms", res.data);
@@ -173,7 +267,7 @@ export const listSections = async (formId: string): Promise<FormsSectionBundle[]
 	const res = await formsListSections(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load sections", res.data);
 
-	return res.data;
+	return withMockSectionQuestions(res.data);
 };
 
 export const updateSection = async (formId: string, sectionId: string, req: FormsSectionRequest): Promise<FormsSection> => {
