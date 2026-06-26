@@ -83,12 +83,12 @@
 	gap: 1rem;
 	width: 100%;
 	justify-content: space-between;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 }
 
 .highlightInput {
 	flex: 1 1 25rem;
-	min-width: min(25rem, 100%);
+	min-width: 0;
 }
 
 .highlightPickerRow {
@@ -99,11 +99,22 @@
 	flex-wrap: wrap;
 }
 
+.highlightPickerRowStacked {
+	flex-direction: column;
+}
+
 .highlightStats {
 	display: flex;
 	gap: 1.4375rem;
 	min-height: 5.25rem;
 	align-items: center;
+	flex-wrap: wrap;
+}
+
+.highlightPickerControls {
+	display: flex;
+	gap: 1.5rem;
+	align-items: flex-start;
 	flex-wrap: wrap;
 }
 

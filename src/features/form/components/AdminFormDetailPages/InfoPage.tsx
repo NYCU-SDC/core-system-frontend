@@ -78,6 +78,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 			})) ?? []
 		);
 	}, [highlightQuery.data, selectedHighlightQuestion, selectedHighlightQuestionId]);
+	const highlightHasManyChoices = highlightChoiceStats.length > 4;
 	const highlightIsConfigured = !!highlightQuery.data?.questionId;
 	const highlightIsPending = setHighlightMutation.isPending || updateHighlightMutation.isPending || clearHighlightMutation.isPending;
 
@@ -379,7 +380,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 									重置為問題標題
 								</Button>
 							</div>
-							<div className={styles.highlightPickerRow}>
+							<div className={`${styles.highlightPickerRow} ${highlightHasManyChoices ? styles.highlightPickerRowStacked : ""}`}>
 								<div className={styles.highlightStats}>
 									{highlightQuery.isLoading ? (
 										<LoadingSpinner />
@@ -394,23 +395,25 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 										<p className={styles.highlightStatsEmpty}>選擇有選項的問題後顯示統計</p>
 									)}
 								</div>
-								<div className={styles.highlightSelect}>
-									<SearchableSelect
-										placeholder="Section 選擇"
-										options={sectionOptions}
-										value={selectedHighlightSectionId || undefined}
-										onValueChange={handleHighlightSectionChange}
-										disabled={isArchived || highlightIsPending || sectionsQuery.isLoading}
-									/>
-								</div>
-								<div className={styles.highlightSelect}>
-									<SearchableSelect
-										placeholder="問題選擇"
-										options={highlightQuestionOptions}
-										value={selectedHighlightQuestionId || undefined}
-										onValueChange={setSelectedHighlightQuestionId}
-										disabled={isArchived || highlightIsPending || !selectedHighlightSectionId}
-									/>
+								<div className={styles.highlightPickerControls}>
+									<div className={styles.highlightSelect}>
+										<SearchableSelect
+											placeholder="Section 選擇"
+											options={sectionOptions}
+											value={selectedHighlightSectionId || undefined}
+											onValueChange={handleHighlightSectionChange}
+											disabled={isArchived || highlightIsPending || sectionsQuery.isLoading}
+										/>
+									</div>
+									<div className={styles.highlightSelect}>
+										<SearchableSelect
+											placeholder="問題選擇"
+											options={highlightQuestionOptions}
+											value={selectedHighlightQuestionId || undefined}
+											onValueChange={setSelectedHighlightQuestionId}
+											disabled={isArchived || highlightIsPending || !selectedHighlightSectionId}
+										/>
+									</div>
 								</div>
 							</div>
 						</div>
