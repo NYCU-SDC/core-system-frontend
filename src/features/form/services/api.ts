@@ -373,17 +373,14 @@ export const getView = (formId: string, viewId: string) => viewsJson<ViewsViewRe
 
 export const createView = (formId: string) => viewsJson<ViewsViewResponse>(viewsBase(formId), { ...defaultRequestOptions, method: "POST" });
 
-export const duplicateView = (formId: string, viewId: string) =>
-	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/duplicate`, { ...defaultRequestOptions, method: "POST" });
+export const duplicateView = (formId: string, viewId: string) => viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/duplicate`, { ...defaultRequestOptions, method: "POST" });
 
 export const updateView = (formId: string, viewId: string, req: ViewsUpdateViewRequest) =>
 	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}`, { ...defaultRequestOptions, method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
 
-export const lockView = (formId: string, viewId: string) =>
-	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/lock`, { ...defaultRequestOptions, method: "POST" });
+export const lockView = (formId: string, viewId: string) => viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/lock`, { ...defaultRequestOptions, method: "POST" });
 
-export const unlockView = (formId: string, viewId: string) =>
-	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/unlock`, { ...defaultRequestOptions, method: "POST" });
+export const unlockView = (formId: string, viewId: string) => viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/unlock`, { ...defaultRequestOptions, method: "POST" });
 
 export const deleteView = async (formId: string, viewId: string): Promise<void> => {
 	const res = await fetch(`${viewsBase(formId)}/${viewId}`, { ...defaultRequestOptions, method: "DELETE" });

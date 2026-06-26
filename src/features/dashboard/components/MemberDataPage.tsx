@@ -5,12 +5,12 @@ import { useSections } from "@/features/form/hooks/useSections";
 import { useCreateView, useDeleteView, useDuplicateView, useLockView, useUnlockView, useUpdateView, useViews } from "@/features/form/hooks/useViews";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
 import type { ViewsViewResponse } from "@/features/form/services/api";
-import type { FormsSectionBundle } from "@nycu-sdc/core-system-sdk";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Table, useToast } from "@/shared/components";
 import { formKeys } from "@/shared/queryKeys/org";
+import type { FormsSectionBundle } from "@nycu-sdc/core-system-sdk";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -88,7 +88,12 @@ export const MemberDataPage = () => {
 	const workflowQuery = useWorkflow(MOCK_FORM_ID);
 	const keyQuestionIds = useMemo(() => {
 		const nodes = workflowQuery.data?.workflow ?? [];
-		return new Set(nodes.filter(node => node.type === "CONDITION").map(node => node.conditionRule?.question).filter((id): id is string => !!id));
+		return new Set(
+			nodes
+				.filter(node => node.type === "CONDITION")
+				.map(node => node.conditionRule?.question)
+				.filter((id): id is string => !!id)
+		);
 	}, [workflowQuery.data]);
 
 	const [hiddenQuestionIds, setHiddenQuestionIds] = useState<Set<string>>(new Set());
@@ -242,7 +247,7 @@ export const MemberDataPage = () => {
 
 					<div className={styles.contentCard}>
 						<div ref={tableWrapperRef} className={styles.tableWrapper}>
-							<Table className={styles.ViewTable} data={tableData} columns={tableColumns} borderStyle="horizontal" stickyHeader showRowNumber  />
+							<Table className={styles.ViewTable} data={tableData} columns={tableColumns} borderStyle="horizontal" stickyHeader showRowNumber />
 						</div>
 					</div>
 				</div>

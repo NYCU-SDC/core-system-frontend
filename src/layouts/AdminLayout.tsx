@@ -5,7 +5,7 @@ import styles from "./AdminLayout.module.css";
 import { AdminNav } from "./AdminNav";
 interface AdminLayoutProps {
 	children: ReactNode;
-	fixedHeight?: boolean; 
+	fixedHeight?: boolean;
 }
 
 export const AdminLayout = ({ children, fixedHeight = false }: AdminLayoutProps) => {

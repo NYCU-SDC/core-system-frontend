@@ -72,7 +72,7 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 			clearShowTimer();
 			clearHideTimer();
 		}
-	}, [isOpen]);  
+	}, [isOpen]);
 
 	useEffect(
 		() => () => {
@@ -80,7 +80,7 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 			clearHideTimer();
 		},
 		[]
-	);  
+	);
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {

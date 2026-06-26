@@ -1,6 +1,6 @@
 import { ScrollContainer } from "@/shared/components";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import type { FormsSectionBundle } from "@nycu-sdc/core-system-sdk";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Eye, EyeOff, Hash, ListChevronsDownUp, ListChevronsUpDown, Square, SquareCheck, X } from "lucide-react";
 import { useState } from "react";
 import styles from "./ColumnRow.module.css";
@@ -45,11 +45,7 @@ export const ColumnRow = ({ sectionsData, hiddenQuestionIds, onToggleQuestion, o
 
 								return (
 									<div key={section.id} className={styles.sectionGroup}>
-										<button
-											type="button"
-											className={`${styles.sectionHeader}${allVisible ? "" : ` ${styles.sectionHeaderPartial}`}`}
-											onClick={() => onToggleSection(questionIds, allVisible)}
-										>
+										<button type="button" className={`${styles.sectionHeader}${allVisible ? "" : ` ${styles.sectionHeaderPartial}`}`} onClick={() => onToggleSection(questionIds, allVisible)}>
 											{allVisible ? <SquareCheck size={16} className={styles.sectionCheckIcon} /> : <Square size={16} className={styles.sectionCheckIcon} />}
 											<span>{section.title || "未命名區段"}</span>
 										</button>
@@ -80,12 +76,7 @@ export const ColumnRow = ({ sectionsData, hiddenQuestionIds, onToggleQuestion, o
 
 			{(!isCollapsed || isExiting) &&
 				visibleQuestions.map((q, i) => (
-					<div
-						key={q.id}
-						title={q.title}
-						className={`${styles.columnChip}${isExiting ? ` ${styles.columnChipExiting}` : ""}`}
-						style={!isExiting ? { animationDelay: `${i * 0.01}s` } : undefined}
-					>
+					<div key={q.id} title={q.title} className={`${styles.columnChip}${isExiting ? ` ${styles.columnChipExiting}` : ""}`} style={!isExiting ? { animationDelay: `${i * 0.01}s` } : undefined}>
 						<span className={styles.columnChipText}>{q.title}</span>
 						<button type="button" className={styles.columnChipRemove} onClick={() => onToggleQuestion(q.id)}>
 							<X size={12} />
