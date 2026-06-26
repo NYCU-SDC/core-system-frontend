@@ -121,8 +121,10 @@
 .highlightPickerControls {
 	display: flex;
 	gap: 1.5rem;
+	max-width: 100%;
 	align-items: flex-start;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	overflow-x: auto;
 }
 
 .highlightStat {
