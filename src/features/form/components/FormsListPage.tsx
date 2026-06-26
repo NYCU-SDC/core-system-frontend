@@ -21,6 +21,7 @@ type FormRow = {
 	status: (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus];
 	buttonLabel: string;
 	responseIds?: string[];
+	allowEditResponse?: boolean;
 };
 
 // Map API status to button label
@@ -42,7 +43,8 @@ const toFormRow = (form: UnitUserForm): FormRow => {
 		deadline: form.deadline ? formatDate(form.deadline) : "無期限",
 		status: form.status,
 		buttonLabel: statusMap[form.status],
-		responseIds: form.responseIds
+		responseIds: form.responseIds,
+		allowEditResponse: form.allowEditResponse
 	};
 };
 
@@ -157,6 +159,14 @@ export const FormsListPage = () => {
 		);
 	};
 
+	const handleEditResponse = (form: FormRow) => () => {
+		if (!form.allowEditResponse) return;
+		const responseId = form.responseIds?.[0];
+		if (responseId) {
+			navigate(`/forms/${form.id}/${responseId}`);
+		}
+	};
+
 	return (
 		<>
 			{meta}
@@ -208,6 +218,16 @@ export const FormsListPage = () => {
 										>
 											{form.buttonLabel}
 										</Button>
+										{form.allowEditResponse && (
+											<Button
+												onClick={event => {
+													event.stopPropagation();
+													handleEditResponse(form);
+												}}
+											>
+												編輯回覆
+											</Button>
+										)}
 										<Button
 											className={styles.sharedBtn}
 											themeColor="var(--red)"
