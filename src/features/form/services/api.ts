@@ -367,14 +367,11 @@ const viewsJson = async <T>(url: string, options: RequestInit): Promise<T> => {
 
 const viewsBase = (formId: string) => `/api/forms/${formId}/views`;
 
-export const listViews = (formId: string) =>
-	viewsJson<ViewsViewResponse[]>(viewsBase(formId), defaultRequestOptions);
+export const listViews = (formId: string) => viewsJson<ViewsViewResponse[]>(viewsBase(formId), defaultRequestOptions);
 
-export const getView = (formId: string, viewId: string) =>
-	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}`, defaultRequestOptions);
+export const getView = (formId: string, viewId: string) => viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}`, defaultRequestOptions);
 
-export const createView = (formId: string) =>
-	viewsJson<ViewsViewResponse>(viewsBase(formId), { ...defaultRequestOptions, method: "POST" });
+export const createView = (formId: string) => viewsJson<ViewsViewResponse>(viewsBase(formId), { ...defaultRequestOptions, method: "POST" });
 
 export const duplicateView = (formId: string, viewId: string) =>
 	viewsJson<ViewsViewResponse>(`${viewsBase(formId)}/${viewId}/duplicate`, { ...defaultRequestOptions, method: "POST" });

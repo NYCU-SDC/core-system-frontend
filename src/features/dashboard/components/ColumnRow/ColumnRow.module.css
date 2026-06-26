@@ -1,0 +1,252 @@
+/* Column row (horizontal chip strip) */
+.columnRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	align-items: center;
+	gap: 0.5rem;
+	/* 最多顯示約四列 chip（4 列高 + 3 個列間距），超過則於 chip 區內捲動*/
+	max-height: calc(4 * 2.0125rem + 3 * 0.5rem);
+	overflow-y: auto;
+}
+
+/* "Column #" trigger chip */
+.headerChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.375rem 0.875rem;
+	border: 0;
+	border-radius: 999rem;
+	background: var(--hero-background-color-secondary);
+	color: var(--foreground);
+	font-size: 0.875rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.headerChip:hover {
+	background: color-mix(in srgb, var(--hero-background-color-secondary) 82%, var(--foreground));
+}
+
+/* Visible column chips (in the row) */
+@keyframes chipFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-0.25rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes chipFadeOut {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-0.375rem);
+	}
+}
+
+.columnChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	max-width: 20rem;
+	padding: 0.375rem 0.5rem 0.375rem 0.875rem;
+	background: var(--code-foreground);
+	border: 0.0625rem solid var(--background-color-tertiary);
+	border-radius: 999rem;
+	color: var(--hero-background-color-secondary);
+	font-size: 0.875rem;
+	line-height: 1.3;
+	animation: chipFadeIn 0.2s ease-out both;
+}
+
+.columnChipExiting {
+	animation: chipFadeOut 0.15s ease-in both;
+}
+
+.columnChipText {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.columnChipRemove {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 0.125rem;
+	border: 0;
+	border-radius: 999rem;
+	background: transparent;
+	color: var(--color-caption);
+	cursor: pointer;
+	transition: color 0.1s ease;
+}
+
+.columnChipRemove:hover {
+	color: var(--color-heading);
+}
+
+/* Collapse toggle */
+.collapseToggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.375rem 0.875rem;
+	border: 0;
+	border-radius: 999rem;
+	background: var(--hero-background-color-secondary);
+	color: var(--foreground);
+	font-size: 0.875rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.collapseToggle:hover {
+	background: color-mix(in srgb, var(--hero-background-color-secondary) 82%, var(--foreground));
+}
+
+/* Popover panel */
+@keyframes panelFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-0.25rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.popoverPanel {
+	z-index: 10000;
+	min-width: 18rem;
+	max-width: 26rem;
+	border-radius: 1.25rem;
+	background: var(--selection);
+	box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+}
+
+.popoverPanel[data-state="open"] {
+	animation: panelFadeIn 0.16s ease-out;
+}
+
+.popoverScroll {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	max-height: 24rem;
+	overflow-y: auto;
+	padding: 1.5rem;
+	scrollbar-width: thin;
+}
+
+.popoverScroll::-webkit-scrollbar {
+	width: 0.6rem;
+}
+
+.popoverScroll::-webkit-scrollbar-track {
+	margin: 1.25rem 0;
+}
+
+/* Section group inside popover */
+.sectionGroup {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+}
+
+.sectionGroup::before {
+	content: "";
+	position: absolute;
+	left: 0.5rem;
+	top: 2rem;
+	bottom: 0.5rem;
+	width: 0.1rem;
+	border-radius: 999rem;
+	background: color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+
+.sectionHeader {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.625rem;
+	width: fit-content;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--color-heading);
+	font-size: 0.925rem;
+	line-height: 1.2;
+	cursor: pointer;
+	transition: color 0.15s ease;
+}
+
+.sectionHeader:hover {
+	color: var(--foreground);
+}
+
+.sectionHeaderPartial {
+	color: var(--color-caption);
+}
+
+.sectionCheckIcon {
+	flex-shrink: 0;
+}
+
+/* Question chips inside popover */
+.questionChips {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.625rem;
+	padding-left: 2.5rem;
+}
+
+.questionChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	max-width: 100%;
+	padding: 0.4375rem 0.9375rem;
+	border: 0;
+	border-radius: 999rem;
+	background: var(--foreground);
+	color: var(--color);
+	font-size: 0.825rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: opacity 0.15s ease;
+}
+
+.questionChip:hover {
+	opacity: 0.88;
+}
+
+.questionChipHidden {
+	opacity: 0.55;
+}
+
+.questionChipText {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.eyeIcon {
+	flex-shrink: 0;
+}

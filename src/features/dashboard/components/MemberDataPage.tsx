@@ -1,39 +1,248 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
+import { useFormResponsesWithDetails } from "@/features/form/hooks/useFormResponses";
+import { useFormById } from "@/features/form/hooks/useOrgForms";
+import { useSections } from "@/features/form/hooks/useSections";
+import { useCreateView, useDeleteView, useDuplicateView, useLockView, useUnlockView, useUpdateView, useViews } from "@/features/form/hooks/useViews";
+import { useWorkflow } from "@/features/form/hooks/useWorkflow";
+import type { ViewsViewResponse } from "@/features/form/services/api";
+import type { FormsSectionBundle } from "@nycu-sdc/core-system-sdk";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Table } from "@/shared/components";
-import { Hash } from "lucide-react";
-import { useState } from "react";
+import { Table, useToast } from "@/shared/components";
+import { formKeys } from "@/shared/queryKeys/org";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ColumnRow } from "./ColumnRow/ColumnRow";
 import styles from "./MemberDataPage.module.css";
-import { type View, ViewTabDropdown } from "./ViewTabDropdown/ViewTabDropdown";
+import { ViewTabDropdown } from "./ViewTabDropdown/ViewTabDropdown";
+
+const MOCK_FORM_ID = "9a843aa0-8451-4e3b-b6a0-8c0e994e9040";
+
+// Render key-question answers as chips; comma-separated values become multiple chips
+const renderKeyAnswer = (value: unknown) => {
+	const text = typeof value === "string" ? value.trim() : value == null ? "" : String(value);
+	if (!text || text === "-") return "-";
+	return (
+		<span className={styles.badgeCell}>
+			{text
+				.split(/,\s*/)
+				.filter(Boolean)
+				.map((label, i) => (
+					<span key={i} className={styles.cellChip}>
+						{label}
+					</span>
+				))}
+		</span>
+	);
+};
 
 export const MemberDataPage = () => {
 	const orgSlug = useActiveOrgSlug();
 	const meta = useSeo({ rule: SEO_CONFIG.memberDataPage });
-	const [selectedView, setSelectedView] = useState<View | null>(null);
+	const [searchParams, setSearchParams] = useSearchParams();
+
+	const { pushToast } = useToast();
+	const queryClient = useQueryClient();
+	const viewsQuery = useViews(MOCK_FORM_ID);
+	const views = useMemo(() => [...(viewsQuery.data ?? [])].sort((a, b) => a.order - b.order), [viewsQuery.data]);
+
+	// URL is the single source of truth for the selected view: ?view=<id>
+	const viewParam = searchParams.get("view");
+	const activeView = useMemo(() => views.find(v => v.id === viewParam) ?? views[0] ?? null, [views, viewParam]);
+
+	const selectViewInUrl = (viewId: string, options?: { replace?: boolean }) =>
+		setSearchParams(
+			prev => {
+				const next = new URLSearchParams(prev);
+				next.set("view", viewId);
+				return next;
+			},
+			{ replace: options?.replace }
+		);
+
+	// Backfill ?view= to the first tab when missing/invalid; replace to avoid a history entry
+	useEffect(() => {
+		if (views.length === 0) return;
+		if (!viewParam || !views.some(v => v.id === viewParam)) selectViewInUrl(views[0].id, { replace: true });
+	}, [views, viewParam]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const createView = useCreateView(MOCK_FORM_ID);
+	const duplicateView = useDuplicateView(MOCK_FORM_ID);
+	const updateView = useUpdateView(MOCK_FORM_ID);
+	const lockView = useLockView(MOCK_FORM_ID);
+	const unlockView = useUnlockView(MOCK_FORM_ID);
+	const deleteView = useDeleteView(MOCK_FORM_ID);
+
+	const formQuery = useFormById(MOCK_FORM_ID);
+	const formTitle = formQuery.data?.title ?? "SDC 2026 招募資料";
+
+	const sectionsQuery = useSections(MOCK_FORM_ID);
+	const { data: responseDetails = [] } = useFormResponsesWithDetails(MOCK_FORM_ID);
+
+	const sectionsData = useMemo<FormsSectionBundle[]>(() => sectionsQuery.data ?? [], [sectionsQuery.data]);
+	const allQuestions = useMemo(() => sectionsData.flatMap(bundle => bundle.questions ?? []), [sectionsData]);
+
+	// Workflow key questions = those referenced by CONDITION nodes; rendered as chips
+	const workflowQuery = useWorkflow(MOCK_FORM_ID);
+	const keyQuestionIds = useMemo(() => {
+		const nodes = workflowQuery.data?.workflow ?? [];
+		return new Set(nodes.filter(node => node.type === "CONDITION").map(node => node.conditionRule?.question).filter((id): id is string => !!id));
+	}, [workflowQuery.data]);
+
+	const [hiddenQuestionIds, setHiddenQuestionIds] = useState<Set<string>>(new Set());
+	const [isColumnCollapsed, setIsColumnCollapsed] = useState(false);
+	const [isColumnExiting, setIsColumnExiting] = useState(false);
+	const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const tableWrapperRef = useRef<HTMLDivElement>(null);
+
+	useEffect(
+		() => () => {
+			if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+		},
+		[]
+	);
+
+	// Measure sticky header height into a CSS var so scroll-padding-top adapts to density/font
+	useEffect(() => {
+		const wrapper = tableWrapperRef.current;
+		const thead = wrapper?.querySelector("thead");
+		if (!wrapper || !thead) return;
+		const updateHeaderHeight = () => wrapper.style.setProperty("--view-table-header-height", `${thead.getBoundingClientRect().height}px`);
+		updateHeaderHeight();
+		const observer = new ResizeObserver(updateHeaderHeight);
+		observer.observe(thead);
+		return () => observer.disconnect();
+	}, []);
+
+	const handleColumnToggle = () => {
+		if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+		if (!isColumnCollapsed) {
+			setIsColumnExiting(true);
+			collapseTimerRef.current = setTimeout(() => {
+				setIsColumnCollapsed(true);
+				setIsColumnExiting(false);
+			}, 150);
+		} else {
+			setIsColumnExiting(false);
+			setIsColumnCollapsed(false);
+		}
+	};
+
+	const visibleQuestions = useMemo(() => allQuestions.filter(q => !hiddenQuestionIds.has(q.id)), [allQuestions, hiddenQuestionIds]);
+
+	// Columns clamp long answers to 10–20rem with ellipsis; key questions render as chips
+	const tableColumns = useMemo(
+		() =>
+			visibleQuestions.map(q => {
+				const base = { key: q.id, header: q.title, minWidth: "10rem", maxWidth: "20rem" };
+				return keyQuestionIds.has(q.id) ? { ...base, render: renderKeyAnswer } : { ...base, ellipsis: true };
+			}),
+		[visibleQuestions, keyQuestionIds]
+	);
+
+	const tableData = useMemo(
+		() =>
+			responseDetails.map(response => {
+				const answerMap = new Map<string, string>();
+				response.sections.forEach(section => {
+					section.answerDetails.forEach(detail => {
+						answerMap.set(detail.question.id, detail.payload?.displayValue ?? "-");
+					});
+				});
+				return Object.fromEntries(visibleQuestions.map(q => [q.id, answerMap.get(q.id) ?? "-"]));
+			}),
+		[responseDetails, visibleQuestions]
+	);
+
+	const handleToggleQuestion = (questionId: string) => {
+		setHiddenQuestionIds(prev => {
+			const next = new Set(prev);
+			if (next.has(questionId)) next.delete(questionId);
+			else next.add(questionId);
+			return next;
+		});
+	};
+
+	const handleToggleSection = (questionIds: string[], allVisible: boolean) => {
+		setHiddenQuestionIds(prev => {
+			const next = new Set(prev);
+			if (allVisible) questionIds.forEach(id => next.add(id));
+			else questionIds.forEach(id => next.delete(id));
+			return next;
+		});
+	};
+
+	// ErrorToast
+	const withErrorToast = <T,>(errorTitle: string, run: () => Promise<T>): Promise<T> =>
+		run().catch((error: unknown) => {
+			pushToast({ title: errorTitle, description: error instanceof Error ? error.message : String(error), variant: "error" });
+			throw error;
+		});
+
+	const handleCreateView = (): Promise<ViewsViewResponse> => withErrorToast("新增分頁失敗", () => createView.mutateAsync());
+
+	const handleDuplicateView = (viewId: string): Promise<ViewsViewResponse> => withErrorToast("建立副本失敗", () => duplicateView.mutateAsync(viewId));
+
+	const handleRenameView = (viewId: string, title: string): Promise<ViewsViewResponse> => withErrorToast("重新命名失敗", () => updateView.mutateAsync({ viewId, req: { title } }));
+
+	const handleLockView = (viewId: string): Promise<ViewsViewResponse> => withErrorToast("鎖定分頁失敗", () => lockView.mutateAsync(viewId));
+
+	const handleUnlockView = (viewId: string): Promise<ViewsViewResponse> => withErrorToast("解鎖分頁失敗", () => unlockView.mutateAsync(viewId));
+
+	const handleDeleteView = (viewId: string): Promise<void> => withErrorToast("刪除分頁失敗", () => deleteView.mutateAsync(viewId));
+
+	const handleReorderViews = (newViews: ViewsViewResponse[]) => {
+		const reordered = newViews.map((view, index) => ({ ...view, order: index }));
+		queryClient.setQueryData(formKeys.views(MOCK_FORM_ID), reordered);
+		reordered.forEach(view => {
+			const previous = views.find(v => v.id === view.id);
+			if (previous && previous.order !== view.order) {
+				updateView.mutate(
+					{ viewId: view.id, req: { order: view.order } },
+					{ onError: (error: unknown) => pushToast({ title: "排序更新失敗", description: error instanceof Error ? error.message : String(error), variant: "error" }) }
+				);
+			}
+		});
+	};
 
 	return (
 		<AdminLayout fixedHeight>
 			{meta}
 			<section className={styles.page} aria-label={`${orgSlug} member data`}>
-				<h1 className={styles.title}>formTitle</h1>
+				<h1 className={styles.title}>{formTitle}</h1>
 				<div className={styles.panel}>
 					<div className={styles.controls}>
 						<div className={styles.tabRow}>
-							<ViewTabDropdown onSelect={setSelectedView} />
-							{selectedView && <span className={styles.activeViewLabel}>{selectedView.title}</span>}
+							<ViewTabDropdown
+								views={views}
+								activeViewId={activeView?.id ?? null}
+								onSelect={view => selectViewInUrl(view.id)}
+								onCreateView={handleCreateView}
+								onDuplicateView={handleDuplicateView}
+								onRenameView={handleRenameView}
+								onLockView={handleLockView}
+								onUnlockView={handleUnlockView}
+								onDeleteView={handleDeleteView}
+								onReorderViews={handleReorderViews}
+							/>
 						</div>
 
-						<div className={styles.chip}>
-							<span>Column</span>
-							<Hash size={16} className={styles.chipIcon} />
-						</div>
+						<ColumnRow
+							sectionsData={sectionsData}
+							hiddenQuestionIds={hiddenQuestionIds}
+							onToggleQuestion={handleToggleQuestion}
+							onToggleSection={handleToggleSection}
+							isCollapsed={isColumnCollapsed}
+							isExiting={isColumnExiting}
+							onToggleCollapse={handleColumnToggle}
+						/>
 					</div>
 
 					<div className={styles.contentCard}>
-						<div className={styles.tableWrapper}>
-							<Table data={[]} borderStyle="full" />
+						<div ref={tableWrapperRef} className={styles.tableWrapper}>
+							<Table className={styles.ViewTable} data={tableData} columns={tableColumns} borderStyle="horizontal" stickyHeader showRowNumber  />
 						</div>
 					</div>
 				</div>

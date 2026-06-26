@@ -10,6 +10,16 @@ import type {
 } from "@nycu-sdc/core-system-sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+export const useFormResponsesWithDetails = (formId: string | undefined) =>
+	useQuery<ResponsesGetFormResponse[]>({
+		queryKey: [...formKeys.responses(formId ?? ""), "detailed"],
+		queryFn: async () => {
+			const list = await api.listFormResponses(formId!);
+			return Promise.all(list.responses.map(r => api.getFormResponse(formId!, r.id)));
+		},
+		enabled: !!formId
+	});
+
 export const useFormResponses = (formId: string | undefined, enabled = true) =>
 	useQuery<ResponsesListResponse>({
 		queryKey: formKeys.responses(formId ?? ""),

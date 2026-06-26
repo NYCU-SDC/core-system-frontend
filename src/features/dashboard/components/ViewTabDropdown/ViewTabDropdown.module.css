@@ -7,7 +7,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 0.625rem;
-	padding: 0.5rem 1rem;
+	padding: 0.5rem 0.75rem;
 	border: 0;
 	border-radius: 0.1875rem;
 	background: var(--selection);
@@ -55,15 +55,18 @@
 	animation: dropdownIn 0.15s ease;
 }
 
-/* ── List items ─────────────────────────────────────────── */
+/* ── Row base (list items + submenu items) ──────────────── */
 
 .item,
-.addItem {
+.addItem,
+.submenuItem {
 	display: flex;
 	align-items: center;
-	padding: 0.275rem 0.625rem 0.275rem 0.75rem;
+	justify-content: space-between;
+	padding: 0.3rem 0.625rem 0.3rem 0.75rem;
 	background: transparent;
 	color: var(--color-heading);
+	font-size: 1rem;
 	line-height: 1;
 	cursor: pointer;
 	user-select: none;
@@ -72,7 +75,14 @@
 		color 0.2s ease;
 }
 
-.item:not(.itemLocked):hover,
+/* ── List items ─────────────────────────────────────────── */
+
+.item {
+	position: relative;
+	gap: 0.5rem;
+}
+
+.item:hover,
 .addItem:hover {
 	background: var(--background-color-tertiary);
 	border-radius: 0.1875rem;
@@ -81,13 +91,8 @@
 	z-index: 102;
 }
 
-.item {
-	position: relative;
-	gap: 0.5rem;
-}
-
-.item + .item {
-	border-top: 0.085rem solid var(--background-color-tertiary);
+.sortableWrapper + .sortableWrapper {
+	border-top: 0.0625rem solid var(--background-color-tertiary);
 }
 
 /* ── Drag handle ────────────────────────────────────────── */
@@ -123,7 +128,51 @@
 	font-size: 1rem;
 }
 
-/* ── Lock icon, plus icon ──────────────────────────────────────────── */
+.itemTitleInput {
+	flex: 1;
+	min-width: 0;
+	font-size: 1rem;
+	background: transparent;
+	border: 0.0625rem solid var(--color);
+	border-radius: 0.25rem;
+	color: var(--foreground);
+	padding: 0.125rem 0.25rem;
+	outline: none;
+	line-height: 1;
+}
+
+.itemTitleInputError {
+	border-color: var(--red);
+}
+
+.itemDragOver {
+	background: var(--background-color-tertiary);
+	border-radius: 0.1875rem;
+}
+
+/* ── Icon buttons (lock, more) ──────────────────────────── */
+
+.lockButton,
+.moreButton {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 0.25rem;
+	border: 0;
+	border-radius: 0.1875rem;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.lockButton:hover,
+.moreButton:hover {
+	background: var(--selection);
+	color: var(--foreground);
+}
 
 .lockIcon,
 .plusIcon {
@@ -140,25 +189,6 @@
 	flex-shrink: 0;
 }
 
-.moreButton {
-	display: flex;
-	align-items: center;
-	padding: 0.25rem;
-	border: 0;
-	border-radius: 0.1875rem;
-	background: transparent;
-	color: inherit;
-	cursor: pointer;
-	transition:
-		background-color 0.2s ease,
-		color 0.2s ease;
-}
-
-.moreButton:hover {
-	background: var(--selection);
-	color: var(--foreground);
-}
-
 .submenu {
 	position: absolute;
 	top: 0;
@@ -172,21 +202,10 @@
 }
 
 .submenuItem {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
 	gap: 1rem;
 	width: 100%;
-	padding: 0.35rem 0.625rem 0.35rem 0.75rem;
 	border: 0;
-	background: transparent;
-	color: var(--color-body);
-	line-height: 1;
 	text-align: left;
-	cursor: pointer;
-	transition:
-		background-color 0.2s ease,
-		color 0.2s ease;
 }
 
 .submenuItem + .submenuItem {
@@ -194,9 +213,14 @@
 }
 
 .submenuItem:hover {
-	background: var(--background-color-overlay);
+	background: var(--background-color-tertiary);
 	color: var(--foreground);
 }
+
+.submenuItemDanger:hover {
+	color: var(--red);
+}
+
 .submenuItemIcon {
 	display: flex;
 	align-items: center;
@@ -206,8 +230,7 @@
 /* ── 新增分頁 ────────────────────────────────────────────── */
 
 .addItem {
-	justify-content: space-between;
 	width: 100%;
 	border: 0;
-	border-top: 0.0625rem solid var(--background-color-tertiary);
+	box-shadow: 0 -0.0625rem 0 var(--background-color-tertiary);
 }
