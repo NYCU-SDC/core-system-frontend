@@ -15,6 +15,9 @@ import type {
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse,
+	FormsHighlightPatchRequest,
+	FormsHighlightRequest,
+	FormsHighlightResponse,
 	FormsQuestionRequest,
 	FormsQuestionResponse,
 	FormsSection,
@@ -38,16 +41,20 @@ import {
 	formWorkflowGetWorkflow,
 	formWorkflowUpdateWorkflow,
 	formsArchiveForm,
+	formsClearFormHighlight,
 	formsCreateQuestion,
 	formsDeleteForm,
 	formsDeleteQuestion,
 	formsGetFormById,
 	formsGetFormFonts,
+	formsGetFormHighlight,
 	formsGetGoogleSheetEmail,
 	formsListSections,
 	formsPublishForm,
+	formsSetFormHighlight,
 	formsUnarchiveForm,
 	formsUpdateForm,
+	formsUpdateFormHighlight,
 	formsUpdateQuestion,
 	formsUpdateSection,
 	formsUploadFormCoverImage,
@@ -135,6 +142,29 @@ export const getFormFonts = async (): Promise<FormsFont[]> => {
 	const res = await formsGetFormFonts(defaultRequestOptions);
 	assertOk(res.status, "Failed to load fonts", res.data);
 	return res.data;
+};
+
+export const getFormHighlight = async (formId: string): Promise<FormsHighlightResponse> => {
+	const res = await formsGetFormHighlight(formId, defaultRequestOptions);
+	assertOk(res.status, "Failed to load form highlight", res.data);
+	return res.data as FormsHighlightResponse;
+};
+
+export const setFormHighlight = async (formId: string, req: FormsHighlightRequest): Promise<FormsHighlightResponse> => {
+	const res = await formsSetFormHighlight(formId, req, defaultRequestOptions);
+	assertOk(res.status, "Failed to save form highlight", res.data);
+	return res.data as FormsHighlightResponse;
+};
+
+export const updateFormHighlight = async (formId: string, req: FormsHighlightPatchRequest): Promise<FormsHighlightResponse> => {
+	const res = await formsUpdateFormHighlight(formId, req, defaultRequestOptions);
+	assertOk(res.status, "Failed to update form highlight", res.data);
+	return res.data as FormsHighlightResponse;
+};
+
+export const clearFormHighlight = async (formId: string): Promise<void> => {
+	const res = await formsClearFormHighlight(formId, defaultRequestOptions);
+	assertOk(res.status, "Failed to clear form highlight", res.data);
 };
 
 // ── Sections & Questions ──────────────────────────────────────────────────

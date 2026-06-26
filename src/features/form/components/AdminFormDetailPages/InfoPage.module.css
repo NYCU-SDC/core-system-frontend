@@ -23,6 +23,134 @@
 	margin: 0;
 }
 
+.highlightSection {
+	display: flex;
+	width: min(40.75rem, 100%);
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 1rem;
+}
+
+.highlightHeader {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.highlightTitle {
+	margin: 0;
+	color: var(--color-heading);
+}
+
+.highlightHeaderActions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.addHighlightButton {
+	display: inline-flex;
+	width: 2.375rem;
+	height: 2.375rem;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	border-radius: 0.1875rem;
+	background-color: var(--foreground);
+	color: var(--background-color-primary);
+	clip-path: polygon(0.4375rem 0, 100% 0, 100% calc(100% - 0.4375rem), calc(100% - 0.4375rem) 100%, 0 100%, 0 0.4375rem);
+}
+
+.addHighlightButton:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.highlightEditor {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 1rem;
+	max-width: 100%;
+}
+
+.highlightTitleRow {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	width: 100%;
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+
+.highlightInput {
+	flex: 1 1 25rem;
+	min-width: min(25rem, 100%);
+}
+
+.highlightPickerRow {
+	display: flex;
+	align-items: flex-start;
+	gap: 1.5rem;
+	width: 100%;
+	flex-wrap: wrap;
+}
+
+.highlightStats {
+	display: flex;
+	gap: 1.4375rem;
+	min-height: 5.25rem;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.highlightStat {
+	display: flex;
+	width: 5.25rem;
+	height: 5.25rem;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	background-color: var(--selection);
+	color: var(--color-heading);
+}
+
+.highlightStat > strong {
+	font-size: 2rem;
+	line-height: 1.5;
+}
+
+.highlightStat > span {
+	max-width: 100%;
+	padding-inline: 0.25rem;
+	font-size: 0.875rem;
+	line-height: 1;
+	text-align: center;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.highlightStatsEmpty {
+	margin: 0;
+	color: var(--color-caption);
+	font-size: 0.875rem;
+}
+
+.highlightSelect {
+	width: 10.3125rem;
+}
+
+.highlightDraftNote {
+	margin: 0;
+	color: var(--color-caption);
+	font-size: 0.875rem;
+}
+
 .switch {
 	display: flex;
 }

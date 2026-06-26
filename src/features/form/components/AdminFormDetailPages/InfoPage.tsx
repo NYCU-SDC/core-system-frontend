@@ -1,12 +1,13 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
+import { useClearFormHighlight, useFormHighlight, useSetFormHighlight, useUpdateFormHighlight } from "@/features/form/hooks/useFormHighlight";
 import { useFormResponses } from "@/features/form/hooks/useFormResponses";
 import { useArchiveForm, useDeleteForm, useUnarchiveForm, useUpdateForm } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
-import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
+import { Button, Input, LoadingSpinner, MarkdownEditor, SearchableSelect, Switch, Tooltip, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror } from "@/shared/utils/proseMirror";
 import type { FormsFormRequestUpdate, FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
-import { Archive, Trash2 } from "lucide-react";
+import { Archive, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./InfoPage.module.css";
@@ -25,12 +26,17 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const unarchiveFormMutation = useUnarchiveForm(orgSlug);
 	const deleteFormMutation = useDeleteForm(orgSlug);
 	const sectionsQuery = useSections(formData.id);
+	const highlightQuery = useFormHighlight(formData.id);
+	const setHighlightMutation = useSetFormHighlight(formData.id);
+	const updateHighlightMutation = useUpdateFormHighlight(formData.id);
+	const clearHighlightMutation = useClearFormHighlight(formData.id);
 	const sendResponseEmailSupported = "sendResponseEmail" in formData;
 	const sendResponseEmailWarningShownRef = useRef(false);
 
 	// derive counts
-	const allResponses = responsesQuery.data?.responses ?? [];
-	const submittedCount = allResponses.length;
+	const totalResponseCount = responsesQuery.data?.totalCount ?? 0;
+	const draftResponseCount = responsesQuery.data?.draftCount ?? 0;
+	const submittedResponseCount = responsesQuery.data?.submittedCount ?? 0;
 
 	// derive all questions across all sections
 	const allQuestions = useMemo(() => {
@@ -39,6 +45,41 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 
 	const allRequired = allQuestions.length > 0 && allQuestions.every(q => q.question.required);
 	const [isSettingRequired, setIsSettingRequired] = useState(false);
+	const [isHighlightEditorOpen, setIsHighlightEditorOpen] = useState(false);
+	const [highlightTitle, setHighlightTitle] = useState("");
+	const [selectedHighlightSectionId, setSelectedHighlightSectionId] = useState("");
+	const [selectedHighlightQuestionId, setSelectedHighlightQuestionId] = useState("");
+	const sectionOptions = useMemo(() => sectionsQuery.data?.map(bundle => ({ value: bundle.section.id, label: bundle.section.title || "未命名區段" })) ?? [], [sectionsQuery.data]);
+	const selectedHighlightSection = useMemo(() => sectionsQuery.data?.find(bundle => bundle.section.id === selectedHighlightSectionId), [sectionsQuery.data, selectedHighlightSectionId]);
+	const highlightQuestionOptions = useMemo(
+		() => selectedHighlightSection?.questions?.map((question, index) => ({ value: question.id, label: `Q${index + 1} ${question.title || "未命名問題"}` })) ?? [],
+		[selectedHighlightSection]
+	);
+	const selectedHighlightQuestion = useMemo(
+		() => selectedHighlightSection?.questions?.find(question => question.id === selectedHighlightQuestionId),
+		[selectedHighlightQuestionId, selectedHighlightSection]
+	);
+	const selectedHighlightQuestionTitle = selectedHighlightQuestion?.title ?? (highlightQuery.data?.questionId === selectedHighlightQuestionId ? (highlightQuery.data.questionTitle ?? "") : "");
+	const canResetHighlightTitle = !!selectedHighlightQuestionTitle && highlightTitle !== selectedHighlightQuestionTitle;
+	const highlightChoiceStats = useMemo(() => {
+		if (highlightQuery.data?.questionId === selectedHighlightQuestionId) {
+			return highlightQuery.data.choices.map(choice => ({
+				id: choice.choiceId,
+				title: choice.name,
+				count: choice.count
+			}));
+		}
+
+		return (
+			selectedHighlightQuestion?.choices?.map(choice => ({
+				id: choice.id,
+				title: choice.name,
+				count: 0
+			})) ?? []
+		);
+	}, [highlightQuery.data, selectedHighlightQuestion, selectedHighlightQuestionId]);
+	const highlightIsConfigured = !!highlightQuery.data?.questionId;
+	const highlightIsPending = setHighlightMutation.isPending || updateHighlightMutation.isPending || clearHighlightMutation.isPending;
 
 	// local draft state for settings
 	const [title, setTitle] = useState(formData.title ?? "");
@@ -126,6 +167,72 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		pushToast,
 		isArchived
 	]);
+
+	useEffect(() => {
+		const highlight = highlightQuery.data;
+		if (!highlight) return;
+
+		if (!highlight.questionId) {
+			setIsHighlightEditorOpen(false);
+			setHighlightTitle("");
+			setSelectedHighlightSectionId("");
+			setSelectedHighlightQuestionId("");
+			return;
+		}
+
+		setIsHighlightEditorOpen(true);
+		setHighlightTitle(highlight.displayTitle ?? highlight.questionTitle ?? "");
+		setSelectedHighlightQuestionId(highlight.questionId);
+
+		const matchingSection = sectionsQuery.data?.find(bundle => bundle.questions?.some(question => question.id === highlight.questionId));
+		if (matchingSection) {
+			setSelectedHighlightSectionId(matchingSection.section.id);
+		}
+	}, [highlightQuery.data, sectionsQuery.data]);
+
+	const handleStartHighlightSetup = () => {
+		if (isArchived) return;
+		setIsHighlightEditorOpen(true);
+	};
+
+	const handleHighlightSectionChange = (sectionId: string) => {
+		setSelectedHighlightSectionId(sectionId);
+		setSelectedHighlightQuestionId("");
+	};
+
+	const handleSaveHighlight = () => {
+		if (!selectedHighlightQuestionId) {
+			pushToast({ title: "請先選擇精選問題", variant: "warning" });
+			return;
+		}
+
+		const displayTitle = highlightTitle.trim() ? highlightTitle.trim() : null;
+		const currentQuestionId = highlightQuery.data?.questionId ?? null;
+		const mutationOptions = {
+			onSuccess: () => pushToast({ title: "精選問題已儲存", variant: "success" }),
+			onError: (error: Error) => pushToast({ title: "精選問題儲存失敗", description: error.message, variant: "error" })
+		};
+
+		if (currentQuestionId !== selectedHighlightQuestionId) {
+			setHighlightMutation.mutate({ questionId: selectedHighlightQuestionId, displayTitle }, mutationOptions);
+			return;
+		}
+
+		updateHighlightMutation.mutate({ displayTitle }, mutationOptions);
+	};
+
+	const handleClearHighlight = () => {
+		clearHighlightMutation.mutate(undefined, {
+			onSuccess: () => {
+				setIsHighlightEditorOpen(false);
+				setHighlightTitle("");
+				setSelectedHighlightSectionId("");
+				setSelectedHighlightQuestionId("");
+				pushToast({ title: "精選問題已清除", variant: "success" });
+			},
+			onError: error => pushToast({ title: "精選問題清除失敗", description: error.message, variant: "error" })
+		});
+	};
 
 	const handleToggleAllRequired = async (checked: boolean) => {
 		if (isArchived) return;
@@ -217,10 +324,97 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				<section className={styles.seciton}>
 					<div className={`${styles.count}`}>
 						<div className={`${styles.item}`}>
-							{responsesQuery.isLoading ? <LoadingSpinner /> : <h2 className={`${styles.value}`}>{submittedCount}</h2>}
+							{responsesQuery.isLoading ? <LoadingSpinner /> : <h2 className={`${styles.value}`}>{totalResponseCount}</h2>}
+							<p className={styles.value}>總回覆數</p>
+						</div>
+						<div className={`${styles.item}`}>
+							{responsesQuery.isLoading ? <LoadingSpinner /> : <h2 className={`${styles.value}`}>{draftResponseCount}</h2>}
+							<p className={styles.value}>填寫中</p>
+						</div>
+						<div className={`${styles.item}`}>
+							{responsesQuery.isLoading ? <LoadingSpinner /> : <h2 className={`${styles.value}`}>{submittedResponseCount}</h2>}
 							<p className={styles.value}>已提交</p>
 						</div>
 					</div>
+				</section>
+				<section className={styles.highlightSection}>
+					<div className={styles.highlightHeader}>
+						<h3 className={styles.highlightTitle}>精選問題</h3>
+						<div className={styles.highlightHeaderActions}>
+							{isHighlightEditorOpen ? (
+								<>
+									<Button
+										type="button"
+										icon={Save}
+										onClick={handleSaveHighlight}
+										disabled={isArchived || !selectedHighlightQuestionId}
+										processing={setHighlightMutation.isPending || updateHighlightMutation.isPending}
+									>
+										儲存
+									</Button>
+									{highlightIsConfigured && (
+										<Button type="button" variant="secondary" onClick={handleClearHighlight} disabled={isArchived} processing={clearHighlightMutation.isPending}>
+											清除
+										</Button>
+									)}
+								</>
+							) : (
+								<button className={styles.addHighlightButton} type="button" onClick={handleStartHighlightSetup} disabled={isArchived} aria-label="新增精選問題">
+									<Plus size={24} />
+								</button>
+							)}
+						</div>
+					</div>
+					{isHighlightEditorOpen && (
+						<div className={styles.highlightEditor}>
+							<div className={styles.highlightTitleRow}>
+								<Input
+									className={styles.highlightInput}
+									placeholder="顯示標題"
+									value={highlightTitle}
+									onChange={event => setHighlightTitle(event.target.value)}
+									disabled={isArchived || highlightIsPending}
+								/>
+								<Button type="button" icon={RotateCcw} onClick={() => setHighlightTitle(selectedHighlightQuestionTitle)} disabled={isArchived || highlightIsPending || !canResetHighlightTitle}>
+									重置為問題標題
+								</Button>
+							</div>
+							<div className={styles.highlightPickerRow}>
+								<div className={styles.highlightStats}>
+									{highlightQuery.isLoading ? (
+										<LoadingSpinner />
+									) : highlightChoiceStats.length > 0 ? (
+										highlightChoiceStats.map(stat => (
+											<div className={styles.highlightStat} key={stat.id}>
+												<strong>{stat.count}</strong>
+												<span>{stat.title}</span>
+											</div>
+										))
+									) : (
+										<p className={styles.highlightStatsEmpty}>選擇有選項的問題後顯示統計</p>
+									)}
+								</div>
+								<div className={styles.highlightSelect}>
+									<SearchableSelect
+										placeholder="Section 選擇"
+										options={sectionOptions}
+										value={selectedHighlightSectionId || undefined}
+										onValueChange={handleHighlightSectionChange}
+										disabled={isArchived || highlightIsPending || sectionsQuery.isLoading}
+									/>
+								</div>
+								<div className={styles.highlightSelect}>
+									<SearchableSelect
+										placeholder="問題選擇"
+										options={highlightQuestionOptions}
+										value={selectedHighlightQuestionId || undefined}
+										onValueChange={setSelectedHighlightQuestionId}
+										disabled={isArchived || highlightIsPending || !selectedHighlightSectionId}
+									/>
+								</div>
+							</div>
+						</div>
+					)}
 				</section>
 				<h3>表單設定</h3>
 				<Input label="表單標題" placeholder="輸入表單標題" value={title} onChange={e => setTitle(e.target.value)} disabled={isArchived} />
