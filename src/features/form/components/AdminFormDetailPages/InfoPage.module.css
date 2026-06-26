@@ -93,7 +93,7 @@
 
 .highlightResetButton {
 	flex: 0 0 auto;
-	min-width: 11.5rem;
+	min-width: 12rem;
 }
 
 .highlightPickerRow {
@@ -160,8 +160,8 @@
 }
 
 .highlightSelect {
-	width: 13.75rem;
-	min-width: 13.75rem;
+	width: 14rem;
+	min-width: 14rem;
 }
 
 .highlightDraftNote {
