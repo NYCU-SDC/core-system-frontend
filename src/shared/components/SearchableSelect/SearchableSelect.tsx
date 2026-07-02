@@ -2,7 +2,7 @@ import * as Label from "@radix-ui/react-label";
 import * as RadixSelect from "@radix-ui/react-select";
 import { ChevronDown, Search } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import styles from "./SearchableSelect.module.css";
 
 export interface SearchableSelectOption {
@@ -12,15 +12,17 @@ export interface SearchableSelectOption {
 }
 
 export interface SearchableSelectProps extends ComponentPropsWithoutRef<typeof RadixSelect.Root> {
+	id?: string;
 	label?: string;
 	placeholder?: string;
 	options: SearchableSelectOption[];
 	themeColor?: string;
 }
 
-export const SearchableSelect = ({ label, placeholder, options, themeColor, ...props }: SearchableSelectProps) => {
+export const SearchableSelect = ({ id, label, placeholder, options, themeColor, ...props }: SearchableSelectProps) => {
 	const [searchQuery, setSearchQuery] = useState("");
-	const triggerId = `select-${label?.replace(/\s/g, "-").toLowerCase()}`;
+	const fallbackId = useId();
+	const triggerId = id ?? (label ? `select-${label.replace(/\s/g, "-").toLowerCase()}` : `select-${fallbackId}`);
 
 	const filteredOptions = options.filter(option => option.label.toLowerCase().includes(searchQuery.toLowerCase()));
 

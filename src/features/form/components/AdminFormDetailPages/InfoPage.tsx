@@ -16,6 +16,14 @@ interface AdminFormInfoPageProps {
 	formData: FormsFormResponse;
 }
 
+type HighlightDraft = {
+	baseKey: string;
+	isOpen: boolean;
+	title: string;
+	sectionId: string;
+	questionId: string;
+};
+
 export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const { pushToast } = useToast();
 	const navigate = useNavigate();
@@ -45,10 +53,20 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 
 	const allRequired = allQuestions.length > 0 && allQuestions.every(q => q.question.required);
 	const [isSettingRequired, setIsSettingRequired] = useState(false);
-	const [isHighlightEditorOpen, setIsHighlightEditorOpen] = useState(false);
-	const [highlightTitle, setHighlightTitle] = useState("");
-	const [selectedHighlightSectionId, setSelectedHighlightSectionId] = useState("");
-	const [selectedHighlightQuestionId, setSelectedHighlightQuestionId] = useState("");
+	const [highlightDraft, setHighlightDraft] = useState<HighlightDraft | null>(null);
+	const highlightQuestionId = highlightQuery.data?.questionId ?? "";
+	const highlightBaseTitle = highlightQuery.data?.displayTitle ?? highlightQuery.data?.questionTitle ?? "";
+	const highlightDraftBaseKey = [highlightQuestionId || "none", highlightQuery.data?.questionTitle ?? "", highlightQuery.data?.displayTitle ?? ""].join("|");
+	const activeHighlightDraft = highlightDraft?.baseKey === highlightDraftBaseKey ? highlightDraft : null;
+	const highlightIsConfigured = !!highlightQuestionId;
+	const highlightConfiguredSectionId = useMemo(() => {
+		if (!highlightQuestionId) return "";
+		return sectionsQuery.data?.find(bundle => bundle.questions?.some(question => question.id === highlightQuestionId))?.section.id ?? "";
+	}, [highlightQuestionId, sectionsQuery.data]);
+	const isHighlightEditorOpen = activeHighlightDraft?.isOpen ?? highlightIsConfigured;
+	const highlightTitle = activeHighlightDraft?.title ?? highlightBaseTitle;
+	const selectedHighlightSectionId = activeHighlightDraft?.sectionId ?? highlightConfiguredSectionId;
+	const selectedHighlightQuestionId = activeHighlightDraft?.questionId ?? highlightQuestionId;
 	const sectionOptions = useMemo(() => sectionsQuery.data?.map(bundle => ({ value: bundle.section.id, label: bundle.section.title || "未命名區段" })) ?? [], [sectionsQuery.data]);
 	const selectedHighlightSection = useMemo(() => sectionsQuery.data?.find(bundle => bundle.section.id === selectedHighlightSectionId), [sectionsQuery.data, selectedHighlightSectionId]);
 	const highlightQuestionOptions = useMemo(
@@ -79,8 +97,17 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		);
 	}, [highlightQuery.data, selectedHighlightQuestion, selectedHighlightQuestionId]);
 	const highlightHasManyChoices = highlightChoiceStats.length > 4;
-	const highlightIsConfigured = !!highlightQuery.data?.questionId;
 	const highlightIsPending = setHighlightMutation.isPending || updateHighlightMutation.isPending || clearHighlightMutation.isPending;
+	const updateHighlightDraft = (patch: Partial<Omit<HighlightDraft, "baseKey">>) => {
+		setHighlightDraft(current => ({
+			baseKey: highlightDraftBaseKey,
+			isOpen: current?.baseKey === highlightDraftBaseKey ? current.isOpen : isHighlightEditorOpen,
+			title: current?.baseKey === highlightDraftBaseKey ? current.title : highlightTitle,
+			sectionId: current?.baseKey === highlightDraftBaseKey ? current.sectionId : selectedHighlightSectionId,
+			questionId: current?.baseKey === highlightDraftBaseKey ? current.questionId : selectedHighlightQuestionId,
+			...patch
+		}));
+	};
 
 	// local draft state for settings
 	const [title, setTitle] = useState(formData.title ?? "");
@@ -169,36 +196,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		isArchived
 	]);
 
-	useEffect(() => {
-		const highlight = highlightQuery.data;
-		if (!highlight) return;
-
-		if (!highlight.questionId) {
-			setIsHighlightEditorOpen(false);
-			setHighlightTitle("");
-			setSelectedHighlightSectionId("");
-			setSelectedHighlightQuestionId("");
-			return;
-		}
-
-		setIsHighlightEditorOpen(true);
-		setHighlightTitle(highlight.displayTitle ?? highlight.questionTitle ?? "");
-		setSelectedHighlightQuestionId(highlight.questionId);
-
-		const matchingSection = sectionsQuery.data?.find(bundle => bundle.questions?.some(question => question.id === highlight.questionId));
-		if (matchingSection) {
-			setSelectedHighlightSectionId(matchingSection.section.id);
-		}
-	}, [highlightQuery.data, sectionsQuery.data]);
-
 	const handleStartHighlightSetup = () => {
 		if (isArchived) return;
-		setIsHighlightEditorOpen(true);
+		updateHighlightDraft({ isOpen: true });
 	};
 
 	const handleHighlightSectionChange = (sectionId: string) => {
-		setSelectedHighlightSectionId(sectionId);
-		setSelectedHighlightQuestionId("");
+		updateHighlightDraft({ sectionId, questionId: "" });
 	};
 
 	const handleSaveHighlight = () => {
@@ -225,10 +229,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const handleClearHighlight = () => {
 		clearHighlightMutation.mutate(undefined, {
 			onSuccess: () => {
-				setIsHighlightEditorOpen(false);
-				setHighlightTitle("");
-				setSelectedHighlightSectionId("");
-				setSelectedHighlightQuestionId("");
+				updateHighlightDraft({ isOpen: false, title: "", sectionId: "", questionId: "" });
 				pushToast({ title: "精選問題已清除", variant: "success" });
 			},
 			onError: error => pushToast({ title: "精選問題清除失敗", description: error.message, variant: "error" })
@@ -348,13 +349,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 										type="button"
 										icon={Save}
 										onClick={handleSaveHighlight}
-										disabled={isArchived || !selectedHighlightQuestionId}
+										disabled={isArchived || highlightIsPending || !selectedHighlightQuestionId}
 										processing={setHighlightMutation.isPending || updateHighlightMutation.isPending}
 									>
 										儲存
 									</Button>
 									{highlightIsConfigured && (
-										<Button type="button" variant="secondary" onClick={handleClearHighlight} disabled={isArchived} processing={clearHighlightMutation.isPending}>
+										<Button type="button" variant="secondary" onClick={handleClearHighlight} disabled={isArchived || highlightIsPending} processing={clearHighlightMutation.isPending}>
 											清除
 										</Button>
 									)}
@@ -373,14 +374,14 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 									className={styles.highlightInput}
 									placeholder="顯示標題"
 									value={highlightTitle}
-									onChange={event => setHighlightTitle(event.target.value)}
+									onChange={event => updateHighlightDraft({ title: event.target.value })}
 									disabled={isArchived || highlightIsPending}
 								/>
 								<Button
 									type="button"
 									className={styles.highlightResetButton}
 									icon={RotateCcw}
-									onClick={() => setHighlightTitle(selectedHighlightQuestionTitle)}
+									onClick={() => updateHighlightDraft({ title: selectedHighlightQuestionTitle })}
 									disabled={isArchived || highlightIsPending || !canResetHighlightTitle}
 								>
 									重置為問題標題
@@ -404,6 +405,7 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 								<div className={styles.highlightPickerControls}>
 									<div className={styles.highlightSelect}>
 										<SearchableSelect
+											id="highlight-section-select"
 											placeholder="Section 選擇"
 											options={sectionOptions}
 											value={selectedHighlightSectionId || undefined}
@@ -413,10 +415,11 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 									</div>
 									<div className={styles.highlightSelect}>
 										<SearchableSelect
+											id="highlight-question-select"
 											placeholder="問題選擇"
 											options={highlightQuestionOptions}
 											value={selectedHighlightQuestionId || undefined}
-											onValueChange={setSelectedHighlightQuestionId}
+											onValueChange={questionId => updateHighlightDraft({ questionId })}
 											disabled={isArchived || highlightIsPending || !selectedHighlightSectionId}
 										/>
 									</div>
