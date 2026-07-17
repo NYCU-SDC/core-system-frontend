@@ -40,6 +40,7 @@ export const AdminFormDetailPage = () => {
 	const isArchived = formQuery.data?.status === "ARCHIVED";
 
 	const handleTabChange = (tab: TabType) => {
+		if (isArchived && (tab === "edit" || tab === "design")) return;
 		setActiveTab(tab);
 		navigate(`/orgs/${orgSlug}/forms/${formid}/${tab}`);
 	};

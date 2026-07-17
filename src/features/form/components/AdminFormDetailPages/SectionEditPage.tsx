@@ -1,5 +1,6 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
+import { useUndoableEditor } from "@/features/form/hooks/useUndoableEditor";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
 import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
@@ -31,6 +32,46 @@ type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
 	oauthConnect?: Question["oauthProvider"];
 };
 
+type EditorDraft = {
+	questions: Question[];
+	questionIds: (string | undefined)[];
+	sectionTitleDraft: string;
+	sectionDescriptionDraft: ProseMirrorLikeDocument;
+};
+
+const EMPTY_DRAFT: EditorDraft = {
+	questions: [],
+	questionIds: [],
+	sectionTitleDraft: "",
+	sectionDescriptionDraft: EMPTY_PROSE_MIRROR_DOC
+};
+
+const ensureQuestionClientId = (question: Question): Question => ({
+	...question,
+	clientId: question.clientId ?? uuidv4()
+});
+
+const ensureOptionId = (option: Option): Option => ({
+	...option,
+	id: option.id ?? uuidv4()
+});
+
+const mapApiChoicesToOptions = (choices: FormsQuestionResponse["choices"], existingOptions?: Option[]): Option[] | undefined =>
+	choices?.map((choice, index) =>
+		ensureOptionId({
+			id: choice.id ?? existingOptions?.[index]?.id,
+			label: choice.name ?? "",
+			isOther: choice.isOther ?? false
+		})
+	);
+
+const mapApiChoicesToDetailOptions = (choices: FormsQuestionResponse["choices"], existingDetailOptions?: Question["detailOptions"]): Question["detailOptions"] | undefined =>
+	choices?.map((choice, index) => ({
+		id: choice.id ?? existingDetailOptions?.[index]?.id ?? uuidv4(),
+		label: choice.name ?? "",
+		description: choice.description ?? ""
+	}));
+
 export const AdminSectionEditPage = () => {
 	const { formid, sectionId } = useParams<{ formid: string; sectionId: string }>();
 	const navigate = useNavigate();
@@ -38,8 +79,9 @@ export const AdminSectionEditPage = () => {
 	const orgSlug = useActiveOrgSlug();
 
 	const sectionsQuery = useSections(formid);
-	const section = sectionsQuery.data?.map(response => response.section).find(foundSection => foundSection.id === sectionId);
-	const apiQuestions = (sectionsQuery.data?.flatMap(response => response.questions ?? []).filter(q => q.sectionId === sectionId) ?? []) as FormsQuestionResponse[];
+	const sectionBundle = sectionsQuery.data?.find(response => response.section.id === sectionId);
+	const section = sectionBundle?.section;
+	const apiQuestions = useMemo(() => (sectionBundle?.questions ?? []) as FormsQuestionResponse[], [sectionBundle?.questions]);
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
@@ -56,11 +98,9 @@ export const AdminSectionEditPage = () => {
 	};
 
 	// States
-	const [questions, setQuestions] = useState<Question[]>([]);
-	const [questionIds, setQuestionIds] = useState<(string | undefined)[]>([]);
-	const [clientIds, setClientIds] = useState<string[]>([]);
-	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
-	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState<ProseMirrorLikeDocument>(EMPTY_PROSE_MIRROR_DOC);
+	const { state: draft, setState: setEditorState, replaceState, undo, redo, flushCheckpoint, canUndo, canRedo } = useUndoableEditor<EditorDraft>(EMPTY_DRAFT, { limit: 100 });
+	const { questions, questionIds, sectionTitleDraft, sectionDescriptionDraft } = draft;
+	const clientIds = useMemo(() => questions.map((question, index) => question.clientId ?? `question-${index}`), [questions]);
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
 	const [savedSectionDescription, setSavedSectionDescription] = useState(() => serializeProseMirrorDoc(EMPTY_PROSE_MIRROR_DOC));
 	const questionsRef = useRef<Question[]>([]);
@@ -68,14 +108,51 @@ export const AdminSectionEditPage = () => {
 	const dirtyQuestionIndexesRef = useRef<Set<number>>(new Set());
 	const autosaveTimerRef = useRef<number | null>(null);
 	const isFlushingDirtyQuestionsRef = useRef(false);
+	const initializedSectionIdRef = useRef<string | null>(null);
 	const [dirtyQuestionVersion, setDirtyQuestionVersion] = useState(0);
 	const [newlyAddedIndex, setNewlyAddedIndex] = useState<number | null>(null);
 
 	// Callbacks
-	const setQuestionIdsAndRef = useCallback((nextQuestionIds: (string | undefined)[]) => {
-		questionIdsRef.current = nextQuestionIds;
-		setQuestionIds(nextQuestionIds);
-	}, []);
+	const setQuestions = useCallback(
+		(updater: Question[] | ((prev: Question[]) => Question[]), checkpoint: "immediate" | "debounced" | "none" = "immediate") => {
+			setEditorState(
+				prev => ({
+					...prev,
+					questions: typeof updater === "function" ? (updater as (prev: Question[]) => Question[])(prev.questions) : updater
+				}),
+				{ checkpoint }
+			);
+		},
+		[setEditorState]
+	);
+
+	const setQuestionIdsAndRef = useCallback(
+		(nextQuestionIds: (string | undefined)[], checkpoint: "immediate" | "debounced" | "none" = "immediate") => {
+			questionIdsRef.current = nextQuestionIds;
+			setEditorState(
+				prev => ({
+					...prev,
+					questionIds: nextQuestionIds
+				}),
+				{ checkpoint }
+			);
+		},
+		[setEditorState]
+	);
+
+	const updateQuestionAt = useCallback(
+		(index: number, updater: (question: Question) => Question, checkpoint: "immediate" | "debounced" | "none" = "immediate") => {
+			setQuestions(
+				prev =>
+					prev.map((question, currentIndex) => {
+						if (currentIndex !== index) return question;
+						return ensureQuestionClientId(updater(ensureQuestionClientId(question)));
+					}),
+				checkpoint
+			);
+		},
+		[setQuestions]
+	);
 
 	const markQuestionsDirty = useCallback((indexes: number[]) => {
 		let hasValidIndex = false;
@@ -160,14 +237,36 @@ export const AdminSectionEditPage = () => {
 
 	const handleSectionBlurSave = useCallback(() => {
 		if (!sectionId) return;
+		flushCheckpoint();
 		saveSectionIfChanged(sectionTitleDraft, sectionDescriptionDraft);
-	}, [sectionId, saveSectionIfChanged, sectionTitleDraft, sectionDescriptionDraft]);
+	}, [flushCheckpoint, saveSectionIfChanged, sectionDescriptionDraft, sectionId, sectionTitleDraft]);
+
+	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
+		const base: FormsQuestionRequest = {
+			type: q.type as FormsQuestionRequest["type"],
+			title: q.title,
+			description: toApiProseMirror(q.description) as ProseMirrorDocument,
+			required: q.required ?? false,
+			order
+		};
+
+		if (q.isFromAnswer && q.sourceQuestionId) {
+			base.sourceId = q.sourceQuestionId;
+			delete base.choices;
+		} else if (QUESTION_STRATEGIES[q.type].features.includes("HAS_OPTIONS") && q.options) {
+			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
+		}
+
+		QUESTION_STRATEGIES[q.type].toApiPayload?.(q, base);
+		return base;
+	};
 
 	const flushDirtyQuestions = useCallback(async () => {
 		if (!formid || !sectionId) return;
 		if (isFlushingDirtyQuestionsRef.current) return;
 		if (dirtyQuestionIndexesRef.current.size === 0) return;
 
+		flushCheckpoint();
 		isFlushingDirtyQuestionsRef.current = true;
 		try {
 			while (dirtyQuestionIndexesRef.current.size > 0) {
@@ -219,7 +318,7 @@ export const AdminSectionEditPage = () => {
 							const next = [...prev];
 							next[index] = updated;
 							return next;
-						});
+						}, "none");
 					};
 					if (existingId) {
 						const updated = await updateQuestion.mutateAsync({ questionId: existingId, req });
@@ -229,7 +328,7 @@ export const AdminSectionEditPage = () => {
 						syncQuestionFromApi(res);
 						const nextQuestionIds = [...questionIdsRef.current];
 						nextQuestionIds[index] = res.id;
-						setQuestionIdsAndRef(nextQuestionIds);
+						setQuestionIdsAndRef(nextQuestionIds, "none");
 					}
 				}
 			}
@@ -238,49 +337,62 @@ export const AdminSectionEditPage = () => {
 		} finally {
 			isFlushingDirtyQuestionsRef.current = false;
 		}
-	}, [formid, sectionId, updateQuestion, createQuestion, pushToast, setQuestionIdsAndRef]);
+	}, [createQuestion, flushCheckpoint, formid, pushToast, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
 
 	// Effects
 	// Sync from API on first load
 	useEffect(() => {
-		if (apiQuestions.length > 0 && questions.length === 0) {
-			const mapped: Question[] = apiQuestions.map(q => {
-				const apiQuestion = q as ApiQuestionWithOptionalFields;
+		if (!section?.id) return;
+		if (initializedSectionIdRef.current === section.id) return;
 
-				return {
-					type: q.type as Question["type"],
-					title: q.title,
-					description: fromApiProseMirror(q.description),
-					required: q.required ?? false,
-					isFromAnswer: Boolean(q.sourceId),
-					sourceQuestionId: q.sourceId,
-					options: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", isOther: c.isOther ?? false })),
-					detailOptions: q.choices?.map(c => ({ id: c.id, label: c.name ?? "", description: c.description ?? "" })),
-					start: q.scale?.minVal,
-					end: q.scale?.maxVal,
-					startLabel: q.scale?.minValueLabel ?? "",
-					endLabel: q.scale?.maxValueLabel ?? "",
-					icon: q.scale?.icon as Question["icon"],
-					uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
-					uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
-					uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
-					dateHasYear: q.date?.hasYear ?? true,
-					dateHasMonth: q.date?.hasMonth ?? true,
-					dateHasDay: q.date?.hasDay ?? true,
-					dateHasMinDate: Boolean(q.date?.minDate),
-					dateHasMaxDate: Boolean(q.date?.maxDate),
-					dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
-					dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
-					url: apiQuestion.url ?? "",
-					oauthProvider: apiQuestion.oauthConnect
-				};
-			});
-			setQuestions(mapped);
-			setQuestionIdsAndRef(apiQuestions.map(q => q.id));
-			setClientIds(apiQuestions.map(q => q.id));
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [apiQuestions.length]);
+		const mapped: Question[] = apiQuestions.map(q => {
+			const apiQuestion = q as ApiQuestionWithOptionalFields;
+
+			return {
+				clientId: q.id ?? uuidv4(),
+				type: q.type as Question["type"],
+				title: q.title,
+				description: fromApiProseMirror(q.description),
+				required: q.required ?? false,
+				isFromAnswer: Boolean(q.sourceId),
+				sourceQuestionId: q.sourceId,
+				options: mapApiChoicesToOptions(q.choices),
+				detailOptions: mapApiChoicesToDetailOptions(q.choices),
+				start: q.scale?.minVal,
+				end: q.scale?.maxVal,
+				startLabel: q.scale?.minValueLabel ?? "",
+				endLabel: q.scale?.maxValueLabel ?? "",
+				icon: q.scale?.icon as Question["icon"],
+				uploadAllowedFileTypes: q.uploadFile?.allowedFileTypes ? [...q.uploadFile.allowedFileTypes] : ["PDF"],
+				uploadMaxFileAmount: q.uploadFile?.maxFileAmount ?? 1,
+				uploadMaxFileSizeLimit: q.uploadFile?.maxFileSizeLimit ?? 10485760,
+				dateHasYear: q.date?.hasYear ?? true,
+				dateHasMonth: q.date?.hasMonth ?? true,
+				dateHasDay: q.date?.hasDay ?? true,
+				dateHasMinDate: Boolean(q.date?.minDate),
+				dateHasMaxDate: Boolean(q.date?.maxDate),
+				dateMinDate: q.date?.minDate ? q.date.minDate.slice(0, 10) : "",
+				dateMaxDate: q.date?.maxDate ? q.date.maxDate.slice(0, 10) : "",
+				url: apiQuestion.url ?? "",
+				oauthProvider: apiQuestion.oauthConnect
+			};
+		});
+		const normalizedDescription = fromApiProseMirror(section.description);
+		const nextQuestionIds = apiQuestions.map(q => q.id);
+
+		replaceState({
+			questions: mapped,
+			questionIds: nextQuestionIds,
+			sectionTitleDraft: section.title ?? "",
+			sectionDescriptionDraft: normalizedDescription
+		});
+		initializedSectionIdRef.current = section.id;
+		questionIdsRef.current = nextQuestionIds;
+		setSavedSectionTitle(section.title ?? "");
+		setSavedSectionDescription(serializeProseMirrorDoc(normalizedDescription));
+		setDirtyQuestionVersion(0);
+		dirtyQuestionIndexesRef.current.clear();
+	}, [apiQuestions, replaceState, section]);
 
 	useEffect(() => {
 		questionsRef.current = questions;
@@ -289,14 +401,6 @@ export const AdminSectionEditPage = () => {
 	useEffect(() => {
 		questionIdsRef.current = questionIds;
 	}, [questionIds]);
-
-	useEffect(() => {
-		const normalizedDescription = fromApiProseMirror(section?.description);
-		setSectionTitleDraft(section?.title ?? "");
-		setSectionDescriptionDraft(normalizedDescription);
-		setSavedSectionTitle(section?.title ?? "");
-		setSavedSectionDescription(serializeProseMirrorDoc(normalizedDescription));
-	}, [section?.id, section?.title, section?.description]);
 
 	useEffect(() => {
 		if (dirtyQuestionVersion === 0) return;
@@ -324,25 +428,42 @@ export const AdminSectionEditPage = () => {
 		[flushDirtyQuestions]
 	);
 
-	const toApiRequest = (q: Question, order: number): FormsQuestionRequest => {
-		const base: FormsQuestionRequest = {
-			type: q.type as FormsQuestionRequest["type"],
-			title: q.title,
-			description: toApiProseMirror(q.description) as ProseMirrorDocument,
-			required: q.required ?? false,
-			order
+	useEffect(() => {
+		const isNativeTextUndoTarget = (target: EventTarget | null) => {
+			if (!(target instanceof HTMLElement)) return false;
+			if (target.isContentEditable || target.closest('[contenteditable="true"]')) return true;
+			if (target instanceof HTMLTextAreaElement) return true;
+			if (target instanceof HTMLInputElement) {
+				const nonTextTypes = new Set(["button", "checkbox", "color", "file", "hidden", "image", "radio", "range", "reset", "submit"]);
+				return !nonTextTypes.has(target.type);
+			}
+			return false;
 		};
 
-		if (q.isFromAnswer && q.sourceQuestionId) {
-			base.sourceId = q.sourceQuestionId;
-			delete base.choices;
-		} else if (QUESTION_STRATEGIES[q.type].features.includes("HAS_OPTIONS") && q.options) {
-			base.choices = q.options.map(o => ({ name: o.label, isOther: o.isOther ?? false }));
-		}
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.isComposing) return;
+			const modifierPressed = event.metaKey || event.ctrlKey;
+			if (!modifierPressed) return;
+			if (isNativeTextUndoTarget(event.target)) return;
 
-		QUESTION_STRATEGIES[q.type].toApiPayload?.(q, base);
-		return base;
-	};
+			const lowerKey = event.key.toLowerCase();
+			const isUndo = lowerKey === "z" && !event.shiftKey;
+			const isRedo = (lowerKey === "z" && event.shiftKey) || (lowerKey === "y" && event.ctrlKey && !event.metaKey);
+			if (!isUndo && !isRedo) return;
+
+			event.preventDefault();
+			if (isUndo) {
+				if (!canUndo) return;
+				undo();
+				return;
+			}
+			if (!canRedo) return;
+			redo();
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [canRedo, canUndo, flushCheckpoint, redo, undo]);
 
 	const sourceQuestionOptions = useMemo(
 		() =>
@@ -366,6 +487,7 @@ export const AdminSectionEditPage = () => {
 		const next = strategy.initialState();
 
 		const nextQuestion: Question = {
+			clientId: prev.clientId ?? uuidv4(),
 			type: nextType,
 			title: prev.title,
 			description: prev.description ?? EMPTY_PROSE_MIRROR_DOC,
@@ -383,13 +505,13 @@ export const AdminSectionEditPage = () => {
 		});
 
 		if (nextQuestion.type === "DETAILED_MULTIPLE_CHOICE" && prev.options) {
-			nextQuestion.detailOptions = prev.options.map(o => ({ id: o.id, label: o.label, description: "" }));
+			nextQuestion.detailOptions = prev.options.map(o => ({ id: o.id ?? uuidv4(), label: o.label, description: "" }));
 			delete nextQuestion.options;
 		}
 
 		updatedQuestions[index] = nextQuestion;
 
-		setQuestions(updatedQuestions);
+		setQuestions(updatedQuestions, "immediate");
 		markQuestionDirty(index);
 	};
 
@@ -415,6 +537,7 @@ export const AdminSectionEditPage = () => {
 		const strategy = QUESTION_STRATEGIES[type];
 
 		const newQuestion: Question = {
+			clientId: uuidv4(),
 			type,
 			title: "問題標題",
 			description: EMPTY_PROSE_MIRROR_DOC,
@@ -424,258 +547,239 @@ export const AdminSectionEditPage = () => {
 		};
 
 		const updatedQuestions = [...questions, newQuestion];
-		setQuestions(updatedQuestions);
-		setClientIds(prev => [...prev, uuidv4()]);
+		setQuestions(updatedQuestions, "immediate");
 		setNewlyAddedIndex(newIndex);
 		markQuestionDirty(newIndex);
 	};
 
 	const handleRemoveQuestion = (index: number) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions.splice(index, 1);
-		setQuestions(updatedQuestions);
+		const updatedQuestions = questions.filter((_, currentIndex) => currentIndex !== index);
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index, 1);
-		setQuestionIdsAndRef(updatedQuestionIds);
-		setClientIds(prev => {
-			const next = [...prev];
-			next.splice(index, 1);
-			return next;
-		});
+		questionIdsRef.current = updatedQuestionIds;
+		setEditorState(
+			prev => ({
+				...prev,
+				questions: updatedQuestions,
+				questionIds: updatedQuestionIds
+			}),
+			{ checkpoint: "immediate" }
+		);
 		markQuestionsDirtyFrom(index, updatedQuestions.length);
 	};
 
 	const handleDuplicateQuestion = (index: number) => {
-		const updatedQuestions = [...questions];
-		const questionToDuplicate = updatedQuestions[index];
-		updatedQuestions.splice(index + 1, 0, { ...questionToDuplicate });
-		setQuestions(updatedQuestions);
+		const updatedQuestions = questions.flatMap((question, currentIndex) => {
+			if (currentIndex !== index) return [question];
+			return [question, { ...structuredClone(question), clientId: uuidv4() }];
+		});
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index + 1, 0, undefined);
-		setQuestionIdsAndRef(updatedQuestionIds);
-		setClientIds(prev => {
-			const next = [...prev];
-			next.splice(index + 1, 0, uuidv4());
-			return next;
-		});
+		questionIdsRef.current = updatedQuestionIds;
+		setEditorState(
+			prev => ({
+				...prev,
+				questions: updatedQuestions,
+				questionIds: updatedQuestionIds
+			}),
+			{ checkpoint: "immediate" }
+		);
 		markQuestionsDirtyFrom(index + 1, updatedQuestions.length);
 	};
 
 	const handleTitleChange = (index: number, newTitle: string) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[index].title = newTitle;
-		setQuestions(updatedQuestions);
+		if (questions[index]?.title === newTitle) return;
+		updateQuestionAt(index, question => ({ ...question, title: newTitle }), "debounced");
 		markQuestionDirty(index);
 	};
 
 	const handleDescriptionChange = (index: number, newDescription: ProseMirrorLikeDocument | null) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[index].description = newDescription ?? EMPTY_PROSE_MIRROR_DOC;
-		setQuestions(updatedQuestions);
+		const normalizedDescription = newDescription ?? EMPTY_PROSE_MIRROR_DOC;
+		if (serializeProseMirrorDoc(questions[index]?.description ?? EMPTY_PROSE_MIRROR_DOC) === serializeProseMirrorDoc(normalizedDescription)) return;
+		updateQuestionAt(index, question => ({ ...question, description: normalizedDescription }), "debounced");
 		markQuestionDirty(index);
 	};
 
 	const handleAddOption = (questionIndex: number, newOption: Option) => {
-		const updatedQuestions = [...questions];
-		if (!updatedQuestions[questionIndex].options) {
-			updatedQuestions[questionIndex].options = [];
-		}
+		const optionWithId = ensureOptionId({ id: newOption.id ?? uuidv4(), ...newOption });
 
-		const optionWithId: Option = { id: uuidv4(), ...newOption };
-		const otherOptionIndex = updatedQuestions[questionIndex].options!.findIndex(option => option.isOther);
-		if (optionWithId.isOther) {
-			if (otherOptionIndex === -1) {
-				updatedQuestions[questionIndex].options!.push(optionWithId);
-			}
-		} else {
-			if (otherOptionIndex !== -1) {
-				updatedQuestions[questionIndex].options!.splice(otherOptionIndex, 0, optionWithId);
-			} else {
-				updatedQuestions[questionIndex].options!.push(optionWithId);
-			}
-		}
-
-		setQuestions(updatedQuestions);
+		updateQuestionAt(
+			questionIndex,
+			question => {
+				const currentOptions = question.options ?? [];
+				const otherOptionIndex = currentOptions.findIndex(option => option.isOther);
+				let nextOptions = currentOptions;
+				if (optionWithId.isOther) {
+					if (otherOptionIndex !== -1) return question;
+					nextOptions = [...currentOptions, optionWithId];
+				} else if (otherOptionIndex !== -1) {
+					nextOptions = [...currentOptions.slice(0, otherOptionIndex), optionWithId, ...currentOptions.slice(otherOptionIndex)];
+				} else {
+					nextOptions = [...currentOptions, optionWithId];
+				}
+				return { ...question, options: nextOptions };
+			},
+			"immediate"
+		);
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleAddDetailOption = (questionIndex: number, newDetailOption: { label: string; description: string }) => {
-		const updatedQuestions = [...questions];
-		if (!updatedQuestions[questionIndex].detailOptions) {
-			updatedQuestions[questionIndex].detailOptions = [];
-		}
-		updatedQuestions[questionIndex].detailOptions!.push({ id: uuidv4(), ...newDetailOption });
-		setQuestions(updatedQuestions);
+		const detailOption = { id: uuidv4(), ...newDetailOption };
+		updateQuestionAt(questionIndex, question => ({ ...question, detailOptions: [...(question.detailOptions ?? []), detailOption] }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
-		const updatedQuestions = [...questions];
-		if (!updatedQuestions[questionIndex].options) {
-			return;
-		}
-		updatedQuestions[questionIndex].options!.splice(optionIndex, 1);
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, options: question.options?.filter((_, currentIndex) => currentIndex !== optionIndex) ?? [] }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleChangeOption = (questionIndex: number, optionIndex: number, newLabel: string) => {
-		const updatedQuestions = [...questions];
-		if (!updatedQuestions[questionIndex].options) {
-			updatedQuestions[questionIndex].options = [];
-		}
-		updatedQuestions[questionIndex].options![optionIndex] = {
-			...updatedQuestions[questionIndex].options![optionIndex],
-			label: newLabel
-		};
-		setQuestions(updatedQuestions);
+		const currentLabel = questions[questionIndex]?.options?.[optionIndex]?.label;
+		if (currentLabel === newLabel) return;
+
+		updateQuestionAt(
+			questionIndex,
+			question => ({
+				...question,
+				options: (question.options ?? []).map((option, currentIndex) => (currentIndex === optionIndex ? { ...option, label: newLabel } : option))
+			}),
+			"debounced"
+		);
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleStartChange = (questionIndex: number, newStart: number) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].start = newStart;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, start: newStart }), "debounced");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleEndChange = (questionIndex: number, newEnd: number) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].end = newEnd;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, end: newEnd }), "debounced");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleChangeIcon = (questionIndex: number, newIcon: Question["icon"]) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].icon = newIcon;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, icon: newIcon }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleToggleIsFromAnswer = (questionIndex: number) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].isFromAnswer = !updatedQuestions[questionIndex].isFromAnswer;
-		if (updatedQuestions[questionIndex].type === "RANKING" && updatedQuestions[questionIndex].isFromAnswer) {
-			updatedQuestions[questionIndex].options = [];
-		}
-		if (!updatedQuestions[questionIndex].isFromAnswer) {
-			updatedQuestions[questionIndex].sourceQuestionId = undefined;
-		}
-		setQuestions(updatedQuestions);
+		updateQuestionAt(
+			questionIndex,
+			question => {
+				const isFromAnswer = !question.isFromAnswer;
+				return {
+					...question,
+					isFromAnswer,
+					options: question.type === "RANKING" && isFromAnswer ? [] : question.options,
+					sourceQuestionId: isFromAnswer ? question.sourceQuestionId : undefined
+				};
+			},
+			"immediate"
+		);
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleSourceQuestionChange = (questionIndex: number, sourceQuestionId: string) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].sourceQuestionId = sourceQuestionId;
-		updatedQuestions[questionIndex].isFromAnswer = true;
-		if (updatedQuestions[questionIndex].type === "RANKING") {
-			updatedQuestions[questionIndex].options = [];
-		}
-		setQuestions(updatedQuestions);
+		updateQuestionAt(
+			questionIndex,
+			question => ({
+				...question,
+				sourceQuestionId,
+				isFromAnswer: true,
+				options: question.type === "RANKING" ? [] : question.options
+			}),
+			"immediate"
+		);
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleRequiredChange = (questionIndex: number, required: boolean) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].required = required;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, required }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleUrlChange = (questionIndex: number, url: string) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].url = url;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, url }), "debounced");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleOauthProviderChange = (questionIndex: number, provider: "GOOGLE" | "GITHUB") => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].oauthProvider = provider;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, oauthProvider: provider }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleStartLabelChange = (questionIndex: number, label: string) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].startLabel = label;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, startLabel: label }), "debounced");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleEndLabelChange = (questionIndex: number, label: string) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].endLabel = label;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, endLabel: label }), "debounced");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleUploadFileTypesChange = (questionIndex: number, nextTypes: string[]) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].uploadAllowedFileTypes = nextTypes;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, uploadAllowedFileTypes: nextTypes }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleUploadMaxFileAmountChange = (questionIndex: number, maxAmount: number) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].uploadMaxFileAmount = maxAmount;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, uploadMaxFileAmount: maxAmount }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleUploadMaxFileSizeLimitChange = (questionIndex: number, maxFileSizeLimit: number) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex].uploadMaxFileSizeLimit = maxFileSizeLimit;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, uploadMaxFileSizeLimit: maxFileSizeLimit }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleDateOptionChange = (questionIndex: number, field: "dateHasYear" | "dateHasMonth" | "dateHasDay" | "dateHasMinDate" | "dateHasMaxDate", value: boolean) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex][field] = value;
 		const todayStr = new Date().toISOString().split("T")[0];
-		if (!value && field === "dateHasMinDate") {
-			updatedQuestions[questionIndex].dateMinDate = "";
-		}
-		if (value && field === "dateHasMinDate" && !updatedQuestions[questionIndex].dateMinDate) {
-			updatedQuestions[questionIndex].dateMinDate = todayStr;
-		}
-		if (!value && field === "dateHasMaxDate") {
-			updatedQuestions[questionIndex].dateMaxDate = "";
-		}
-		if (value && field === "dateHasMaxDate" && !updatedQuestions[questionIndex].dateMaxDate) {
-			updatedQuestions[questionIndex].dateMaxDate = todayStr;
-		}
-		setQuestions(updatedQuestions);
+		updateQuestionAt(
+			questionIndex,
+			question => {
+				const nextQuestion: Question = { ...question, [field]: value };
+				if (!value && field === "dateHasMinDate") {
+					nextQuestion.dateMinDate = "";
+				}
+				if (value && field === "dateHasMinDate" && !nextQuestion.dateMinDate) {
+					nextQuestion.dateMinDate = todayStr;
+				}
+				if (!value && field === "dateHasMaxDate") {
+					nextQuestion.dateMaxDate = "";
+				}
+				if (value && field === "dateHasMaxDate" && !nextQuestion.dateMaxDate) {
+					nextQuestion.dateMaxDate = todayStr;
+				}
+				return nextQuestion;
+			},
+			"immediate"
+		);
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleDateRangeChange = (questionIndex: number, field: "dateMinDate" | "dateMaxDate", value: string) => {
-		const updatedQuestions = [...questions];
-		updatedQuestions[questionIndex][field] = value;
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, [field]: value }), "debounced");
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleDetailOptionChange = (questionIndex: number, optionIndex: number, field: "label" | "description", value: string) => {
-		const updatedQuestions = [...questions];
-		if (!updatedQuestions[questionIndex].detailOptions) return;
-		updatedQuestions[questionIndex].detailOptions![optionIndex] = {
-			...updatedQuestions[questionIndex].detailOptions![optionIndex],
-			[field]: value
-		};
-		setQuestions(updatedQuestions);
+		updateQuestionAt(
+			questionIndex,
+			question => ({
+				...question,
+				detailOptions: (question.detailOptions ?? []).map((option, currentIndex) => (currentIndex === optionIndex ? { ...option, [field]: value } : option))
+			}),
+			"debounced"
+		);
 		markQuestionDirty(questionIndex);
 	};
 
 	const handleRemoveDetailOption = (questionIndex: number, optionIndex: number) => {
-		const updatedQuestions = [...questions];
-		if (!updatedQuestions[questionIndex].detailOptions) return;
-		updatedQuestions[questionIndex].detailOptions!.splice(optionIndex, 1);
-		setQuestions(updatedQuestions);
+		updateQuestionAt(questionIndex, question => ({ ...question, detailOptions: question.detailOptions?.filter((_, currentIndex) => currentIndex !== optionIndex) ?? [] }), "immediate");
 		markQuestionDirty(questionIndex);
 	};
 
@@ -694,9 +798,16 @@ export const AdminSectionEditPage = () => {
 			const draggedQuestion = questionsRef.current[oldIndex];
 			const draggedQuestionId = questionIdsRef.current[oldIndex];
 
-			setQuestions(prev => arrayMove(prev, oldIndex, newIndex));
-			setQuestionIdsAndRef(arrayMove(questionIds, oldIndex, newIndex));
-			setClientIds(prev => arrayMove(prev, oldIndex, newIndex));
+			const reorderedQuestionIds = arrayMove(questionIdsRef.current, oldIndex, newIndex);
+			questionIdsRef.current = reorderedQuestionIds;
+			setEditorState(
+				prev => ({
+					...prev,
+					questions: arrayMove(prev.questions, oldIndex, newIndex),
+					questionIds: reorderedQuestionIds
+				}),
+				{ checkpoint: "immediate" }
+			);
 			remapDirtyQuestionIndexesAfterMove(oldIndex, newIndex);
 
 			if (draggedQuestionId && draggedQuestion) {
@@ -707,9 +818,16 @@ export const AdminSectionEditPage = () => {
 					{
 						onError: err => {
 							pushToast({ title: "排序失敗", description: (err as Error).message, variant: "error" });
-							setQuestions(prev => arrayMove(prev, newIndex, oldIndex));
-							setQuestionIdsAndRef(arrayMove(questionIdsRef.current, newIndex, oldIndex));
-							setClientIds(prev => arrayMove(prev, newIndex, oldIndex));
+							const restoredQuestionIds = arrayMove(questionIdsRef.current, newIndex, oldIndex);
+							questionIdsRef.current = restoredQuestionIds;
+							setEditorState(
+								prev => ({
+									...prev,
+									questions: arrayMove(prev.questions, newIndex, oldIndex),
+									questionIds: restoredQuestionIds
+								}),
+								{ checkpoint: "immediate" }
+							);
 							remapDirtyQuestionIndexesAfterMove(newIndex, oldIndex);
 						}
 					}
@@ -719,7 +837,7 @@ export const AdminSectionEditPage = () => {
 				markQuestionDirty(newIndex);
 			}
 		},
-		[clientIds, questionIds, questionsRef, questionIdsRef, updateQuestion, pushToast, setQuestionIdsAndRef, remapDirtyQuestionIndexesAfterMove, markQuestionDirty]
+		[clientIds, markQuestionDirty, pushToast, remapDirtyQuestionIndexesAfterMove, setEditorState, updateQuestion]
 	);
 
 	return (
@@ -729,7 +847,15 @@ export const AdminSectionEditPage = () => {
 					<Button onClick={handleBack}>返回</Button>
 					{sectionsQuery.isLoading && <LoadingSpinner />}
 					{sectionsQuery.isError && <ErrorMessage message={(sectionsQuery.error as Error)?.message ?? "無法載入區塊資料"} />}
-					<div className={styles.container}>
+					<div
+						className={styles.container}
+						onBlur={event => {
+							if (!(event.target instanceof HTMLElement)) return;
+							if (event.target.isContentEditable || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+								flushCheckpoint();
+							}
+						}}
+					>
 						<section className={styles.card}>
 							<Input
 								placeholder="區段標題"
@@ -737,7 +863,15 @@ export const AdminSectionEditPage = () => {
 								themeColor="--comment"
 								textSize="h2"
 								value={sectionTitleDraft}
-								onChange={event => setSectionTitleDraft(event.target.value)}
+								onChange={event =>
+									setEditorState(
+										prev => ({
+											...prev,
+											sectionTitleDraft: event.target.value
+										}),
+										{ checkpoint: "debounced" }
+									)
+								}
 								onBlur={handleSectionBlurSave}
 							/>
 							<MarkdownEditor
@@ -745,7 +879,15 @@ export const AdminSectionEditPage = () => {
 								variant="flushed"
 								themeColor="--comment"
 								value={sectionDescriptionDraft}
-								onChange={setSectionDescriptionDraft}
+								onChange={nextDescription =>
+									setEditorState(
+										prev => ({
+											...prev,
+											sectionDescriptionDraft: nextDescription
+										}),
+										{ checkpoint: "debounced" }
+									)
+								}
 								onBlur={handleSectionBlurSave}
 							/>
 						</section>
@@ -795,6 +937,7 @@ export const AdminSectionEditPage = () => {
 												onUrlChange={url => handleUrlChange(index, url)}
 												onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
 												onFold={() => {
+													flushCheckpoint();
 													void flushDirtyQuestions();
 												}}
 												onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
