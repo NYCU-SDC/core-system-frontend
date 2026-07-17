@@ -190,6 +190,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	};
 
 	useEffect(() => {
+		setLocalTitle(question.title);
+	}, [question.title]);
+
+	useEffect(() => {
 		setLocalDesc(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
 	}, [question.description]);
 
@@ -214,7 +218,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 				if (document.activeElement instanceof HTMLElement && cardRef.current?.contains(document.activeElement)) {
 					document.activeElement.blur();
 				}
-				// flush title & description via refs as a safety net
+				// Flush title and description through refs while the card is still mounted.
 				props.onTitleChange?.(localTitleRef.current);
 				props.onDescriptionChange?.(localDescRef.current || { type: "doc", content: [{ type: "paragraph" }] });
 				props.onFold?.();
@@ -272,7 +276,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							<Input
 								ref={titleRef}
 								value={localTitle}
-								onChange={e => setLocalTitle(e.target.value)}
+								onChange={event => setLocalTitle(event.target.value)}
 								onBlur={() => props.onTitleChange?.(localTitle)}
 								placeholder="問題標題"
 								variant="flushed"
@@ -299,6 +303,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 											key={type}
 											type="button"
 											className={styles.typeMenuItem}
+											onMouseDown={event => event.preventDefault()}
 											onClick={() => {
 												props.onTypeChange?.(type);
 												setIsTypeMenuOpen(false);
