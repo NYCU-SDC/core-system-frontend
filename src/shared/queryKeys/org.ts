@@ -21,6 +21,7 @@ export const slugKeys = {
 };
 
 export const formKeys = {
+	highlight: (formId: string) => ["form", formId, "highlight"] as const,
 	sections: (formId: string) => ["form", formId, "sections"] as const,
 	workflow: (formId: string) => ["form", formId, "workflow"] as const,
 	responses: (formId: string) => ["form", formId, "responses"] as const,
