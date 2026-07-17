@@ -99,6 +99,7 @@ export const AppRouter = () => {
 							<Route path="/orgs/:orgSlug/forms/:formid/reply" element={<AdminFormDetailPage />} />
 							<Route path="/orgs/:orgSlug/forms/:formid/design" element={<AdminFormDetailPage />} />
 							<Route path="/orgs/:orgSlug/forms/:formid/preview" element={<AdminFormPreviewPage />} />
+							<Route path="/orgs/:orgSlug/forms/:formid/members" element={<MemberDataPage />} />
 							<Route path="/orgs/:orgSlug/members" element={<MemberDataPage />} />
 							<Route path="/orgs/:orgSlug/settings" element={<AdminSettingsPage />} />
 							<Route path="/account/settings" element={<SettingsPage />} />

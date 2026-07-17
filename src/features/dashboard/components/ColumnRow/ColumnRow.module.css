@@ -5,7 +5,7 @@
 	align-content: flex-start;
 	align-items: center;
 	gap: 0.5rem;
-	/* 最多顯示約四列 chip（4 列高 + 3 個列間距），超過則於 chip 區內捲動*/
+	/* 最多顯示約四列 chip（4 列高 + 3 個列間距），超過則於 chip 區內捲動 */
 	max-height: calc(4 * 2.0125rem + 3 * 0.5rem);
 	overflow-y: auto;
 }
@@ -31,7 +31,7 @@
 }
 
 /* Visible column chips (in the row) */
-@keyframes chipFadeIn {
+@keyframes chip-fade-in {
 	from {
 		opacity: 0;
 		transform: translateY(-0.25rem);
@@ -42,7 +42,7 @@
 	}
 }
 
-@keyframes chipFadeOut {
+@keyframes chip-fade-out {
 	from {
 		opacity: 1;
 		transform: translateY(0);
@@ -65,11 +65,11 @@
 	color: var(--hero-background-color-secondary);
 	font-size: 0.875rem;
 	line-height: 1.3;
-	animation: chipFadeIn 0.2s ease-out both;
+	animation: chip-fade-in 0.2s ease-out both;
 }
 
 .columnChipExiting {
-	animation: chipFadeOut 0.15s ease-in both;
+	animation: chip-fade-out 0.15s ease-in both;
 }
 
 .columnChipText {
@@ -119,7 +119,7 @@
 }
 
 /* Popover panel */
-@keyframes panelFadeIn {
+@keyframes panel-fade-in {
 	from {
 		opacity: 0;
 		transform: translateY(-0.25rem);
@@ -141,7 +141,7 @@
 }
 
 .popoverPanel[data-state="open"] {
-	animation: panelFadeIn 0.16s ease-out;
+	animation: panel-fade-in 0.16s ease-out;
 }
 
 .popoverScroll {

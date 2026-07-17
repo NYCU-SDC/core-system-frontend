@@ -2,7 +2,7 @@ import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { ClipboardList, FileText, FileUser, LogOut, Menu, Settings, X } from "lucide-react";
 import { useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import styles from "./AdminNav.module.css";
 
 interface AdminNavProps {
@@ -12,11 +12,13 @@ interface AdminNavProps {
 
 export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 	const { pathname } = useLocation();
+	const { formid } = useParams<{ formid?: string }>();
 	const orgSlug = useActiveOrgSlug();
 
 	const isUserForms = pathname === "/forms" || pathname.startsWith("/forms/");
-	const isFormsDashboard = pathname === `/orgs/${orgSlug}/forms` || pathname.startsWith(`/orgs/${orgSlug}/forms/`);
-	const isMemberData = pathname === `/orgs/${orgSlug}/members` || pathname.startsWith(`/orgs/${orgSlug}/members/`);
+	const isMemberData = pathname === `/orgs/${orgSlug}/members` || pathname.startsWith(`/orgs/${orgSlug}/members/`) || /^\/orgs\/[^/]+\/forms\/[^/]+\/members\/?$/.test(pathname);
+	const isFormsDashboard = !isMemberData && (pathname === `/orgs/${orgSlug}/forms` || pathname.startsWith(`/orgs/${orgSlug}/forms/`));
+	const memberDataPath = formid ? `/orgs/${orgSlug}/forms/${formid}/members` : `/orgs/${orgSlug}/members`;
 	const isSettings = pathname.startsWith(`/orgs/${orgSlug}/settings`);
 	const isUserSettings = pathname === "/account/settings";
 
@@ -60,7 +62,7 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 								<FileText size={22} />
 							</div>
 						</Link>
-						<Link to={`/orgs/${orgSlug}/members`} className={styles.link} title="成員資料管理">
+						<Link to={memberDataPath} className={styles.link} title="成員資料管理">
 							<div className={`${styles.navItem} ${isMemberData ? styles.navItemActive : ""}`}>
 								<FileUser size={22} />
 							</div>

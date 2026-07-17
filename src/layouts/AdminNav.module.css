@@ -136,6 +136,7 @@
 	cursor: pointer;
 	opacity: 0;
 	pointer-events: none;
+	visibility: hidden;
 }
 
 /* ========== Collapse (desktop default) ========== */
@@ -169,6 +170,7 @@
 	.burgerBtn {
 		pointer-events: auto;
 		opacity: 1;
+		visibility: visible;
 		transition:
 			opacity 200ms ease 420ms,
 			background-color 0.5s ease,

@@ -1,8 +1,8 @@
 import type { ViewsViewResponse } from "@/features/form/services/api";
 import { Button, Dialog, Tooltip } from "@/shared/components";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, Copy, GripVertical, Lock, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -25,8 +25,8 @@ interface ViewTabDropdownProps {
 function SortableViewItem({ id, children }: { id: string; children: (listeners: React.HTMLAttributes<HTMLElement> | undefined) => ReactNode }) {
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 	return (
-		<div ref={setNodeRef} className={styles.sortableWrapper} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes}>
-			{children(listeners as React.HTMLAttributes<HTMLElement> | undefined)}
+		<div ref={setNodeRef} className={styles.sortableWrapper} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
+			{children({ ...attributes, ...listeners } as React.HTMLAttributes<HTMLElement>)}
 		</div>
 	);
 }
@@ -45,7 +45,7 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 	const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isTouchDevice = useMemo(() => window.matchMedia("(hover: none)").matches, []);
-	const sensors = useSensors(useSensor(PointerSensor));
+	const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
 	const clearShowTimer = () => {
 		if (showTimerRef.current) {
@@ -105,6 +105,7 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 
 	const handleSelectView = (tab: ViewsViewResponse) => {
 		setOpenSubmenuId(null);
+		setIsOpen(false);
 		onSelect(tab);
 	};
 
@@ -174,6 +175,8 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 			<button
 				type="button"
 				className={styles.trigger}
+				aria-expanded={isOpen}
+				aria-haspopup="listbox"
 				onClick={() => {
 					setIsOpen(prev => !prev);
 					setOpenSubmenuId(null);
@@ -206,17 +209,27 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 			</Dialog>
 
 			{isOpen && (
-				<div className={styles.dropdown}>
+				<div className={styles.dropdown} role="listbox" aria-label="成員資料分頁">
 					<DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={() => setIsDragging(true)} onDragEnd={handleDragEnd} onDragCancel={() => setIsDragging(false)}>
 						<SortableContext items={views.map(v => v.id)} strategy={verticalListSortingStrategy}>
 							{views.map(tab => (
 								<SortableViewItem key={tab.id} id={tab.id}>
-									{dragListeners => (
+									{dragAttributes => (
 										<div
 											className={`${styles.item}${tab.locked ? ` ${styles.itemLocked}` : ""}${tab.id === activeViewId ? ` ${styles.itemActive}` : ""}`}
 											onClick={() => editingViewId !== tab.id && handleSelectView(tab)}
+											role="option"
+											aria-selected={tab.id === activeViewId}
+											tabIndex={editingViewId === tab.id ? -1 : 0}
+											onKeyDown={event => {
+												if (event.target !== event.currentTarget || editingViewId === tab.id) return;
+												if (event.key === "Enter" || event.key === " ") {
+													event.preventDefault();
+													handleSelectView(tab);
+												}
+											}}
 										>
-											<span className={styles.handle} {...dragListeners}>
+											<span className={styles.handle} {...dragAttributes} onClick={event => event.stopPropagation()}>
 												{isDragging ? (
 													<GripVertical width={12} height={20} />
 												) : (
@@ -247,6 +260,7 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 												<button
 													type="button"
 													className={styles.lockButton}
+													aria-label={`解鎖分頁 ${tab.title}`}
 													onClick={e => {
 														e.stopPropagation();
 														onUnlockView(tab.id).catch(() => {});
@@ -264,16 +278,13 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 													<button
 														type="button"
 														className={styles.moreButton}
-														onClick={
-															isTouchDevice
-																? e => {
-																		e.stopPropagation();
-																		clearShowTimer();
-																		clearHideTimer();
-																		setOpenSubmenuId(prev => (prev === tab.id ? null : tab.id));
-																	}
-																: undefined
-														}
+														aria-label={`分頁選項 ${tab.title}`}
+														onClick={e => {
+															e.stopPropagation();
+															clearShowTimer();
+															clearHideTimer();
+															setOpenSubmenuId(prev => (prev === tab.id ? null : tab.id));
+														}}
 													>
 														<MoreVertical size={16} />
 													</button>
@@ -285,7 +296,8 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 													<button
 														type="button"
 														className={styles.submenuItem}
-														onClick={() => {
+														onClick={event => {
+															event.stopPropagation();
 															setEditingViewId(tab.id);
 															setEditingTitle(tab.title);
 															setOpenSubmenuId(null);
@@ -299,7 +311,8 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 													<button
 														type="button"
 														className={styles.submenuItem}
-														onClick={() => {
+														onClick={event => {
+															event.stopPropagation();
 															onDuplicateView(tab.id).catch(() => {});
 															setOpenSubmenuId(null);
 														}}
@@ -312,7 +325,8 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 													<button
 														type="button"
 														className={styles.submenuItem}
-														onClick={() => {
+														onClick={event => {
+															event.stopPropagation();
 															onLockView(tab.id).catch(() => {});
 															setOpenSubmenuId(null);
 														}}
@@ -325,7 +339,8 @@ export const ViewTabDropdown = ({ views, activeViewId, onSelect, onCreateView, o
 													<button
 														type="button"
 														className={`${styles.submenuItem} ${styles.submenuItemDanger}`}
-														onClick={() => {
+														onClick={event => {
+															event.stopPropagation();
 															setDeleteTarget(tab);
 															setOpenSubmenuId(null);
 														}}

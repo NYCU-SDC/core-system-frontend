@@ -1,6 +1,6 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useFormResponsesWithDetails } from "@/features/form/hooks/useFormResponses";
-import { useFormById } from "@/features/form/hooks/useOrgForms";
+import { useFormById, useOrgForms } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useCreateView, useDeleteView, useDuplicateView, useLockView, useUnlockView, useUpdateView, useViews } from "@/features/form/hooks/useViews";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
@@ -8,17 +8,15 @@ import type { ViewsViewResponse } from "@/features/form/services/api";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
-import { Table, useToast } from "@/shared/components";
+import { ErrorMessage, LoadingSpinner, Table, useToast } from "@/shared/components";
 import { formKeys } from "@/shared/queryKeys/org";
 import type { FormsSectionBundle } from "@nycu-sdc/core-system-sdk";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ColumnRow } from "./ColumnRow/ColumnRow";
 import styles from "./MemberDataPage.module.css";
 import { ViewTabDropdown } from "./ViewTabDropdown/ViewTabDropdown";
-
-const MOCK_FORM_ID = "9a843aa0-8451-4e3b-b6a0-8c0e994e9040";
 
 // Render key-question answers as chips; comma-separated values become multiple chips
 const renderKeyAnswer = (value: unknown) => {
@@ -40,12 +38,17 @@ const renderKeyAnswer = (value: unknown) => {
 
 export const MemberDataPage = () => {
 	const orgSlug = useActiveOrgSlug();
+	const { formid: routeFormId } = useParams<{ formid?: string }>();
+	const navigate = useNavigate();
 	const meta = useSeo({ rule: SEO_CONFIG.memberDataPage });
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const { pushToast } = useToast();
 	const queryClient = useQueryClient();
-	const viewsQuery = useViews(MOCK_FORM_ID);
+	const orgFormsQuery = useOrgForms(orgSlug);
+	const formId = routeFormId ?? orgFormsQuery.data?.[0]?.id;
+	const mutationFormId = formId ?? "";
+	const viewsQuery = useViews(formId);
 	const views = useMemo(() => [...(viewsQuery.data ?? [])].sort((a, b) => a.order - b.order), [viewsQuery.data]);
 
 	// URL is the single source of truth for the selected view: ?view=<id>
@@ -68,24 +71,28 @@ export const MemberDataPage = () => {
 		if (!viewParam || !views.some(v => v.id === viewParam)) selectViewInUrl(views[0].id, { replace: true });
 	}, [views, viewParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	const createView = useCreateView(MOCK_FORM_ID);
-	const duplicateView = useDuplicateView(MOCK_FORM_ID);
-	const updateView = useUpdateView(MOCK_FORM_ID);
-	const lockView = useLockView(MOCK_FORM_ID);
-	const unlockView = useUnlockView(MOCK_FORM_ID);
-	const deleteView = useDeleteView(MOCK_FORM_ID);
+	useEffect(() => {
+		if (!routeFormId && formId) navigate(`/orgs/${orgSlug}/forms/${formId}/members`, { replace: true });
+	}, [formId, navigate, orgSlug, routeFormId]);
 
-	const formQuery = useFormById(MOCK_FORM_ID);
-	const formTitle = formQuery.data?.title ?? "SDC 2026 招募資料";
+	const createView = useCreateView(mutationFormId);
+	const duplicateView = useDuplicateView(mutationFormId);
+	const updateView = useUpdateView(mutationFormId);
+	const lockView = useLockView(mutationFormId);
+	const unlockView = useUnlockView(mutationFormId);
+	const deleteView = useDeleteView(mutationFormId);
 
-	const sectionsQuery = useSections(MOCK_FORM_ID);
-	const { data: responseDetails = [] } = useFormResponsesWithDetails(MOCK_FORM_ID);
+	const formQuery = useFormById(formId);
+	const formTitle = formQuery.data?.title ?? "成員資料";
+
+	const sectionsQuery = useSections(formId);
+	const { data: responseDetails = [] } = useFormResponsesWithDetails(formId);
 
 	const sectionsData = useMemo<FormsSectionBundle[]>(() => sectionsQuery.data ?? [], [sectionsQuery.data]);
 	const allQuestions = useMemo(() => sectionsData.flatMap(bundle => bundle.questions ?? []), [sectionsData]);
 
 	// Workflow key questions = those referenced by CONDITION nodes; rendered as chips
-	const workflowQuery = useWorkflow(MOCK_FORM_ID);
+	const workflowQuery = useWorkflow(formId);
 	const keyQuestionIds = useMemo(() => {
 		const nodes = workflowQuery.data?.workflow ?? [];
 		return new Set(
@@ -200,17 +207,35 @@ export const MemberDataPage = () => {
 
 	const handleReorderViews = (newViews: ViewsViewResponse[]) => {
 		const reordered = newViews.map((view, index) => ({ ...view, order: index }));
-		queryClient.setQueryData(formKeys.views(MOCK_FORM_ID), reordered);
-		reordered.forEach(view => {
-			const previous = views.find(v => v.id === view.id);
-			if (previous && previous.order !== view.order) {
-				updateView.mutate(
-					{ viewId: view.id, req: { order: view.order } },
-					{ onError: (error: unknown) => pushToast({ title: "排序更新失敗", description: error instanceof Error ? error.message : String(error), variant: "error" }) }
-				);
+		queryClient.setQueryData(formKeys.views(mutationFormId), reordered);
+		const changedViews = reordered.filter(view => views.find(previous => previous.id === view.id)?.order !== view.order);
+		if (changedViews.length === 0) return;
+
+		void Promise.allSettled(changedViews.map(view => updateView.mutateAsync({ viewId: view.id, req: { order: view.order }, invalidate: false }))).then(results => {
+			void queryClient.invalidateQueries({ queryKey: formKeys.views(mutationFormId) });
+			const failedCount = results.filter(result => result.status === "rejected").length;
+			if (failedCount > 0) {
+				pushToast({ title: "排序更新失敗", description: `${failedCount} 個分頁未能更新，已重新載入伺服器順序。`, variant: "error" });
 			}
 		});
 	};
+
+	if (!formId) {
+		return (
+			<AdminLayout fixedHeight>
+				{meta}
+				<section className={styles.page} aria-label={`${orgSlug} member data`}>
+					{orgFormsQuery.isLoading ? (
+						<LoadingSpinner />
+					) : orgFormsQuery.isError ? (
+						<ErrorMessage message={(orgFormsQuery.error as Error).message} />
+					) : (
+						<ErrorMessage message="目前沒有可顯示成員資料的表單。" />
+					)}
+				</section>
+			</AdminLayout>
+		);
+	}
 
 	return (
 		<AdminLayout fixedHeight>

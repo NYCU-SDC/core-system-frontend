@@ -29,8 +29,10 @@ export const useDuplicateView = (formId: string) => {
 export const useUpdateView = (formId: string) => {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ viewId, req }: { viewId: string; req: ViewsUpdateViewRequest }) => api.updateView(formId, viewId, req),
-		onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.views(formId) })
+		mutationFn: ({ viewId, req }: { viewId: string; req: ViewsUpdateViewRequest; invalidate?: boolean }) => api.updateView(formId, viewId, req),
+		onSuccess: (_data, variables) => {
+			if (variables.invalidate !== false) void qc.invalidateQueries({ queryKey: formKeys.views(formId) });
+		}
 	});
 };
 

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { isValidElement, type CSSProperties, type ReactNode } from "react";
 import { ScrollContainer } from "../ScrollArea/ScrollContainer";
 import styles from "./Table.module.css";
 
@@ -122,6 +122,13 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 		return style;
 	};
 
+	const getCellContent = (value: unknown): ReactNode => {
+		if (value == null) return "-";
+		if (isValidElement(value)) return value;
+		if (typeof value === "string" || typeof value === "number") return value;
+		return String(value);
+	};
+
 	return (
 		<ScrollContainer className={containerClasses}>
 			<table className={`${tableClasses} ${getDensityClass(density)}`} data-align={align}>
@@ -154,7 +161,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 								{columns.map(column => {
 									const value = record[column.key];
 									const columnAlign = column.align || align;
-									const content = column.render ? column.render(value, record, rowIndex) : ((value as ReactNode) ?? "-");
+									const content = column.render ? column.render(value, record, rowIndex) : getCellContent(value);
 									const showTitle = (column.ellipsis || column.width === "fixed") && typeof value === "string";
 
 									return (

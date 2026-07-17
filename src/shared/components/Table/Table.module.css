@@ -123,7 +123,7 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 /* ==================== Cell Styling ====================*/
@@ -131,8 +131,7 @@
 	vertical-align: middle;
 	background-color: var(--table-cell-bg, color-mix(in srgb, var(--foreground) 4%, transparent));
 	font-size: var(--table-cell-font-size, inherit);
-	word-break: break-word;
-	overflow-wrap: break-word;
+	overflow-wrap: anywhere;
 }
 
 /* 超長內容：單行省略號截斷（max-width 由欄位 inline style 給定），hover 由 title 顯示全文 */
