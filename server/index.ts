@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Agent, setGlobalDispatcher } from "undici";
 import { buildMeta, SITE_NAME, type BuildMetaResult } from "../src/seo/buildMeta";
+import { extractTextFromProseMirror } from "../src/shared/utils/proseMirror";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -235,7 +236,7 @@ async function handleFormSeoRoute(req: FormSeoRouteRequest, reply: FastifyReply)
 
 			if (res.status >= 200 && res.status < 300) {
 				title = res.data.title || title;
-				description = res.data.description || description;
+				description = res.data.description ? extractTextFromProseMirror(res.data.description) : description;
 				formMetaCache.set(formId, { title, description });
 				breaker.success();
 			} else {

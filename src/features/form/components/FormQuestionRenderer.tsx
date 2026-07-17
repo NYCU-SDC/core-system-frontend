@@ -25,6 +25,7 @@ type FormQuestionRendererProps = {
 	sourceAnswerValue?: string;
 	responseId?: string;
 	disableFileUpload?: boolean;
+	downloadInitialFiles?: boolean;
 	initialFiles?: ServerFileInfo[];
 	onFileMetadataChange?: (files: ServerFileInfo[]) => void;
 	onAnswerChange: (questionId: string, value: string) => void;
@@ -39,6 +40,7 @@ export const FormQuestionRenderer = ({
 	sourceAnswerValue = "",
 	responseId,
 	disableFileUpload = false,
+	downloadInitialFiles = true,
 	initialFiles,
 	onFileMetadataChange,
 	onAnswerChange,
@@ -83,7 +85,7 @@ export const FormQuestionRenderer = ({
 					key={question.id}
 					id={question.id}
 					label={question.title}
-					description={question.description || undefined}
+					descriptionHtml={question.descriptionHtml || undefined}
 					value={value}
 					options={question.date || { hasYear: true, hasMonth: true, hasDay: true }}
 					required={question.required}
@@ -97,7 +99,7 @@ export const FormQuestionRenderer = ({
 					key={question.id}
 					id={question.id}
 					label={question.title}
-					description={question.description || undefined}
+					descriptionHtml={question.descriptionHtml || undefined}
 					value={value}
 					options={question.scale || { minVal: 1, maxVal: 5 }}
 					required={question.required}
@@ -111,7 +113,7 @@ export const FormQuestionRenderer = ({
 					key={question.id}
 					id={question.id}
 					label={question.title}
-					description={question.description || undefined}
+					descriptionHtml={question.descriptionHtml || undefined}
 					value={value}
 					options={question.scale || { minVal: 1, maxVal: 5 }}
 					required={question.required}
@@ -128,6 +130,7 @@ export const FormQuestionRenderer = ({
 					maxFileAmount={question.uploadFile?.maxFileAmount || 1}
 					allowedFileTypes={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
 					initialFiles={initialFiles}
+					downloadInitialFiles={downloadInitialFiles}
 					onFileMetadataChange={onFileMetadataChange}
 					onFilesChange={fileNames => onAnswerChange(question.id, fileNames)}
 					disabled={disableFileUpload}

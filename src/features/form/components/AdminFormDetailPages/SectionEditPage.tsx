@@ -2,10 +2,14 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUndoableEditor } from "@/features/form/hooks/useUndoableEditor";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, ErrorMessage, Input, LoadingSpinner, TextArea, useToast } from "@/shared/components";
-import type { FormsQuestionRequest, FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
-import { marked } from "marked";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
+import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { FormsQuestionRequest, FormsQuestionResponse, ProseMirrorDocument, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { QuestionCard } from "./components/QuestionCard";
@@ -13,6 +17,15 @@ import { QUESTION_STRATEGIES } from "./QuestionConfig";
 import styles from "./SectionEditPage.module.css";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
+
+function SortableQuestionItem({ id, children }: { id: string; children: (listeners: React.HTMLAttributes<HTMLElement> | undefined) => ReactNode }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+	return (
+		<div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes}>
+			{children(listeners as React.HTMLAttributes<HTMLElement> | undefined)}
+		</div>
+	);
+}
 
 type ApiQuestionWithOptionalFields = FormsQuestionResponse & {
 	url?: string;
@@ -23,14 +36,14 @@ type EditorDraft = {
 	questions: Question[];
 	questionIds: (string | undefined)[];
 	sectionTitleDraft: string;
-	sectionDescriptionDraft: string;
+	sectionDescriptionDraft: ProseMirrorLikeDocument;
 };
 
 const EMPTY_DRAFT: EditorDraft = {
 	questions: [],
 	questionIds: [],
 	sectionTitleDraft: "",
-	sectionDescriptionDraft: ""
+	sectionDescriptionDraft: EMPTY_PROSE_MIRROR_DOC
 };
 
 const ensureQuestionClientId = (question: Question): Question => ({
@@ -68,7 +81,7 @@ export const AdminSectionEditPage = () => {
 	const sectionsQuery = useSections(formid);
 	const sectionBundle = sectionsQuery.data?.find(response => response.section.id === sectionId);
 	const section = sectionBundle?.section;
-	const apiQuestions = (sectionBundle?.questions ?? []) as FormsQuestionResponse[];
+	const apiQuestions = useMemo(() => (sectionBundle?.questions ?? []) as FormsQuestionResponse[], [sectionBundle?.questions]);
 
 	const createQuestion = useCreateQuestion(formid!, sectionId!);
 	const updateQuestion = useUpdateQuestion(formid!, sectionId!);
@@ -87,13 +100,15 @@ export const AdminSectionEditPage = () => {
 	// States
 	const { state: draft, setState: setEditorState, replaceState, undo, redo, flushCheckpoint, canUndo, canRedo } = useUndoableEditor<EditorDraft>(EMPTY_DRAFT, { limit: 100 });
 	const { questions, questionIds, sectionTitleDraft, sectionDescriptionDraft } = draft;
+	const clientIds = useMemo(() => questions.map((question, index) => question.clientId ?? `question-${index}`), [questions]);
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
-	const [savedSectionDescription, setSavedSectionDescription] = useState("");
+	const [savedSectionDescription, setSavedSectionDescription] = useState(() => serializeProseMirrorDoc(EMPTY_PROSE_MIRROR_DOC));
 	const questionsRef = useRef<Question[]>([]);
 	const questionIdsRef = useRef<(string | undefined)[]>([]);
 	const dirtyQuestionIndexesRef = useRef<Set<number>>(new Set());
 	const autosaveTimerRef = useRef<number | null>(null);
 	const isFlushingDirtyQuestionsRef = useRef(false);
+	const initializedSectionIdRef = useRef<string | null>(null);
 	const [dirtyQuestionVersion, setDirtyQuestionVersion] = useState(0);
 	const [newlyAddedIndex, setNewlyAddedIndex] = useState<number | null>(null);
 
@@ -167,23 +182,42 @@ export const AdminSectionEditPage = () => {
 		[markQuestionsDirty]
 	);
 
+	const remapDirtyQuestionIndexesAfterMove = useCallback((oldIndex: number, newIndex: number) => {
+		if (oldIndex === newIndex || dirtyQuestionIndexesRef.current.size === 0) return;
+
+		const remappedIndexes = new Set<number>();
+		dirtyQuestionIndexesRef.current.forEach(index => {
+			if (index === oldIndex) {
+				remappedIndexes.add(newIndex);
+			} else if (oldIndex < newIndex && index > oldIndex && index <= newIndex) {
+				remappedIndexes.add(index - 1);
+			} else if (oldIndex > newIndex && index >= newIndex && index < oldIndex) {
+				remappedIndexes.add(index + 1);
+			} else {
+				remappedIndexes.add(index);
+			}
+		});
+		dirtyQuestionIndexesRef.current = remappedIndexes;
+	}, []);
+
 	const saveSectionIfChanged = useCallback(
-		(nextSectionTitle: string, nextSectionDescription: string) => {
+		(nextSectionTitle: string, nextSectionDescription: ProseMirrorLikeDocument) => {
 			if (!sectionId) return;
-			if (nextSectionTitle === savedSectionTitle && nextSectionDescription === savedSectionDescription) return;
+			if (nextSectionTitle === savedSectionTitle && serializeProseMirrorDoc(nextSectionDescription) === savedSectionDescription) return;
 
 			updateSectionMutation.mutate(
-				{ title: nextSectionTitle, description: nextSectionDescription ? (marked.parse(nextSectionDescription) as string) : nextSectionDescription },
+				{ title: nextSectionTitle, description: toApiProseMirror(nextSectionDescription) as unknown as ProseMirrorDocumentUpdate },
 				{
 					onSuccess: () => {
 						setSavedSectionTitle(nextSectionTitle);
-						setSavedSectionDescription(nextSectionDescription);
+						setSavedSectionDescription(serializeProseMirrorDoc(nextSectionDescription));
 						if (workflowQuery.data?.workflow) {
 							const updatedNodes = workflowQuery.data.workflow.map(n => (n.id === sectionId ? { ...n, label: nextSectionTitle } : n));
 							updateWorkflowMutation.mutate(
 								updatedNodes.map(n => ({
 									id: n.id,
 									label: n.label,
+									payload: n.payload,
 									...(n.conditionRule !== undefined && { conditionRule: n.conditionRule }),
 									...(n.next !== undefined && { next: n.next }),
 									...(n.nextTrue !== undefined && { nextTrue: n.nextTrue }),
@@ -194,7 +228,6 @@ export const AdminSectionEditPage = () => {
 					},
 					onError: err => {
 						pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
-						console.log("儲存失敗");
 					}
 				}
 			);
@@ -212,7 +245,7 @@ export const AdminSectionEditPage = () => {
 		const base: FormsQuestionRequest = {
 			type: q.type as FormsQuestionRequest["type"],
 			title: q.title,
-			description: q.description ? (marked.parse(q.description) as string) : q.description,
+			description: toApiProseMirror(q.description) as ProseMirrorDocument,
 			required: q.required ?? false,
 			order
 		};
@@ -257,7 +290,7 @@ export const AdminSectionEditPage = () => {
 							const updated: Question = {
 								...old,
 								title: apiQuestion.title ?? old.title,
-								description: apiQuestion.description ?? old.description,
+								description: fromApiProseMirror(apiQuestion.description) ?? old.description,
 								required: apiQuestion.required ?? old.required,
 								...(apiQuestion.sourceId !== undefined && {
 									sourceQuestionId: apiQuestion.sourceId ?? undefined,
@@ -299,34 +332,32 @@ export const AdminSectionEditPage = () => {
 					}
 				}
 			}
-		} catch {
-			console.log("儲存失敗");
-			// pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
+		} catch (err) {
+			pushToast({ title: "儲存失敗", description: (err as Error).message, variant: "error" });
 		} finally {
 			isFlushingDirtyQuestionsRef.current = false;
 		}
-	}, [createQuestion, flushCheckpoint, formid, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
+	}, [createQuestion, flushCheckpoint, formid, pushToast, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
 
 	// Effects
 	// Sync from API on first load
 	useEffect(() => {
 		if (!section?.id) return;
+		if (initializedSectionIdRef.current === section.id) return;
 
 		const mapped: Question[] = apiQuestions.map(q => {
 			const apiQuestion = q as ApiQuestionWithOptionalFields;
-			const existingQuestionIndex = questionIdsRef.current.findIndex(questionId => questionId === q.id);
-			const existingQuestion = existingQuestionIndex >= 0 ? questionsRef.current[existingQuestionIndex] : undefined;
 
 			return {
 				clientId: q.id ?? uuidv4(),
 				type: q.type as Question["type"],
 				title: q.title,
-				description: q.description ?? "",
+				description: fromApiProseMirror(q.description),
 				required: q.required ?? false,
 				isFromAnswer: Boolean(q.sourceId),
 				sourceQuestionId: q.sourceId,
-				options: mapApiChoicesToOptions(q.choices, existingQuestion?.options),
-				detailOptions: mapApiChoicesToDetailOptions(q.choices, existingQuestion?.detailOptions),
+				options: mapApiChoicesToOptions(q.choices),
+				detailOptions: mapApiChoicesToDetailOptions(q.choices),
 				start: q.scale?.minVal,
 				end: q.scale?.maxVal,
 				startLabel: q.scale?.minValueLabel ?? "",
@@ -346,19 +377,22 @@ export const AdminSectionEditPage = () => {
 				oauthProvider: apiQuestion.oauthConnect
 			};
 		});
+		const normalizedDescription = fromApiProseMirror(section.description);
+		const nextQuestionIds = apiQuestions.map(q => q.id);
 
 		replaceState({
 			questions: mapped,
-			questionIds: apiQuestions.map(q => q.id),
+			questionIds: nextQuestionIds,
 			sectionTitleDraft: section.title ?? "",
-			sectionDescriptionDraft: section.description ?? ""
+			sectionDescriptionDraft: normalizedDescription
 		});
-		questionIdsRef.current = apiQuestions.map(q => q.id);
+		initializedSectionIdRef.current = section.id;
+		questionIdsRef.current = nextQuestionIds;
 		setSavedSectionTitle(section.title ?? "");
-		setSavedSectionDescription(section.description ?? "");
+		setSavedSectionDescription(serializeProseMirrorDoc(normalizedDescription));
 		setDirtyQuestionVersion(0);
 		dirtyQuestionIndexesRef.current.clear();
-	}, [replaceState, section]);
+	}, [apiQuestions, replaceState, section]);
 
 	useEffect(() => {
 		questionsRef.current = questions;
@@ -433,15 +467,14 @@ export const AdminSectionEditPage = () => {
 
 	const sourceQuestionOptions = useMemo(
 		() =>
-			(sectionsQuery.data ?? [])
-				.flatMap(sectionRes =>
-					(sectionRes.questions ?? [])
-						.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
-						.map(question => ({
-							value: question.id,
-							label: `${sectionRes.section.title} / ${question.title}`
-						}))
-				),
+			(sectionsQuery.data ?? []).flatMap(sectionRes =>
+				(sectionRes.questions ?? [])
+					.filter(question => question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE" || question.type === "DETAILED_MULTIPLE_CHOICE" || question.type === "DROPDOWN")
+					.map(question => ({
+						value: question.id,
+						label: `${sectionRes.section.title} / ${question.title}`
+					}))
+			),
 		[sectionsQuery.data]
 	);
 
@@ -457,7 +490,7 @@ export const AdminSectionEditPage = () => {
 			clientId: prev.clientId ?? uuidv4(),
 			type: nextType,
 			title: prev.title,
-			description: prev.description,
+			description: prev.description ?? EMPTY_PROSE_MIRROR_DOC,
 			required: prev.required,
 			isFromAnswer: prev.isFromAnswer,
 			sourceQuestionId: prev.sourceQuestionId,
@@ -487,9 +520,8 @@ export const AdminSectionEditPage = () => {
 		if (existingId) {
 			try {
 				await deleteQuestion.mutateAsync(existingId);
-			} catch {
-				console.log("儲存失敗");
-				//pushToast({ title: "刪除失敗", description: (err as Error).message, variant: "error" });
+			} catch (err) {
+				pushToast({ title: "刪除失敗", description: (err as Error).message, variant: "error" });
 				return;
 			}
 		}
@@ -508,7 +540,7 @@ export const AdminSectionEditPage = () => {
 			clientId: uuidv4(),
 			type,
 			title: "問題標題",
-			description: "",
+			description: EMPTY_PROSE_MIRROR_DOC,
 			required: false,
 			isFromAnswer: false,
 			...strategy.initialState()
@@ -561,9 +593,10 @@ export const AdminSectionEditPage = () => {
 		markQuestionDirty(index);
 	};
 
-	const handleDescriptionChange = (index: number, newDescription: string) => {
-		if (questions[index]?.description === newDescription) return;
-		updateQuestionAt(index, question => ({ ...question, description: newDescription }), "debounced");
+	const handleDescriptionChange = (index: number, newDescription: ProseMirrorLikeDocument | null) => {
+		const normalizedDescription = newDescription ?? EMPTY_PROSE_MIRROR_DOC;
+		if (serializeProseMirrorDoc(questions[index]?.description ?? EMPTY_PROSE_MIRROR_DOC) === serializeProseMirrorDoc(normalizedDescription)) return;
+		updateQuestionAt(index, question => ({ ...question, description: normalizedDescription }), "debounced");
 		markQuestionDirty(index);
 	};
 
@@ -750,6 +783,63 @@ export const AdminSectionEditPage = () => {
 		markQuestionDirty(questionIndex);
 	};
 
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			const { active, over } = event;
+			if (!over || active.id === over.id) return;
+
+			const oldIndex = clientIds.indexOf(active.id as string);
+			const newIndex = clientIds.indexOf(over.id as string);
+			if (oldIndex === -1 || newIndex === -1) return;
+
+			// Capture before state update to avoid stale closure
+			const draggedQuestion = questionsRef.current[oldIndex];
+			const draggedQuestionId = questionIdsRef.current[oldIndex];
+
+			const reorderedQuestionIds = arrayMove(questionIdsRef.current, oldIndex, newIndex);
+			questionIdsRef.current = reorderedQuestionIds;
+			setEditorState(
+				prev => ({
+					...prev,
+					questions: arrayMove(prev.questions, oldIndex, newIndex),
+					questionIds: reorderedQuestionIds
+				}),
+				{ checkpoint: "immediate" }
+			);
+			remapDirtyQuestionIndexesAfterMove(oldIndex, newIndex);
+
+			if (draggedQuestionId && draggedQuestion) {
+				// Only PUT the dragged question with its new order.
+				// The backend shifts all other questions automatically.
+				updateQuestion.mutate(
+					{ questionId: draggedQuestionId, req: toApiRequest(draggedQuestion, newIndex + 1) },
+					{
+						onError: err => {
+							pushToast({ title: "排序失敗", description: (err as Error).message, variant: "error" });
+							const restoredQuestionIds = arrayMove(questionIdsRef.current, newIndex, oldIndex);
+							questionIdsRef.current = restoredQuestionIds;
+							setEditorState(
+								prev => ({
+									...prev,
+									questions: arrayMove(prev.questions, newIndex, oldIndex),
+									questionIds: restoredQuestionIds
+								}),
+								{ checkpoint: "immediate" }
+							);
+							remapDirtyQuestionIndexesAfterMove(newIndex, oldIndex);
+						}
+					}
+				);
+			} else if (draggedQuestion) {
+				// Question not yet persisted; auto-save will create it with the correct order
+				markQuestionDirty(newIndex);
+			}
+		},
+		[clientIds, markQuestionDirty, pushToast, remapDirtyQuestionIndexesAfterMove, setEditorState, updateQuestion]
+	);
+
 	return (
 		<>
 			<div className={styles.layout}>
@@ -784,72 +874,79 @@ export const AdminSectionEditPage = () => {
 								}
 								onBlur={handleSectionBlurSave}
 							/>
-							<TextArea
+							<MarkdownEditor
 								placeholder="區段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
 								value={sectionDescriptionDraft}
-								onChange={event =>
+								onChange={nextDescription =>
 									setEditorState(
 										prev => ({
 											...prev,
-											sectionDescriptionDraft: event.target.value
+											sectionDescriptionDraft: nextDescription
 										}),
 										{ checkpoint: "debounced" }
 									)
 								}
 								onBlur={handleSectionBlurSave}
-								rows={1}
 							/>
 						</section>
-						{questions.map((question, index) => (
-							<QuestionCard
-								key={question.clientId}
-								question={question}
-								questionNumber={index + 1}
-								//		defaultExpanded={index === newlyAddedIndex}
-								autoFocusTitle={index === newlyAddedIndex}
-								duplicateQuestion={() => handleDuplicateQuestion(index)}
-								removeQuestion={() => handleDeleteQuestionWithApi(index)}
-								onTitleChange={newTitle => handleTitleChange(index, newTitle)}
-								onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
-								onAddOption={() => handleAddOption(index, { label: "新選項" })}
-								onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
-								onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
-								onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
-								onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
-								onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
-								onRemoveOtherOption={() =>
-									handleRemoveOption(
-										index,
-										question.options!.findIndex(option => option.isOther)
-									)
-								}
-								onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
-								onStartChange={newStart => handleStartChange(index, newStart)}
-								onEndChange={newEnd => handleEndChange(index, newEnd)}
-								onStartLabelChange={label => handleStartLabelChange(index, label)}
-								onEndLabelChange={label => handleEndLabelChange(index, label)}
-								onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
-								onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
-								onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
-								sourceQuestionOptions={sourceQuestionOptions}
-								sourceQuestionId={question.sourceQuestionId}
-								onRequiredChange={required => handleRequiredChange(index, required)}
-								onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
-								onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
-								onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
-								onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
-								onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
-								onUrlChange={url => handleUrlChange(index, url)}
-								onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
-								onFold={() => {
-									flushCheckpoint();
-									void flushDirtyQuestions();
-								}}
-								onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
-							/>
-						))}
+						<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+							<SortableContext items={clientIds} strategy={verticalListSortingStrategy}>
+								{questions.map((question, index) => (
+									<SortableQuestionItem key={clientIds[index] ?? index} id={clientIds[index] ?? String(index)}>
+										{dragHandleListeners => (
+											<QuestionCard
+												dragHandleListeners={dragHandleListeners}
+												question={question}
+												questionNumber={index + 1}
+												defaultExpanded={index === newlyAddedIndex}
+												autoFocusTitle={index === newlyAddedIndex}
+												duplicateQuestion={() => handleDuplicateQuestion(index)}
+												removeQuestion={() => handleDeleteQuestionWithApi(index)}
+												onTitleChange={newTitle => handleTitleChange(index, newTitle)}
+												onDescriptionChange={newDescription => handleDescriptionChange(index, newDescription)}
+												onAddOption={() => handleAddOption(index, { label: "新選項" })}
+												onAddOtherOption={() => handleAddOption(index, { label: "其他", isOther: true })}
+												onAddDetailOption={() => handleAddDetailOption(index, { label: "新選項", description: "選項說明" })}
+												onDetailOptionChange={(optionIndex, field, value) => handleDetailOptionChange(index, optionIndex, field, value)}
+												onRemoveDetailOption={optionIndex => handleRemoveDetailOption(index, optionIndex)}
+												onRemoveOption={optionIndex => handleRemoveOption(index, optionIndex)}
+												onRemoveOtherOption={() =>
+													handleRemoveOption(
+														index,
+														question.options!.findIndex(option => option.isOther)
+													)
+												}
+												onChangeOption={(optionIndex, newLabel) => handleChangeOption(index, optionIndex, newLabel)}
+												onStartChange={newStart => handleStartChange(index, newStart)}
+												onEndChange={newEnd => handleEndChange(index, newEnd)}
+												onStartLabelChange={label => handleStartLabelChange(index, label)}
+												onEndLabelChange={label => handleEndLabelChange(index, label)}
+												onChangeIcon={newIcon => handleChangeIcon(index, newIcon)}
+												onToggleIsFromAnswer={() => handleToggleIsFromAnswer(index)}
+												onSourceQuestionChange={sourceId => handleSourceQuestionChange(index, sourceId)}
+												sourceQuestionOptions={sourceQuestionOptions}
+												sourceQuestionId={question.sourceQuestionId}
+												onRequiredChange={required => handleRequiredChange(index, required)}
+												onUploadFileTypesChange={types => handleUploadFileTypesChange(index, types)}
+												onUploadMaxFileAmountChange={amount => handleUploadMaxFileAmountChange(index, amount)}
+												onUploadMaxFileSizeLimitChange={bytes => handleUploadMaxFileSizeLimitChange(index, bytes)}
+												onDateOptionChange={(field, checked) => handleDateOptionChange(index, field, checked)}
+												onDateRangeChange={(field, nextValue) => handleDateRangeChange(index, field, nextValue)}
+												onUrlChange={url => handleUrlChange(index, url)}
+												onOauthProviderChange={provider => handleOauthProviderChange(index, provider)}
+												onFold={() => {
+													flushCheckpoint();
+													void flushDirtyQuestions();
+												}}
+												onTypeChange={nextType => handleQuestionTypeChange(index, nextType)}
+											/>
+										)}
+									</SortableQuestionItem>
+								))}
+							</SortableContext>
+						</DndContext>
 					</div>
 				</div>
 				<div className={styles.sidebarContainer}>

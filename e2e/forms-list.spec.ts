@@ -16,6 +16,14 @@ const formInProgress = {
 	responseIds: ["resp-2"]
 };
 
+const formCompleted = {
+	id: "f4",
+	title: "已完成問卷",
+	deadline: null,
+	status: "COMPLETED",
+	responseIds: ["resp-4"]
+};
+
 test("clicking NOT_STARTED form creates a response and navigates", async ({ page }) => {
 	await mockRoute(page, "**/api/forms/me", [formNotStarted]);
 	await mockRoute(page, "**/api/forms/f1/responses", { id: "resp-1" }, { method: "POST" });
@@ -92,6 +100,27 @@ test("IN_PROGRESS form without responseIds fetches existing response then naviga
 
 	expect(getCalled).toBe(true);
 	await page.waitForURL("**/forms/f3/resp-3");
+});
+
+test("cancel submission asks for confirmation and POSTs cancel endpoint", async ({ page }) => {
+	await mockRoute(page, "**/api/forms/me", [formCompleted]);
+
+	let cancelCalled = false;
+	await page.route("**/api/responses/resp-4/cancel", route => {
+		cancelCalled = true;
+		route.fulfill({ status: 204 });
+	});
+
+	page.once("dialog", dialog => dialog.accept());
+
+	await page.goto("/forms");
+	await page.click("button:has-text('已送出')");
+	await page.waitForSelector("text=已完成問卷");
+
+	await page.click("button:has-text('取消提交')");
+
+	expect(cancelCalled).toBe(true);
+	await expect(page.getByText("已取消提交", { exact: true }).first()).toBeVisible({ timeout: 5000 });
 });
 
 test("create response failure shows error toast and keeps button enabled", async ({ page }) => {

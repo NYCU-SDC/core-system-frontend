@@ -23,6 +23,7 @@
 	--color-body: #c2c0ce;
 	--color-heading: #d3d1db;
 	--color-display: #e3e2e9;
+	--border: var(--selection);
 	--background-color-primary: #0e0d11;
 	--background-color-secondary: #1c1b22;
 	--background-color-tertiary: #383645;

@@ -3,13 +3,15 @@ import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import styles from "../FormFilloutPage.module.css";
 
 export const DetailMultipleChoiceRenderer = ({ question, value, onAnswerChange }: { question: FormsQuestionResponse; value: string; onAnswerChange: (questionId: string, value: string) => void }) => {
+	const choices = (question.choices ?? []).filter(choice => !!choice && !!choice.id);
+
 	return (
 		<div className={styles.choiceList}>
-			{question.choices?.map(choice => (
+			{choices.map(choice => (
 				<DetailedCheckbox
 					key={choice.id}
 					id={`${question.id}-${choice.id}`}
-					title={choice.name}
+					title={choice.name ?? choice.id}
 					description={choice.description || ""}
 					checked={value.includes(choice.id)}
 					onCheckedChange={checked => {

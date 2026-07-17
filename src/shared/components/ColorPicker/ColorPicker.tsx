@@ -52,11 +52,12 @@ export interface ColorPickerProps {
 	value?: string;
 	onChange?: (color: string) => void;
 	allowCustom?: boolean;
+	disabled?: boolean;
 }
 
 const defaultColors = ["#ff5555", "#ffb86c", "#f1fa8c", "#50fa7b", "#8be9fd", "#bd93f9", "#ff79c6", "#6272a4"];
 
-export const ColorPicker = ({ label, colors = defaultColors, value, onChange, allowCustom = true }: ColorPickerProps) => {
+export const ColorPicker = ({ label, colors = defaultColors, value, onChange, allowCustom = true, disabled = false }: ColorPickerProps) => {
 	const [showCustomDialog, setShowCustomDialog] = useState(false);
 	const [hue, setHue] = useState(0);
 	const [saturation, setSaturation] = useState(0);
@@ -70,10 +71,12 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 	const hueColor = rgbToHex(...hsvToRgb(hue, 100, 100));
 
 	const handleColorSelect = (color: string) => {
+		if (disabled) return;
 		onChange?.(color);
 	};
 
 	const handleOpenDialog = () => {
+		if (disabled) return;
 		const initHex = value || "#000000";
 		if (/^#[0-9a-f]{6}$/i.test(initHex)) {
 			const [h, s, v] = hexToHsv(initHex);
@@ -133,6 +136,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 	};
 
 	const handleCustomColorSubmit = () => {
+		if (disabled) return;
 		onChange?.(currentHex);
 		setShowCustomDialog(false);
 	};
@@ -148,6 +152,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 						className={`${styles.colorCircle} ${value === color ? styles.selected : ""}`}
 						style={{ "--color": color } as React.CSSProperties}
 						onClick={() => handleColorSelect(color)}
+						disabled={disabled}
 						aria-label={`選擇顏色 ${color}`}
 					>
 						{value === color && (
@@ -166,6 +171,7 @@ export const ColorPicker = ({ label, colors = defaultColors, value, onChange, al
 								className={`${styles.addButton} ${isCustomSelected ? styles.addButtonCustomSelected : ""}`}
 								style={isCustomSelected ? ({ "--color": value } as React.CSSProperties) : undefined}
 								onClick={handleOpenDialog}
+								disabled={disabled}
 								aria-label="新增自訂顏色"
 							>
 								{isCustomSelected ? (

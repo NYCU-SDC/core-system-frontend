@@ -2,7 +2,6 @@ import type { Question, QuestionTemplate } from "@/features/form/components/Admi
 import { NormalizeDateToUtc } from "@/shared/utils/date";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import { Calendar, CaseSensitive, CloudUpload, Ellipsis, LayoutList, Link2, List, ListOrdered, Rows3, ShieldCheck, SquareCheckBig, Star, TextAlignStart } from "lucide-react";
-import { marked } from "marked";
 import { v4 as uuidv4 } from "uuid";
 
 export const QUESTION_STRATEGIES: Record<Question["type"], QuestionTemplate> = {
@@ -69,7 +68,7 @@ export const QUESTION_STRATEGIES: Record<Question["type"], QuestionTemplate> = {
 		}),
 		toApiPayload: (question, base) => {
 			if (question.detailOptions) {
-				base.choices = question.detailOptions.map(o => ({ name: o.label, description: o.description ? (marked.parse(o.description) as string) : o.description }));
+				base.choices = question.detailOptions.map(o => ({ name: o.label, description: o.description }));
 			}
 		}
 	},

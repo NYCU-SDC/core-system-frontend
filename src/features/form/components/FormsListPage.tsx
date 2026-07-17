@@ -1,13 +1,14 @@
 import { useMe } from "@/features/auth/hooks/useAuth";
 import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { useMyOrgs } from "@/features/dashboard/hooks/useOrgSettings";
+import { useCancelFormResponseSubmission } from "@/features/form/hooks/useFormResponses";
 import { useCreateFormResponse, useMyForms } from "@/features/form/hooks/useMyForms";
 import * as formApi from "@/features/form/services/api";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, ErrorMessage, LoadingSpinner, useToast } from "@/shared/components";
 import { UnitUserFormStatus, type UnitUserForm } from "@nycu-sdc/core-system-sdk";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./FormsListPage.module.css";
 import { TabButtons } from "./TabButtons";
@@ -20,6 +21,7 @@ type FormRow = {
 	status: (typeof UnitUserFormStatus)[keyof typeof UnitUserFormStatus];
 	buttonLabel: string;
 	responseIds?: string[];
+	allowEditResponse?: boolean;
 };
 
 // Map API status to button label
@@ -41,7 +43,8 @@ const toFormRow = (form: UnitUserForm): FormRow => {
 		deadline: form.deadline ? formatDate(form.deadline) : "無期限",
 		status: form.status,
 		buttonLabel: statusMap[form.status],
-		responseIds: form.responseIds
+		responseIds: form.responseIds,
+		allowEditResponse: form.allowEditResponse
 	};
 };
 
@@ -57,6 +60,7 @@ export const FormsListPage = () => {
 	// Fetch forms from API
 	const formsQuery = useMyForms();
 	const createResponseMutation = useCreateFormResponse();
+	const cancelSubmissionMutation = useCancelFormResponseSubmission();
 	const { canAccessOrgAdmin } = useOrgAdminAccess();
 	const myOrgsQuery = useMyOrgs();
 	const adminOrgSlug = myOrgsQuery.data?.[0]?.slug ?? "SDC";
@@ -77,6 +81,7 @@ export const FormsListPage = () => {
 	}, [forms, activeTab]);
 
 	const [pendingFormId, setPendingFormId] = useState<string | null>(null);
+	const [cancelingFormId, setCancelingFormId] = useState<string | null>(null);
 
 	const handleFormClick = (form: FormRow) => {
 		if (form.status === UnitUserFormStatus.NOT_STARTED) {
@@ -116,6 +121,49 @@ export const FormsListPage = () => {
 					.catch(() => pushToast({ title: "無法載入填答紀錄", variant: "error" }))
 					.finally(() => setPendingFormId(null));
 			}
+		}
+	};
+
+	const handleCancelSubmission = async (event: MouseEvent<HTMLButtonElement>, form: FormRow) => {
+		event.stopPropagation();
+		if (cancelingFormId === form.id) return;
+		if (!window.confirm(`確定要取消提交「${form.title}」嗎？取消後會回到填寫中狀態。`)) return;
+
+		let responseId = form.responseIds?.[0];
+		if (!responseId) {
+			setCancelingFormId(form.id);
+			try {
+				const data = await formApi.listFormResponses(form.id);
+				responseId = data.responses?.[0]?.id;
+			} catch (error) {
+				setCancelingFormId(null);
+				pushToast({ title: "取消提交失敗", description: (error as Error).message, variant: "error" });
+				return;
+			}
+		}
+
+		if (!responseId) {
+			setCancelingFormId(null);
+			pushToast({ title: "找不到填答紀錄", variant: "error" });
+			return;
+		}
+
+		setCancelingFormId(form.id);
+		cancelSubmissionMutation.mutate(
+			{ formId: form.id, responseId },
+			{
+				onSuccess: () => pushToast({ title: "已取消提交", variant: "success" }),
+				onError: error => pushToast({ title: "取消提交失敗", description: error.message, variant: "error" }),
+				onSettled: () => setCancelingFormId(null)
+			}
+		);
+	};
+
+	const handleEditResponse = (form: FormRow) => () => {
+		if (!form.allowEditResponse) return;
+		const responseId = form.responseIds?.[0];
+		if (responseId) {
+			navigate(`/forms/${form.id}/${responseId}`);
 		}
 	};
 
@@ -159,9 +207,42 @@ export const FormsListPage = () => {
 									<h3 className={styles.cardTitle}>{form.title}</h3>
 									<p className={styles.cardDescription}>截止日期：{form.deadline}</p>
 								</div>
-								<Button className={styles.sharedBtn} processing={pendingFormId === form.id}>
-									{form.buttonLabel}
-								</Button>
+								{form.status === UnitUserFormStatus.COMPLETED ? (
+									<div className={styles.actions}>
+										<Button
+											processing={pendingFormId === form.id}
+											onClick={event => {
+												event.stopPropagation();
+												handleFormClick(form);
+											}}
+										>
+											{form.buttonLabel}
+										</Button>
+										{form.allowEditResponse && (
+											<Button
+												onClick={event => {
+													event.stopPropagation();
+													handleEditResponse(form);
+												}}
+											>
+												編輯回覆
+											</Button>
+										)}
+										<Button
+											className={styles.sharedBtn}
+											themeColor="var(--red)"
+											processing={cancelingFormId === form.id}
+											disabled={cancelSubmissionMutation.isPending}
+											onClick={event => handleCancelSubmission(event, form)}
+										>
+											取消提交
+										</Button>
+									</div>
+								) : (
+									<Button className={styles.sharedBtn} processing={pendingFormId === form.id}>
+										{form.buttonLabel}
+									</Button>
+								)}
 							</div>
 						))
 					) : (
