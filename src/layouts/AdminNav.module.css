@@ -121,7 +121,22 @@
 
 /* ========== Burger Button ========== */
 .burgerBtn {
-	display: none;
+	display: flex;
+	position: fixed;
+	top: 0.75rem;
+	left: 0.75rem;
+	z-index: 9999;
+	width: 40px;
+	height: 40px;
+	border-radius: 0.5rem;
+	background: var(--background-color-tertiary);
+	border: 1px solid var(--background-color-tertiary);
+	justify-content: center;
+	align-items: center;
+	cursor: pointer;
+	opacity: 0;
+	pointer-events: none;
+	visibility: hidden;
 }
 
 /* ========== Collapse (desktop default) ========== */
@@ -153,18 +168,15 @@
 	}
 
 	.burgerBtn {
-		display: flex;
-		position: fixed;
-		top: 0.75rem;
-		left: 0.75rem;
-		z-index: 9999;
-		width: 40px;
-		height: 40px;
-		border-radius: 0.5rem;
-		background: var(--background-color-tertiary);
-		border: 1px solid var(--background-color-tertiary);
-		justify-content: center;
-		align-items: center;
-		cursor: pointer;
+		pointer-events: auto;
+		opacity: 1;
+		visibility: visible;
+		transition:
+			opacity 200ms ease 420ms,
+			background-color 0.5s ease,
+			padding 220ms ease;
+	}
+	.burgerBtn:hover {
+		background: var(--foreground);
 	}
 }

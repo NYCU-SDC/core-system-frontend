@@ -25,6 +25,8 @@ export const formKeys = {
 	workflow: (formId: string) => ["form", formId, "workflow"] as const,
 	responses: (formId: string) => ["form", formId, "responses"] as const,
 	response: (formId: string, responseId: string) => ["form", formId, "responses", responseId] as const,
+	views: (formId: string) => ["form", formId, "views"] as const,
+	view: (formId: string, viewId: string) => ["form", formId, "views", viewId] as const,
 	fonts: ["form", "fonts"] as const,
 	googleSheetEmail: ["forms", "google-sheet-email"] as const,
 	myForms: ["forms", "me"] as const,

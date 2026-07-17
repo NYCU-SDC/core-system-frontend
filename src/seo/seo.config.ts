@@ -87,6 +87,12 @@ export const SEO_CONFIG: Record<string, SeoRule> = {
 		canonical: false
 	},
 
+	memberDataPage: {
+		title: "成員資料管理",
+		description: "管理 SDC 各組別招募表單成員資料",
+		noIndex: true
+	},
+
 	formDetail: {
 		title: ({ data }) => (data as FormSeoData | undefined)?.title ?? "表單",
 		description: ({ data }) => {

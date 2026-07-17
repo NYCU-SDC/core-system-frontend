@@ -1,7 +1,8 @@
 import { useOrgAdminAccess } from "@/features/auth/hooks/useOrgAdminAccess";
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
-import { ClipboardList, FileText, LogOut, Menu, Settings, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { ClipboardList, FileText, FileUser, LogOut, Menu, Settings, X } from "lucide-react";
+import { useEffect } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
 import styles from "./AdminNav.module.css";
 
 interface AdminNavProps {
@@ -11,14 +12,26 @@ interface AdminNavProps {
 
 export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 	const { pathname } = useLocation();
+	const { formid } = useParams<{ formid?: string }>();
 	const orgSlug = useActiveOrgSlug();
 
 	const isUserForms = pathname === "/forms" || pathname.startsWith("/forms/");
-	const isFormsDashboard = pathname === `/orgs/${orgSlug}/forms` || pathname.startsWith(`/orgs/${orgSlug}/forms/`);
+	const isMemberData = pathname === `/orgs/${orgSlug}/members` || pathname.startsWith(`/orgs/${orgSlug}/members/`) || /^\/orgs\/[^/]+\/forms\/[^/]+\/members\/?$/.test(pathname);
+	const isFormsDashboard = !isMemberData && (pathname === `/orgs/${orgSlug}/forms` || pathname.startsWith(`/orgs/${orgSlug}/forms/`));
+	const memberDataPath = formid ? `/orgs/${orgSlug}/forms/${formid}/members` : `/orgs/${orgSlug}/members`;
 	const isSettings = pathname.startsWith(`/orgs/${orgSlug}/settings`);
 	const isUserSettings = pathname === "/account/settings";
 
 	const { user, canAccessOrgAdmin, isLoading } = useOrgAdminAccess();
+
+	useEffect(() => {
+		const mq = window.matchMedia("(max-width: 30rem)");
+		const handler = (e: MediaQueryListEvent) => {
+			if (!e.matches) setIsOpen(false);
+		};
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	}, [setIsOpen]);
 
 	if (isLoading || !canAccessOrgAdmin) return null;
 
@@ -49,11 +62,16 @@ export const AdminNav = ({ isOpen, setIsOpen }: AdminNavProps) => {
 								<FileText size={22} />
 							</div>
 						</Link>
+						<Link to={memberDataPath} className={styles.link} title="成員資料管理">
+							<div className={`${styles.navItem} ${isMemberData ? styles.navItemActive : ""}`}>
+								<FileUser size={22} />
+							</div>
+						</Link>
 					</div>
 
 					{/* Lower */}
 					<div className={styles.divider}>
-						<Link to={`/orgs/${orgSlug}/settings`} className={styles.link}>
+						<Link to={`/orgs/${orgSlug}/settings`} className={styles.link} title="組織管理">
 							<div className={`${styles.navItem} ${isSettings ? styles.navItemActive : ""}`}>
 								<Settings size={22} />
 							</div>

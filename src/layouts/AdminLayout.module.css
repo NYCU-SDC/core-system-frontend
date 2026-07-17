@@ -28,3 +28,20 @@
 		transform: translateX(66px);
 	}
 }
+
+/* AdminLayout prop: fixedHeight */
+.containerFixed {
+	height: 100vh;
+	overflow: hidden;
+}
+
+.mainFixed {
+	overflow: hidden;
+	min-height: 0;
+}
+
+.contentFixed {
+	overflow: hidden;
+	min-height: 0;
+	padding: 0;
+}
