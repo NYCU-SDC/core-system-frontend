@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { isValidElement, type CSSProperties, type ReactNode } from "react";
 import { ScrollContainer } from "../ScrollArea/ScrollContainer";
 import styles from "./Table.module.css";
 
@@ -21,6 +21,10 @@ export interface TableColumn<T = Record<string, unknown>> {
 	fixedWidth?: string;
 	/** 最小寬度（rem） */
 	minWidth?: string;
+	/** 最大寬度（rem）- 搭配 ellipsis 截斷超長內容 */
+	maxWidth?: string;
+	/** 內容超出時以單行省略號截斷，hover 由 title 顯示全文 */
+	ellipsis?: boolean;
 	/** 文字對齊 */
 	align?: ColumnAlign;
 }
@@ -44,6 +48,8 @@ export interface TableProps<T = Record<string, unknown>> {
 	showRowNumber?: boolean;
 	/** 表格是否撐滿容器高度 */
 	fillHeight?: boolean;
+	/** 外層 div 的 CSS class */
+	className?: string;
 	/** 外層 div 的額外 CSS class */
 	containerClassName?: string;
 	/** <table> 的額外 CSS class */
@@ -69,6 +75,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 	stickyHeader = false,
 	showRowNumber = false,
 	fillHeight = false,
+	className,
 	containerClassName,
 	tableClassName,
 	rowClassName,
@@ -86,7 +93,7 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 			: []);
 	const totalCols = Math.max(1, columns.length + (showRowNumber ? 1 : 0));
 
-	const containerClasses = [styles.container, fillHeight && styles.fillHeight, containerClassName].filter(Boolean).join(" ");
+	const containerClasses = [styles.container, fillHeight && styles.fillHeight, className, containerClassName].filter(Boolean).join(" ");
 
 	const tableBorderClass = {
 		none: styles.borderNone,
@@ -105,6 +112,23 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 		return densityMap[d];
 	};
 
+	const getColumnStyle = (column: TableColumn<T>): CSSProperties => {
+		if (column.width === "fixed" && column.fixedWidth) {
+			return { width: column.fixedWidth, minWidth: column.fixedWidth, maxWidth: column.fixedWidth };
+		}
+		const style: CSSProperties = {};
+		if (column.minWidth) style.minWidth = column.minWidth;
+		if (column.maxWidth) style.maxWidth = column.maxWidth;
+		return style;
+	};
+
+	const getCellContent = (value: unknown): ReactNode => {
+		if (value == null) return "-";
+		if (isValidElement(value)) return value;
+		if (typeof value === "string" || typeof value === "number") return value;
+		return String(value);
+	};
+
 	return (
 		<ScrollContainer className={containerClasses}>
 			<table className={`${tableClasses} ${getDensityClass(density)}`} data-align={align}>
@@ -113,19 +137,11 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 						{showRowNumber && <th className={`${styles.header} ${styles.rowNumberHeader}`}>#</th>}
 						{columns.map(column => {
 							const columnAlign = column.align || align;
-							const columnStyle: CSSProperties = {};
-
-							if (column.width === "fixed" && column.fixedWidth) {
-								columnStyle.width = column.fixedWidth;
-								columnStyle.minWidth = column.fixedWidth;
-								columnStyle.maxWidth = column.fixedWidth;
-							} else if (column.minWidth) {
-								columnStyle.minWidth = column.minWidth;
-							}
-
 							return (
-								<th key={String(column.key)} className={styles.header} data-align={columnAlign} style={columnStyle} title={typeof column.header === "string" ? column.header : undefined}>
-									<div className={styles.headerContent}>{column.header}</div>
+								<th key={String(column.key)} className={styles.header} data-align={columnAlign} style={getColumnStyle(column)} title={typeof column.header === "string" ? column.header : undefined}>
+									<div className={styles.headerContent} style={column.maxWidth ? { maxWidth: column.maxWidth } : undefined}>
+										{column.header}
+									</div>
 								</th>
 							);
 						})}
@@ -145,25 +161,24 @@ export const Table = <T extends Record<string, unknown> = Record<string, unknown
 								{columns.map(column => {
 									const value = record[column.key];
 									const columnAlign = column.align || align;
-									const columnStyle: CSSProperties = {};
-
-									if (column.width === "fixed" && column.fixedWidth) {
-										columnStyle.width = column.fixedWidth;
-										columnStyle.minWidth = column.fixedWidth;
-										columnStyle.maxWidth = column.fixedWidth;
-									} else if (column.minWidth) {
-										columnStyle.minWidth = column.minWidth;
-									}
+									const content = column.render ? column.render(value, record, rowIndex) : getCellContent(value);
+									const showTitle = (column.ellipsis || column.width === "fixed") && typeof value === "string";
 
 									return (
 										<td
 											key={`${rowIndex}-${String(column.key)}`}
 											className={`${styles.cell} ${cellClassName?.(value, record, rowIndex, column.key) ?? ""}`}
 											data-align={columnAlign}
-											style={columnStyle}
-											title={column.width === "fixed" && typeof value === "string" ? value : undefined}
+											style={getColumnStyle(column)}
+											title={showTitle ? (value as string) : undefined}
 										>
-											{column.render ? column.render(value, record, rowIndex) : ((value as ReactNode) ?? "-")}
+											{column.ellipsis ? (
+												<div className={styles.cellEllipsis} style={column.maxWidth ? { maxWidth: column.maxWidth } : undefined}>
+													{content}
+												</div>
+											) : (
+												content
+											)}
 										</td>
 									);
 								})}

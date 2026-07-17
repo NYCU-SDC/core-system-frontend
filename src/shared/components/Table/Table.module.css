@@ -91,18 +91,18 @@
 
 /* 只有橫線 */
 .borderHorizontal {
-	border-top: 0.0625rem solid var(--border);
-	border-bottom: 0.0625rem solid var(--border);
+	border-top: 0.0625rem solid var(--table-border-color, var(--border));
+	border-bottom: 0.0625rem solid var(--table-border-color, var(--border));
 }
 
 .borderHorizontal .header {
 	border: none;
-	border-bottom: 0.0625rem solid var(--border);
+	border-bottom: 0.0625rem solid var(--table-border-color, var(--border));
 }
 
 .borderHorizontal .cell {
 	border: none;
-	border-bottom: 0.0625rem solid var(--border);
+	border-bottom: 0.0625rem solid var(--table-border-color, var(--border));
 }
 
 .borderHorizontal tbody tr:last-child .cell {
@@ -111,11 +111,10 @@
 
 /* ==================== Header Styling ====================*/
 .header {
-	background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
-	font-weight: 600;
+	background-color: var(--table-header-bg, color-mix(in srgb, var(--foreground) 10%, transparent));
+	font-weight: 400;
 	white-space: nowrap;
 	vertical-align: middle;
-	user-select: none;
 	position: relative;
 }
 
@@ -124,15 +123,22 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 /* ==================== Cell Styling ====================*/
 .cell {
 	vertical-align: middle;
-	background-color: color-mix(in srgb, var(--foreground) 4%, transparent);
-	word-break: break-word;
-	overflow-wrap: break-word;
+	background-color: var(--table-cell-bg, color-mix(in srgb, var(--foreground) 4%, transparent));
+	font-size: var(--table-cell-font-size, inherit);
+	overflow-wrap: anywhere;
+}
+
+/* 超長內容：單行省略號截斷（max-width 由欄位 inline style 給定），hover 由 title 顯示全文 */
+.cellEllipsis {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 /* Hover 效果 */
@@ -165,7 +171,7 @@
 	position: sticky;
 	top: 0;
 	z-index: 10;
-	background-color: color-mix(in srgb, var(--foreground) 10%, var(--background-color-primary));
+	background-color: var(--table-header-bg, color-mix(in srgb, var(--foreground) 10%, var(--background-color-primary)));
 }
 
 .stickyHeader.borderFull .header,
