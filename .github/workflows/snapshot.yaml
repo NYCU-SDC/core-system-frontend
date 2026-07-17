@@ -100,7 +100,6 @@ jobs:
     name: Build Docker image
     runs-on: ubuntu-latest
     needs: [Lint, Format, Build, Test]
-    needs: [Lint, Format, Build, Test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

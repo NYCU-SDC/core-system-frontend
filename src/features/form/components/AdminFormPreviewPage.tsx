@@ -1,7 +1,6 @@
 import { useFormById } from "@/features/form/hooks/useOrgForms";
 import { useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";

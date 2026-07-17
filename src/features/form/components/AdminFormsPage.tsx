@@ -1,6 +1,5 @@
 import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useCreateOrgForm, useOrgForms } from "@/features/form/hooks/useOrgForms";
-import { textToProseMirrorDocument } from "@/features/form/utils/proseMirror";
 import { AdminLayout } from "@/layouts";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -52,10 +51,10 @@ const toFormRow = (form: FormsFormResponse): FormRow => ({
 	id: form.id,
 	title: form.title,
 	lastEdited: formatDate(form.updatedAt),
-	lastEditor: form.lastEditor.name,
-	lastEditorAvatarUrl: form.lastEditor.avatarUrl,
-	creator: form.creator.name,
-	creatorAvatarUrl: form.creator.avatarUrl,
+	lastEditor: form.lastEditor?.name || form.lastEditor?.username || form.lastEditor?.emails?.[0] || "-",
+	lastEditorAvatarUrl: form.lastEditor?.avatarUrl || "",
+	creator: form.creator?.name || form.creator?.username || form.creator?.emails?.[0] || "-",
+	creatorAvatarUrl: form.creator?.avatarUrl || "",
 	status: toStatusVariant(form.status, form.deadline),
 	deadline: form.deadline ? formatDate(form.deadline) : "-"
 });
@@ -68,7 +67,7 @@ export const AdminFormsPage = () => {
 
 	// Fetch forms from API
 	const orgSlug = useActiveOrgSlug();
-	const formsQuery = useOrgForms(orgSlug, ADMIN_FORM_STATUSES);
+	const formsQuery = useOrgForms(orgSlug);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 
 	useEffect(() => {
@@ -97,7 +96,8 @@ export const AdminFormsPage = () => {
 				title: "未命名表單",
 				description: EMPTY_PROSE_MIRROR_DOC as unknown as ProseMirrorDocument,
 				messageAfterSubmission: "感謝您的填寫！",
-				visibility: "PUBLIC"
+				visibility: "PUBLIC",
+				allowEditResponse: false
 			},
 			{
 				onSuccess: newForm => {

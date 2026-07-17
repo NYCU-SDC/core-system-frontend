@@ -1,3 +1,4 @@
+import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { Markdown } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import styles from "./FormQuestionWrapper.module.css";
@@ -8,10 +9,7 @@ interface FormQuestionWrapperProps {
 }
 
 export const FormQuestionWrapper = ({ question, children }: FormQuestionWrapperProps) => {
-	const descriptionHtml = question.descriptionHtml ?? "";
-	const descriptionText = proseMirrorToPlainText(question.description);
-	const hasDescriptionHtml = Boolean(descriptionHtml.trim());
-	const hasDescriptionText = !hasDescriptionHtml && Boolean(descriptionText.trim());
+	const description = question.descriptionHtml?.trim() || proseMirrorToPlainText(question.description).trim();
 
 	return (
 		<div key={question.id} className={styles.questionField}>
@@ -19,7 +17,7 @@ export const FormQuestionWrapper = ({ question, children }: FormQuestionWrapperP
 				{question.title}
 				{question.required && <span className={styles.requiredAsterisk}> *</span>}
 			</label>
-			{question.descriptionHtml && <Markdown className={styles.questionDescription} content={question.descriptionHtml} />}
+			{description && <Markdown className={styles.questionDescription} content={description} />}
 			{children}
 		</div>
 	);

@@ -1,9 +1,7 @@
-import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { DateInput, ScaleInput } from "@/shared/components";
 import type { FormsQuestionResponse } from "@nycu-sdc/core-system-sdk";
 import { useEffect } from "react";
 import styles from "./FormFilloutPage.module.css";
-import { FormQuestionWrapper } from "./FormQuestionWrapper";
 import { FormQuestionWrapper } from "./FormQuestionWrapper";
 import {
 	DetailMultipleChoiceRenderer,
@@ -27,6 +25,7 @@ type FormQuestionRendererProps = {
 	sourceAnswerValue?: string;
 	responseId?: string;
 	disableFileUpload?: boolean;
+	downloadInitialFiles?: boolean;
 	initialFiles?: ServerFileInfo[];
 	onFileMetadataChange?: (files: ServerFileInfo[]) => void;
 	onAnswerChange: (questionId: string, value: string) => void;
@@ -41,13 +40,12 @@ export const FormQuestionRenderer = ({
 	sourceAnswerValue = "",
 	responseId,
 	disableFileUpload = false,
+	downloadInitialFiles = true,
 	initialFiles,
 	onFileMetadataChange,
 	onAnswerChange,
 	onOtherTextChange
 }: FormQuestionRendererProps) => {
-	const description = question.descriptionHtml ?? proseMirrorToPlainText(question.description);
-
 	useEffect(() => {
 		if (question.type !== "RANKING") return;
 		const rankingChoices = question.choices?.length ? question.choices : (sourceQuestion?.choices ?? []);
@@ -132,6 +130,7 @@ export const FormQuestionRenderer = ({
 					maxFileAmount={question.uploadFile?.maxFileAmount || 1}
 					allowedFileTypes={question.uploadFile?.allowedFileTypes?.join(",") || "*"}
 					initialFiles={initialFiles}
+					downloadInitialFiles={downloadInitialFiles}
 					onFileMetadataChange={onFileMetadataChange}
 					onFilesChange={fileNames => onAnswerChange(question.id, fileNames)}
 					disabled={disableFileUpload}

@@ -1,0 +1,159 @@
+/* 按鈕色彩 */
+.buttonForeground {
+	background-color: var(--foreground);
+	color: var(--background-color-primary);
+	border: 0.0625rem solid var(--foreground);
+}
+
+.buttonForeground:hover:not(:disabled) {
+	opacity: 0.9;
+}
+
+.buttonOrange {
+	background: var(--orange);
+	color: var(--background);
+	border: 0.0625rem solid var(--orange);
+}
+
+.buttonOrange:hover:not(:disabled) {
+	opacity: 0.9;
+}
+
+/* 匯出對話框 */
+.exportPopup {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+	color: var(--foreground);
+}
+
+.exportTitle {
+	margin: 0;
+	line-height: 1.2;
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+.exportHint {
+	margin: 0;
+	color: var(--muted-foreground);
+	font-size: 0.9375rem;
+}
+
+.exportQuestionBox {
+	max-height: 16.25rem;
+	overflow-y: auto;
+	border: 0.0625rem solid var(--border);
+	background: color-mix(in srgb, var(--foreground) 4%, transparent);
+	border-radius: 0.625rem;
+	padding: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+.exportSectionGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	position: relative;
+}
+
+.exportSectionGroup::before {
+	content: "";
+	position: absolute;
+	left: calc(1rem - 1px);
+	top: 1rem;
+	bottom: 1rem;
+	width: 2px;
+	background: color-mix(in srgb, var(--foreground) 20%, transparent);
+	border-radius: 1px;
+}
+
+.exportSectionItem {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	line-height: 1.4;
+	color: var(--foreground);
+	font-weight: 600;
+	cursor: pointer;
+	user-select: none;
+	transition: color 0.2s ease;
+}
+
+.exportSectionItem input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.exportQuestionItem {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	line-height: 1.4;
+	color: var(--muted-foreground);
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.2s ease;
+}
+
+.exportQuestionItem:hover {
+	color: var(--foreground);
+}
+
+.exportQuestionItem input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.exportQuestionItemIndented {
+	padding-left: 3rem;
+	position: relative;
+}
+
+.exportQuestionItemIndented::before {
+	content: "";
+	position: absolute;
+	left: calc(1rem - 1px);
+	top: 50%;
+	width: 2rem;
+	height: 2px;
+	background: color-mix(in srgb, var(--foreground) 20%, transparent);
+	transform: translateY(-50%);
+	border-radius: 1px;
+}
+
+.exportCheckboxIcon {
+	width: 2rem;
+	height: 2rem;
+	flex: 0 0 2rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.375rem;
+	background: var(--orange);
+	color: var(--background);
+	font-weight: 600;
+	position: relative;
+	z-index: 1;
+}
+
+.exportPopupActions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+/* 語意 class */
+.exportPreviewTableContainer {
+	max-height: 22.5rem;
+	overflow: auto;
+	border: 0.0625rem solid var(--border);
+	border-radius: 0.625rem;
+	margin-bottom: 1.5rem;
+}

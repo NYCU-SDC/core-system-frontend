@@ -82,6 +82,25 @@
 	transition: all 0.15s ease;
 }
 
+.fileActionBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 0.25rem;
+	border: none;
+	background: transparent;
+	color: var(--color-caption);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.fileActionBtn:hover {
+	background-color: var(--background-color-tertiary);
+	color: var(--color-heading);
+}
+
 .fileRemoveBtn:hover {
 	background-color: var(--background-color-tertiary);
 	color: var(--color-heading);

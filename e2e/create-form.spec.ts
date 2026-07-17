@@ -125,7 +125,7 @@ test("編輯表單測試", async ({ page }) => {
 	});
 	await page.route(`**/api/forms/${newFormId}/sections/**`, async route => {
 		const method = route.request().method();
-		if (method === "PUT") {
+		if (method === "PUT" || method === "PATCH") {
 			const body = route.request().postDataJSON() as { title?: string; description?: unknown } | null;
 			await route.fulfill({
 				status: 200,
@@ -134,7 +134,7 @@ test("編輯表單測試", async ({ page }) => {
 			});
 			return;
 		}
-		await route.continue();
+		await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: "section-1", title: "test section", description: null }) });
 	});
 	await page.route("**/api/sections/**/questions**", async route => {
 		const method = route.request().method();
@@ -154,7 +154,7 @@ test("編輯表單測試", async ({ page }) => {
 			});
 			return;
 		}
-		if (method === "PUT") {
+		if (method === "PUT" || method === "PATCH") {
 			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) });
 			return;
 		}

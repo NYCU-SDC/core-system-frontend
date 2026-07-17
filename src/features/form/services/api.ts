@@ -11,6 +11,7 @@ import type {
 	FormsFormRequest,
 	FormsFormRequestUpdate,
 	FormsFormResponse,
+	FormsFormStatus,
 	FormsGoogleSheetEmailResponse,
 	FormsGoogleSheetVerifyRequest,
 	FormsGoogleSheetVerifyResponse,
@@ -18,11 +19,12 @@ import type {
 	FormsQuestionResponse,
 	FormsSection,
 	FormsSectionBundle,
-	FormsSectionBundle,
 	FormsSectionRequest,
 	ResponsesAnswersRequest,
 	ResponsesAnswersRequestUpdate,
 	ResponsesCreateResponse,
+	ResponsesExportPreviewRequest,
+	ResponsesExportPreviewResponse,
 	ResponsesGetFormResponse,
 	ResponsesGetQuestionResponse,
 	ResponsesListResponse,
@@ -30,7 +32,6 @@ import type {
 	UnitUserForm
 } from "@nycu-sdc/core-system-sdk";
 import {
-	filesDownloadFile,
 	filesDownloadFile,
 	formWorkflowCreateNode,
 	formWorkflowDeleteNode,
@@ -56,6 +57,7 @@ import {
 	responsesGetFormResponse,
 	responsesGetQuestionResponse,
 	responsesListFormResponses,
+	responsesPreviewFormResponseExport,
 	responsesSubmitFormResponse,
 	responsesUpdateFormResponse,
 	unitCreateOrgForm,
@@ -75,7 +77,13 @@ export const listOrgForms = async (slug: string): Promise<FormsFormResponse[]> =
 	return res.data;
 };
 
-export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsFormResponse> => {
+export const listOrgFormsByStatus = async (slug: string, statuses?: readonly FormsFormStatus[]): Promise<FormsFormResponse[]> => {
+	const params = statuses && statuses.length > 0 ? { status: [...statuses] } : undefined;
+	const res = await unitListFormsByOrg(slug, params, defaultRequestOptions);
+	assertOk(res.status, "Failed to load forms", res.data);
+	return res.data;
+};
+
 export const createOrgForm = async (slug: string, req: FormsFormRequest): Promise<FormsFormResponse> => {
 	const res = await unitCreateOrgForm(slug, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to create form", res.data);
@@ -83,13 +91,11 @@ export const createOrgForm = async (slug: string, req: FormsFormRequest): Promis
 };
 
 export const getFormById = async (formId: string): Promise<FormsFormResponse> => {
-export const getFormById = async (formId: string): Promise<FormsFormResponse> => {
 	const res = await formsGetFormById(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load form", res.data);
 	return res.data;
 };
 
-export const updateForm = async (formId: string, req: FormsFormRequestUpdate): Promise<FormsFormResponse> => {
 export const updateForm = async (formId: string, req: FormsFormRequestUpdate): Promise<FormsFormResponse> => {
 	const res = await formsUpdateForm(formId, req, defaultRequestOptions);
 	assertOk(res.status, "Failed to update form", res.data);
@@ -102,7 +108,6 @@ export const publishForm = async (formId: string): Promise<FormsFormPublishRespo
 	return res.data;
 };
 
-export const archiveForm = async (formId: string): Promise<FormsFormResponse> => {
 export const archiveForm = async (formId: string): Promise<FormsFormResponse> => {
 	const res = await formsArchiveForm(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to archive form", res.data);
@@ -138,7 +143,7 @@ export const listSections = async (formId: string): Promise<FormsSectionBundle[]
 	const res = await formsListSections(formId, defaultRequestOptions);
 	assertOk(res.status, "Failed to load sections", res.data);
 
-	return raw as FormsSectionsResponse[];
+	return res.data;
 };
 
 export const updateSection = async (formId: string, sectionId: string, req: FormsSectionRequest): Promise<FormsSection> => {
@@ -220,6 +225,51 @@ export const getFormResponse = async (formId: string, responseId: string): Promi
 	return res.data as ResponsesGetFormResponse;
 };
 
+export const previewFormResponseExport = async (formId: string, req: ResponsesExportPreviewRequest): Promise<ResponsesExportPreviewResponse> => {
+	const res = await responsesPreviewFormResponseExport(formId, req, defaultRequestOptions);
+	assertOk(res.status, "Failed to preview export", res.data);
+	return res.data as ResponsesExportPreviewResponse;
+};
+
+const parseDownloadFilename = (contentDisposition: string | null): string | null => {
+	if (!contentDisposition) return null;
+
+	const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+	if (utf8Match?.[1]) {
+		return decodeURIComponent(utf8Match[1]);
+	}
+
+	const basicMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+	return basicMatch?.[1] ?? null;
+};
+
+export const exportFormResponses = async (formId: string, questionIds: string[]): Promise<{ blob: Blob; filename: string | null }> => {
+	const response = await fetch(`/api/forms/${formId}/responses/export/download`, {
+		...defaultRequestOptions,
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json"
+		},
+		body: JSON.stringify({ questionIds })
+	});
+
+	if (!response.ok) {
+		const body = await response.text();
+		let payload: unknown = body;
+		try {
+			payload = JSON.parse(body);
+		} catch {
+			payload = body;
+		}
+		assertOk(response.status, "Failed to export responses", payload);
+	}
+
+	return {
+		blob: await response.blob(),
+		filename: parseDownloadFilename(response.headers.get("Content-Disposition"))
+	};
+};
+
 export const deleteFormResponse = async (formId: string, responseId: string): Promise<void> => {
 	const res = await responsesDeleteFormResponse(formId, responseId, defaultRequestOptions);
 	assertOk(res.status, "Failed to delete response", res.data);
@@ -233,6 +283,16 @@ export const updateFormResponse = async (responseId: string, answers: ResponsesA
 export const submitFormResponse = async (responseId: string, answers: ResponsesAnswersRequest): Promise<void> => {
 	const res = await responsesSubmitFormResponse(responseId, answers, defaultRequestOptions);
 	assertOk(res.status, "Failed to submit form", res.data);
+};
+
+export const cancelFormResponseSubmission = async (responseId: string): Promise<void> => {
+	const response = await fetch(`/api/responses/${responseId}/cancel`, {
+		...defaultRequestOptions,
+		method: "POST"
+	});
+	const body = [204, 205, 304].includes(response.status) ? "" : await response.text();
+	const data = body.trim().length > 0 ? JSON.parse(body) : {};
+	assertOk(response.status, "Failed to cancel submission", data);
 };
 
 export const downloadFile = async (fileId: string): Promise<Blob> => {

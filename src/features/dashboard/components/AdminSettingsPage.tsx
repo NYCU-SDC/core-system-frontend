@@ -13,7 +13,6 @@ type MemberRow = {
 	email: string;
 	// roleLabel: string;
 	avatarUrl: string | null;
-	avatarUrl: string | null;
 };
 
 /* ---------- API 資料轉 UI Model ---------- */
@@ -39,7 +38,6 @@ const toMemberRow = (value: unknown): MemberRow | null => {
 	// const roles = getStringArray(member.roles);
 	// const roleLabel = roles.includes("admin") ? "Admin" : "Member";
 
-	const avatarUrl = getString(member.avatarUrl);
 	const avatarUrl = getString(member.avatarUrl);
 	return { id, name, email, avatarUrl };
 };

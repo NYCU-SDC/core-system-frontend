@@ -36,7 +36,6 @@ export const authService = {
 
 		if (options.redirectUrl) {
 			params.r = options.redirectUrl;
-			params.r = options.redirectUrl;
 		}
 
 		window.location.href = getAuthLoginGoogleUrl(normalizedProvider, params);

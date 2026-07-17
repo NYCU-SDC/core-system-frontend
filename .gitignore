@@ -16,12 +16,14 @@ dist-ssr
 *.local
 
 # Test artifacts
+playwright/.auth/
 playwright-report/
 test-results/
 
 # Local tooling
 .claude/
 .codex-gitconfig
+.gitconfig-temp
 
 # Editor directories and files
 .vscode/*
@@ -33,10 +35,3 @@ test-results/
 *.njsproj
 *.sln
 *.sw?
-
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/

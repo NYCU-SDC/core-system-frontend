@@ -1,8 +1,8 @@
+import { FILLOUT_UNDO_CONFIG, useFilloutUndo } from "@/features/form/hooks/useFilloutUndo";
 import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { buildAnswersPayload, useSections } from "@/features/form/hooks/useSections";
 import { useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { proseMirrorToPlainText } from "@/features/form/utils/proseMirror";
 import { resolveVisibleSectionsFromWorkflow } from "@/features/form/utils/workflow";
 import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
@@ -39,20 +39,6 @@ export const FormFilloutPage = () => {
 	const { formId, responseId: urlResponseId } = useParams<{ formId: string; responseId: string }>();
 	const navigate = useNavigate();
 	const { pushToast } = useToast();
-
-	// State
-	const [currentStep, setCurrentStep] = useState(0);
-	const [isSubmitted, setIsSubmitted] = useState(false);
-	const [answers, setAnswers] = useState<Record<string, string>>({});
-	const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
-	const [fileMetadata, setFileMetadata] = useState<Record<string, ServerFileInfo[]>>({});
-
-	// Ref
-	const answersInitialized = useRef(false);
-	const lastAutoSavePayloadRef = useRef<string>("");
-	const lastFailedAutoSavePayloadRef = useRef<string>("");
-
-	// ── React Query ──────────────────────────────────────────────────────────
 	const formQuery = useFormQuery(formId);
 	const meta = useSeo({
 		rule: SEO_CONFIG.formDetail,
@@ -61,9 +47,41 @@ export const FormFilloutPage = () => {
 	});
 	const sectionsQuery = useSections(formId, !!urlResponseId);
 	const workflowQuery = useWorkflow(formId, !!urlResponseId);
+	const disableKeyboardUndoRedo = Boolean(workflowQuery.data?.workflow?.some(node => node.type === "CONDITION" && node.conditionRule?.question));
 	const responseQuery = useFormResponse(formId, urlResponseId, !!urlResponseId);
 	const updateResponseMutation = useUpdateFormResponse(urlResponseId ?? "");
 	const submitResponseMutation = useSubmitFormResponse(formId ?? "");
+
+	// State
+	const [currentStep, setCurrentStep] = useState(0);
+	const [isSubmitted, setIsSubmitted] = useState(false);
+	const [fileMetadata, setFileMetadata] = useState<Record<string, ServerFileInfo[]>>({});
+	const {
+		state: formState,
+		setState: setFormState,
+		replaceState,
+		undo,
+		redo,
+		resetHistory,
+		flushCheckpoint,
+		canUndo,
+		canRedo,
+		onTextInputBlurCheckpoint
+	} = useFilloutUndo(
+		{
+			answers: {},
+			otherTexts: {}
+		},
+		{ historyLimit: FILLOUT_UNDO_CONFIG.historyLimit, disableKeyboardShortcuts: disableKeyboardUndoRedo }
+	);
+	const { answers, otherTexts } = formState;
+	// Ref
+
+	const answersInitialized = useRef(false);
+	const lastAutoSavePayloadRef = useRef<string>("");
+	const lastFailedAutoSavePayloadRef = useRef<string>("");
+
+	// ── React Query ──────────────────────────────────────────────────────────
 	const updateResponseMutateAsyncRef = useRef(updateResponseMutation.mutateAsync);
 	const coverImageUrl = formId ? `/api/forms/${formId}/cover` : null;
 
@@ -155,7 +173,7 @@ export const FormFilloutPage = () => {
 		const data = responseQuery.data as unknown as FormResponseData | undefined;
 		if (!data?.sections) return;
 		const loadedFileMetadata: Record<string, ServerFileInfo[]> = {};
-		const loaded: Record<string, string> = {};
+		const loadedAnswers: Record<string, string> = {};
 		const loadedOtherTexts: Record<string, string> = {};
 		data.sections.forEach(section => {
 			section.answerDetails?.forEach(detail => {
@@ -168,28 +186,30 @@ export const FormFilloutPage = () => {
 						.map(f => ({ fileId: f.fileId!, originalFilename: f.originalFilename!, contentType: f.contentType ?? "application/octet-stream" }));
 					loadedFileMetadata[detail.question.id] = fileInfos;
 					if (fileInfos.length > 0) {
-						loaded[detail.question.id] = fileInfos.map(f => f.originalFilename).join(",");
+						loadedAnswers[detail.question.id] = fileInfos.map(f => f.originalFilename).join(",");
 					}
 					return;
 				}
 				if (answerPayload && Array.isArray((answerPayload as ResponsesStringArrayAnswer).value)) {
 					const arrayAnswer = answerPayload as ResponsesStringArrayAnswer;
-					loaded[detail.question.id] = arrayAnswer.value.join(",");
+					loadedAnswers[detail.question.id] = arrayAnswer.value.join(",");
 					if (arrayAnswer.otherText) {
 						loadedOtherTexts[detail.question.id] = arrayAnswer.otherText;
 					}
 					return;
 				}
 				if (detail.payload?.displayValue) {
-					loaded[detail.question.id] = detail.payload.displayValue;
+					loadedAnswers[detail.question.id] = detail.payload.displayValue;
 				}
 			});
 		});
-		setAnswers(loaded);
-		setOtherTexts(loadedOtherTexts);
+		replaceState({
+			answers: loadedAnswers,
+			otherTexts: loadedOtherTexts
+		});
 		setFileMetadata(loadedFileMetadata);
 		answersInitialized.current = true;
-	}, [responseQuery.data]);
+	}, [replaceState, responseQuery.data]);
 
 	useEffect(() => {
 		if (isOnPreviewStep && urlResponseId) {
@@ -233,60 +253,91 @@ export const FormFilloutPage = () => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	};
 
+	const moveToStep = (nextStep: number) => {
+		flushCheckpoint();
+		resetHistory();
+		setCurrentStep(nextStep);
+		scrollToTop();
+	};
+
+	const handleUndo = () => {
+		flushCheckpoint();
+		undo();
+	};
+
+	const handleRedo = () => {
+		flushCheckpoint();
+		redo();
+	};
+
 	const handleNext = () => {
 		if (!isLastStep) {
-			setCurrentStep(prev => prev + 1);
-			scrollToTop();
+			moveToStep(currentStep + 1);
 		}
 	};
 
 	const handlePrevious = () => {
 		if (!isFirstStep) {
-			setCurrentStep(prev => prev - 1);
-			scrollToTop();
+			moveToStep(currentStep - 1);
 		}
 	};
 
 	const handleSectionClick = (index: number) => {
-		setCurrentStep(index);
-		scrollToTop();
+		moveToStep(index);
+	};
+
+	const isDebouncedTextQuestion = (questionId: string) => {
+		const question = questionsById.get(questionId);
+		return question?.type === "SHORT_TEXT" || question?.type === "LONG_TEXT" || question?.type === "HYPERLINK";
 	};
 
 	const updateAnswer = (questionId: string, value: string) => {
-		setAnswers(prev => {
-			const next = { ...prev, [questionId]: value };
+		setFormState(
+			prevState => {
+				const nextAnswers = { ...prevState.answers, [questionId]: value };
+				// Sync ranking questions whose source is the changed question
 
-			// Sync ranking questions whose source is the changed question
-			const allQuestions = sections.flatMap(s => s.questions ?? []);
-			const questionMap = new Map(allQuestions.map(q => [q.id, q]));
-			allQuestions.forEach(q => {
-				if (q.type !== "RANKING" || q.sourceId !== questionId) return;
-				const rankingRaw = prev[q.id] ?? "";
-				if (!rankingRaw) return;
-				if (!value) {
-					next[q.id] = "";
-					return;
-				}
-				const sourceQuestion = questionMap.get(q.sourceId);
-				const sourceSelectedIds = sourceQuestion?.type === "SINGLE_CHOICE" || sourceQuestion?.type === "DROPDOWN" ? [value] : value.split(",").filter(Boolean);
-				const filteredRankingIds = rankingRaw
-					.split(",")
-					.filter(Boolean)
-					.filter(id => sourceSelectedIds.includes(id));
-				const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
-				const normalized = [...filteredRankingIds, ...missingIds].join(",");
-				if (normalized !== rankingRaw) next[q.id] = normalized;
-			});
+				const allQuestions = sections.flatMap(section => section.questions ?? []);
+				const questionMap = new Map(allQuestions.map(question => [question.id, question]));
+				allQuestions.forEach(question => {
+					if (question.type !== "RANKING" || question.sourceId !== questionId) return;
+					const rankingRaw = prevState.answers[question.id] ?? "";
+					if (!rankingRaw) return;
+					if (!value) {
+						nextAnswers[question.id] = "";
+						return;
+					}
+					const sourceQuestion = questionMap.get(question.sourceId);
+					const sourceSelectedIds = sourceQuestion?.type === "SINGLE_CHOICE" || sourceQuestion?.type === "DROPDOWN" ? [value] : value.split(",").filter(Boolean);
+					const filteredRankingIds = rankingRaw
+						.split(",")
+						.filter(Boolean)
+						.filter(id => sourceSelectedIds.includes(id));
+					const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
+					const normalized = [...filteredRankingIds, ...missingIds].join(",");
+					if (normalized !== rankingRaw) nextAnswers[question.id] = normalized;
+				});
 
-			return next;
-		});
+				return {
+					...prevState,
+					answers: nextAnswers
+				};
+			},
+			{ checkpoint: isDebouncedTextQuestion(questionId) ? "debounced" : "immediate" }
+		);
 	};
 
 	const updateOtherText = (questionId: string, value: string) => {
-		setOtherTexts(prev => ({
-			...prev,
-			[questionId]: value
-		}));
+		setFormState(
+			prevState => ({
+				...prevState,
+				otherTexts: {
+					...prevState.otherTexts,
+					[questionId]: value
+				}
+			}),
+			{ checkpoint: "debounced" }
+		);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -295,23 +346,21 @@ export const FormFilloutPage = () => {
 		if (!urlResponseId) return;
 
 		const NO_ANSWER_REQUIRED_TYPES: string[] = ["OAUTH_CONNECT", "UPLOAD_FILE"];
-
 		// Validate required fields across all non-preview sections
-		const realSections = sections.filter(s => s.id !== "preview");
+
+		const realSections = sections.filter(section => section.id !== "preview");
 		for (let i = 0; i < realSections.length; i++) {
 			const section = realSections[i];
-			const missingQuestion = section.questions?.find(q => {
-				if (!q.required) return false;
-				if (NO_ANSWER_REQUIRED_TYPES.includes(q.type)) return false;
-				if (NO_ANSWER_REQUIRED_TYPES.includes(q.type)) return false;
-				const value = answers[q.id] ?? "";
+			const missingQuestion = section.questions?.find(question => {
+				if (!question.required) return false;
+				if (NO_ANSWER_REQUIRED_TYPES.includes(question.type)) return false;
+				const value = answers[question.id] ?? "";
 				return value.trim() === "";
 			});
 			if (missingQuestion) {
-				const sectionIndex = sections.findIndex(s => s.id === section.id);
+				const sectionIndex = sections.findIndex(sectionItem => sectionItem.id === section.id);
 				if (sectionIndex >= 0) {
-					setCurrentStep(sectionIndex);
-					scrollToTop();
+					moveToStep(sectionIndex);
 				}
 				pushToast({ title: "尚有必填欄位未填寫", description: `「${missingQuestion.title}」為必填`, variant: "error" });
 				return;
@@ -319,8 +368,6 @@ export const FormFilloutPage = () => {
 		}
 
 		try {
-			// Build answers payload
-			const payload = buildAnswersPayload(sections, answers, otherTexts) ?? { answers: [] };
 			// Build answers payload
 			const payload = buildAnswersPayload(sections, answers, otherTexts) ?? { answers: [] };
 
@@ -400,21 +447,14 @@ export const FormFilloutPage = () => {
 					title={form.title}
 					formDescriptionHtml={form.descriptionHtml}
 					currentStep={currentStep}
-					currentSection={
-						currentSection
-							? {
-									title: currentSection.title,
-									description: currentSection.descriptionHtml ?? proseMirrorToPlainText(currentSection.description)
-								}
-							: null
-					}
+					currentSection={currentSection}
 					onBack={() => navigate("/forms")}
 					saveStatus={urlResponseId ? (updateResponseMutation.isPending ? "saving" : updateResponseMutation.isError ? "error" : "saved") : undefined}
 				/>
 
 				<FormStructure sections={sections} currentStep={currentStep} onSectionClick={handleSectionClick} />
 
-				<form className={styles.form}>
+				<form className={styles.form} onBlurCapture={onTextInputBlurCheckpoint}>
 					{sections[currentStep] && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
@@ -451,18 +491,28 @@ export const FormFilloutPage = () => {
 					)}
 
 					<div className={styles.navigation}>
-						<Button type="button" onClick={handlePrevious} disabled={isFirstStep} themeColor="var(--foreground)">
-							上一頁
-						</Button>
-						{isLastStep ? (
-							<Button type="button" onClick={handleSubmit} disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending} themeColor={primaryThemeColor}>
-								{responseProgress === "SUBMITTED" ? "已儲存編輯" : "送出"}
+						<div className={styles.navigationGroup}>
+							<Button type="button" onClick={handlePrevious} disabled={isFirstStep} themeColor="var(--foreground)">
+								上一頁
 							</Button>
-						) : (
-							<Button type="button" onClick={handleNext} themeColor={primaryThemeColor}>
-								下一頁
+							<Button type="button" onClick={handleUndo} disabled={!canUndo} themeColor="var(--foreground)">
+								Undo
 							</Button>
-						)}
+							<Button type="button" onClick={handleRedo} disabled={!canRedo} themeColor="var(--foreground)">
+								Redo
+							</Button>
+						</div>
+						<div className={styles.navigationGroup}>
+							{isLastStep ? (
+								<Button type="button" onClick={handleSubmit} disabled={responseProgress === "SUBMITTED"} processing={submitResponseMutation.isPending} themeColor={primaryThemeColor}>
+									{responseProgress === "SUBMITTED" ? "已儲存編輯" : "送出"}
+								</Button>
+							) : (
+								<Button type="button" onClick={handleNext} themeColor={primaryThemeColor}>
+									下一頁
+								</Button>
+							)}
+						</div>
 					</div>
 				</form>
 			</div>

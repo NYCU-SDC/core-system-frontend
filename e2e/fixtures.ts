@@ -57,10 +57,10 @@ export const test = base.extend<Fixtures>({
 
 export { expect } from "@playwright/test";
 
-export async function mockRoute(page: Page, pattern: string, body: unknown, options: { status?: number; method?: string } = {}) {
+export async function mockRoute(page: Page, pattern: string | RegExp, body: unknown, options: { status?: number; method?: string } = {}) {
 	const { status = 200, method } = options;
-	const globPattern = pattern.endsWith("**") ? pattern : `${pattern}**`;
-	await page.route(pattern, route => {
+	const routePattern = typeof pattern === "string" && !pattern.endsWith("**") ? `${pattern}**` : pattern;
+	await page.route(routePattern, route => {
 		if (method && route.request().method() !== method.toUpperCase()) {
 			return route.continue();
 		}
