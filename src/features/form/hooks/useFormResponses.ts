@@ -16,12 +16,7 @@ export const useFormResponsesWithDetails = (formId: string | undefined) =>
 		queryFn: async () => {
 			const list = await api.listFormResponses(formId!);
 			const results = await Promise.allSettled(list.responses.map(response => api.getFormResponse(formId!, response.id)));
-			const details = results.flatMap(result => (result.status === "fulfilled" ? [result.value] : []));
-			if (details.length === 0 && results.length > 0) {
-				const firstFailure = results.find(result => result.status === "rejected");
-				throw firstFailure?.reason ?? new Error("Failed to load response details");
-			}
-			return details;
+			return results.flatMap(result => (result.status === "fulfilled" ? [result.value] : []));
 		},
 		enabled: !!formId
 	});
