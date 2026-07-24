@@ -2,10 +2,7 @@ import type { Question } from "@/features/form/components/AdminFormDetailPages/t
 import { useUndoableEditor } from "@/features/form/hooks/useUndoableEditor";
 import { useCallback, useEffect, useRef } from "react";
 
-// Editor-end undo snapshot. questions and questionIds are index-aligned parallel
-// arrays (questionIds[i] is the server id for questions[i]); they MUST move together
-// in a single snapshot, otherwise undoing one without the other misaligns the
-// server-id <-> question mapping and autosave PUTs to the wrong row.
+// Undo snapshot for questions and their aligned questionIds.
 export type SectionEditSnapshot = {
 	questions: Question[];
 	questionIds: (string | undefined)[];
@@ -29,10 +26,7 @@ const isTextInputTarget = (target: EventTarget | null) => {
 	return false;
 };
 
-// CLAUDE.md 鐵則 3: when a ProseMirror (TipTap) editor is focused, Mod-z / Ctrl-Z must
-// be left to PM's own history. The section description AND every question description are
-// MarkdownEditor (contenteditable), so the global keydown handler must bail when focus is
-// inside one.
+// Skip global undo/redo while focus is inside a ProseMirror editor.
 const isProseMirrorFocused = () => {
 	const active = document.activeElement;
 	if (!(active instanceof HTMLElement)) return false;
@@ -42,16 +36,14 @@ const isProseMirrorFocused = () => {
 type UseSectionEditUndoOptions = {
 	historyLimit?: number;
 	disableKeyboardShortcuts?: boolean;
-	// await any in-flight autosave flush before mutating history (方案 a hard requirement 3).
+	// Wait for any in-flight autosave before changing history.
 	beforeUndoRedo?: () => void | Promise<void>;
-	// re-mark the post-undo/redo snapshot dirty so existing autosave converges the backend
-	// (方案 a hard requirement 1). Receives the new snapshot so callers can read the
-	// authoritative post-change length without depending on a not-yet-synced ref.
+	// Handle the updated snapshot after undo/redo.
 	afterUndoRedo?: (snapshot: SectionEditSnapshot) => void;
 };
 
 export const useSectionEditUndo = (initialState: SectionEditSnapshot, options: UseSectionEditUndoOptions = {}) => {
-	const { state, setState, replaceState, undo, redo, resetHistory, flushCheckpoint, canUndo, canRedo } = useUndoableEditor<SectionEditSnapshot>(initialState, {
+	const { state, setState, replaceState, undo, redo, resetHistory, flushCheckpoint, canUndo, canRedo, debugHistory } = useUndoableEditor<SectionEditSnapshot>(initialState, {
 		limit: options.historyLimit ?? SECTION_EDIT_UNDO_CONFIG.historyLimit
 	});
 
@@ -79,9 +71,7 @@ export const useSectionEditUndo = (initialState: SectionEditSnapshot, options: U
 		[setState]
 	);
 
-	// Atomic update of BOTH arrays in a single checkpoint — use for add / remove / duplicate /
-	// reorder so the action costs exactly one undo step (two separate immediate setStates would
-	// push two snapshots and need two undos — the multi-snapshot pitfall from CLAUDE.md).
+	// Update both arrays in one checkpoint so the change uses one undo step.
 	const setSnapshot = useCallback(
 		(next: SectionEditSnapshot | ((prev: SectionEditSnapshot) => SectionEditSnapshot), checkpoint: CheckpointMode = "immediate") => {
 			setState(prev => (typeof next === "function" ? (next as (prev: SectionEditSnapshot) => SectionEditSnapshot)(prev) : next), { checkpoint });
@@ -177,6 +167,8 @@ export const useSectionEditUndo = (initialState: SectionEditSnapshot, options: U
 		redo: runRedo,
 		canUndo,
 		canRedo,
-		onTextInputBlurCheckpoint
+		onTextInputBlurCheckpoint,
+		// Read-only undo stack for the history log UI.
+		history: debugHistory
 	};
 };
