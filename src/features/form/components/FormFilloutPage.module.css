@@ -56,6 +56,73 @@
 	margin-top: 1rem;
 }
 
+.navigationGroup {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+/* Uniform width for the nav buttons. */
+.navigationGroup button {
+	min-width: 5rem;
+}
+
+/* Segmented undo/redo pill above the questions (same pattern as the editor sidebar). */
+.undoBar {
+	align-self: flex-start;
+	display: inline-flex;
+	align-items: stretch;
+	border-radius: 0.6rem;
+	overflow: hidden;
+	background-color: var(--background-color-secondary);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.undoBarBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	color: inherit;
+	padding: 0.45rem 0.9rem;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.undoBarBtn:not(:last-child) {
+	border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.undoBarBtn:hover:not(:disabled) {
+	background-color: var(--hero-background-color-primary);
+}
+
+.undoBarBtn:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+/* Prev/Next: text on desktop, chevron symbol only on small screens. */
+.navIcon {
+	display: none;
+}
+
+@media (max-width: 40rem) {
+	.navLabel {
+		display: none;
+	}
+	.navIcon {
+		display: inline-flex;
+	}
+	.navigationGroup button {
+		min-width: 0;
+	}
+	.navigationGroup .navChevronBtn {
+		padding-block: 0.92rem;
+	}
+}
+
 .previewSection {
 	display: flex;
 	flex-direction: column;
