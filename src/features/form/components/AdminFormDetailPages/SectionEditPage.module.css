@@ -5,6 +5,29 @@
 
 .content {
 	flex: 1;
+	min-width: 0;
+}
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.expandAllToggle {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-left: auto;
+}
+
+.expandAllLabel {
+	color: var(--foreground);
+	font-size: 0.95rem;
+}
+
+.expandAllToggle button {
+	background-color: var(--selection);
 }
 
 .container {
@@ -15,7 +38,51 @@
 }
 
 .sidebarContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	width: 15rem;
+	flex-shrink: 0;
+	position: sticky;
+	top: 1.5rem;
+	align-self: flex-start;
+}
+
+.undoBar {
+	align-self: flex-start;
+	display: inline-flex;
+	align-items: stretch;
+	background-color: var(--orange);
+	color: var(--background-color-primary);
+	clip-path: polygon(0.7rem 0, 100% 0, 100% calc(100% - 0.7rem), calc(100% - 0.7rem) 100%, 0 100%, 0 0.7rem);
+}
+
+.undoBarBtn {
 	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	color: inherit;
+	padding: 0.5rem 1.1rem;
+	cursor: pointer;
+}
+
+.undoBarBtn:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: -1px;
+	width: 2px;
+	background: var(--background-color-primary);
+	transform: skewX(-18deg);
+}
+
+.undoBarBtn:disabled {
+	opacity: 0.4;
+	cursor: default;
 }
 
 .sidebar {
@@ -25,11 +92,8 @@
 	border-radius: 1rem;
 	font-size: 1rem;
 	min-width: 15rem;
-	margin-top: 4rem;
 	padding: 1.5rem 1rem;
 	background-color: var(--background-color-primary);
-	position: sticky;
-	top: 1.5rem;
 }
 
 .card {
@@ -58,4 +122,63 @@
 
 .sidebar > p {
 	padding: 0 0.5rem;
+}
+
+@media (max-width: 48rem) {
+	.sidebarContainer {
+		width: auto;
+	}
+
+	.sidebar {
+		min-width: 0;
+		align-items: center;
+		padding: 1rem 0.5rem;
+	}
+
+	.sidebar > p {
+		display: none;
+	}
+
+	.newQuestion {
+		justify-content: center;
+		padding: 0.5rem;
+	}
+
+	.newQuestionLabel {
+		display: none;
+	}
+
+	.toolbar {
+		flex-wrap: wrap;
+		justify-content: space-between;
+	}
+
+	.toolbar > button {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
+	.undoBar {
+		position: fixed;
+		bottom: 1rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 50;
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+		transition: transform 0.25s ease, opacity 0.25s ease;
+	}
+
+	.undoBarHidden {
+		transform: translateX(-50%) translateY(180%);
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.content {
+		padding-bottom: 4rem;
+	}
+
+	.card {
+		padding: 1rem;
+	}
 }

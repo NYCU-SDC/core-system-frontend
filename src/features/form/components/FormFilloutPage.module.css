@@ -56,6 +56,75 @@
 	margin-top: 1rem;
 }
 
+.navigationGroup {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+/* Uniform width for the nav buttons. */
+.navigationGroup button {
+	min-width: 5rem;
+}
+
+/* Segmented undo/redo pill*/
+.undoBar {
+	align-self: flex-start;
+	display: inline-flex;
+	align-items: stretch;
+	background-color: var(--orange);
+	color: var(--background-color-primary);
+	clip-path: polygon(0.7rem 0, 100% 0, 100% calc(100% - 0.7rem), calc(100% - 0.7rem) 100%, 0 100%, 0 0.7rem);
+}
+
+.undoBarBtn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	color: inherit;
+	padding: 0.5rem 1.1rem;
+	cursor: pointer;
+}
+
+.undoBarBtn:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: -1px;
+	width: 2px;
+	background: var(--background-color-primary);
+	transform: skewX(-18deg);
+}
+
+.undoBarBtn:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+/* Prev/Next: text on desktop, chevron symbol only on small screens. */
+.navIcon {
+	display: none;
+}
+
+@media (max-width: 40rem) {
+	.navLabel {
+		display: none;
+	}
+	.navIcon {
+		display: inline-flex;
+	}
+	.navigationGroup button {
+		min-width: 0;
+	}
+	.navigationGroup .navChevronBtn {
+		padding-block: 0.92rem;
+	}
+}
+
 .previewSection {
 	display: flex;
 	flex-direction: column;

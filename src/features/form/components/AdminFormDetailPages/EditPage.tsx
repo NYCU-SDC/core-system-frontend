@@ -437,31 +437,47 @@ export const AdminFormEditPage = ({ formData }: AdminFormEditPageProps) => {
 	if (workflowQuery.isLoading) return <LoadingSpinner />;
 	if (workflowQuery.isError) return <ErrorMessage message={(workflowQuery.error as Error)?.message ?? "無法載入表單結構"} />;
 
+	const sections = (sectionsQuery.data ?? []).map(bundle => bundle.section);
+
 	return (
-		<div ref={reactFlowWrapper} style={{ width: "100%", height: "500px" }}>
-			<ReactFlow
-				nodes={nodes}
-				edges={edges}
-				connectionLineType={ConnectionLineType.Straight}
-				onNodesChange={onNodesChange}
-				onNodesDelete={onNodesDelete}
-				onNodeDoubleClick={onNodeDoubleClick}
-				onNodeDragStop={onNodeDragStop}
-				onEdgesChange={onEdgesChange}
-				onEdgesDelete={onEdgesDelete}
-				onConnect={onConnect}
-				edgeTypes={edgeTypes}
-				nodeTypes={nodeTypes}
-				fitView
-			>
-				<Panel position="top-right" className={styles.panel}>
-					<Button onClick={() => handleAddNode("SECTION")}>新增區域</Button>
-					<Button onClick={() => handleAddNode("CONDITION")}>新增條件</Button>
-				</Panel>
-				<Background gap={12} size={1} />
-				<Controls className={styles.controls} />
-			</ReactFlow>
-		</div>
+		<>
+			<div ref={reactFlowWrapper} style={{ width: "100%", height: "500px" }}>
+				<ReactFlow
+					nodes={nodes}
+					edges={edges}
+					connectionLineType={ConnectionLineType.Straight}
+					onNodesChange={onNodesChange}
+					onNodesDelete={onNodesDelete}
+					onNodeDoubleClick={onNodeDoubleClick}
+					onNodeDragStop={onNodeDragStop}
+					onEdgesChange={onEdgesChange}
+					onEdgesDelete={onEdgesDelete}
+					onConnect={onConnect}
+					edgeTypes={edgeTypes}
+					nodeTypes={nodeTypes}
+					fitView
+				>
+					<Panel position="top-right" className={styles.panel}>
+						<Button onClick={() => handleAddNode("SECTION")}>新增區域</Button>
+						<Button onClick={() => handleAddNode("CONDITION")}>新增條件</Button>
+					</Panel>
+					<Background gap={12} size={1} />
+					<Controls className={styles.controls} />
+				</ReactFlow>
+			</div>
+			{sections.length > 0 && (
+				<div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+					{sections.map(section => (
+						<Button
+							key={section.id}
+							onClick={() => navigate(`/orgs/${orgSlug}/forms/${formData.id}/section/${section.id}/edit`)}
+						>
+							編輯：{section.title || "(未命名區塊)"}
+						</Button>
+					))}
+				</div>
+			)}
+		</>
 	);
 };
 

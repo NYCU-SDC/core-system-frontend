@@ -1,4 +1,4 @@
-import { FILLOUT_UNDO_CONFIG, useFilloutUndo } from "@/features/form/hooks/useFilloutUndo";
+import { FILLOUT_UNDO_CONFIG, useFilloutUndo, type FilloutSnapshot, type IrreversibleKind } from "@/features/form/hooks/useFilloutUndo";
 import { useFormResponse, useSubmitFormResponse, useUpdateFormResponse } from "@/features/form/hooks/useFormResponses";
 import { useFormQuery } from "@/features/form/hooks/useOrgForms";
 import { buildAnswersPayload, useSections } from "@/features/form/hooks/useSections";
@@ -8,6 +8,7 @@ import { SEO_CONFIG } from "@/seo/seo.config";
 import { useSeo } from "@/seo/useSeo";
 import { Button, LoadingSpinner, useToast } from "@/shared/components";
 import { ResponsesResponseProgress, type FormsSection, type ResponsesResponseSections, type ResponsesStringArrayAnswer } from "@nycu-sdc/core-system-sdk";
+import { ChevronLeft, ChevronRight, Redo2, Undo2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FormHeader } from "./FormDetail/components/FormHeader/FormHeader";
@@ -23,6 +24,13 @@ interface FormResponseData {
 	sections: ResponsesResponseSections[];
 	progress: ResponsesResponseProgress;
 }
+
+// Toast when an undo/redo lands on a no-op marker; names the step so the user knows what was skipped.
+const NOOP_TOAST: Record<IrreversibleKind, { title: string; description: string }> = {
+	upload: { title: "這一步無法還原", description: "此步是「檔案上傳」，不會被還原。再按一次可退到上一筆變更。" },
+	oauth: { title: "這一步無法還原", description: "此步是「帳號綁定」，不會被還原。再按一次可退到上一筆變更。" },
+	workflow: { title: "這一步無法還原", description: "此步是「答案連動（會影響顯示的區段）」，不會被還原。再按一次可退到上一筆變更。" }
+};
 
 const ensureEmfontStylesheet = (fontId: string) => {
 	if (!fontId) return;
@@ -66,7 +74,8 @@ export const FormFilloutPage = () => {
 		flushCheckpoint,
 		canUndo,
 		canRedo,
-		onTextInputBlurCheckpoint
+		onTextInputBlurCheckpoint,
+		commitIrreversible
 	} = useFilloutUndo(
 		{
 			answers: {},
@@ -80,6 +89,8 @@ export const FormFilloutPage = () => {
 	const answersInitialized = useRef(false);
 	const lastAutoSavePayloadRef = useRef<string>("");
 	const lastFailedAutoSavePayloadRef = useRef<string>("");
+	// Snapshot identity we last toasted for, so each landing toasts once and re-renders don't re-toast.
+	const lastNoopToastRef = useRef<FilloutSnapshot | null>(null);
 
 	// ── React Query ──────────────────────────────────────────────────────────
 	const updateResponseMutateAsyncRef = useRef(updateResponseMutation.mutateAsync);
@@ -138,6 +149,15 @@ export const FormFilloutPage = () => {
 	const questionsById = useMemo(() => {
 		return new Map(sections.flatMap(section => section.questions ?? []).map(question => [question.id, question]));
 	}, [sections]);
+
+	// Questions whose answer feeds a workflow CONDITION — changing one re-computes visible sections.
+	const workflowTriggerQuestionIds = useMemo(() => {
+		const ids = new Set<string>();
+		workflowQuery.data?.workflow?.forEach(node => {
+			if (node.type === "CONDITION" && node.conditionRule?.question) ids.add(node.conditionRule.question);
+		});
+		return ids;
+	}, [workflowQuery.data]);
 
 	// Whether the form is currently being filled out (as opposed to just previewing)
 	const isOnPreviewStep = sections.length > 0 && currentStep === sections.length - 1 && sections[currentStep]?.id === "preview";
@@ -249,6 +269,14 @@ export const FormFilloutPage = () => {
 		}
 	}, [sections.length, currentStep]);
 
+	// Toast when undo/redo lands on a no-op marker (the next press continues to the real change).
+	useEffect(() => {
+		if (!formState.noop) return;
+		if (lastNoopToastRef.current === formState) return;
+		lastNoopToastRef.current = formState;
+		pushToast({ ...NOOP_TOAST[formState.noop.kind], variant: "info" });
+	}, [formState, pushToast]);
+
 	const scrollToTop = () => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	};
@@ -291,40 +319,56 @@ export const FormFilloutPage = () => {
 		return question?.type === "SHORT_TEXT" || question?.type === "LONG_TEXT" || question?.type === "HYPERLINK";
 	};
 
+	const irreversibleKindFor = (questionId: string): IrreversibleKind | null => {
+		const question = questionsById.get(questionId);
+		if (question?.type === "UPLOAD_FILE") return "upload";
+		if (question?.type === "OAUTH_CONNECT") return "oauth";
+		// Only discrete (non-text) workflow triggers — a free-text trigger would mark a no-op per keystroke.
+		if (workflowTriggerQuestionIds.has(questionId) && !isDebouncedTextQuestion(questionId)) return "workflow";
+		return null;
+	};
+
+	// Apply an answer change plus any dependent RANKING re-sync; pure so both code paths can reuse it.
+	const applyAnswerUpdate = (prevState: FilloutSnapshot, questionId: string, value: string): FilloutSnapshot => {
+		const nextAnswers = { ...prevState.answers, [questionId]: value };
+		// Sync ranking questions whose source is the changed question
+		const allQuestions = sections.flatMap(section => section.questions ?? []);
+		const questionMap = new Map(allQuestions.map(question => [question.id, question]));
+		allQuestions.forEach(question => {
+			if (question.type !== "RANKING" || question.sourceId !== questionId) return;
+			const rankingRaw = prevState.answers[question.id] ?? "";
+			if (!rankingRaw) return;
+			if (!value) {
+				nextAnswers[question.id] = "";
+				return;
+			}
+			const sourceQuestion = questionMap.get(question.sourceId);
+			const sourceSelectedIds = sourceQuestion?.type === "SINGLE_CHOICE" || sourceQuestion?.type === "DROPDOWN" ? [value] : value.split(",").filter(Boolean);
+			const filteredRankingIds = rankingRaw
+				.split(",")
+				.filter(Boolean)
+				.filter(id => sourceSelectedIds.includes(id));
+			const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
+			const normalized = [...filteredRankingIds, ...missingIds].join(",");
+			if (normalized !== rankingRaw) nextAnswers[question.id] = normalized;
+		});
+
+		return {
+			...prevState,
+			answers: nextAnswers
+		};
+	};
+
 	const updateAnswer = (questionId: string, value: string) => {
-		setFormState(
-			prevState => {
-				const nextAnswers = { ...prevState.answers, [questionId]: value };
-				// Sync ranking questions whose source is the changed question
-
-				const allQuestions = sections.flatMap(section => section.questions ?? []);
-				const questionMap = new Map(allQuestions.map(question => [question.id, question]));
-				allQuestions.forEach(question => {
-					if (question.type !== "RANKING" || question.sourceId !== questionId) return;
-					const rankingRaw = prevState.answers[question.id] ?? "";
-					if (!rankingRaw) return;
-					if (!value) {
-						nextAnswers[question.id] = "";
-						return;
-					}
-					const sourceQuestion = questionMap.get(question.sourceId);
-					const sourceSelectedIds = sourceQuestion?.type === "SINGLE_CHOICE" || sourceQuestion?.type === "DROPDOWN" ? [value] : value.split(",").filter(Boolean);
-					const filteredRankingIds = rankingRaw
-						.split(",")
-						.filter(Boolean)
-						.filter(id => sourceSelectedIds.includes(id));
-					const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
-					const normalized = [...filteredRankingIds, ...missingIds].join(",");
-					if (normalized !== rankingRaw) nextAnswers[question.id] = normalized;
-				});
-
-				return {
-					...prevState,
-					answers: nextAnswers
-				};
-			},
-			{ checkpoint: isDebouncedTextQuestion(questionId) ? "debounced" : "immediate" }
-		);
+		const kind = irreversibleKindFor(questionId);
+		// Only mark a no-op on a real value change — upload onAnswerChange fires spuriously (load / download).
+		if (kind && answers[questionId] !== value) {
+			commitIrreversible(kind, prevState => applyAnswerUpdate(prevState, questionId, value));
+			return;
+		}
+		setFormState(prevState => applyAnswerUpdate(prevState, questionId, value), {
+			checkpoint: isDebouncedTextQuestion(questionId) ? "debounced" : "immediate"
+		});
 	};
 
 	const updateOtherText = (questionId: string, value: string) => {
@@ -455,6 +499,16 @@ export const FormFilloutPage = () => {
 				<FormStructure sections={sections} currentStep={currentStep} onSectionClick={handleSectionClick} />
 
 				<form className={styles.form} onBlurCapture={onTextInputBlurCheckpoint}>
+						{!isOnPreviewStep && (
+							<div className={styles.undoBar}>
+								<button type="button" className={styles.undoBarBtn} onClick={handleUndo} disabled={!canUndo} aria-label="復原" title={disableKeyboardUndoRedo ? "復原" : "復原　Ctrl + Z"}>
+									<Undo2 size={18} />
+								</button>
+								<button type="button" className={styles.undoBarBtn} onClick={handleRedo} disabled={!canRedo} aria-label="重做" title={disableKeyboardUndoRedo ? "重做" : "重做　Ctrl + Shift + Z"}>
+									<Redo2 size={18} />
+								</button>
+							</div>
+						)}
 					{sections[currentStep] && (
 						<div className={styles.section}>
 							<div className={styles.fields}>
@@ -492,14 +546,9 @@ export const FormFilloutPage = () => {
 
 					<div className={styles.navigation}>
 						<div className={styles.navigationGroup}>
-							<Button type="button" onClick={handlePrevious} disabled={isFirstStep} themeColor="var(--foreground)">
-								上一頁
-							</Button>
-							<Button type="button" onClick={handleUndo} disabled={!canUndo} themeColor="var(--foreground)">
-								Undo
-							</Button>
-							<Button type="button" onClick={handleRedo} disabled={!canRedo} themeColor="var(--foreground)">
-								Redo
+							<Button type="button" className={styles.navChevronBtn} onClick={handlePrevious} disabled={isFirstStep} themeColor="var(--foreground)" aria-label="上一頁" title="上一頁">
+								<span className={styles.navLabel}>上一頁</span>
+								<ChevronLeft className={styles.navIcon} size={20} />
 							</Button>
 						</div>
 						<div className={styles.navigationGroup}>
@@ -508,8 +557,9 @@ export const FormFilloutPage = () => {
 									{responseProgress === "SUBMITTED" ? "已儲存編輯" : "送出"}
 								</Button>
 							) : (
-								<Button type="button" onClick={handleNext} themeColor={primaryThemeColor}>
-									下一頁
+								<Button type="button" className={styles.navChevronBtn} onClick={handleNext} themeColor={primaryThemeColor} aria-label="下一頁" title="下一頁">
+									<span className={styles.navLabel}>下一頁</span>
+									<ChevronRight className={styles.navIcon} size={20} />
 								</Button>
 							)}
 						</div>

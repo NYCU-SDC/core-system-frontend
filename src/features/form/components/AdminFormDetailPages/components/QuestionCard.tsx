@@ -1,7 +1,7 @@
 import type { Question } from "@/features/form/components/AdminFormDetailPages/types/question";
-import { Button, Checkbox, Input, Select, Switch } from "@/shared/components";
+import { Button, Checkbox, Dialog, Input, Select, Switch } from "@/shared/components";
 import { MarkdownEditor } from "@/shared/components/MarkdownEditor/MarkdownEditor";
-import type { ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
+import { EMPTY_PROSE_MIRROR_DOC, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import { FormsAllowedFileTypes } from "@nycu-sdc/core-system-sdk";
 import {
 	Calendar,
@@ -33,6 +33,9 @@ export interface QuestionCardProps {
 	question: Question;
 	questionNumber?: number;
 	defaultExpanded?: boolean;
+	expandAll?: boolean;
+	keepExpandedOnCollapse?: boolean;
+	onActivate?: () => void;
 	autoFocusTitle?: boolean;
 	onTitleChange?: (newTitle: string) => void;
 	onDescriptionChange?: (newDescription: ProseMirrorLikeDocument) => void;
@@ -164,13 +167,16 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const [isDuplicating, setIsDuplicating] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [localUploadMaxFileAmountStr, setLocalUploadMaxFileAmountStr] = useState(() => String(question.uploadMaxFileAmount ?? 1));
 	const [localUploadMaxFileSizeMbStr, setLocalUploadMaxFileSizeMbStr] = useState(() => String(Number(((question.uploadMaxFileSizeLimit ?? 10485760) / 1024 / 1024).toFixed(2))));
+	// Keep title state in sync with both live input and external title updates.
 	const [localTitle, setLocalTitle] = useState(question.title);
 	const localTitleRef = useRef(question.title);
 	localTitleRef.current = localTitle;
-	const [localDesc, setLocalDesc] = useState<ProseMirrorLikeDocument>(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
-	const localDescRef = useRef<ProseMirrorLikeDocument>(question.description);
+	// Keep description state in sync and always store a valid editor document.
+	const [localDesc, setLocalDesc] = useState<ProseMirrorLikeDocument>(question.description ?? EMPTY_PROSE_MIRROR_DOC);
+	const localDescRef = useRef<ProseMirrorLikeDocument>(question.description ?? EMPTY_PROSE_MIRROR_DOC);
 	localDescRef.current = localDesc;
 	const cardRef = useRef<HTMLElement | null>(null);
 	const titleRef = useRef<HTMLInputElement>(null);
@@ -194,8 +200,18 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	}, [question.title]);
 
 	useEffect(() => {
-		setLocalDesc(question.description ?? { type: "doc", content: [{ type: "paragraph" }] });
+		setLocalDesc(question.description ?? EMPTY_PROSE_MIRROR_DOC);
 	}, [question.description]);
+
+	// Sync local expansion with the global expand/collapse toggle.
+	const prevExpandAllRef = useRef(props.expandAll);
+	useEffect(() => {
+		if (props.expandAll === prevExpandAllRef.current) return;
+		prevExpandAllRef.current = props.expandAll;
+		// Keep the last active card open when collapsing all.
+		if (props.expandAll) setIsExpanded(true);
+		else setIsExpanded(Boolean(props.keepExpandedOnCollapse));
+	}, [props.expandAll, props.keepExpandedOnCollapse]);
 
 	useEffect(() => {
 		if (props.autoFocusTitle && isExpanded && titleRef.current) {
@@ -210,19 +226,19 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 
 		const handleOutsideClick = (event: MouseEvent) => {
 			const target = event.target as Element;
-			// Ignore clicks inside Radix UI portals (dropdowns, popovers, etc.)
-			if (target.closest("[data-radix-popper-content-wrapper], [data-radix-select-content], [data-radix-dropdown-menu-content]")) return;
+			// Ignore clicks inside Radix portals owned by this card.
+			if (target.closest("[data-radix-popper-content-wrapper], [data-radix-select-content], [data-radix-dropdown-menu-content], [role='dialog']")) return;
 			if (!cardRef.current?.contains(target)) {
-				// Force blur on any focused input inside the card so its onBlur fires
-				// while the component is still mounted (mousedown precedes blur)
+				// Blur focused fields before collapsing so their onBlur handlers still run.
 				if (document.activeElement instanceof HTMLElement && cardRef.current?.contains(document.activeElement)) {
 					document.activeElement.blur();
 				}
-				// Flush title and description through refs while the card is still mounted.
+				// Commit the latest title/description as a click-away safety net.
 				props.onTitleChange?.(localTitleRef.current);
-				props.onDescriptionChange?.(localDescRef.current || { type: "doc", content: [{ type: "paragraph" }] });
+				props.onDescriptionChange?.(localDescRef.current);
 				props.onFold?.();
-				setIsExpanded(false);
+				// Collapse on click-away unless global expand-all is active.
+				if (!props.expandAll) setIsExpanded(false);
 				setIsTypeMenuOpen(false);
 			}
 		};
@@ -238,8 +254,29 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 
 	const handleDeleteClick = () => {
 		if (isDeleting || isDuplicating) return;
+		// Confirm first because delete is treated as non-undoable.
+		setIsDeleteDialogOpen(true);
+	};
+
+	const confirmDelete = () => {
+		if (isDeleting || isDuplicating) return;
+		setIsDeleteDialogOpen(false);
 		void runWithIndicator(removeQuestion, setIsDeleting);
 	};
+
+	// Let Enter confirm the delete dialog.
+	useEffect(() => {
+		if (!isDeleteDialogOpen) return;
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Enter" && !event.isComposing) {
+				event.preventDefault();
+				confirmDelete();
+			}
+		};
+		document.addEventListener("keydown", onKeyDown);
+		return () => document.removeEventListener("keydown", onKeyDown);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isDeleteDialogOpen]);
 
 	const uploadFileTypeValues = (question.uploadAllowedFileTypes ?? ["PDF"]) as FormsAllowedFileTypes[];
 	const localUploadMaxFileAmountNum = Number(localUploadMaxFileAmountStr);
@@ -250,7 +287,13 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const maxDateError = question.dateHasMaxDate && !question.dateMaxDate ? "請填結束日期" : "";
 
 	return (
-		<section ref={cardRef} className={`${styles.card} ${isExpanded ? styles.expanded : ""}`} onClick={() => !isExpanded && setIsExpanded(true)} {...(!isExpanded && props.dragHandleListeners)}>
+		<section
+			ref={cardRef}
+			className={`${styles.card} ${isExpanded ? styles.expanded : ""}`}
+			onMouseDownCapture={() => props.onActivate?.()}
+			onClick={() => !isExpanded && setIsExpanded(true)}
+			{...(!isExpanded && props.dragHandleListeners)}
+		>
 			{isExpanded ? (
 				<div
 					onClick={e => {
@@ -260,7 +303,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 						if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
 							e.preventDefault();
 							props.onTitleChange?.(localTitleRef.current);
-							props.onDescriptionChange?.(localDescRef.current || { type: "doc", content: [{ type: "paragraph" }] });
+							props.onDescriptionChange?.(localDescRef.current);
 							props.onFold?.();
 							setIsExpanded(false);
 							setIsTypeMenuOpen(false);
@@ -285,8 +328,11 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 							/>
 							<MarkdownEditor
 								value={localDesc}
-								onChange={nextValue => setLocalDesc(nextValue)}
-								onBlur={() => props.onDescriptionChange?.(localDesc)}
+								onChange={nextDesc => setLocalDesc(nextDesc)}
+								onBlur={() => {
+									// Commit the final editor state when focus leaves the description.
+									props.onDescriptionChange?.(localDescRef.current);
+								}}
 								placeholder="這裡可以寫一段描述（支援 Markdown）"
 								variant="flushed"
 								themeColor="--comment"
@@ -552,6 +598,29 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					</p>
 				</div>
 			)}
+			<Dialog
+				open={isDeleteDialogOpen}
+				onOpenChange={setIsDeleteDialogOpen}
+				title="刪除題目"
+				description="此動作無法復原"
+				size="sm"
+				footer={
+					<>
+						<Button type="button" variant="secondary" onClick={() => setIsDeleteDialogOpen(false)}>
+							取消
+						</Button>
+						<Button type="button" onClick={confirmDelete} themeColor="var(--red, #d64545)">
+							刪除
+						</Button>
+					</>
+				}
+			>
+				<p className={styles.deleteDialogText}>
+					確定要刪除「{question.title || "此題目"}」嗎？
+					<br />
+					刪除後，<strong>此區段的操作紀錄（可復原步驟）會一併重置</strong>，無法再用 undo 還原。
+				</p>
+			</Dialog>
 		</section>
 	);
 };
