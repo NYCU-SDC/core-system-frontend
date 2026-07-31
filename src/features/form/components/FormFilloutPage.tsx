@@ -348,7 +348,7 @@ export const FormFilloutPage = () => {
 				.split(",")
 				.filter(Boolean)
 				.filter(id => sourceSelectedIds.includes(id));
-			const missingIds = sourceSelectedIds.filter(id => !sourceSelectedIds.includes(id));
+			const missingIds = sourceSelectedIds.filter(id => !filteredRankingIds.includes(id));
 			const normalized = [...filteredRankingIds, ...missingIds].join(",");
 			if (normalized !== rankingRaw) nextAnswers[question.id] = normalized;
 		});

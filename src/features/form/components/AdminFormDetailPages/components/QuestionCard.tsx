@@ -163,7 +163,7 @@ const uploadFileTypeCategoryMap: Record<string, FormsAllowedFileTypes[]> = {
 export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 	const { question, removeQuestion, duplicateQuestion } = props;
 
-	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? true);
+	const [isExpanded, setIsExpanded] = useState(props.defaultExpanded ?? false);
 	const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 	const [isDuplicating, setIsDuplicating] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -245,7 +245,7 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 
 		document.addEventListener("mousedown", handleOutsideClick);
 		return () => document.removeEventListener("mousedown", handleOutsideClick);
-	}, [isExpanded, props, question.description, question.title]);
+	}, [isExpanded, props]);
 
 	const handleDuplicateClick = () => {
 		if (isDuplicating || isDeleting) return;
@@ -317,15 +317,10 @@ export const QuestionCard = (props: QuestionCardProps): ReactNode => {
 					<div className={styles.header}>
 						<div className={styles.input}>
 							<Input
-								key={`${question.clientId ?? question.title}-title-${question.title}`}
 								ref={titleRef}
-								defaultValue={question.title}
+								value={localTitle}
 								onChange={event => setLocalTitle(event.target.value)}
-								onBlur={event => {
-									if (event.target.value !== question.title) {
-										props.onTitleChange?.(event.target.value);
-									}
-								}}
+								onBlur={() => props.onTitleChange?.(localTitle)}
 								placeholder="問題標題"
 								variant="flushed"
 								themeColor="--comment"

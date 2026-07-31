@@ -73,7 +73,17 @@ export const OptionsQuestion = (props: OptionsQuestionProps) => {
 				<>
 					{props.options.map((option, index) => {
 						if (!option.isOther) {
-							return <OptionRow key={`${option.id}-${option.label}`} option={option} index={index} type={props.type} canRemove={props.options.length > 1} onCommit={props.onChange} onRemove={props.onRemove} />;
+							return (
+								<OptionRow
+									key={`${option.id}-${option.label}`}
+									option={option}
+									index={index}
+									type={props.type}
+									canRemove={props.options.length > 1}
+									onCommit={props.onChange}
+									onRemove={props.onRemove}
+								/>
+							);
 						}
 						if (option.isOther) {
 							return (

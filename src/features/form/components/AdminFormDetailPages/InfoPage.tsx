@@ -5,9 +5,9 @@ import { useSections } from "@/features/form/hooks/useSections";
 import * as api from "@/features/form/services/api";
 import { Button, Input, LoadingSpinner, MarkdownEditor, Switch, Tooltip, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror } from "@/shared/utils/proseMirror";
-import type { FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
+import type { FormsFormRequestUpdate, FormsFormResponse, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
 import { Archive, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./InfoPage.module.css";
 
@@ -25,15 +25,18 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const unarchiveFormMutation = useUnarchiveForm(orgSlug);
 	const deleteFormMutation = useDeleteForm(orgSlug);
 	const sectionsQuery = useSections(formData.id);
+	const sendResponseEmailSupported = "sendResponseEmail" in formData;
+	const sendResponseEmailWarningShownRef = useRef(false);
 
 	// derive counts
 	const allResponses = responsesQuery.data?.responses ?? [];
 	const submittedCount = allResponses.length;
 
 	// derive all questions across all sections
-	const allQuestions = useMemo(() => {
-		return sectionsQuery.data?.flatMap(group => group.questions?.map(question => ({ question: { ...question }, sectionId: group.section.id })) ?? []) ?? [];
-	}, [sectionsQuery.data]);
+	const allQuestions = useMemo(
+		() => sectionsQuery.data?.flatMap(group => group.questions?.map(question => ({ question: { ...question }, sectionId: group.section.id })) ?? []) ?? [],
+		[sectionsQuery.data]
+	);
 
 	const allRequired = allQuestions.length > 0 && allQuestions.every(q => q.question.required);
 	const [isSettingRequired, setIsSettingRequired] = useState(false);
@@ -44,7 +47,9 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 	const [confirmMsg, setConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
 	const [deadline, setDeadline] = useState(formData.deadline ? formData.deadline.split("T")[0] : "");
 	const [publishTime, setPublishTime] = useState(formData.publishTime ? formData.publishTime.split("T")[0] : "");
+	const [allowEditResponse, setAllowEditResponse] = useState(formData.allowEditResponse ?? false);
 	const [isPublic, setIsPublic] = useState(formData.visibility === "PUBLIC");
+	const [sendResponseEmail, setSendResponseEmail] = useState(sendResponseEmailSupported ? ((formData as FormsFormResponse & { sendResponseEmail?: boolean }).sendResponseEmail ?? false) : false);
 	const [savedTitle, setSavedTitle] = useState(formData.title ?? "");
 	const [savedDescription, setSavedDescription] = useState(() => serializeProseMirrorDoc(fromApiProseMirror(formData.description)));
 	const [savedConfirmMsg, setSavedConfirmMsg] = useState(formData.messageAfterSubmission ?? "");
@@ -59,7 +64,24 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		confirmMsg !== savedConfirmMsg ||
 		deadline !== savedDeadline ||
 		publishTime !== savedPublishTime ||
-		isPublic !== savedIsPublic;
+		isPublic !== savedIsPublic ||
+		allowEditResponse !== formData.allowEditResponse;
+	const sendResponseEmailDisabled = !sendResponseEmailSupported || isArchived || updateFormMutation.isPending;
+
+	useEffect(() => {
+		if (sendResponseEmailSupported) {
+			sendResponseEmailWarningShownRef.current = false;
+			return;
+		}
+		if (sendResponseEmailWarningShownRef.current) return;
+
+		sendResponseEmailWarningShownRef.current = true;
+		pushToast({
+			title: "通知設定暫不可用",
+			description: "後端尚未回傳寄送確認信設定，已暫時停用此開關。",
+			variant: "warning"
+		});
+	}, [sendResponseEmailSupported, pushToast]);
 
 	useEffect(() => {
 		if (!hasSettingChanges || updateFormMutation.isPending || isArchived) return;
@@ -72,7 +94,8 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 					messageAfterSubmission: confirmMsg,
 					deadline: deadline ? new Date(deadline).toISOString() : undefined,
 					publishTime: publishTime ? new Date(publishTime).toISOString() : undefined,
-					visibility: isPublic ? "PUBLIC" : "PRIVATE"
+					visibility: isPublic ? "PUBLIC" : "PRIVATE",
+					allowEditResponse: allowEditResponse
 				},
 				{
 					onSuccess: () => {
@@ -89,7 +112,21 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 		}, 500);
 
 		return () => window.clearTimeout(timerId);
-	}, [hasSettingChanges, updateFormMutation.isPending, updateFormMutation, title, description, serializedDescription, confirmMsg, deadline, publishTime, isPublic, pushToast, isArchived]);
+	}, [
+		hasSettingChanges,
+		updateFormMutation.isPending,
+		updateFormMutation,
+		title,
+		description,
+		serializedDescription,
+		confirmMsg,
+		deadline,
+		publishTime,
+		allowEditResponse,
+		isPublic,
+		pushToast,
+		isArchived
+	]);
 
 	const handleToggleAllRequired = async (checked: boolean) => {
 		if (isArchived) return;
@@ -122,6 +159,26 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 			pushToast({ title: `${failed} 題更新失敗`, description: "部分題目更新時發生錯誤", variant: "error" });
 			sectionsQuery.refetch();
 		}
+	};
+
+	const handleToggleSendResponseEmail = (checked: boolean) => {
+		if (!sendResponseEmailSupported) {
+			pushToast({
+				title: "通知設定暫不可用",
+				description: "後端尚未回傳寄送確認信設定，無法變更此開關。",
+				variant: "warning"
+			});
+			return;
+		}
+		if (isArchived) return;
+		const previousValue = sendResponseEmail;
+		setSendResponseEmail(checked);
+		updateFormMutation.mutate({ sendResponseEmail: checked } as FormsFormRequestUpdate, {
+			onError: error => {
+				setSendResponseEmail(previousValue);
+				pushToast({ title: "儲存通知設定失敗", description: (error as Error).message, variant: "error" });
+			}
+		});
 	};
 
 	const handleArchive = () => {
@@ -185,7 +242,13 @@ export const AdminFormInfoPage = ({ formData }: AdminFormInfoPageProps) => {
 				<Tooltip content="目前所有回覆均允許編輯" side="right">
 					<div className={`${styles.switch}`}>
 						<p className={`${styles.label}`}>允許編輯回覆</p>
-						<Switch checked disabled />
+						{sectionsQuery.isLoading ? <LoadingSpinner /> : <Switch checked={allowEditResponse} onCheckedChange={setAllowEditResponse} disabled={isArchived} />}
+					</div>
+				</Tooltip>
+				<Tooltip content={sendResponseEmailSupported ? "成功送出表單後寄送確認信給填寫者" : "後端尚未支援此設定，暫時無法調整"} side="right">
+					<div className={`${styles.switch}`}>
+						<p className={`${styles.label}`}>送出表單後寄送確認信</p>
+						<Switch checked={sendResponseEmail} onCheckedChange={handleToggleSendResponseEmail} disabled={sendResponseEmailDisabled} />
 					</div>
 				</Tooltip>
 				<div className={`${styles.switch}`}>

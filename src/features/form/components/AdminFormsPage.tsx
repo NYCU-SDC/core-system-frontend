@@ -67,7 +67,7 @@ export const AdminFormsPage = () => {
 
 	// Fetch forms from API
 	const orgSlug = useActiveOrgSlug();
-	const formsQuery = useOrgForms(orgSlug, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
+	const formsQuery = useOrgForms(orgSlug);
 	const createFormMutation = useCreateOrgForm(orgSlug);
 
 	useEffect(() => {
@@ -96,7 +96,8 @@ export const AdminFormsPage = () => {
 				title: "未命名表單",
 				description: EMPTY_PROSE_MIRROR_DOC as unknown as ProseMirrorDocument,
 				messageAfterSubmission: "感謝您的填寫！",
-				visibility: "PUBLIC"
+				visibility: "PUBLIC",
+				allowEditResponse: false
 			},
 			{
 				onSuccess: newForm => {
