@@ -1,9 +1,13 @@
 import { useUndoableEditor } from "@/features/form/hooks/useUndoableEditor";
 import { useCallback, useEffect } from "react";
 
+export type IrreversibleKind = "upload" | "oauth" | "workflow";
+
 export type FilloutSnapshot = {
 	answers: Record<string, string>;
 	otherTexts: Record<string, string>;
+	// Marks a no-op undo step for irreversible actions.
+	noop?: { kind: IrreversibleKind } | null;
 };
 
 export const FILLOUT_UNDO_CONFIG = {
@@ -20,6 +24,13 @@ const isTextInputTarget = (target: EventTarget | null) => {
 		return !NON_TEXT_INPUT_TYPES.has(target.type);
 	}
 	return false;
+};
+
+// Leave Mod-z / Ctrl-Z to ProseMirror when the editor is focused.
+const isProseMirrorFocused = () => {
+	const active = document.activeElement;
+	if (!(active instanceof HTMLElement)) return false;
+	return active.isContentEditable || Boolean(active.closest('[contenteditable="true"], .ProseMirror'));
 };
 
 type UseFilloutUndoOptions = {
@@ -40,10 +51,22 @@ export const useFilloutUndo = (initialState: FilloutSnapshot, options: UseFillou
 		[flushCheckpoint]
 	);
 
+	// Insert a no-op marker so the first undo can signal an irreversible step.
+	const commitIrreversible = useCallback(
+		(kind: IrreversibleKind, updater: (prev: FilloutSnapshot) => FilloutSnapshot) => {
+			flushCheckpoint();
+			setState(prev => ({ ...updater(prev), noop: { kind } }), { checkpoint: "immediate" });
+			setState(prev => ({ ...prev, noop: null }), { checkpoint: "immediate" });
+		},
+		[flushCheckpoint, setState]
+	);
+
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (options.disableKeyboardShortcuts) return;
 			if (event.isComposing) return;
+			// Let a focused ProseMirror editor own Mod-z / Ctrl-Z / Ctrl-Shift-Z.
+			if (isProseMirrorFocused()) return;
 			const modifierPressed = event.metaKey || event.ctrlKey;
 			if (!modifierPressed) return;
 
@@ -77,6 +100,7 @@ export const useFilloutUndo = (initialState: FilloutSnapshot, options: UseFillou
 		flushCheckpoint,
 		canUndo,
 		canRedo,
-		onTextInputBlurCheckpoint
+		onTextInputBlurCheckpoint,
+		commitIrreversible
 	};
 };
