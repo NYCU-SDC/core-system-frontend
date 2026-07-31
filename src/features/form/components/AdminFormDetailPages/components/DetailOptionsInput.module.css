@@ -21,6 +21,7 @@
 .detailOptionContent {
 	display: flex;
 	flex: 1;
+	min-width: 0;
 	flex-direction: column;
 	gap: 1rem;
 }
@@ -35,4 +36,10 @@
 
 .removeIcon:hover {
 	color: var(--red);
+}
+
+@media (max-width: 48rem) {
+	.wrapper {
+		padding: 0.75rem 1rem;
+	}
 }

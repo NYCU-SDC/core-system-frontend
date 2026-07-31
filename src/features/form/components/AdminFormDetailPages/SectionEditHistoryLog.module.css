@@ -108,3 +108,16 @@
 .rowCurrent .label {
 	font-weight: 600;
 }
+
+@media (max-width: 48rem) {
+	.panel {
+		position: fixed;
+		left: 50%;
+		bottom: 5rem;
+		transform: translateX(-50%);
+		z-index: 60;
+		width: min(92vw, 22rem);
+		max-height: 50vh;
+		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+	}
+}

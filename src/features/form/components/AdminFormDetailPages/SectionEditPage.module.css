@@ -5,6 +5,7 @@
 
 .content {
 	flex: 1;
+	min-width: 0;
 }
 
 .toolbar {
@@ -23,6 +24,10 @@
 .expandAllLabel {
 	color: var(--foreground);
 	font-size: 0.95rem;
+}
+
+.expandAllToggle button {
+	background-color: var(--selection);
 }
 
 .container {
@@ -117,4 +122,63 @@
 
 .sidebar > p {
 	padding: 0 0.5rem;
+}
+
+@media (max-width: 48rem) {
+	.sidebarContainer {
+		width: auto;
+	}
+
+	.sidebar {
+		min-width: 0;
+		align-items: center;
+		padding: 1rem 0.5rem;
+	}
+
+	.sidebar > p {
+		display: none;
+	}
+
+	.newQuestion {
+		justify-content: center;
+		padding: 0.5rem;
+	}
+
+	.newQuestionLabel {
+		display: none;
+	}
+
+	.toolbar {
+		flex-wrap: wrap;
+		justify-content: space-between;
+	}
+
+	.toolbar > button {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
+	.undoBar {
+		position: fixed;
+		bottom: 1rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 50;
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+		transition: transform 0.25s ease, opacity 0.25s ease;
+	}
+
+	.undoBarHidden {
+		transform: translateX(-50%) translateY(180%);
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.content {
+		padding-bottom: 4rem;
+	}
+
+	.card {
+		padding: 1rem;
+	}
 }

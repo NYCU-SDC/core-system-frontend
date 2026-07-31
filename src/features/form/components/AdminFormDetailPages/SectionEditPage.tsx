@@ -98,6 +98,15 @@ export const AdminSectionEditPage = () => {
 	const [expandAll, setExpandAll] = useState(false);
 	// Keep the last active card expanded when "collapse all" is toggled.
 	const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
+	// Hide the fixed-bottom undo bar (mobile) when scrolled to the page bottom so it doesn't cover the footer.
+	const [undoBarHidden, setUndoBarHidden] = useState(false);
+
+	useEffect(() => {
+		const onScroll = () => setUndoBarHidden(window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 80);
+		window.addEventListener("scroll", onScroll, { passive: true });
+		onScroll();
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
 
 	// Use refs to break the undo/redo callback definition cycle.
 	const beforeUndoRedoRef = useRef<() => Promise<void>>(async () => {});
@@ -885,7 +894,7 @@ export const AdminSectionEditPage = () => {
 					</div>
 				</div>
 				<div className={styles.sidebarContainer}>
-					<div className={styles.undoBar}>
+					<div className={`${styles.undoBar} ${undoBarHidden ? styles.undoBarHidden : ""}`}>
 						<button type="button" className={styles.undoBarBtn} onClick={() => void undo()} disabled={!canUndo} aria-label="復原" title="復原">
 							<Undo2 size={18} />
 						</button>
@@ -900,9 +909,9 @@ export const AdminSectionEditPage = () => {
 					<div className={styles.sidebar}>
 						<p>新增</p>
 						{Object.values(QUESTION_STRATEGIES).map((option, index) => (
-							<button key={index} className={styles.newQuestion} onClick={() => handleAddQuestion(option.type)}>
+							<button key={index} className={styles.newQuestion} onClick={() => handleAddQuestion(option.type)} title={option.text}>
 								{option.icon}
-								{option.text}
+								<span className={styles.newQuestionLabel}>{option.text}</span>
 							</button>
 						))}
 					</div>

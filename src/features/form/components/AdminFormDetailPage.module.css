@@ -90,3 +90,9 @@
 .design {
 	max-width: 30rem;
 }
+
+@media (max-width: 48rem) {
+	.content {
+		padding: 1rem;
+	}
+}

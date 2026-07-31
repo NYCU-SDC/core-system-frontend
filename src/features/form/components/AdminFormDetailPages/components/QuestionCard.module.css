@@ -95,12 +95,12 @@
 
 .switch {
 	display: flex;
+	align-items: center;
+	gap: 0.5rem;
 }
 
 .switch > .label {
-	flex: 1;
 	margin: 0;
-	min-width: 4rem;
 }
 
 .linearScale {
@@ -202,4 +202,28 @@
 
 .expandedGrip:active {
 	cursor: grabbing;
+}
+
+@media (max-width: 48rem) {
+	.card {
+		padding-inline: 1rem;
+	}
+
+	.card.expanded {
+		padding-block: 1.25rem;
+	}
+
+	.header {
+		flex-direction: column;
+	}
+
+	.typeWrapper {
+		order: -1;
+		align-self: flex-end;
+	}
+
+	.header .input input {
+		font-weight: 500;
+		font-size: 1.5rem;
+	}
 }
