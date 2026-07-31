@@ -67,39 +67,41 @@
 	min-width: 5rem;
 }
 
-/* Segmented undo/redo pill above the questions (same pattern as the editor sidebar). */
+/* Segmented undo/redo pill*/
 .undoBar {
 	align-self: flex-start;
 	display: inline-flex;
 	align-items: stretch;
-	border-radius: 0.6rem;
-	overflow: hidden;
-	background-color: var(--background-color-secondary);
-	border: 1px solid rgba(255, 255, 255, 0.08);
+	background-color: var(--orange);
+	color: var(--background-color-primary);
+	clip-path: polygon(0.7rem 0, 100% 0, 100% calc(100% - 0.7rem), calc(100% - 0.7rem) 100%, 0 100%, 0 0.7rem);
 }
 
 .undoBarBtn {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	border: none;
 	background: transparent;
 	color: inherit;
-	padding: 0.45rem 0.9rem;
+	padding: 0.5rem 1.1rem;
 	cursor: pointer;
-	transition: background-color 0.15s ease;
 }
 
-.undoBarBtn:not(:last-child) {
-	border-right: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.undoBarBtn:hover:not(:disabled) {
-	background-color: var(--hero-background-color-primary);
+.undoBarBtn:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: -1px;
+	width: 2px;
+	background: var(--background-color-primary);
+	transform: skewX(-18deg);
 }
 
 .undoBarBtn:disabled {
-	opacity: 0.35;
+	opacity: 0.4;
 	cursor: default;
 }
 

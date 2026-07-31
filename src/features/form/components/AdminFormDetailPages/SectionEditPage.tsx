@@ -2,18 +2,20 @@ import { useActiveOrgSlug } from "@/features/dashboard/hooks/useOrgSettings";
 import { useSectionEditUndo, type SectionEditSnapshot } from "@/features/form/hooks/useSectionEditUndo";
 import { useCreateQuestion, useDeleteQuestion, useSections, useUpdateQuestion, useUpdateSection } from "@/features/form/hooks/useSections";
 import { useUpdateWorkflow, useWorkflow } from "@/features/form/hooks/useWorkflow";
-import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, useToast } from "@/shared/components";
+import { Button, ErrorMessage, Input, LoadingSpinner, MarkdownEditor, Switch, useToast } from "@/shared/components";
 import { EMPTY_PROSE_MIRROR_DOC, fromApiProseMirror, serializeProseMirrorDoc, toApiProseMirror, type ProseMirrorLikeDocument } from "@/shared/utils/proseMirror";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { FormsQuestionRequest, FormsQuestionResponse, ProseMirrorDocument, ProseMirrorDocumentUpdate } from "@nycu-sdc/core-system-sdk";
+import { History, Redo2, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { QuestionCard } from "./components/QuestionCard";
 import { QUESTION_STRATEGIES } from "./QuestionConfig";
+import { SectionEditHistoryLog } from "./SectionEditHistoryLog";
 import styles from "./SectionEditPage.module.css";
 import type { Option, Question } from "./types/question";
 import { QUESTION_FEATURES } from "./types/question";
@@ -78,8 +80,7 @@ export const AdminSectionEditPage = () => {
 		}
 	};
 
-	// States (section title/description drafts are non-undoable: they autosave via onBlur and
-	// the description MarkdownEditor owns its own ProseMirror history).
+	// Section title/description autosave separately and do not participate in question undo history.
 	const [sectionTitleDraft, setSectionTitleDraft] = useState("");
 	const [sectionDescriptionDraft, setSectionDescriptionDraft] = useState<ProseMirrorLikeDocument>(() => EMPTY_PROSE_MIRROR_DOC);
 	const [savedSectionTitle, setSavedSectionTitle] = useState("");
@@ -93,14 +94,16 @@ export const AdminSectionEditPage = () => {
 	const hydratedSectionIdRef = useRef<string | null>(null);
 	const [dirtyQuestionVersion, setDirtyQuestionVersion] = useState(0);
 	const [newlyAddedIndex, setNewlyAddedIndex] = useState<number | null>(null);
+	const [showHistory, setShowHistory] = useState(false);
+	const [expandAll, setExpandAll] = useState(false);
+	// Keep the last active card expanded when "collapse all" is toggled.
+	const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
 
-	// Undo/redo engine. beforeUndoRedo / afterUndoRedo are wired through refs because the
-	// flush + mark-dirty callbacks are defined further down and themselves depend on the
-	// engine's setters — referencing them directly here would be a definition cycle.
+	// Use refs to break the undo/redo callback definition cycle.
 	const beforeUndoRedoRef = useRef<() => Promise<void>>(async () => {});
 	const afterUndoRedoRef = useRef<(snapshot: SectionEditSnapshot) => void>(() => {});
 
-	const { questions, questionIds, setQuestions, updateQuestionAt, setQuestionIds, setSnapshot, hydrate, undo, redo, canUndo, canRedo, onTextInputBlurCheckpoint } = useSectionEditUndo(
+	const { questions, questionIds, setQuestions, updateQuestionAt, setQuestionIds, setSnapshot, hydrate, undo, redo, canUndo, canRedo, onTextInputBlurCheckpoint, history } = useSectionEditUndo(
 		{ questions: [], questionIds: [] },
 		{
 			beforeUndoRedo: () => beforeUndoRedoRef.current(),
@@ -108,8 +111,7 @@ export const AdminSectionEditPage = () => {
 		}
 	);
 
-	// Synchronous server-id ref update is required by the sequential flush loop: each create
-	// reads questionIdsRef.current to build the next ids array before React re-renders.
+	// Keep questionIdsRef in sync before the next flush step.
 	const setQuestionIdsAndRef = useCallback(
 		(nextQuestionIds: (string | undefined)[], checkpoint?: "immediate" | "debounced" | "none") => {
 			questionIdsRef.current = nextQuestionIds;
@@ -228,8 +230,7 @@ export const AdminSectionEditPage = () => {
 	const flushDirtyQuestions = useCallback(async () => {
 		if (!formid || !sectionId) return;
 		if (isFlushingDirtyQuestionsRef.current) {
-			// A flush is already running; await it so callers (e.g. undo/redo) can rely on
-			// in-flight autosave having settled before they mutate history.
+		// Wait for the current flush to finish.
 			if (flushPromiseRef.current) await flushPromiseRef.current;
 			return;
 		}
@@ -295,10 +296,7 @@ export const AdminSectionEditPage = () => {
 						} else {
 							const res = await createQuestion.mutateAsync(req);
 							syncQuestionFromApi(res);
-							// Phase 1 known-limitation: redo a newly-created question may re-POST (id was
-							// none-backfilled, not in snapshot), so the history entry for the redone state
-							// still has questionIds[index] === undefined. Future fix: clientId->serverId map,
-							// NOT patching the id into past/future (that would change engine semantics).
+						// Redoing a newly created question may re-POST because its snapshot id is still undefined.
 							const nextQuestionIds = [...questionIdsRef.current];
 							nextQuestionIds[index] = res.id;
 							setQuestionIdsAndRef(nextQuestionIds, "none");
@@ -317,8 +315,7 @@ export const AdminSectionEditPage = () => {
 		await run;
 	}, [createQuestion, formid, sectionId, setQuestionIdsAndRef, setQuestions, updateQuestion]);
 
-	// beforeUndoRedo: drain in-flight + pending autosave so a later flush can't overwrite the
-	// undone state with a stale API response (方案 a hard requirement 3).
+	// Finish pending autosave before undo/redo.
 	const awaitInFlightFlush = useCallback(async () => {
 		if (autosaveTimerRef.current !== null) {
 			window.clearTimeout(autosaveTimerRef.current);
@@ -328,9 +325,7 @@ export const AdminSectionEditPage = () => {
 		if (flushPromiseRef.current) await flushPromiseRef.current;
 	}, [flushDirtyQuestions]);
 
-	// afterUndoRedo: 方案 a hard requirement 1 — re-mark the restored questions dirty so the
-	// existing autosave converges the backend. Single section is <=15 questions, so mark all
-	// rather than diffing which changed.
+	// Mark restored questions dirty after undo/redo.
 	const markAllQuestionsDirty = useCallback(
 		(snapshot: SectionEditSnapshot) => {
 			markQuestionsDirtyFrom(0, snapshot.questions.length);
@@ -397,6 +392,7 @@ export const AdminSectionEditPage = () => {
 			setQuestions(mapped, "none");
 			setQuestionIdsAndRef(nextQuestionIds, "none");
 		}
+		// Re-run only when section identity or question count changes.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [apiQuestions.length, section?.id]);
 
@@ -529,9 +525,8 @@ export const AdminSectionEditPage = () => {
 		};
 
 		const updatedQuestions = [...questions, newQuestion];
-		// Keep the parallel arrays aligned (new question has no server id yet) and commit both
-		// in one checkpoint so the add costs exactly one undo step.
-		setSnapshot({ questions: updatedQuestions, questionIds: [...questionIds, undefined] }, "immediate");
+		// Reset undo history after adding a question.
+		hydrate({ questions: updatedQuestions, questionIds: [...questionIds, undefined] });
 		setNewlyAddedIndex(newIndex);
 		markQuestionDirty(newIndex);
 	};
@@ -540,7 +535,8 @@ export const AdminSectionEditPage = () => {
 		const updatedQuestions = questions.filter((_, currentIndex) => currentIndex !== index);
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index, 1);
-		setSnapshot({ questions: updatedQuestions, questionIds: updatedQuestionIds }, "immediate");
+		// Reset undo history because this change is not safely undoable.
+		hydrate({ questions: updatedQuestions, questionIds: updatedQuestionIds });
 		markQuestionsDirtyFrom(index, updatedQuestions.length);
 	};
 
@@ -551,7 +547,8 @@ export const AdminSectionEditPage = () => {
 		});
 		const updatedQuestionIds = [...questionIds];
 		updatedQuestionIds.splice(index + 1, 0, undefined);
-		setSnapshot({ questions: updatedQuestions, questionIds: updatedQuestionIds }, "immediate");
+		// Reset undo history after duplicating a question.
+		hydrate({ questions: updatedQuestions, questionIds: updatedQuestionIds });
 		markQuestionsDirtyFrom(index + 1, updatedQuestions.length);
 	};
 
@@ -562,13 +559,9 @@ export const AdminSectionEditPage = () => {
 	};
 
 	const handleDescriptionChange = (index: number, newDescription: ProseMirrorLikeDocument) => {
-		// Diff guard (same pattern as handleTitleChange). Critical: QuestionCard's outside-click
-		// safety net fires onDescriptionChange for EVERY expanded card on ANY click. Without this
-		// guard, every click marked all questions dirty -> autosave PUT every question ->
-		// syncQuestionFromApi overwrote every title/description with the API response.
+		// Ignore unchanged descriptions to avoid redundant autosave work.
 		if (serializeProseMirrorDoc(questions[index]?.description) === serializeProseMirrorDoc(newDescription)) return;
-		// Immutable update so we never mutate a snapshot already captured in history. Debounced
-		// to coalesce the blur commit with the outside-click / Enter safety-net double-fire.
+		// Debounce description updates so repeated editor events collapse into one save step.
 		updateQuestionAt(index, question => ({ ...question, description: newDescription }), "debounced");
 		markQuestionDirty(index);
 	};
@@ -767,18 +760,17 @@ export const AdminSectionEditPage = () => {
 			const newIndex = clientIds.indexOf(over.id as string);
 			if (oldIndex === -1 || newIndex === -1) return;
 
-			// Capture before state update to avoid stale closure
+			// Capture the dragged item before reordering state.
 			const draggedQuestion = questionsRef.current[oldIndex];
 			const draggedQuestionId = questionIdsRef.current[oldIndex];
 
-			// Reorder both arrays in a single checkpoint so the drag is one undo step.
+			// Keep question order and ids aligned in one undo step.
 			setSnapshot(prev => ({ questions: arrayMove(prev.questions, oldIndex, newIndex), questionIds: arrayMove(prev.questionIds, oldIndex, newIndex) }), "immediate");
 			questionIdsRef.current = arrayMove(questionIdsRef.current, oldIndex, newIndex);
 			remapDirtyQuestionIndexesAfterMove(oldIndex, newIndex);
 
 			if (draggedQuestionId && draggedQuestion) {
-				// Only PUT the dragged question with its new order.
-				// The backend shifts all other questions automatically.
+				// Persist only the dragged question; the backend shifts the rest.
 				updateQuestion.mutate(
 					{ questionId: draggedQuestionId, req: toApiRequest(draggedQuestion, newIndex + 1) },
 					{
@@ -791,7 +783,7 @@ export const AdminSectionEditPage = () => {
 					}
 				);
 			} else if (draggedQuestion) {
-				// Question not yet persisted; auto-save will create it with the correct order
+				// Let autosave create the reordered question.
 				markQuestionDirty(newIndex);
 			}
 		},
@@ -802,19 +794,16 @@ export const AdminSectionEditPage = () => {
 		<>
 			<div className={styles.layout}>
 				<div className={styles.content}>
-					<div style={{ display: "flex", gap: "8px" }}>
-						<Button onClick={handleBack}>返回</Button>
-						<Button variant="secondary" onClick={() => void undo()} disabled={!canUndo}>
-							復原
-						</Button>
-						<Button variant="secondary" onClick={() => void redo()} disabled={!canRedo}>
-							重做
-						</Button>
+					<div className={styles.toolbar}>
+						<Button onClick={handleBack}>返回總覽</Button>
+						<div className={styles.expandAllToggle}>
+							<span className={styles.expandAllLabel}>全部展開</span>
+							<Switch checked={expandAll} onCheckedChange={setExpandAll} themeColor="var(--orange)" />
+						</div>
 					</div>
 					{sectionsQuery.isLoading && <LoadingSpinner />}
 					{sectionsQuery.isError && <ErrorMessage message={(sectionsQuery.error as Error)?.message ?? "無法載入區塊資料"} />}
-					{/* onBlurCapture flushes any pending debounced text checkpoint when leaving an input,
-					    so a text edit becomes a discrete undo step on blur. */}
+					{/* Flush pending text checkpoints on blur so edits become discrete undo steps. */}
 					<div className={styles.container} onBlurCapture={onTextInputBlurCheckpoint}>
 						<section className={styles.card}>
 							<Input
@@ -844,6 +833,9 @@ export const AdminSectionEditPage = () => {
 												question={question}
 												questionNumber={index + 1}
 												defaultExpanded={index === newlyAddedIndex}
+												expandAll={expandAll}
+												keepExpandedOnCollapse={index === activeCardIndex}
+												onActivate={() => setActiveCardIndex(index)}
 												autoFocusTitle={index === newlyAddedIndex}
 												dragHandleListeners={listeners}
 												duplicateQuestion={() => handleDuplicateQuestion(index)}
@@ -893,6 +885,18 @@ export const AdminSectionEditPage = () => {
 					</div>
 				</div>
 				<div className={styles.sidebarContainer}>
+					<div className={styles.undoBar}>
+						<button type="button" className={styles.undoBarBtn} onClick={() => void undo()} disabled={!canUndo} aria-label="復原" title="復原">
+							<Undo2 size={18} />
+						</button>
+						<button type="button" className={styles.undoBarBtn} onClick={() => void redo()} disabled={!canRedo} aria-label="重做" title="重做">
+							<Redo2 size={18} />
+						</button>
+						<button type="button" className={styles.undoBarBtn} onClick={() => setShowHistory(prev => !prev)} aria-label="步驟紀錄" title="步驟紀錄">
+							<History size={18} />
+						</button>
+					</div>
+					{showHistory && <SectionEditHistoryLog history={history} />}
 					<div className={styles.sidebar}>
 						<p>新增</p>
 						{Object.values(QUESTION_STRATEGIES).map((option, index) => (
